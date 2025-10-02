@@ -1,4 +1,4 @@
-# Teeth Management System: Connecting Patients and Students in Egypt
+# THOUTHA: Connecting Patients and Students in Egypt
 
 ## Project Overview
 
