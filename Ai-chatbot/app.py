@@ -6,17 +6,22 @@ import traceback
 import logging
 import re
 
+# Import ai_client in a way that works when running the file directly
+try:
+    # When the package is installed or run as a module
+    from . import ai_client
+except Exception:
+    # When running as a script (e.g. `streamlit run app.py`) fall back to top-level import
+    import ai_client
+
 
 logging.getLogger("streamlit.runtime.scriptrunner.script_run_context").setLevel(logging.ERROR)
 
 # Load Gemini API key from .env
 load_dotenv()
-GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 
-st.set_page_config(page_title="Medical Chatbot (EN/AR) - Gemini", page_icon="💬", layout="centered")
-st.title("🩺 Medical Assistant Chatbot (English / العربية) — Gemini")
-st.write("Enter symptoms in English or Arabic. The app will return a short diagnosis in BOTH languages and suggest a doctor from the local database.")
-
+st.set_page_config(page_title="المساعد الطبي / Medical Assistant Chatbot", page_icon="💬", layout="centered")
+st.title("دكتوري🩺")
 def get_doctor_recommendation(symptom_text):
     try:
         conn = sqlite3.connect(os.path.join(os.getcwd(), 'doctors.db'))
@@ -34,7 +39,6 @@ def get_doctor_recommendation(symptom_text):
 
 
 # --- Chat-like UI ---
-st.markdown("## Chat with Medical Assistant / الدردشة مع المساعد الطبي")
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -50,31 +54,23 @@ user_input = st.chat_input("Type your symptoms or question here... / اكتب ا
 if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     with st.spinner("Analyzing... / جاري التحليل..."):
+        # Initialize Gemini client wrapper and generate a response. The client
+        # will load the API key itself from the environment if not provided.
         try:
-            import google.generativeai as genai
-        except Exception as e:
-            st.chat_message("assistant").error("Gemini client library is not installed or failed to import. Install 'google-generativeai'. See terminal for details.")
+            client = ai_client.GeminiClient()
+        except Exception:
+            st.chat_message("assistant").error("Gemini client library is not installed or failed to initialize. Install 'google-generativeai' and set GEMINI_API_KEY.")
             st.chat_message("assistant").text(traceback.format_exc())
             st.stop()
 
-        if not GEMINI_KEY:
-            st.chat_message("assistant").error("GEMINI_API_KEY is not set. Please add it to the .env file and restart the app.")
-            st.stop()
-
         try:
-            genai.configure(api_key=GEMINI_KEY)
-            model = genai.GenerativeModel("gemini-2.5-flash")
             # For chat, optionally include previous exchanges in prompt
             history_text = "\n".join([
                 f"User: {m['content']}" if m['role']=='user' else f"Assistant: {m['content']}"
                 for m in st.session_state.chat_history if m['role'] != 'system'
             ])
 
-            # Detect if user input contains Arabic characters
-            def is_arabic(text):
-                return bool(re.search(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]", text))
-
-            user_lang = 'ar' if is_arabic(user_input) else 'en'
+            user_lang = 'ar' if ai_client.is_arabic(user_input) else 'en'
 
             if user_lang == 'ar':
                 prompt = (
@@ -91,11 +87,7 @@ if user_input:
                     "Respond briefly and clearly in English."
                 )
 
-            response = model.generate_content(prompt)
-            if hasattr(response, 'text'):
-                diagnosis_text = response.text.strip()
-            else:
-                diagnosis_text = str(response).strip()
+            diagnosis_text = client.generate(prompt)
 
 
             # Build localized reply header
