@@ -6,9 +6,7 @@ import traceback
 import logging
 import re
 
-# Silence noisy Streamlit warning that can appear when the app is run in some environments:
-# "Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode."
-# We elevate the specific scriptrunner logger to ERROR so normal info/debug logs are unaffected.
+
 logging.getLogger("streamlit.runtime.scriptrunner.script_run_context").setLevel(logging.ERROR)
 
 # Load Gemini API key from .env
