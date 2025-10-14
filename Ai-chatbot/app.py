@@ -4,27 +4,28 @@ from dotenv import load_dotenv
 import sqlite3
 import traceback
 import logging
-import re
 
-# Import ai_client in a way that works when running the file directly
+# Import the updated ai_client
 try:
-    # When the package is installed or run as a module
     from . import ai_client
-except Exception:
-    # When running as a script (e.g. `streamlit run app.py`) fall back to top-level import
+except ImportError:
     import ai_client
 
-
+# Configure logging to reduce console noise from Streamlit
 logging.getLogger("streamlit.runtime.scriptrunner.script_run_context").setLevel(logging.ERROR)
 
-# Load Gemini API key from .env
+# Load Gemini API key from .env file
 load_dotenv()
 
-st.set_page_config(page_title="المساعد الطبي / Medical Assistant Chatbot", page_icon="💬", layout="centered")
-st.title("دكتوري🩺")
+# --- Page and UI Configuration ---
+st.set_page_config(page_title="المساعد الطبي / Thoutha", page_icon="🦷", layout="centered")
+st.title("ثوثة 🦷 - المساعد الذكي لطبيب الأسنان")
+
 def get_doctor_recommendation(symptom_text):
+    """Searches the database for a doctor based on keywords in the text."""
     try:
-        conn = sqlite3.connect(os.path.join(os.getcwd(), 'doctors.db'))
+        db_path = os.path.join(os.path.dirname(__file__), 'doctors.db')
+        conn = sqlite3.connect(db_path)
         c = conn.cursor()
         c.execute("SELECT name, specialty, services FROM doctors")
         doctors = c.fetchall()
@@ -37,83 +38,82 @@ def get_doctor_recommendation(symptom_text):
     except Exception:
         return None
 
-
-# --- Chat-like UI ---
+# --- Main Chat Application Logic ---
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 for msg in st.session_state.chat_history:
-    if msg["role"] == "user":
-        st.chat_message("user").write(msg["content"])
-    else:
-        st.chat_message("assistant").write(msg["content"])
+    st.chat_message(msg["role"]).write(msg["content"])
 
-user_input = st.chat_input("Type your symptoms or question here... / اكتب الأعراض أو سؤالك هنا...")
+user_input = st.chat_input("Ask about your dental concerns... / اسأل عن مشاكل أسنانك...")
 
 if user_input:
     st.session_state.chat_history.append({"role": "user", "content": user_input})
-    with st.spinner("Analyzing... / جاري التحليل..."):
-        # Initialize Gemini client wrapper and generate a response. The client
-        # will load the API key itself from the environment if not provided.
-        try:
-            client = ai_client.GeminiClient()
-        except Exception:
-            st.chat_message("assistant").error("Gemini client library is not installed or failed to initialize. Install 'google-generativeai' and set GEMINI_API_KEY.")
-            st.chat_message("assistant").text(traceback.format_exc())
+    st.chat_message("user").write(user_input)
+
+    try:
+        client = ai_client.Thoutha()
+        user_lang = 'ar' if ai_client.is_arabic(user_input) else 'en'
+
+        # --- DENTAL RELEVANCE CHECK (Hybrid Guard Clause) ---
+        with st.spinner("Checking relevance... / جاري التحقق..."):
+            is_dental = client.is_query_dental(user_input)
+
+        if not is_dental:
+            if user_lang == 'ar':
+                refusal_message = "عذراً، يمكنني فقط الإجابة على الأسئلة المتعلقة بصحة الأسنان والفم. كيف يمكنني مساعدتك في هذا الخصوص؟"
+            else:
+                refusal_message = "I can only answer questions about dental and oral health. How can I assist you with a dental matter?"
+
+            st.session_state.chat_history.append({"role": "assistant", "content": refusal_message})
+            st.chat_message("assistant").write(refusal_message)
             st.stop()
 
-        try:
-            # For chat, optionally include previous exchanges in prompt
-            history_text = "\n".join([
-                f"User: {m['content']}" if m['role']=='user' else f"Assistant: {m['content']}"
-                for m in st.session_state.chat_history if m['role'] != 'system'
-            ])
-
-            user_lang = 'ar' if ai_client.is_arabic(user_input) else 'en'
-
+        # --- MAIN CHAT LOGIC ---
+        with st.spinner("Analyzing... / جاري التحليل..."):
             if user_lang == 'ar':
-                prompt = (
-                    "أنت مساعد طبي. أجب باللغة العربية فقط. إذا كانت هناك علامات طارئة، قم بتضمين ملاحظة سلامة قصيرة.\n"
-                    f"سجل المحادثة:\n{history_text}\n\n"
-                    f"المستخدم: {user_input}\n"
-                    "أجب بشكل موجز وواضح باللغة العربية."
+                system_prompt = (
+                    "أنت 'ثوثة'، مساعد ذكاء اصطناعي متخصص في طب الأسنان. دورك هو مناقشة الأعراض وطرح أسئلة توضيحية. "
+                    "يجب أن ترفض بأدب الإجابة على أي أسئلة غير متعلقة بالأسنان. لا تقدم تشخيصًا طبيًا نهائيًا أبدًا. "
+                    "هدفك هو تشجيع المستخدم على استشارة طبيب أسنان بشري."
                 )
             else:
-                prompt = (
-                    "You are a medical assistant. Respond in English only. If emergency signs are present, include a short safety note.\n"
-                    f"Chat history:\n{history_text}\n\n"
-                    f"User: {user_input}\n"
-                    "Respond briefly and clearly in English."
+                system_prompt = (
+                    "You are 'Thoutha', a specialized dental AI assistant. Your role is to discuss symptoms and ask clarifying questions. "
+                    "You must politely refuse to answer any non-dental questions. Never provide a definitive medical diagnosis. "
+                    "Your goal is to encourage the user to consult a human dentist."
                 )
 
-            diagnosis_text = client.generate(prompt)
+            conversation_for_api = [
+                {'role': 'user', 'parts': [system_prompt]},
+                {'role': 'model', 'parts': ["Understood. I am Thoutha, ready to assist with dental inquiries."]}
+            ]
+            for msg in st.session_state.chat_history:
+                role = "user" if msg["role"] == "user" else "model"
+                conversation_for_api.append({'role': role, 'parts': [msg["content"]]})
 
+            diagnosis_text = client.generate_response(conversation_for_api)
 
-            # Build localized reply header
-            if user_lang == 'ar':
-                reply = "✅ \n\n" + diagnosis_text + "\n\n"
-            else:
-                reply = "✅\n\n" + diagnosis_text + "\n\n"
-
-            # Suggest doctor with localized labels (only include section if a doctor is found)
-            doctor = get_doctor_recommendation(user_input)
+            reply = " \n\n" + diagnosis_text + "\n\n"
+            doctor = get_doctor_recommendation(user_input + " " + diagnosis_text)
             if doctor:
                 if user_lang == 'ar':
-                    reply += f"👨‍⚕️ الطبيب المقترح\n"
-                    reply += f"الاسم: {doctor['name']}\n"
-                    reply += f"التخصص: {doctor['specialty']}\n"
-                    reply += f"الخدمات: {doctor['services']}"
+                    reply += f"👨‍⚕️ **الطبيب المقترح:**\n"
+                    reply += f"- **الاسم:** {doctor['name']}\n"
+                    reply += f"- **التخصص:** {doctor['specialty']}\n"
+                    reply += f"- **الخدمات:** {doctor['services']}"
                 else:
-                    reply += f"👨‍⚕️ Recommended Doctor\n"
-                    reply += f"Name: {doctor['name']}\n"
-                    reply += f"Specialty: {doctor['specialty']}\n"
-                    reply += f"Services: {doctor['services']}"
+                    reply += f"👨‍⚕️ **Recommended Doctor:**\n"
+                    reply += f"- **Name:** {doctor['name']}\n"
+                    reply += f"- **Specialty:** {doctor['specialty']}\n"
+                    reply += f"- **Services:** {doctor['services']}"
 
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
             st.chat_message("assistant").write(reply)
-        except Exception as e:
-            st.chat_message("assistant").error("Error while calling Gemini API or processing response. See details below.")
-            st.chat_message("assistant").text(traceback.format_exc())
+
+    except Exception:
+        st.chat_message("assistant").error("An error occurred. See details below.")
+        st.chat_message("assistant").text(traceback.format_exc())
 
 st.markdown('---')
