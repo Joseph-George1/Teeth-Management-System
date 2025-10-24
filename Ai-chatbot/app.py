@@ -22,19 +22,13 @@ st.set_page_config(page_title="المساعد الطبي / Thoutha", page_icon="
 st.title("ثوثة 🦷 - المساعد الذكي لطبيب الأسنان")
 
 def get_doctor_recommendation(symptom_text):
-    """Searches the database for a doctor based on keywords in the text."""
+    """Wrapper that delegates to the shared ai_client utility.
+
+    Kept here as a thin compatibility layer so other code can call the
+    same name as before. Internally it calls `ai_client.get_doctor_recommendation`.
+    """
     try:
-        db_path = os.path.join(os.path.dirname(__file__), 'doctors.db')
-        conn = sqlite3.connect(db_path)
-        c = conn.cursor()
-        c.execute("SELECT name, specialty, services FROM doctors")
-        doctors = c.fetchall()
-        conn.close()
-        for name, specialty, services in doctors:
-            for keyword in services.split(","):
-                if keyword.strip() and keyword.strip().lower() in symptom_text.lower():
-                    return {"name": name, "specialty": specialty, "services": services}
-        return None
+        return ai_client.get_doctor_recommendation(symptom_text)
     except Exception:
         return None
 

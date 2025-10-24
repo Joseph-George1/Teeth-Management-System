@@ -1,5 +1,6 @@
 import re
 import os
+import codecs
 from dotenv import load_dotenv
 from textblob import TextBlob  # For English spell correction
 
@@ -16,6 +17,56 @@ load_dotenv()
 def is_arabic(text: str) -> bool:
     """Return True if the text contains Arabic characters."""
     return bool(re.search(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]", text))
+
+
+def decode_unicode_escapes(s: str) -> str:
+    """Decode literal Unicode escape sequences (e.g. "\\u0623\\u0647...") into characters.
+
+    If the input is not a string or decoding fails, return the original value.
+    """
+    if not isinstance(s, str):
+        return s
+
+    def contains_arabic(text: str) -> bool:
+        return bool(re.search(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]", text))
+
+    try:
+        # Step 1: decode standard \uXXXX escapes
+        t = codecs.decode(s, 'unicode_escape')
+        if contains_arabic(t):
+            return t
+    except Exception:
+        t = s
+
+    # Step 2: sometimes UTF-8 bytes were escaped as \u00XX sequences and then
+    # interpreted as latin-1 characters (e.g. \u00d8\u00a3 -> bytes D8 A3 -> Arabic).
+    try:
+        # Try latin-1 -> utf-8 once on the last decoded text
+        try_bytes = t.encode('latin-1')
+        decoded_once = try_bytes.decode('utf-8')
+        if contains_arabic(decoded_once):
+            return decoded_once
+        # If not, attempt a few more recovery passes where strings like "Ã" and "Â"
+        # indicate double-encoding. Iterate up to 3 times.
+        cur = decoded_once
+        for _ in range(3):
+            if contains_arabic(cur):
+                return cur
+            try:
+                cur = cur.encode('latin-1').decode('utf-8')
+            except Exception:
+                break
+        if contains_arabic(cur):
+            return cur
+    except Exception:
+        pass
+
+    # Step 3: as a last resort, return the first pass result if it contains useful chars,
+    # otherwise return original input
+    if contains_arabic(t):
+        return t
+
+    return s
 
 
 def normalize_arabic(text: str) -> str:
@@ -43,6 +94,30 @@ def autocorrect_text(text: str) -> str:
             return corrected
     except Exception:
         return text
+
+
+def get_doctor_recommendation(symptom_text: str, db_path: str | None = None):
+    """Search the local doctors.db for a matching service keyword.
+
+    Returns a dict with keys name, specialty, services or None if no match.
+    The db_path defaults to the `doctors.db` located next to this module.
+    """
+    try:
+        if db_path is None:
+            db_path = os.path.join(os.path.dirname(__file__), 'doctors.db')
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute("SELECT name, specialty, services FROM doctors")
+        doctors = c.fetchall()
+        conn.close()
+        for name, specialty, services in doctors:
+            for keyword in services.split(","):
+                if keyword.strip() and keyword.strip().lower() in symptom_text.lower():
+                    return {"name": name, "specialty": specialty, "services": services}
+        return None
+    except Exception:
+        return None
 
 
 # --- Gemini Client Class ---
@@ -106,7 +181,9 @@ class Thoutha:
         try:
             generation_config = genai.types.GenerationConfig(candidate_count=1, temperature=0.0)
             response = self.classifier_model.generate_content(prompt, generation_config=generation_config)
-            return "YES" in response.text.upper()
+            text = response.text if hasattr(response, 'text') else str(response)
+            text = decode_unicode_escapes(text)
+            return "YES" in text.upper()
         except Exception:
             # Model might not be available for this API version. Try a sensible
             # fallback once (gemini-2.5-flash), then give up.
@@ -130,7 +207,9 @@ class Thoutha:
                 conversation_history[-1]['parts'][0] = corrected
 
             response = self.chat_model.generate_content(conversation_history)
-            return response.text.strip()
+            text = response.text if hasattr(response, 'text') else str(response)
+            text = decode_unicode_escapes(text)
+            return text.strip()
         except Exception as e:
             # If the configured chat model is not available, try a fallback model
             # once and re-raise a clearer error if that also fails.
