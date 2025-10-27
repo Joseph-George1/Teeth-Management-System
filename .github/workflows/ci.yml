@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install & build (Thoutha-Website/ثوثة)
+      - name: Install & build (Thoutha-Website/ثوثة) if package.json exists
         run: |
           SITE_DIR="Thoutha-Website/ثوثة"
           if [ -f "$SITE_DIR/package.json" ]; then
@@ -26,7 +26,7 @@ jobs:
             if npm run | sed -n '1,200p' | grep -q "build"; then
               npm run build
             else
-              echo "No build script defined in package.json; skipping build"
+              echo "No 'build' script defined in package.json; skipping build"
             fi
             cd - || true
           else
@@ -57,13 +57,49 @@ jobs:
           else
             echo "No Python requirements found at $REQ"
           fi
-      - name: Run pytest if present
+      - name: Run pytest if present, otherwise run flake8
         run: |
           if [ -d "Ai-chatbot/tests" ] || ls Ai-chatbot/test* 1>/dev/null 2>&1; then
-            pytest -q Ai-chatbot || exit 1
+            python -m pytest -q Ai-chatbot || exit 1
           else
-            echo "No Python tests found"
+            echo "No Python tests found; running flake8 (if available)"
+            if python -c "import shutil,sys; sys.exit(0 if shutil.which('flake8') else 1)"; then
+              flake8 Ai-chatbot || exit 1
+            else
+              echo "flake8 not installed or no tests found; nothing to run"
+            fi
           fi
+
+  flask-smoke:
+    name: Start Flask API for integration/smoke tests
+    runs-on: ubuntu-latest
+    needs: python-checks
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Ai-chatbot deps
+        run: |
+          REQ=Ai-chatbot/requirements.txt
+          if [ -f "$REQ" ]; then
+            python -m pip install --upgrade pip
+            pip install -r "$REQ"
+          fi
+      - name: Start Flask API in background
+        run: |
+          nohup python Ai-chatbot/flask_api.py > /tmp/flask.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -sSf http://localhost:5000/health >/dev/null 2>&1; then
+              echo "Flask API up"
+              break
+            fi
+            sleep 1
+          done
+      - name: Optional integration check against /health
+        run: |
+          curl -sSf http://localhost:5000/health || (echo "Flask API health check failed" && exit 1)
 
   flutter-linux-build:
     name: Flutter (linux) - CMake build
