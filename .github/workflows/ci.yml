@@ -1,0 +1,133 @@
+name: CI - Build & Tests
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  website-build:
+    name: Build Thoutha website (Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install & build (Thoutha-Website/ثوثة) if package.json exists
+        
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libgtk-3-dev
+      - name: Generate Flutter linux build files
+        run: |
+          flutter --version  # Ensure flutter is available
+          cd flutter_moblie_app
+          flutter pub get
+          flutter build linux
+          cd ..
+      - name: Upload built site artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thoutha-dist
+          path: Thoutha-Website/ثوثة/dist || Thoutha-Website/ثوثة/build || ''
+
+  python-checks:
+    name: Python - install & tests (Ai-chatbot)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Python deps (Ai-chatbot/requirements.txt)
+        run: |
+          REQ=Ai-chatbot/requirements.txt
+          if [ -f "$REQ" ]; then
+            python -m pip install --upgrade pip
+            pip install -r "$REQ"
+          else
+            echo "No Python requirements found at $REQ"
+          fi
+      - name: Run pytest if present, otherwise run flake8
+        run: |
+          if [ -d "Ai-chatbot/tests" ] || ls Ai-chatbot/test* 1>/dev/null 2>&1; then
+            python -m pytest -q Ai-chatbot || exit 1
+          else
+            echo "No Python tests found; running flake8 (if available)"
+            if python -c "import shutil,sys; sys.exit(0 if shutil.which('flake8') else 1)"; then
+              flake8 Ai-chatbot || exit 1
+            else
+              echo "flake8 not installed or no tests found; nothing to run"
+            fi
+          fi
+
+  flask-smoke:
+    name: Start Flask API for integration/smoke tests
+    runs-on: ubuntu-latest
+    needs: python-checks
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Ai-chatbot deps
+        run: |
+          REQ=Ai-chatbot/requirements.txt
+          if [ -f "$REQ" ]; then
+            python -m pip install --upgrade pip
+            pip install -r "$REQ"
+          fi
+      - name: Start Flask API in background
+        run: |
+          nohup python Ai-chatbot/flask_api.py > /tmp/flask.log 2>&1 &
+          for i in $(seq 1 20); do
+            if curl -sSf http://localhost:5000/health >/dev/null 2>&1; then
+              echo "Flask API up"
+              break
+            fi
+            sleep 1
+          done
+      - name: Optional integration check against /health
+        run: |
+          curl -sSf http://localhost:5000/health || (echo "Flask API health check failed" && exit 1)
+
+  flutter-linux-build:
+    name: Flutter (linux) - CMake build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake pkg-config
+      - name: Configure & build flutter_moblie_app/linux if present
+        run: |
+          if [ -f "flutter_moblie_app/linux/CMakeLists.txt" ]; then
+            mkdir -p flutter_moblie_app/linux/build
+            cd flutter_moblie_app/linux/build
+            cmake .. -DCMAKE_BUILD_TYPE=Release
+            cmake --build . -- -j$(nproc)
+          else
+            echo "No CMakeLists.txt found for flutter_moblie_app/linux; skipping"
+          fi
+
+  shellcheck:
+    name: ShellCheck - validate shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Run ShellCheck on repo scripts
+        run: |
+          SCRIPTS=$(git ls-files '*.sh' || true)
+          if [ -n "$SCRIPTS" ]; then
+            shellcheck -x $SCRIPTS || exit 1
+          else
+            echo "No shell scripts to lint"
+          fi

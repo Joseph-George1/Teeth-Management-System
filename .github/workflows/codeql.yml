@@ -1,0 +1,26 @@
+name: CodeQL Analysis
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  analyze:
+    name: Run CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, python, cpp
+      - name: Autobuild (optional)
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform analysis
+        uses: github/codeql-action/analyze@v3

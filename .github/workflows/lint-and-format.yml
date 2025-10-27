@@ -1,0 +1,73 @@
+name: Lint & Format Checks
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+
+jobs:
+  js-lint:
+    name: ESLint (Thoutha website)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install deps if package.json exists
+        run: |
+          SITE_DIR="Thoutha-Website/ثوثة"
+          if [ -f "$SITE_DIR/package.json" ]; then
+            cd "$SITE_DIR"
+            npm ci
+            cd - || true
+          else
+            echo "No package.json in $SITE_DIR; skipping npm install"
+          fi
+      - name: Run ESLint (prefer npm lint script, else npx fallback)
+        run: |
+          SITE_DIR="Thoutha-Website/ثوثة"
+          if [ -f "$SITE_DIR/package.json" ]; then
+            cd "$SITE_DIR"
+            if npm run | grep -q "lint"; then
+              npm run lint --silent || exit 1
+            else
+              if npx eslint --version >/dev/null 2>&1; then
+                npx eslint . --ext .js,.jsx --max-warnings=0 || exit 1
+              else
+                echo "ESLint not installed and no lint script defined; skipping"
+              fi
+            fi
+            cd - || true
+          else
+            echo "No JS project; skipping ESLint"
+          fi
+
+  python-lint:
+    name: Python formatting & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python & install tools
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install black and flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8 || true
+      - name: Black check
+        run: |
+          if ls **/*.py 1>/dev/null 2>&1; then
+            black --check . || (echo "Run 'black .' locally to fix formatting" && exit 1)
+          else
+            echo "No Python files"
+          fi
+      - name: Flake8
+        run: |
+          if ls **/*.py 1>/dev/null 2>&1; then
+            flake8 || exit 1
+          else
+            echo "No Python files"
+          fi
