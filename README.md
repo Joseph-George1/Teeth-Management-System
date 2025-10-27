@@ -1,5 +1,7 @@
 ## THOUTHA: Connecting Patients and Students in Egypt
 
+[![License: GNU](https://img.shields.io/badge/License-GNU-red.svg)](LICENSE)
+
 
 <img width="500" height="500" alt="IMG_5729" src="https://github.com/user-attachments/assets/c6223af8-7ac1-4ef5-ad9e-ede11c9c3412" />
 
