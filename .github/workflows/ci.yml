@@ -18,20 +18,17 @@ jobs:
         with:
           node-version: 18
       - name: Install & build (Thoutha-Website/ثوثة) if package.json exists
+        
         run: |
-          SITE_DIR="Thoutha-Website/ثوثة"
-          if [ -f "$SITE_DIR/package.json" ]; then
-            cd "$SITE_DIR"
-            npm ci
-            if npm run | sed -n '1,200p' | grep -q "build"; then
-              npm run build
-            else
-              echo "No 'build' script defined in package.json; skipping build"
-            fi
-            cd - || true
-          else
-            echo "No package.json in $SITE_DIR; skipping website build"
-          fi
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libgtk-3-dev
+      - name: Generate Flutter linux build files
+        run: |
+          flutter --version  # Ensure flutter is available
+          cd flutter_moblie_app
+          flutter pub get
+          flutter build linux
+          cd ..
       - name: Upload built site artifact
         if: always()
         uses: actions/upload-artifact@v4
