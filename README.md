@@ -1,3 +1,4 @@
+<img width="1024" height="1024" alt="IMG_5729" src="https://github.com/user-attachments/assets/c6223af8-7ac1-4ef5-ad9e-ede11c9c3412" />
 # THOUTHA: Connecting Patients and Students in Egypt
 
 ## Project Overview
