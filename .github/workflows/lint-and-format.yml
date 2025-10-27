@@ -25,7 +25,7 @@ jobs:
           else
             echo "No package.json in $SITE_DIR; skipping npm install"
           fi
-      - name: Run ESLint
+      - name: Run ESLint (prefer npm lint script, else npx fallback)
         run: |
           SITE_DIR="Thoutha-Website/ثوثة"
           if [ -f "$SITE_DIR/package.json" ]; then
@@ -34,9 +34,9 @@ jobs:
               npm run lint --silent || exit 1
             else
               if npx eslint --version >/dev/null 2>&1; then
-                npx eslint . --ext .js,.jsx || exit 1
+                npx eslint . --ext .js,.jsx --max-warnings=0 || exit 1
               else
-                echo "ESLint not installed and no lint script defined"
+                echo "ESLint not installed and no lint script defined; skipping"
               fi
             fi
             cd - || true
