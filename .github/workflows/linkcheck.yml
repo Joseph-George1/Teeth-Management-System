@@ -1,0 +1,36 @@
+name: Link Checker
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-linkcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build site (if present)
+        run: |
+          SITE_DIR="Thoutha-Website/ثوثة"
+          if [ -f "$SITE_DIR/package.json" ]; then
+            cd "$SITE_DIR"
+            npm ci
+            if npm run | grep -q "build"; then
+              npm run build
+            fi
+            cd - || true
+          else
+            echo "No JS site; skipping build"
+          fi
+      - name: Install lychee (link checker)
+        run: |
+          curl -sSfL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-linux-amd64.gz -o lychee.gz
+          gunzip lychee.gz && chmod +x lychee && sudo mv lychee /usr/local/bin/lychee
+      - name: Run lychee against built site
+        run: |
+          DIST="Thoutha-Website/ثوثة/dist"
+          if [ -d "$DIST" ]; then
+            lychee -j "$DIST" || exit 1
+          else
+            echo "No built site at $DIST; skipping link check"
+          fi

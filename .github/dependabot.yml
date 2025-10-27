@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/Thoutha-Website/ثوثة"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/Ai-chatbot"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
