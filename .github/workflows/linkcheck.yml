@@ -22,15 +22,41 @@ jobs:
           else
             echo "No JS site; skipping build"
           fi
+      - name: Serve built site using preview script if present, else http-server (port 9000)
+        run: |
+          SITE_DIR="Thoutha-Website/ثوثة"
+          DIST="$SITE_DIR/dist"
+          cd "$SITE_DIR" || true
+          if [ -f package.json ]; then
+            if npm run | grep -q "preview"; then
+              npm run preview -- --port 9000 &> /tmp/preview.log &
+            else
+              npm install -g http-server
+              npx http-server "$DIST" -p 9000 > /tmp/http-server.log 2>&1 &
+            fi
+          else
+            if [ -d "$DIST" ]; then
+              npm install -g http-server
+              npx http-server "$DIST" -p 9000 > /tmp/http-server.log 2>&1 &
+            else
+              echo "No package.json and no built dist; skipping serve"
+            fi
+          fi
+          for i in $(seq 1 20); do
+            if curl -sSf "http://localhost:9000" >/dev/null 2>&1; then
+              echo "server up"
+              break
+            fi
+            sleep 1
+          done
       - name: Install lychee (link checker)
         run: |
           curl -sSfL https://github.com/lycheeverse/lychee/releases/latest/download/lychee-linux-amd64.gz -o lychee.gz
           gunzip lychee.gz && chmod +x lychee && sudo mv lychee /usr/local/bin/lychee
-      - name: Run lychee against built site
+      - name: Run lychee against the running preview
         run: |
-          DIST="Thoutha-Website/ثوثة/dist"
-          if [ -d "$DIST" ]; then
-            lychee -j "$DIST" || exit 1
+          if curl -sSf "http://localhost:9000" >/dev/null 2>&1; then
+            lychee http://localhost:9000 || exit 1
           else
-            echo "No built site at $DIST; skipping link check"
+            echo "No running site to scan; ensure build produced dist or adjust path"
           fi
