@@ -110,8 +110,20 @@ flutter:
     - family: Cairo
       fonts:
         - asset: assets/fonts/Cairo/Cairo-VariableFont_slnt,wght.ttf
-          # - asset: assets/fonts/Cairo-Bold.ttf
+        - asset: assets/fonts/Story_Script/StoryScript-Regular.ttf
+        - asset: assets/fonts/Vina_Sans/VinaSans-Regular.ttf
+
+    - family: Story
+      fonts:
+        - asset: assets/fonts/Story_Script/StoryScript-Regular.ttf
           weight: 600
+
+    - family: VinaSans
+      fonts:
+        - asset: assets/fonts/Vina_Sans/VinaSans-Regular.ttf
+          weight: 600
+
+
   #   - family: Trajan Pro
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf

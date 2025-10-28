@@ -5,10 +5,8 @@ import '../../../core/helpers/spacing.dart';
 import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
+import '../../home/ui/home_screen.dart';
 
-// ============================================
-// PURE UI SECTION - NO BUSINESS LOGIC HERE
-// ============================================
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -60,121 +58,147 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 130),
+            child: Container(
+              color: Colors.white.withOpacity(0.4),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 60.h),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      //logo
+                      Image.asset(
+                        'assets/images/splash-logo.png',
+                        width: 80.w,
+                        height: 80.h,
+                      ),
+                      verticalSpace(6),
+                      // Header Section
+                      Text(
+                        'Login',
+                        style: TextStyle(
+                          color: ColorsManager.darkBlue,
+                          fontSize: 40.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Story',
+                        ),
+                      ),
+                      verticalSpace(8),
+                      Text(
+                        'Enter your email or number and password to login',
+                        style: TextStyle(
+                          color: ColorsManager.gray,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      verticalSpace(10),
 
-          Container(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Section
-                    Text(
-                      'Welcome Back',
-                      style: TextStyles.font24BlueBold,
-                    ),
-                    verticalSpace(8),
-                    Text(
-                      'We\'re excited to have you back, can\'t wait to see what you\'ve been up to since you last logged in.',
-                      style: TextStyles.font14GrayRegular,
-                    ),
-                    verticalSpace(36),
-
-                    // Login Form
-                    Form(
-                      // key: formKey, // Uncomment when implementing logic
-                      child: Column(
-                        children: [
-                          // Email Field
-                          TextFormField(
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              errorText: emailError,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          verticalSpace(16),
-
-                          // Password Field
-                          TextFormField(
-                            controller: passwordController,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              errorText: passwordError,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.visibility_off),
-                                onPressed: () {
-                                  // Toggle password visibility
-                                },
-                              ),
-                            ),
-                            obscureText: true,
-                          ),
-
-                          verticalSpace(24),
-
-                          // Forgot Password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyles.font13BlueRegular,
-                            ),
-                          ),
-
-                          verticalSpace(40),
-
-                          // Login Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: AppTextButton(
-                              buttonText: "Login",
-                              textStyle: TextStyles.font16WhiteSemiBold,
-                              onPressed: () {},
-                            ),
-                          ),
-
-                          verticalSpace(16),
-
-                          // Terms & Conditions
-                          Text(
-                            'By logging in, you agree to our Terms & Conditions and Privacy Policy',
-                            style: TextStyles.font13GrayRegular,
-                            textAlign: TextAlign.center,
-                          ),
-
-                          verticalSpace(24),
-
-                          // Don't have an account?
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Don\'t have an account?',
-                                style: TextStyles.font13DarkBlueRegular,
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  // Navigate to signup
-                                },
-                                child: Text(
-                                  'Sign Up',
-                                  style: TextStyles.font13BlueSemiBold,
+                      // Login Form
+                      Form(
+                        // key: formKey, // Uncomment when implementing logic
+                        child: Column(
+                          children: [
+                            // Email Field
+                            TextFormField(
+                              controller: emailController,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                errorText: emailError,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            verticalSpace(16),
+
+                            // Password Field
+                            TextFormField(
+                              controller: passwordController,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                errorText: passwordError,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.visibility_off),
+                                  onPressed: () {
+                                    // Toggle password visibility
+                                  },
+                                ),
+                              ),
+                              obscureText: true,
+                            ),
+
+                            verticalSpace(24),
+
+                            // Forgot Password
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Forgot Password?',
+                                style: TextStyles.font13BlueRegular,
+                              ),
+                            ),
+                            verticalSpace(40),
+
+                            // Login Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: AppTextButton(
+                                buttonText: "Login",
+                                textStyle: TextStyles.font16WhiteSemiBold,
+                                onPressed: () {
+                                  // Navigate to HomeScreen
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomeScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+
+                            verticalSpace(16),
+
+                            // Terms & Conditions
+                            Text(
+                              'By logging in, you agree to our Terms & Conditions and Privacy Policy',
+                              style: TextStyles.font13GrayRegular,
+                              textAlign: TextAlign.center,
+                            ),
+
+                            verticalSpace(24),
+
+                            // Don't have an account?
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Don\'t have an account?',
+                                  style: TextStyles.font13DarkBlueRegular,
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    // Navigate to signup
+                                  },
+                                  child: Text(
+                                    'Sign Up',
+                                    style: TextStyles.font13BlueSemiBold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

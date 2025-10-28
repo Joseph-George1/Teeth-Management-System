@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_moblie_app/features/login/ui/login_screen.dart';
 import 'package:flutter_moblie_app/features/onboarding/widgets/doctor_image_and_text.dart';
 import 'package:flutter_moblie_app/features/onboarding/widgets/get_started_button.dart';
 import 'package:flutter_moblie_app/features/onboarding/widgets/page_indicator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 
 import '../../core/routing/routes.dart';
 import '../../core/theming/colors.dart';
@@ -21,31 +19,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   final int _numPages = 3;
 
-  List<Widget> _buildPageIndicator() {
-    List<Widget> list = [];
-    for (int i = 0; i < _numPages; i++) {
-      list.add(i == _currentPage ? _indicator(true) : _indicator(false));
-    }
-    return list;
-  }
-
-  Widget _indicator(bool isActive) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      margin: const EdgeInsets.symmetric(horizontal: 4.0),
-      height: 8.0,
-      width: isActive ? 24.0 : 8.0,
-      decoration: BoxDecoration(
-        color: isActive ? ColorsManager.mainBlue : Colors.grey[400],
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-      ),
-    );
-  }
-
   void _onSkipPressed() {
     // Navigate to login screen and remove all previous routes from the stack
     Navigator.pushNamedAndRemoveUntil(
-      context, 
+      context,
       Routes.loginScreen,
       (route) => false, // This removes all previous routes
     );
@@ -76,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ColorsManager.layerBlur1.withOpacity(0.1),
                   Colors.transparent,
                 ],
-                stops: const [0.0, 0.3, 0.8],
+                stops: const [0.1, 0.5, 0.8],
               ),
             ),
           ),
@@ -93,13 +70,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ColorsManager.layerBlur2.withOpacity(0.1),
                   Colors.transparent,
                 ],
-                stops: const [0.0, 0.3, 0.8],
+                stops: const [0.1, 0.5, 0.8],
               ),
             ),
           ),
 
           // PageView for onboarding screens
-          PageView(
+         PageView(
             controller: _pageController,
             onPageChanged: _onPageChanged,
             children: [
@@ -117,16 +94,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               DoctorImageAndText(
                 imagePath: 'assets/images/3-onboarding.jpg',
-                title: 'متابعة دقيقة لصحة أسنانك',
+                 title: 'متابعة دقيقة لصحة أسنانك',
                 description:
                     'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة. نحن نهتم بابتسامتك من أول زيارة.',
               ),
             ],
           ),
 
-          // Page Indicator - Always show on all pages
+          // Page Indicator - Positioned above action buttons
           Positioned(
-            bottom: 100.h,
+            bottom: 25.h, // Increased from 100 to 120 to give more space
             left: 0,
             right: 0,
             child: PageIndicator(
@@ -134,7 +111,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               pageCount: _numPages,
             ),
           ),
-          SizedBox(height: 50.h),
 
           // Action Buttons Container
           Positioned(
@@ -171,9 +147,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   TextButton(
                     onPressed: _onSkipPressed,
                     child: Text(
-                      'تخطي',
+                      'ندخل في الموضوع علي طول',
                       style: TextStyle(
-                        color: ColorsManager.mainBlue,
+                        color: ColorsManager.darkBlue,
                         fontSize: 16.sp,
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
@@ -188,75 +164,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildOnboardingPage({
-    required String image,
-    required String title,
-    required String description,
-    bool isLastPage = false,
-  }) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 80.h),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Image
-            Container(
-              width: 200.w,
-              height: 200.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  image,
-                  width: 200.w,
-                  height: 200.h,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            SizedBox(height: 40.h),
-            // Title
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.w),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.bold,
-                  color: ColorsManager.fontColor,
-                ),
-              ),
-            ),
-            SizedBox(height: 20.h),
-            // Description
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30.w),
-              child: Text(
-                description,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 14.sp,
-                  color: ColorsManager.fontColor,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
