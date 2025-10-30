@@ -4,6 +4,8 @@ import '../../features/login/ui/login_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/sign_up/ui/sign_up_screen.dart';
 import '../../features/splash_screen/splash_screen.dart';
+import '../../features/otp/ui/otp_screen.dart';
+import '../../features/chat/ui/chat_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
@@ -23,6 +25,14 @@ class AppRouter {
       case Routes.signUpScreen:
         return MaterialPageRoute(
           builder: (context) => const SignUpScreen(),
+        );
+      case Routes.otpScreen:
+        return MaterialPageRoute(
+          builder: (context) => const OtpScreen(),
+        );
+      case Routes.chatScreen:
+        return MaterialPageRoute(
+          builder: (context) => const ChatScreen(),
         );
       default:
         return MaterialPageRoute(
