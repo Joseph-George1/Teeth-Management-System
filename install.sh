@@ -1,38 +1,53 @@
 #!/usr/bin/env bash
 # install.sh - Install python3, pip, requirements for Ai-chatbot and copy 'astart' to /bin
 # Usage: sudo ./install.sh
+
+# Exit immediately on error (-e), undefined variable (-u), or pipe failure (-o pipefail)
 set -euo pipefail
 
-# Colors
+# -----------------------------
+# Define color variables for output
+# -----------------------------
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
 BLUE="\033[1;34m"
 RESET="\033[0m"
 
-msg() { echo -e "${BLUE}==>${RESET} $1"; }
-ok()  { echo -e "${GREEN}✔${RESET} $1"; }
-warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; }
-err() { echo -e "${RED}✖ $1${RESET}"; exit 1; }
+# -----------------------------
+# Helper functions for messages
+# -----------------------------
+msg() { echo -e "${BLUE}==>${RESET} $1"; }   # Print normal info message
+ok()  { echo -e "${GREEN}✔${RESET} $1"; }    # Print success message
+warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; }   # Print warning message
+err() { echo -e "${RED}✖ $1${RESET}"; exit 1; }  # Print error and exit
 
-# Resolve paths relative to this script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AI_DIR="$SCRIPT_DIR/Ai-chatbot"
-REQ_FILE="$AI_DIR/requirements.txt"
-ASTART="$AI_DIR/astart"
-VENV_DIR="$AI_DIR/venv"
+# -----------------------------
+# Resolve script paths
+# -----------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Directory where the script is located
+AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Main project folder
+REQ_FILE="$AI_DIR/requirements.txt"                         # Path to Python requirements file
+ASTART="$AI_DIR/astart"                                     # Path to the 'astart' executable
+VENV_DIR="$AI_DIR/venv"                                     # Virtual environment folder
 
+# -----------------------------
+# Function: Create Python virtual environment
+# -----------------------------
 create_venv() {
+    # If venv already exists, skip creation
     if [[ -d "$VENV_DIR" && -f "$VENV_DIR/bin/activate" ]]; then
         ok "Virtual environment already exists at: $VENV_DIR"
         return 0
     fi
 
+    # If python3 is missing, warn and exit gracefully
     if ! command -v python3 >/dev/null 2>&1; then
         warn "python3 not found; cannot create virtual environment now. It will be created after python3 is available."
         return 1
     fi
 
+    # Try to create the virtual environment
     msg "Creating virtual environment at: $VENV_DIR"
     if python3 -m venv "$VENV_DIR"; then
         ok "Virtual environment created at: $VENV_DIR"
@@ -42,9 +57,12 @@ create_venv() {
     fi
 }
 
-# Try to create now if possible; non-fatal if it can't be created yet.
+# Try to create venv right away, but don't stop if it fails (|| true)
 create_venv || true
-# Detect package manager
+
+# -----------------------------
+# Function: Detect available package manager
+# -----------------------------
 detect_pkg_mgr() {
     if command -v apt-get >/dev/null 2>&1; then echo "apt-get"
     elif command -v dnf >/dev/null 2>&1; then echo "dnf"
@@ -54,9 +72,15 @@ detect_pkg_mgr() {
     else echo ""; fi
 }
 
+# Save detected package manager name
 PKG_MGR="$(detect_pkg_mgr)"
+
+# If no supported package manager is found, warn user
 if [[ -z "$PKG_MGR" ]]; then warn "No supported package manager found. You must install python3 and pip manually."; fi
 
+# -----------------------------
+# Function: Install Python packages based on detected manager
+# -----------------------------
 install_pkgs() {
     case "$PKG_MGR" in
         apt-get)
@@ -86,7 +110,11 @@ install_pkgs() {
     esac
 }
 
+# -----------------------------
+# Function: Ensure Python3 and pip are installed
+# -----------------------------
 ensure_python_pip() {
+    # Check for python3
     if ! command -v python3 >/dev/null 2>&1; then
         if [[ -n "$PKG_MGR" ]]; then
             install_pkgs
@@ -97,6 +125,7 @@ ensure_python_pip() {
         ok "python3 found: $(python3 --version 2>&1)"
     fi
 
+    # Check for pip
     if ! python3 -m pip --version >/dev/null 2>&1; then
         warn "pip for python3 not found. Attempting to bootstrap..."
         if python3 -m ensurepip --upgrade >/dev/null 2>&1; then
@@ -111,18 +140,24 @@ ensure_python_pip() {
     fi
 }
 
+# -----------------------------
+# Function: Install Python dependencies
+# -----------------------------
 install_requirements() {
+    # Check if Ai-chatbot directory exists
     if [[ ! -d "$AI_DIR" ]]; then
         err "Ai-chatbot directory not found at: $AI_DIR"
     fi
 
+    # Check if requirements.txt exists
     if [[ ! -f "$REQ_FILE" ]]; then
         warn "requirements.txt not found at $REQ_FILE. Skipping pip install."
         return
     fi
 
     msg "Installing Python requirements from $REQ_FILE ..."
-    # Prefer system-wide install; if not root, use sudo
+
+    # Install requirements (use sudo if not root)
     if [[ $EUID -eq 0 ]]; then
         python3 -m pip install --no-cache-dir -r "$REQ_FILE"
     else
@@ -131,18 +166,24 @@ install_requirements() {
     ok "requirements installed."
 }
 
+# -----------------------------
+# Function: Copy 'astart' to /usr/local/bin or /bin
+# -----------------------------
 install_astart() {
+    # Ensure file exists
     if [[ ! -f "$ASTART" ]]; then
         err "astart not found at: $ASTART"
     fi
 
+    # Choose best destination directory
     DEST="/bin"
-    # prefer /usr/local/bin if exists on system for local installs
     if [[ -d "/usr/local/bin" ]]; then
         DEST="/usr/local/bin"
     fi
 
     msg "Copying astart to $DEST and making it executable..."
+
+    # Copy with or without sudo based on privileges
     if [[ $EUID -eq 0 ]]; then
         cp "$ASTART" "$DEST/astart"
         chmod +x "$DEST/astart"
@@ -155,9 +196,11 @@ install_astart() {
     msg "You can run it as: astart"
 }
 
-
-# Option B: system-wide Node.js install (NodeSource) with dpkg conflict resolution
+# -----------------------------
+# Function: Install Node.js system-wide using NodeSource (apt-based systems only)
+# -----------------------------
 install_node_system_wide() {
+    # Skip for non-apt systems
     if [[ "$PKG_MGR" != "apt-get" ]]; then
         warn "Option B (system-wide Node install) currently supports apt-based systems only. Skipping."
         return 0
@@ -165,12 +208,13 @@ install_node_system_wide() {
 
     msg "Option B: Install Node.js system-wide via NodeSource (may remove conflicting dev packages)."
 
+    # If Node is already installed, skip
     if command -v node >/dev/null 2>&1; then
         ok "Node is already installed: $(node -v)"
         return 0
     fi
 
-    # Check for the file that commonly triggers the dpkg conflict
+    # Handle dpkg conflicts (common.gypi issue)
     CONFLICT_FILE="/usr/include/node/common.gypi"
     OWNER_INFO=$(dpkg -S "$CONFLICT_FILE" 2>/dev/null || true)
     if [[ -n "$OWNER_INFO" ]]; then
@@ -185,7 +229,7 @@ install_node_system_wide() {
         msg "No obvious dpkg conflict found for $CONFLICT_FILE. Proceeding with NodeSource install."
     fi
 
-    # Prompt which major Node version to install (20 preferred); default 20
+    # Ask user which Node version to install (default 20)
     read -r -p "Which Node major version do you want to install? (20/18) [20]: " NODE_VER
     NODE_VER=${NODE_VER:-20}
     if [[ "$NODE_VER" != "18" && "$NODE_VER" != "20" ]]; then
@@ -193,6 +237,7 @@ install_node_system_wide() {
         NODE_VER=20
     fi
 
+    # Configure NodeSource repo
     if [[ "$NODE_VER" == "20" ]]; then
         msg "Configuring NodeSource repository for Node 20..."
         curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -201,9 +246,11 @@ install_node_system_wide() {
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     fi
 
+    # Install Node.js
     msg "Installing nodejs package via apt..."
     sudo apt-get install -y nodejs
 
+    # Verify installation
     if command -v node >/dev/null 2>&1; then
         ok "Node installed: $(node -v)"
         ok "npm installed: $(npm -v)"
@@ -212,18 +259,30 @@ install_node_system_wide() {
     fi
 }
 
-
-
-
+# -----------------------------
+# Main installer function
+# -----------------------------
 main() {
     echo
     msg "Starting Ai-chatbot installer"
+
+    # Ensure Python and pip are available
     ensure_python_pip
+
+    # Install Python requirements
     install_requirements
+
+    # Install Node.js system-wide (if apt system)
     install_node_system_wide
+
+    # Copy 'astart' launcher
     install_astart
+
     echo
     ok "Installation complete."
 }
 
+# -----------------------------
+# Run main function
+# -----------------------------
 main
