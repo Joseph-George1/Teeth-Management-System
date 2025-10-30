@@ -155,11 +155,72 @@ install_astart() {
     msg "You can run it as: astart"
 }
 
+
+# Option B: system-wide Node.js install (NodeSource) with dpkg conflict resolution
+install_node_system_wide() {
+    if [[ "$PKG_MGR" != "apt-get" ]]; then
+        warn "Option B (system-wide Node install) currently supports apt-based systems only. Skipping."
+        return 0
+    fi
+
+    msg "Option B: Install Node.js system-wide via NodeSource (may remove conflicting dev packages)."
+
+    if command -v node >/dev/null 2>&1; then
+        ok "Node is already installed: $(node -v)"
+        return 0
+    fi
+
+    # Check for the file that commonly triggers the dpkg conflict
+    CONFLICT_FILE="/usr/include/node/common.gypi"
+    OWNER_INFO=$(dpkg -S "$CONFLICT_FILE" 2>/dev/null || true)
+    if [[ -n "$OWNER_INFO" ]]; then
+        warn "Detected package(s) owning $CONFLICT_FILE: $OWNER_INFO"
+        msg "Removing likely-conflicting packages: libnode-dev libnode72 nodejs npm (if present)"
+        sudo apt remove --purge -y libnode-dev libnode72 nodejs npm || true
+        sudo apt autoremove -y || true
+        sudo apt-get clean || true
+        sudo rm -f /var/cache/apt/archives/nodejs_*.deb || true
+        sudo apt-get -f install -y || true
+    else
+        msg "No obvious dpkg conflict found for $CONFLICT_FILE. Proceeding with NodeSource install."
+    fi
+
+    # Prompt which major Node version to install (20 preferred); default 20
+    read -r -p "Which Node major version do you want to install? (20/18) [20]: " NODE_VER
+    NODE_VER=${NODE_VER:-20}
+    if [[ "$NODE_VER" != "18" && "$NODE_VER" != "20" ]]; then
+        warn "Unrecognized choice; defaulting to 20"
+        NODE_VER=20
+    fi
+
+    if [[ "$NODE_VER" == "20" ]]; then
+        msg "Configuring NodeSource repository for Node 20..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    else
+        msg "Configuring NodeSource repository for Node 18..."
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    fi
+
+    msg "Installing nodejs package via apt..."
+    sudo apt-get install -y nodejs
+
+    if command -v node >/dev/null 2>&1; then
+        ok "Node installed: $(node -v)"
+        ok "npm installed: $(npm -v)"
+    else
+        err "Node installation failed. Check apt output above. You can try the non-invasive Option A (nvm) instead."
+    fi
+}
+
+
+
+
 main() {
     echo
     msg "Starting Ai-chatbot installer"
     ensure_python_pip
     install_requirements
+    install_node_system_wide
     install_astart
     echo
     ok "Installation complete."
