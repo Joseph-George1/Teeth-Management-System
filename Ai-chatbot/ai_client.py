@@ -185,8 +185,6 @@ class Thoutha:
             text = decode_unicode_escapes(text)
             return "YES" in text.upper()
         except Exception:
-            # Model might not be available for this API version. Try a sensible
-            # fallback once (gemini-2.5-flash), then give up.
             try:
                 fallback = "gemini-2.5-flash"
                 if self.classifier_model_name != fallback:
@@ -209,10 +207,13 @@ class Thoutha:
             response = self.chat_model.generate_content(conversation_history)
             text = response.text if hasattr(response, 'text') else str(response)
             text = decode_unicode_escapes(text)
+
+            # --- Clean markdown formatting ---
+            # Remove asterisks (*, **), underscores (_), and backticks (`) used by Gemini for bold/italic/code formatting
+            text = re.sub(r'[\*_`]+', '', text)
+
             return text.strip()
         except Exception as e:
-            # If the configured chat model is not available, try a fallback model
-            # once and re-raise a clearer error if that also fails.
             err_text = str(e).lower()
             if "not found" in err_text or "is not found" in err_text:
                 try:
@@ -220,7 +221,9 @@ class Thoutha:
                     if self.chat_model_name != fallback:
                         self.chat_model = genai.GenerativeModel(fallback)
                         response = self.chat_model.generate_content(conversation_history)
-                        return response.text.strip()
+                        text = response.text if hasattr(response, 'text') else str(response)
+                        text = re.sub(r'[\*_`]+', '', text)
+                        return text.strip()
                 except Exception as e2:
                     raise RuntimeError(f"Error generating response (fallback failed): {e2}") from e2
 
