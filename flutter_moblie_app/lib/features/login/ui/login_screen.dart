@@ -113,7 +113,7 @@ class LoginScreen extends StatelessWidget {
                               ),
                               keyboardType: TextInputType.emailAddress,
                             ),
-                            verticalSpace(16),
+                            verticalSpace(17),
 
                             // Password Field
                             TextFormField(
