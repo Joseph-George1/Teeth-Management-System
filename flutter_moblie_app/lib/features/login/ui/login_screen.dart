@@ -14,6 +14,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isLoading = false;
     String? passwordError;
+    bool rememberMe = false;
 
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
@@ -131,32 +132,52 @@ class LoginScreen extends StatelessWidget {
                                   obscureText: true,
                                 ),
                                 verticalSpace(5),
-                                // Forgot Password
+                                // Forgot Password & Remember Me
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment
-                                      .spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'هل نسيت كلمة المرور؟',
-                                      style: TextStyles.font13BlueRegular,
+                                    GestureDetector(
+                                      onTap: () {
+                                        // Navigate to forgot password screen
+                                        // Navigator.of(context).pushNamed(Routes.forgotPasswordScreen);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'),
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        'هل نسيت كلمة المرور؟',
+                                        style: TextStyles.font13BlueRegular.copyWith(
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
                                     ),
                                     Row(
                                       children: [
-
-                                        Transform.scale(
-                                          scale: 0.9,
-                                          child: Checkbox(
-                                            value: false,
-                                            // You'll need to manage this state
-                                            onChanged: (bool? value) {
-                                              // Handle checkbox state change
-                                            },
-                                            activeColor: ColorsManager.mainBlue,
-                                          ),
-                                        ), Text(
+                                        StatefulBuilder(
+                                          builder: (context, setState) {
+                                            return Transform.scale(
+                                              scale: 0.9,
+                                              child: Checkbox(
+                                                value: rememberMe,
+                                                onChanged: (bool? value) {
+                                                  setState(() {
+                                                    rememberMe = value ?? false;
+                                                    // Here you can save the login state to shared preferences
+                                                    // SharedPreferences prefs = await SharedPreferences.getInstance();
+                                                    // await prefs.setBool('rememberMe', rememberMe);
+                                                  });
+                                                },
+                                                activeColor: ColorsManager.mainBlue,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        Text(
                                           'تذكرني',
-                                          style: TextStyles
-                                              .font13DarkBlueRegular,
+                                          style: TextStyles.font13DarkBlueRegular,
                                         ),
                                       ],
                                     ),
@@ -207,57 +228,114 @@ class LoginScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Google',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
+                                // Social Login Buttons - Smaller and in a single row
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Google
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: Image.asset(
+                                              'assets/images/Google__G__logo.svg.png',
+                                              width: 24,
+                                              height: 24,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            onPressed: () {
+                                              // Handle Google sign in
+                                            },
+                                            style: IconButton.styleFrom(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                side: BorderSide(color: Colors.grey[300]!),
+                                              ),
+                                              backgroundColor: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Facebook',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
+                                      // Facebook
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: const Icon(Icons.facebook, size: 24, color: Colors.blue),
+                                            onPressed: () {
+                                              // Handle Facebook sign in
+                                            },
+                                            style: IconButton.styleFrom(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                side: BorderSide(color: Colors.grey[300]!),
+                                              ),
+                                              backgroundColor: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Apple',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
+                                      // Apple
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: const Icon(Icons.apple, size: 24, color: Colors.black),
+                                            onPressed: () {
+                                              // Handle Apple sign in
+                                            },
+                                            style: IconButton.styleFrom(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                side: BorderSide(color: Colors.grey[300]!),
+                                              ),
+                                              backgroundColor: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      // Phone
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        child: SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: Image.asset(
+                                              'assets/images/eee.png',
+                                              width: 24,
+                                              height: 24,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            onPressed: () {
+                                              Navigator.of(context).pushNamed(Routes.otpScreen);
+                                            },
+                                            style: IconButton.styleFrom(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                                side: BorderSide(color: Colors.grey[300]!),
+                                              ),
+                                              backgroundColor: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-
-
+                                const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -267,9 +345,7 @@ class LoginScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).pushNamed(Routes.signUpScreen);
+                                        Navigator.of(context).pushNamed(Routes.signUpScreen);
                                       },
                                       child: Text(
                                         'إنشاء حساب',
