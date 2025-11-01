@@ -95,28 +95,25 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # Fonts
+  # Custom fonts configuration
   fonts:
     - family: Cairo
       fonts:
-        - asset: assets/fonts/Cairo/Cairo-VariableFont_slnt,wght.ttf
-        - asset: assets/fonts/Story_Script/StoryScript-Regular.ttf
-        - asset: assets/fonts/Vina_Sans/VinaSans-Regular.ttf
-
-    - family: Story
+        - asset: assets/fonts/Cairo/static/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo/static/Cairo-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo/static/Cairo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo/static/Cairo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo/static/Cairo-Light.ttf
+          weight: 300
+    - family: Story Script
       fonts:
         - asset: assets/fonts/Story_Script/StoryScript-Regular.ttf
-          weight: 600
-
-    - family: VinaSans
+    - family: Vina Sans
       fonts:
         - asset: assets/fonts/Vina_Sans/VinaSans-Regular.ttf
-          weight: 600
 
 
   #   - family: Trajan Pro

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/routing/routes.dart';
+import 'core/theming/app_theme.dart';
 
 class DocApp extends StatelessWidget {
   final AppRouter appRouter;
@@ -16,9 +17,8 @@ class DocApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Doc App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          //primaryColor;
-        ),
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
         initialRoute: Routes.splashScreen,
         onGenerateRoute: appRouter.generateRoute,
       ),
