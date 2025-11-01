@@ -17,6 +17,18 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController _otpController = TextEditingController();
+  bool _isOtpValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _otpController.addListener(() {
+      final isValid = _otpController.text.length == 4;
+      if (isValid != _isOtpValid) {
+        setState(() => _isOtpValid = isValid);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -63,95 +75,122 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
             ),
           ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 30.h),
+          Center(
             child: SingleChildScrollView(
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    verticalSpace(80),
-                    Text(
-                      'تأكيد رقم الهاتف',
-                      style: TextStyles.font24BlueBold,
-                    ),
-                    verticalSpace(8),
-                    Text(
-                      'أدخل كود التفعيل المرسل إليك عبر الرسالة القصيرة.',
-                      style: TextStyles.font14GrayRegular,
-                      textAlign: TextAlign.right,
-                    ),
-                    verticalSpace(36),
-
-                    TextFormField(
-                      controller: _otpController,
-                      maxLength: 4,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
+              child: Padding(
+                padding: EdgeInsets.all(24.0.w),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24.0.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        verticalSpace(10),
+                        Image.asset(
+                          'assets/images/splash-logo.png',
+                          width: 80.w,
+                          height: 80.h,
+                        ),
+                        Text('كود التفعيل', style: TextStyles.font24BlueBold),
+                        verticalSpace(8),
+                        Text(
+                          'لقد ارسلنا لك كود اكتبه لكي تفعل الحساب الخاص بك للمتابعه',
+                          style: TextStyles.font14GrayRegular,
+                          textAlign: TextAlign.right,
+                        ),
+                        verticalSpace(12),
+                        Form(
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller: _otpController,
+                                maxLength: 4,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(4),
+                                ],
+                                onChanged: (val) {
+                                  final isValid = val.length == 4;
+                                  if (isValid != _isOtpValid) {
+                                    setState(() => _isOtpValid = isValid);
+                                  }
+                                },
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  counterText: '',
+                                  hintText: '— — — —',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                              verticalSpace(24),
+                              Align(
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                  onPressed: () {
+                                    // TODO: Resend OTP
+                                  },
+                                  child: Text(
+                                    'إعادة إرسال الرمز',
+                                    style: TextStyles.font13BlueSemiBold,
+                                  ),
+                                ),
+                              ),
+                              verticalSpace(24),
+                              SizedBox(
+                                width: double.infinity,
+                                child: AppTextButton(
+                                  buttonText: 'تحقق من الرمز',
+                                  textStyle: TextStyles.font16WhiteSemiBold,
+                                  onPressed: _isOtpValid
+                                      ? () {
+                                          // TODO: Verify OTP then navigate to success screen
+                                          Navigator.of(context).pushNamed(
+                                            Routes.otpSuccessScreen,
+                                          );
+                                        }
+                                      : null,
+                                ),
+                              ),
+                              verticalSpace(16),
+                              Align(
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text(
+                                    'تعديل الرقم والرجوع',
+                                    style: TextStyles.font13DarkBlueRegular,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        hintText: '— — — —',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                     ),
-
-                    verticalSpace(24),
-                    Align(
-                      alignment: Alignment.center,
-                      child: TextButton(
-                        onPressed: () {
-                          // TODO: Resend OTP
-                        },
-                        child: Text(
-                          'إعادة إرسال الرمز',
-                          style: TextStyles.font13BlueSemiBold,
-                        ),
-                      ),
-                    ),
-
-                    verticalSpace(32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: AppTextButton(
-                        buttonText: 'تأكيد',
-                        textStyle: TextStyles.font16WhiteSemiBold,
-                        onPressed: () {
-                          // TODO: Verify OTP then navigate
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            Routes.loginScreen,
-                            (route) => false,
-                          );
-                        },
-                      ),
-                    ),
-
-                    verticalSpace(16),
-                    Align(
-                      alignment: Alignment.center,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          'تعديل الرقم والرجوع',
-                          style: TextStyles.font13DarkBlueRegular,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
           ),
-        ],
+          )],
       ),
     );
   }

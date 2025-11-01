@@ -5,6 +5,7 @@ import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/sign_up/ui/sign_up_screen.dart';
 import '../../features/splash_screen/splash_screen.dart';
 import '../../features/otp/ui/otp_screen.dart';
+import '../../features/otp/ui/otp_success_screen.dart';
 import '../../features/chat/ui/chat_screen.dart';
 
 class AppRouter {
@@ -30,10 +31,15 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (context) => const OtpScreen(),
         );
+      case Routes.otpSuccessScreen:
+        return MaterialPageRoute(
+          builder: (context) => const OtpSuccessScreen(),
+        );
       case Routes.chatScreen:
         return MaterialPageRoute(
           builder: (context) => const ChatScreen(),
         );
+
       default:
         return MaterialPageRoute(
           builder: (context) => Scaffold(
