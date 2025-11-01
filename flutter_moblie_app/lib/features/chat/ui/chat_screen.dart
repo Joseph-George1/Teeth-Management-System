@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
 
 import '../../../core/helpers/spacing.dart';
-import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/networking/dio_factory.dart';
+import '../../../core/helpers/shared_pref_helper.dart';
+import '../../../core/helpers/constants.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,6 +20,34 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _msgController = TextEditingController();
   final List<_ChatMessage> _messages = [];
   bool _isSending = false;
+  String? _conversationId;
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureConversationId();
+    // Precache chatbot avatar to ensure circular image renders instantly
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(const AssetImage('assets/images/chatbot.jpg'), context);
+    });
+  }
+
+  Future<void> _ensureConversationId() async {
+    // Try to load an existing conversation id from secure storage
+    final existing = await SharedPrefHelper.getSecuredString(SharedPrefKeys.conversationId);
+    String id = (existing is String) ? existing : '';
+    if (id.isEmpty) {
+      // Generate a simple unique id without extra dependencies
+      final rnd = Random().nextInt(999999).toString().padLeft(6, '0');
+      id = 'sess-${DateTime.now().millisecondsSinceEpoch}-$rnd';
+      await SharedPrefHelper.setSecuredString(SharedPrefKeys.conversationId, id);
+    }
+    if (mounted) {
+      setState(() {
+        _conversationId = id;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -28,6 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _msgController.text.trim();
     if (text.isEmpty || _isSending) return;
+    // Ensure we have a conversation id before sending
+    if (_conversationId == null || _conversationId!.isEmpty) {
+      await _ensureConversationId();
+    }
     setState(() {
       _isSending = true;
       _messages.add(_ChatMessage(text: text, isUser: true));
@@ -36,10 +70,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final Dio dio = DioFactory.getDio();
+      // Build limited conversation history (exclude the just-typed message to avoid duplication)
+      final prior = _messages.length > 1 ? _messages.sublist(0, _messages.length - 1) : const <_ChatMessage>[];
+      // Take last 10 turns max to keep payload small
+      final take = prior.length > 10 ? prior.sublist(prior.length - 10) : prior;
+      final history = take
+          .map((m) => {
+                'role': m.isUser ? 'user' : 'assistant',
+                'content': m.text,
+              })
+          .toList(growable: false);
       final response = await dio.post(
-        'http://16.16.218.118:5000/chat',
+        'http://13.51.250.240:5000/chat',
         data: {
           'message': text,
+          'history': history,
+          'conversation_id': _conversationId,
         },
         options: Options(
           headers: {
@@ -62,8 +108,15 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add(_ChatMessage(text: botText, isUser: false));
       });
     } catch (e) {
+      String errText = 'حدث خطأ أثناء الإرسال. حاول مرة أخرى.';
+      if (e is DioException) {
+        final code = e.response?.statusCode;
+        final data = e.response?.data;
+        final msg = e.message;
+        errText = 'فشل الإرسال (${code ?? 'شبكة'}): ${data ?? msg ?? 'تحقق من الاتصال'}';
+      }
       setState(() {
-        _messages.add(_ChatMessage(text: 'حدث خطأ أثناء الإرسال. حاول مرة أخرى.', isUser: false));
+        _messages.add(_ChatMessage(text: errText, isUser: false));
       });
     } finally {
       if (mounted) {
@@ -127,6 +180,16 @@ class _ChatScreenState extends State<ChatScreen> {
                       style: TextStyles.font24BlackBold,
                     ),
                     verticalSpace(8),
+                    // Chatbot header image (centered circle)
+                    Center(
+                      child: CircleAvatar(
+                        radius: 34,
+                        backgroundImage:
+                            const AssetImage('assets/images/chatbot.jpg'),
+                        backgroundColor: Colors.transparent,
+                      ),
+                    ),
+                    verticalSpace(8),
 
                     // Messages list
                     Expanded(
@@ -135,26 +198,62 @@ class _ChatScreenState extends State<ChatScreen> {
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         itemBuilder: (context, index) {
                           final msg = _messages[_messages.length - 1 - index];
-                          return Align(
-                            alignment: msg.isUser
-                                ? Alignment.centerLeft
-                                : Alignment.centerRight,
-                            child: Container(
-                              constraints: BoxConstraints(maxWidth: 0.8.sw),
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                              decoration: BoxDecoration(
-                                color: msg.isUser
-                                    ? Colors.black.withOpacity(0.05)
-                                    : Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(12),
+                          if (msg.isUser) {
+                            // User bubble (left)
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                constraints: BoxConstraints(maxWidth: 0.8.sw),
+                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  msg.text,
+                                  style: TextStyles.font15DarkBlueMedium,
+                                  textAlign: TextAlign.right,
+                                ),
                               ),
-                              child: Text(
-                                msg.text,
-                                style: TextStyles.font15DarkBlueMedium,
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          );
+                            );
+                          } else {
+                            // Bot bubble (right) with small avatar at the start
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.black12, width: 1),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Image.asset(
+                                    'assets/images/chatbot.jpg',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 0.75.sw),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      msg.text,
+                                      style: TextStyles.font15DarkBlueMedium,
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
                         },
                         separatorBuilder: (_, __) => verticalSpace(8),
                         itemCount: _messages.length,

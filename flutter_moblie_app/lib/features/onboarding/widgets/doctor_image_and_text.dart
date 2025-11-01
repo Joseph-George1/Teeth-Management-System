@@ -17,6 +17,10 @@ class DoctorImageAndText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Match cache size used during precache in splash (≈200x200 logical px)
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final cacheW = (200 * dpr).round();
+    final cacheH = (200 * dpr).round();
     return Center(
       child: SingleChildScrollView(
         child: Container(
@@ -47,6 +51,9 @@ class DoctorImageAndText extends StatelessWidget {
                     width: 200.w,
                     height: 200.h,
                     fit: BoxFit.cover,
+                    cacheWidth: cacheW,
+                    cacheHeight: cacheH,
+                    filterQuality: FilterQuality.low,
                   ),
                 ),
               ),

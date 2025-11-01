@@ -12,14 +12,35 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Future<void> _precacheOnboardingImages(BuildContext context) async {
+    final images = const [
+      'assets/images/1-onboarding.jpg',
+      'assets/images/2-inboarding.jpg',
+      'assets/images/3-onboarding.jpg',
+    ];
+
+    // Precache at displayed size (≈200x200 logical pixels) to speed up decode.
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final targetW = (200 * dpr).round();
+    final targetH = (200 * dpr).round();
+
+    final futures = images.map((path) {
+      final provider = ResizeImage(AssetImage(path), width: targetW, height: targetH);
+      return precacheImage(provider, context);
+    }).toList();
+
+    // Wait for all onboarding images so they appear instantly.
+    await Future.wait(futures);
+  }
+
   @override
   void initState() {
     super.initState();
-    // Navigate to onboarding screen after 5 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
-      }
+    // Precache onboarding images so they show instantly when navigating.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _precacheOnboardingImages(context);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
     });
   }
 
@@ -35,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
             height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                center: Alignment(-0.7, -0.7), // Top-left quadrant
+                center: const Alignment(-0.7, -0.7), // Top-left quadrant
                 radius: 1.5,
                 colors: [
                   ColorsManager.layerBlur1.withOpacity(0.4),
@@ -53,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
             height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                center: Alignment(0.7, 0.7), // Bottom-right quadrant
+                center: const Alignment(0.7, 0.7), // Bottom-right quadrant
                 radius: 1.5,
                 colors: [
                   ColorsManager.layerBlur2.withOpacity(0.4),
