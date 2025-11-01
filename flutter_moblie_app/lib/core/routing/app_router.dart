@@ -7,6 +7,8 @@ import '../../features/splash_screen/splash_screen.dart';
 import '../../features/otp/ui/otp_screen.dart';
 import '../../features/otp/ui/otp_success_screen.dart';
 import '../../features/chat/ui/chat_screen.dart';
+import '../../features/forgot_password/ui/forgot_password_screen.dart';
+import '../../features/reset_password/ui/reset_password_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
@@ -28,8 +30,11 @@ class AppRouter {
           builder: (context) => const SignUpScreen(),
         );
       case Routes.otpScreen:
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (context) => const OtpScreen(),
+          builder: (context) => OtpScreen(
+            isForgotPasswordFlow: args?['isForgotPassword'] ?? false,
+          ),
         );
       case Routes.otpSuccessScreen:
         return MaterialPageRoute(
@@ -38,6 +43,14 @@ class AppRouter {
       case Routes.chatScreen:
         return MaterialPageRoute(
           builder: (context) => const ChatScreen(),
+        );
+      case Routes.forgotPasswordScreen:
+        return MaterialPageRoute(
+          builder: (context) => const ForgotPasswordScreen(),
+        );
+      case Routes.resetPasswordScreen:
+        return MaterialPageRoute(
+          builder: (context) => const ResetPasswordScreen(),
         );
 
       default:

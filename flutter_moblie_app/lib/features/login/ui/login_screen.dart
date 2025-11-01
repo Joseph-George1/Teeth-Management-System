@@ -138,14 +138,7 @@ class LoginScreen extends StatelessWidget {
                                   children: [
                                     GestureDetector(
                                       onTap: () {
-                                        // Navigate to forgot password screen
-                                        // Navigator.of(context).pushNamed(Routes.forgotPasswordScreen);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'),
-                                            duration: Duration(seconds: 2),
-                                          ),
-                                        );
+                                        Navigator.pushNamed(context, Routes.forgotPasswordScreen);
                                       },
                                       child: Text(
                                         'هل نسيت كلمة المرور؟',

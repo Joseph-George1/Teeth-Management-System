@@ -6,4 +6,7 @@ class Routes {
   static const String otpScreen = '/otpScreen';
   static const String otpSuccessScreen = '/otpSuccessScreen';
   static const String chatScreen = '/chatScreen';
+  static const String forgotPasswordScreen = '/forgotPassword';
+  static const String resetPasswordScreen = '/resetPassword';
+  static const String signUpSuccessScreen = '/signUpSuccess';
 }

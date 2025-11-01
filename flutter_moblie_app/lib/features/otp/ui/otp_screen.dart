@@ -9,7 +9,12 @@ import '../../../core/widgets/app_text_button.dart';
 import '../../../core/routing/routes.dart';
 
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key});
+  final bool isForgotPasswordFlow;
+  
+  const OtpScreen({
+    super.key,
+    this.isForgotPasswordFlow = false,
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -34,6 +39,23 @@ class _OtpScreenState extends State<OtpScreen> {
   void dispose() {
     _otpController.dispose();
     super.dispose();
+  }
+
+  // Handle OTP verification
+  void _verifyOtp() {
+    if (_isOtpValid) {
+      if (widget.isForgotPasswordFlow) {
+        // Navigate to reset password screen for forgot password flow
+        Navigator.of(context).pushReplacementNamed(
+          Routes.resetPasswordScreen,
+        );
+      } else {
+        // Navigate to OTP success screen for sign-up flow
+        Navigator.of(context).pushReplacementNamed(
+          Routes.otpSuccessScreen,
+        );
+      }
+    }
   }
 
   @override
@@ -93,104 +115,104 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ],
                   ),
-                  child: Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        verticalSpace(10),
-                        Image.asset(
-                          'assets/images/splash-logo.png',
-                          width: 80.w,
-                          height: 80.h,
-                        ),
-                        Text('كود التفعيل', style: TextStyles.font24BlueBold),
-                        verticalSpace(8),
-                        Text(
-                          'لقد ارسلنا لك كود اكتبه لكي تفعل الحساب الخاص بك للمتابعه',
-                          style: TextStyles.font14GrayRegular,
-                          textAlign: TextAlign.right,
-                        ),
-                        verticalSpace(12),
-                        Form(
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: _otpController,
-                                maxLength: 4,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(4),
-                                ],
-                                onChanged: (val) {
-                                  final isValid = val.length == 4;
-                                  if (isValid != _isOtpValid) {
-                                    setState(() => _isOtpValid = isValid);
-                                  }
-                                },
-                                textAlign: TextAlign.center,
-                                decoration: InputDecoration(
-                                  counterText: '',
-                                  hintText: '— — — —',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                              verticalSpace(24),
-                              Align(
-                                alignment: Alignment.center,
-                                child: TextButton(
-                                  onPressed: () {
-                                    // TODO: Resend OTP
+                child:
+      Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          verticalSpace(10),
+                          Image.asset(
+                            'assets/images/splash-logo.png',
+                            width: 80.w,
+                            height: 80.h,
+                          ),
+                          Text('كود التفعيل', style: TextStyles.font24BlueBold),
+                          verticalSpace(8),
+                          Text(
+                            widget.isForgotPasswordFlow
+                                ? 'لقد أرسلنا كود التحقق إلى هاتفك. يرجى إدخاله لإعادة تعيين كلمة المرور'
+                                : 'تم إرسال كود التفعيل إلى هاتفك. يرجى إدخاله لتفعيل حسابك',
+                            style: TextStyles.font14GrayRegular,
+                            textAlign: TextAlign.center,
+                          ),
+                          verticalSpace(12),
+                          Form(
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _otpController,
+                                  maxLength: 4,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(4),
+                                  ],
+                                  onChanged: (val) {
+                                    final isValid = val.length == 4;
+                                    if (isValid != _isOtpValid) {
+                                      setState(() => _isOtpValid = isValid);
+                                    }
                                   },
-                                  child: Text(
-                                    'إعادة إرسال الرمز',
-                                    style: TextStyles.font13BlueSemiBold,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    counterText: '',
+                                    hintText: '— — — —',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              verticalSpace(24),
-                              SizedBox(
-                                width: double.infinity,
-                                child: AppTextButton(
-                                  buttonText: 'تحقق من الرمز',
-                                  textStyle: TextStyles.font16WhiteSemiBold,
-                                  onPressed: _isOtpValid
-                                      ? () {
-                                          // TODO: Verify OTP then navigate to success screen
-                                          Navigator.of(context).pushNamed(
-                                            Routes.otpSuccessScreen,
-                                          );
-                                        }
-                                      : null,
-                                ),
-                              ),
-                              verticalSpace(16),
-                              Align(
-                                alignment: Alignment.center,
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text(
-                                    'تعديل الرقم والرجوع',
-                                    style: TextStyles.font13DarkBlueRegular,
+                                verticalSpace(24),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      // TODO: Resend OTP
+                                    },
+                                    child: Text(
+                                      'إعادة إرسال الرمز',
+                                      style: TextStyles.font13BlueSemiBold,
+                                    ),
                                   ),
                                 ),
-                              ),
+                                verticalSpace(24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AppTextButton(
+                                    buttonText: widget.isForgotPasswordFlow 
+                                        ? 'تغيير كلمة المرور' 
+                                        : 'تفعيل الحساب',
+                                    textStyle: TextStyles.font16WhiteSemiBold,
+                                    onPressed: _isOtpValid ? _verifyOtp : null,
+                                  ),
+                                ),
+                                verticalSpace(16),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text(
+                                      'تعديل الرقم والرجوع',
+                                      style: TextStyles.font13DarkBlueRegular,
+                                    ),
+                                  ),
+                                ),
+
                             ],
                           ),
                         ),
                       ],
                     ),
-                ),
-              ),
-            ),
-          ),
-          )],
+                  ),
+                  ),
+              )
+            )
+          )
+        ],
       ),
     );
   }
