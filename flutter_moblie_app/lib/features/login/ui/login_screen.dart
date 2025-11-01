@@ -55,16 +55,15 @@ class LoginScreen extends StatelessWidget {
                     ColorsManager.layerBlur2.withOpacity(0.1),
                     Colors.transparent,
                   ],
-                  stops: const [0.0, 0.3, 0.8],
+                  stops: const [0.1, 0.3, 0.8],
                 ),
               ),
             ),
 
             Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.all(24.0.w),
-                  child: Container(
+              child: Padding(
+                padding: EdgeInsets.all(24.0.w),
+                child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(24.0.w),
                     decoration: BoxDecoration(
@@ -90,7 +89,7 @@ class LoginScreen extends StatelessWidget {
                             width: 80.w,
                             height: 80.h,
                           ),
-                          Text(' تسجيل دخول', style: TextStyles.font24BlueBold),
+                          Text(' تسجيل دخول', style: TextStyles.font24BlueBold,),
                           verticalSpace(8),
                           Text(
                             'ادخل الايميل او رقم الهاتف و كلمه المرور',
@@ -183,7 +182,82 @@ class LoginScreen extends StatelessWidget {
                                   style: TextStyles.font13GrayRegular,
                                   textAlign: TextAlign.center,
                                 ),
-                                verticalSpace(24),
+                                verticalSpace(6),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Divider(
+                                          color: Colors.grey[400],
+                                          thickness: 1,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                        child: Text('أو', style: TextStyle(color: Colors.grey[600])),
+                                      ),
+                                      Expanded(
+                                        child: Divider(
+                                          color: Colors.grey[400],
+                                          thickness: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Google',
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Facebook',
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Apple',
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -211,7 +285,6 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
               ),
             ),
           ],
