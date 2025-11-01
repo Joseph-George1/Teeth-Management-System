@@ -320,7 +320,7 @@ class LoginScreen extends StatelessWidget {
                                               fit: BoxFit.contain,
                                             ),
                                             onPressed: () {
-                                              Navigator.of(context).pushNamed(Routes.otpScreen);
+                                              Navigator.of(context).pushNamed(Routes.signUpScreen);
                                             },
                                             style: IconButton.styleFrom(
                                               shape: RoundedRectangleBorder(
