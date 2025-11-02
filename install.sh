@@ -265,6 +265,8 @@ install_node_system_wide() {
 main() {
     echo
     msg "Starting Ai-chatbot installer"
+    # Create Python virtual environment
+    create_venv
 
     # Ensure Python and pip are available
     ensure_python_pip
