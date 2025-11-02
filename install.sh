@@ -157,13 +157,38 @@ install_requirements() {
 
     msg "Installing Python requirements from $REQ_FILE ..."
 
-    # Install requirements (use sudo if not root)
+    # If a virtualenv exists in $VENV_DIR, activate it and install there
+    if [[ -f "$VENV_DIR/bin/activate" ]]; then
+        msg "Activating virtualenv at: $VENV_DIR"
+        # shellcheck disable=SC1090
+        source "$VENV_DIR/bin/activate"
+        pip install --no-cache-dir -r "$REQ_FILE"
+        ok "requirements installed into virtualenv: $VENV_DIR"
+        return
+    fi
+
+    # If venv did not exist, try to create it and then install into it
+    msg "No virtualenv detected at $VENV_DIR — attempting to create one for development"
+    if create_venv; then
+        if [[ -f "$VENV_DIR/bin/activate" ]]; then
+            msg "Activating newly-created virtualenv at: $VENV_DIR"
+            # shellcheck disable=SC1090
+            source "$VENV_DIR/bin/activate"
+            pip install --no-cache-dir -r "$REQ_FILE"
+            ok "requirements installed into virtualenv: $VENV_DIR"
+            return
+        fi
+    else
+        warn "Virtualenv creation failed or skipped; falling back to system install."
+    fi
+
+    # Fallback: install system-wide (use sudo if not root)
     if [[ $EUID -eq 0 ]]; then
         python3 -m pip install --no-cache-dir -r "$REQ_FILE"
     else
         sudo python3 -m pip install --no-cache-dir -r "$REQ_FILE"
     fi
-    ok "requirements installed."
+    ok "requirements installed system-wide (virtualenv not used)."
 }
 
 # -----------------------------
