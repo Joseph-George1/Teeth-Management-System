@@ -29,22 +29,27 @@ class TextStyles {
     color: ColorsManager.darkBlue,
   );
 
-  static TextStyle font13DarkBlueRegular = TextStyle(
-    fontSize: 13.sp,
-    fontWeight: FontWeightHelper.regular,
-    color: ColorsManager.darkBlue,
-  );
-
   static TextStyle font24BlueBold = TextStyle(
     fontSize: 24.sp,
     fontWeight: FontWeightHelper.bold,
     color: ColorsManager.mainBlue,
   );
 
+  static TextStyle font20WhiteBold = TextStyle(
+    fontSize: 20.sp,
+    fontWeight: FontWeightHelper.bold,
+    color: Colors.white,
+  );
+
   static TextStyle font16WhiteSemiBold = TextStyle(
     fontSize: 16.sp,
     fontWeight: FontWeightHelper.semiBold,
-    color: Colors.white,
+  );
+
+  static TextStyle font13DarkBlueRegular = TextStyle(
+    fontSize: 13.sp,
+    fontWeight: FontWeightHelper.regular,
+    color: ColorsManager.darkBlue,
   );
 
   static TextStyle font13GrayRegular = TextStyle(

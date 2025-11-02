@@ -134,7 +134,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                                   },
                                   child: Text(
                                     'العودة لتسجيل الدخول',
-                                    style: TextStyles.font13DarkBlueRegular,
+                                    style: TextStyles.font13DarkBlueMedium,
                                   ),
                                 ),
                               ),

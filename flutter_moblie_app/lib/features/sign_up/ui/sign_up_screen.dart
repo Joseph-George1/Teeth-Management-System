@@ -390,7 +390,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             children: [
                               Text(
                                 'لديك حساب بالفعل؟',
-                                style: TextStyles.font13DarkBlueRegular,
+                                style: TextStyles.font13DarkBlueMedium,
                               ),
                               TextButton(
                                 onPressed: () {
