@@ -6,24 +6,26 @@ import '../theming/colors.dart';
 class AppTextButton extends StatelessWidget {
   final double? borderRadius;
   final Color? backgroundColor;
+  final Color? disabledBackgroundColor;
   final double? horizontalPadding;
   final double? verticalPadding;
   final double? buttonWidth;
   final double? buttonHeight;
   final String buttonText;
   final TextStyle textStyle;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   const AppTextButton({
     super.key,
     this.borderRadius,
     this.backgroundColor,
+    this.disabledBackgroundColor,
     this.horizontalPadding,
     this.verticalPadding,
     this.buttonHeight,
     this.buttonWidth,
     required this.buttonText,
     required this.textStyle,
-    required this.onPressed,
+    this.onPressed,
   });
 
   @override
@@ -35,9 +37,12 @@ class AppTextButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius ?? 16.0),
           ),
         ),
-        backgroundColor: MaterialStatePropertyAll(
-          backgroundColor ?? ColorsManager.mainBlue,
-        ),
+        backgroundColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.disabled)) {
+            return disabledBackgroundColor ?? (backgroundColor ?? ColorsManager.mainBlue).withOpacity(0.5);
+          }
+          return backgroundColor ?? ColorsManager.mainBlue;
+        }),
         padding: MaterialStateProperty.all<EdgeInsets>(
           EdgeInsets.symmetric(
             horizontal: horizontalPadding?.w ?? 12.w,
