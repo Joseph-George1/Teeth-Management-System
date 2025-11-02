@@ -167,12 +167,12 @@ install_requirements() {
 }
 
 # -----------------------------
-# Function: Copy 'astart' to /usr/local/bin or /bin
+# Function: Install 'astart' launcher script
 # -----------------------------
 install_astart() {
-    # Ensure file exists
+    # Warn if source exists or not; we'll still create a launcher script
     if [[ ! -f "$ASTART" ]]; then
-        err "astart not found at: $ASTART"
+        warn "astart source not found at: $ASTART. Creating a default launcher instead."
     fi
 
     # Choose best destination directory
@@ -181,19 +181,75 @@ install_astart() {
         DEST="/usr/local/bin"
     fi
 
-    msg "Copying astart to $DEST and making it executable..."
+    msg "Installing astart to $DEST and making it executable..."
 
-    # Copy with or without sudo based on privileges
+    # Launcher script content (creates a small CLI to start the chatbot)
+    # Note: NC is used here as 'no color' to match common conventions.
+    LAUNCHER_CONTENT='#!/usr/bin/env bash
+# astart - launcher for Ai-chatbot
+# Usage: astart -c   # run Streamlit web UI
+#        astart -a   # run API only
+
+# Colors
+RED="\033[1;31m"
+GREEN="\033[1;32m"
+NC="\033[0m"
+
+# Define paths
+core_path="$HOME/Teeth-Management-System/Ai-chatbot"
+Source_path="venv/bin/activate"
+
+# To run the full AI chatbot with web interface
+AI_chatbot_with_web(){
+    cd "$core_path" || exit 1
+    if [[ -f "$Source_path" ]]; then
+        # shellcheck disable=SC1090
+        source "$Source_path"
+    fi
+    streamlit run app.py
+}
+
+# To run only the API without the web interface
+AI_chatbot_api_only(){
+    cd "$core_path" || exit 1
+    if [[ -f "$Source_path" ]]; then
+        # shellcheck disable=SC1090
+        source "$Source_path"
+    fi
+    python3 api.py
+}
+
+while getopts ":ca" option; do
+    case $option in
+        c)
+            echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
+            AI_chatbot_with_web
+            ;;
+        a)
+            echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
+            AI_chatbot_api_only
+            ;;
+        *)
+            echo -e "${RED}Invalid option. Please try again.${NC}"
+            ;;
+    esac
+done
+
+if [ $OPTIND -eq 1 ]; then
+    echo -e "${RED}No options were passed. Use -c for Chatbot with Web Interface or -a for API Only.${NC}"
+fi'
+
+    # Write launcher script, using sudo when not root
     if [[ $EUID -eq 0 ]]; then
-        cp "$ASTART" "$DEST/astart"
+        printf "%s\n" "$LAUNCHER_CONTENT" > "$DEST/astart"
         chmod +x "$DEST/astart"
     else
-        sudo cp "$ASTART" "$DEST/astart"
+        sudo bash -c "printf '%s\n' \"$LAUNCHER_CONTENT\" > '$DEST/astart'"
         sudo chmod +x "$DEST/astart"
     fi
 
     ok "astart installed to $DEST/astart"
-    msg "You can run it as: astart"
+    msg "You can run it as: astart (-c or -a)"
 }
 
 # -----------------------------
