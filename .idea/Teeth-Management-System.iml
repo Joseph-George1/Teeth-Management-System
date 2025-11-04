@@ -6,6 +6,21 @@
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/path_provider_linux/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/shared_preferences_linux/example/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

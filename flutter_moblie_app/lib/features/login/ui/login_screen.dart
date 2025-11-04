@@ -7,13 +7,21 @@ import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool isLoading = false;
+  String? passwordError;
+  bool rememberMe = false;
+  bool isObscureText = true;
+
+  @override
   Widget build(BuildContext context) {
-    bool isLoading = false;
-    String? passwordError;
 
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
@@ -122,41 +130,51 @@ class LoginScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     suffixIcon: IconButton(
-                                      icon: const Icon(Icons.visibility_off),
+                                      icon: Icon(
+                                        isObscureText ? Icons.visibility_off : Icons.visibility,
+                                      ),
                                       onPressed: () {
-                                        // Toggle password visibility
+                                        setState(() {
+                                          isObscureText = !isObscureText;
+                                        });
                                       },
                                     ),
                                   ),
-                                  obscureText: true,
+                                  obscureText: isObscureText,
                                 ),
                                 verticalSpace(5),
-                                // Forgot Password
+                                // Forgot Password & Remember Me
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment
-                                      .spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'هل نسيت كلمة المرور؟',
-                                      style: TextStyles.font13BlueRegular,
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).pushNamed(Routes.forgotPasswordScreen);
+                                      },
+                                      child: Text(
+                                        'هل نسيت كلمة المرور؟',
+                                        style: TextStyles.font13BlueRegular.copyWith(
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
                                     ),
                                     Row(
                                       children: [
-
                                         Transform.scale(
                                           scale: 0.9,
                                           child: Checkbox(
-                                            value: false,
-                                            // You'll need to manage this state
+                                            value: rememberMe,
                                             onChanged: (bool? value) {
-                                              // Handle checkbox state change
+                                              setState(() {
+                                                rememberMe = value ?? false;
+                                              });
                                             },
                                             activeColor: ColorsManager.mainBlue,
                                           ),
-                                        ), Text(
+                                        ),
+                                        Text(
                                           'تذكرني',
-                                          style: TextStyles
-                                              .font13DarkBlueRegular,
+                                          style: TextStyles.font13DarkBlueMedium,
                                         ),
                                       ],
                                     ),
@@ -172,7 +190,8 @@ class LoginScreen extends StatelessWidget {
                                         Navigator.of(
                                           context,
                                         ).pushNamed(Routes.chatScreen);
-                                      }, textStyle: TextStyle(color: Colors.white)
+                                      },
+                                      textStyle: TextStyle(color: Colors.white),
                                   ),
                                 ),
                                 verticalSpace(10),
@@ -182,114 +201,18 @@ class LoginScreen extends StatelessWidget {
                                   style: TextStyles.font13GrayRegular,
                                   textAlign: TextAlign.center,
                                 ),
-                                verticalSpace(6),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Divider(
-                                          color: Colors.grey[400],
-                                          thickness: 1,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                        child: Text('أو', style: TextStyle(color: Colors.grey[600])),
-                                      ),
-                                      Expanded(
-                                        child: Divider(
-                                          color: Colors.grey[400],
-                                          thickness: 1,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Google',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Facebook',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Apple',
-                                        style: TextStyle(
-                                          color: Colors.grey[800],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'ليس لديك حساب؟',
-                                      style: TextStyles.font13DarkBlueRegular,
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).pushNamed(Routes.signUpScreen);
-                                      },
-                                      child: Text(
-                                        'إنشاء حساب',
-                                        style: TextStyles.font13BlueSemiBold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          ],
                             ),
                           ),
-                        ],
+                    ]
                       ),
                     ),
-                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
+                    );
   }
 }
