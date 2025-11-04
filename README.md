@@ -25,7 +25,10 @@ The application allows patients to describe their symptoms and dental needs, whi
 
 1.  **Clone the repository:** `git clone https://github.com/Joseph-George1/Teeth-Management-System/`
 
+## Languages used
+![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=joseph-george1&repo=Teeth-Management-System&layout=compact)
 
+Top languages in this repository.
 
 
 ## Contributors
@@ -40,6 +43,7 @@ Thanks to all of the contributors who helped bring these projects to life:
 | ![Zeyad Saad](https://github.com/temanhattan.png?size=100) | [@temanhattan](https://github.com/temanhattan) - Zeyad Saad |
 | ![Abdelhalem Ramadan](https://github.com/Haleez007.png?size=100) | [@Haleez007](https://github.com/Haleez007) - Abdelhalem Ramadan |
 | ![Muhammad El Kateb](https://github.com/MuhammamdElKateb.png?size=100) | [@MuhammamdElKateb](https://github.com/MuhammamdElKateb) - Muhammad El Kateb |
+
 
 
 
