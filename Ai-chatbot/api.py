@@ -8,7 +8,7 @@ Endpoints:
 - GET /health -> { "status": "ok" }
 
 Run with:
-    python Ai-chatbot\flask_api.py
+    python Ai-chatbot\api.py
 
 The API will load the Gemini API key using the same mechanism as `ai_client.Thoutha`.
 """
