@@ -46,6 +46,18 @@ class TextStyles {
     fontWeight: FontWeightHelper.semiBold,
   );
 
+  static TextStyle font16BlackRegular = TextStyle(
+    fontSize: 16.sp,
+    fontWeight: FontWeight.normal,
+    color: Colors.black,
+  );
+
+  static TextStyle font18BlackSemiBold = TextStyle(
+    fontSize: 18.sp,
+    fontWeight: FontWeightHelper.semiBold,
+    color: Colors.black,
+  );
+
   static TextStyle font13DarkBlueRegular = TextStyle(
     fontSize: 13.sp,
     fontWeight: FontWeightHelper.regular,

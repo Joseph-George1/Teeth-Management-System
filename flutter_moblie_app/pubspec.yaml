@@ -60,6 +60,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   # easy way to add shimmer effect
   shimmer: ^3.0.0
+  speech_to_text: ^7.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -85,7 +86,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
-    - assets/svgs/
+    #- assets/svgs/
     - assets/fonts/
 
 

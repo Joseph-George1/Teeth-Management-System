@@ -189,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onPressed: () {
                                         Navigator.of(
                                           context,
-                                        ).pushNamed(Routes.chatScreen);
+                                        ).pushNamed(Routes.categoriesScreen);
                                       },
                                       textStyle: TextStyle(color: Colors.white),
                                   ),
@@ -200,6 +200,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                   'بالدخول، أنت توافق على الشروط والأحكام.',
                                   style: TextStyles.font13GrayRegular,
                                   textAlign: TextAlign.center,
+                                ),
+                                verticalSpace(16),
+                                // Sign up link
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'هل ليس لديك حساب بالفعل؟ ',
+                                      style: TextStyles.font13DarkBlueMedium,
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushNamed(context, Routes.signUpScreen);
+                                      },
+                                      child: Text(
+                                        'إنشاء حساب',
+                                        style: TextStyles.font13BlueSemiBold.copyWith(
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                           ],
                             ),

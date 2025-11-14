@@ -9,6 +9,8 @@ import '../../features/otp/ui/otp_success_screen.dart';
 import '../../features/chat/ui/chat_screen.dart';
 import '../../features/forgot_password/ui/forgot_password_screen.dart';
 import '../../features/reset_password/ui/reset_password_screen.dart';
+import '../../features/categories/ui/categories_screen.dart';
+import '../../features/main_layout/ui/main_layout_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
@@ -51,6 +53,14 @@ class AppRouter {
       case Routes.resetPasswordScreen:
         return MaterialPageRoute(
           builder: (context) => const ResetPasswordScreen(),
+        );
+      case Routes.categoriesScreen:
+        return MaterialPageRoute(
+          builder: (context) => const MainLayoutScreen(initialIndex: 0),
+        );
+      case Routes.chatScreen:
+        return MaterialPageRoute(
+          builder: (context) => const MainLayoutScreen(initialIndex: 1),
         );
 
       default:

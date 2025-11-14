@@ -9,4 +9,5 @@ class Routes {
   static const String forgotPasswordScreen = '/forgotPassword';
   static const String resetPasswordScreen = '/resetPassword';
   static const String signUpSuccessScreen = '/signUpSuccess';
+  static const String categoriesScreen = '/categories';
 }

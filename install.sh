@@ -341,11 +341,109 @@ install_node_system_wide() {
 }
 
 # -----------------------------
+# Function: Check and fix prerequisites for Oracle Database
+# -----------------------------
+ensure_oracle_prereqs() {
+    msg "Checking for Oracle Database presence..."
+
+    # Detect Oracle by checking for 'oracle' user or /etc/oratab
+    if ! id -u oracle >/dev/null 2>&1 && [[ ! -f /etc/oratab ]]; then
+        ok "Oracle Database not detected. Skipping Oracle-specific prerequisites."
+        return 0
+    fi
+
+    warn "Oracle Database presence detected. Checking system prerequisites..."
+
+    # 1. Check and create Swap space (min 4GB)
+    local SWAP_KB
+    SWAP_KB=$(grep SwapTotal /proc/meminfo | awk '{print $2}')
+    local MIN_SWAP_KB=4194304 # 4GB
+
+    if [[ "$SWAP_KB" -lt "$MIN_SWAP_KB" ]]; then
+        warn "Insufficient swap space (Found ${SWAP_KB} kB). Creating 4GB swap file at /swapfile..."
+        sudo fallocate -l 4G /swapfile
+        sudo chmod 600 /swapfile
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
+
+        # Make swap persistent across reboots
+        if ! grep -q '/swapfile' /etc/fstab; then
+            echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            ok "Swap file created, enabled, and added to /etc/fstab."
+        else
+            ok "Swap file created and enabled."
+        fi
+    else
+        ok "Sufficient swap space found (${SWAP_KB} kB)."
+    fi
+
+    # 2. Install required packages
+    msg "Installing Oracle-specific dependencies (libaio, bc, sysstat, unixodbc)..."
+    case "$PKG_MGR" in
+        apt-get)
+            sudo apt-get install -y libaio1 bc sysstat unixodbc build-essential
+            ;;
+        dnf|yum)
+            sudo "$PKG_MGR" install -y libaio bc sysstat unixODBC
+            ;;
+        pacman)
+            sudo pacman -Sy --noconfirm libaio bc sysstat unixodbc
+            ;;
+        zypper)
+            sudo zypper install -y libaio1 bc sysstat unixODBC
+            ;;
+        *)
+            warn "Cannot auto-install Oracle dependencies for unknown package manager."
+            ;;
+    esac
+
+    # 3. Set security limits for 'oracle' user
+    if ! grep -q "oracle hard nproc" /etc/security/limits.conf; then
+        msg "Setting Oracle security limits in /etc/security/limits.conf"
+        printf "%s\n" \
+            "oracle soft nofile 1024" \
+            "oracle hard nofile 65536" \
+            "oracle soft nproc 2047" \
+            "oracle hard nproc 16384" \
+            "oracle soft stack 10240" \
+            "oracle hard stack 32768" | sudo tee -a /etc/security/limits.conf > /dev/null
+    else
+        ok "Oracle security limits seem to be set."
+    fi
+
+    # 4. Set kernel parameters
+    if ! grep -q "fs.file-max" /etc/sysctl.conf; then
+        msg "Setting Oracle kernel parameters in /etc/sysctl.conf"
+        printf "%s\n" \
+            "fs.file-max = 6815744" \
+            "kernel.shmmax = 68719476736" \
+            "kernel.shmall = 4294967296" \
+            "kernel.sem = 250 32000 100 128" \
+            "net.ipv4.ip_local_port_range = 9000 65500" \
+            "net.core.rmem_default = 262144" \
+            "net.core.wmem_default = 262144" \
+            "net.core.rmem_max = 4194304" \
+            "net.core.wmem_max = 1048576" | sudo tee -a /etc/sysctl.conf > /dev/null
+
+        msg "Applying kernel parameters..."
+        sudo sysctl -p
+    else
+        ok "Oracle kernel parameters seem to be set."
+    fi
+
+    ok "Oracle prerequisites check and fix complete."
+}
+
+# -----------------------------
 # Main installer function
 # -----------------------------
 main() {
     echo
     msg "Starting Ai-chatbot installer"
+
+    # Run Oracle checks first
+    ensure_oracle_prereqs
+
     # Create Python virtual environment
     create_venv
 
