@@ -48,6 +48,7 @@ dependencies:
   intl: ^0.20.2
   easy_localization: ^3.0.8
   flutter_native_splash: ^2.4.6
+  cached_network_image: ^3.3.1
   sign_in_button: ^4.0.1
   #An SVG rendering and widget library for Flutter, which allows painting
   flutter_svg: ^2.2.1

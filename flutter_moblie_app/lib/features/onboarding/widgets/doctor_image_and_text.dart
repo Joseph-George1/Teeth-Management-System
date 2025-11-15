@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/theming/colors.dart';
 
-class DoctorImageAndText extends StatelessWidget {
+class DoctorImageAndText extends StatefulWidget {
   final String imagePath;
   final String title;
   final String description;
@@ -17,10 +19,43 @@ class DoctorImageAndText extends StatelessWidget {
   });
 
   @override
+  State<DoctorImageAndText> createState() => _DoctorImageAndTextState();
+}
+
+class _DoctorImageAndTextState extends State<DoctorImageAndText> {
+  late final ValueNotifier<bool> _isLoading;
+  late final ImageProvider _imageProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoading = ValueNotifier<bool>(true);
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      _imageProvider = AssetImage(widget.imagePath);
+      // Wait for the image to be loaded
+      await precacheImage(_imageProvider, context);
+      if (mounted) {
+        _isLoading.value = false;
+      }
+    } catch (e) {
+      if (mounted) {
+        _isLoading.value = false;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isLoading.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Precache the image when widget builds
-    precacheImage(AssetImage(imagePath), context);
-    
     return Center(
       child: SingleChildScrollView(
         child: Container(
@@ -29,48 +64,55 @@ class DoctorImageAndText extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Image with fade-in effect and error handling
-              Container(
-                width: 200.w,
-                height: 200.h,
-                margin: EdgeInsets.only(bottom: 40.h),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
+              // Image container with loading state
+              ValueListenableBuilder<bool>(
+                valueListenable: _isLoading,
+                builder: (context, isLoading, _) {
+                  return Container(
                     width: 200.w,
                     height: 200.h,
-                    cacheWidth: 400, // Cache at 2x for high DPI
-                    cacheHeight: 400,
-                    filterQuality: FilterQuality.low,
-                    frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                      if (wasSynchronouslyLoaded) return child;
-                      return AnimatedOpacity(
-                        opacity: frame == null ? 0 : 1,
-                        duration: const Duration(milliseconds: 100), // Faster animation
-                        curve: Curves.easeOut,
-                        child: child,
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.error_outline, size: 50, color: Colors.grey),
-                      );
-                    },
-                  ),
-                ),
+                    margin: EdgeInsets.only(bottom: 40.h),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (isLoading)
+                            const Center(child: CircularProgressIndicator())
+                          else
+                            Image(
+                              image: _imageProvider,
+                              fit: BoxFit.cover,
+                              width: 200.w,
+                              height: 200.h,
+                              isAntiAlias: true,
+                              filterQuality: FilterQuality.medium,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
 
               // Title
@@ -79,28 +121,25 @@ class DoctorImageAndText extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 30.w),
                 margin: EdgeInsets.only(bottom: 20.h),
                 child: Text(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'Cairo',
                     fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
-                    color: ColorsManager.fontColor,
+                    color: ColorsManager.mainBlue,
                   ),
                 ),
               ),
 
               // Description
               Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 30.w),
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Text(
-                  description,
+                  widget.description,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 14.sp,
-                    color: ColorsManager.fontColor,
+                    fontSize: 16.sp,
+                    color: Colors.grey[600],
                     height: 1.5,
                   ),
                 ),
