@@ -1,5 +1,6 @@
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_moblie_app/core/routing/routes.dart';
+
 import '../../features/login/ui/login_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/sign_up/ui/sign_up_screen.dart';

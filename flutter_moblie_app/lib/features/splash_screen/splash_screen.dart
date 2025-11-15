@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:meta/meta.dart';
 
 import '../../core/routing/routes.dart';
 import '../../core/theming/colors.dart';
@@ -19,28 +22,65 @@ class _SplashScreenState extends State<SplashScreen> {
       'assets/images/3-onboarding.jpg',
     ];
 
-    // Precache at displayed size (≈200x200 logical pixels) to speed up decode.
+    // Precache at a reasonable size (400x400 for high DPI)
+    const targetSize = 400; // This will be in logical pixels
     final dpr = MediaQuery.of(context).devicePixelRatio;
-    final targetW = (200 * dpr).round();
-    final targetH = (200 * dpr).round();
+    final targetW = (targetSize * dpr).round();
+    final targetH = (targetSize * dpr).round();
 
-    final futures = images.map((path) {
-      final provider = ResizeImage(AssetImage(path), width: targetW, height: targetH);
-      return precacheImage(provider, context);
-    }).toList();
+    // Use a try-catch to prevent the app from crashing if an image fails to load
+    try {
+      // First, load a low-res version for immediate display
+      await Future.wait(images.map((path) {
+        return precacheImage(
+          ResizeImage(
+            AssetImage(path),
+            width: 100, // Start with a smaller size for faster initial load
+            height: 100,
+            allowUpscaling: true,
+          ),
+          context,
+        );
+      }));
 
-    // Wait for all onboarding images so they appear instantly.
-    await Future.wait(futures);
+      // Then load the full resolution in the background
+      unawaited(Future.wait(images.map((path) {
+        return precacheImage(
+          ResizeImage(
+            AssetImage(path),
+            width: targetW,
+            height: targetH,
+            allowUpscaling: false,
+          ),
+          context,
+          onError: (exception, stackTrace) {
+            debugPrint('Failed to load image: $path\n$exception');
+          },
+        );
+      })));
+
+    } catch (e) {
+      debugPrint('Error preloading images: $e');
+      // Even if there's an error, we still want to continue to the app
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    // Precache onboarding images so they show instantly when navigating.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _precacheOnboardingImages(context);
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
+    
+    // Start precaching images and navigate when done
+    _precacheOnboardingImages(context).then((_) {
+      if (mounted) {
+        // Navigate immediately after precaching is done
+        Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
+      }
+    }).catchError((error) {
+      // If there's an error, still navigate but log the error
+      debugPrint('Error precaching images: $error');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
+      }
     });
   }
 

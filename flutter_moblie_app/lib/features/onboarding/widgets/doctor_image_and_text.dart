@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:async';
 
 import '../../../../core/theming/colors.dart';
 
@@ -17,10 +18,9 @@ class DoctorImageAndText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Match cache size used during precache in splash (≈200x200 logical px)
-    final dpr = MediaQuery.of(context).devicePixelRatio;
-    final cacheW = (200 * dpr).round();
-    final cacheH = (200 * dpr).round();
+    // Precache the image when widget builds
+    precacheImage(AssetImage(imagePath), context);
+    
     return Center(
       child: SingleChildScrollView(
         child: Container(
@@ -29,7 +29,7 @@ class DoctorImageAndText extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Image Container
+              // Image with fade-in effect and error handling
               Container(
                 width: 200.w,
                 height: 200.h,
@@ -48,12 +48,27 @@ class DoctorImageAndText extends StatelessWidget {
                 child: ClipOval(
                   child: Image.asset(
                     imagePath,
+                    fit: BoxFit.cover,
                     width: 200.w,
                     height: 200.h,
-                    fit: BoxFit.cover,
-                    cacheWidth: cacheW,
-                    cacheHeight: cacheH,
+                    cacheWidth: 400, // Cache at 2x for high DPI
+                    cacheHeight: 400,
                     filterQuality: FilterQuality.low,
+                    frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                      if (wasSynchronouslyLoaded) return child;
+                      return AnimatedOpacity(
+                        opacity: frame == null ? 0 : 1,
+                        duration: const Duration(milliseconds: 100), // Faster animation
+                        curve: Curves.easeOut,
+                        child: child,
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.error_outline, size: 50, color: Colors.grey),
+                      );
+                    },
                   ),
                 ),
               ),
