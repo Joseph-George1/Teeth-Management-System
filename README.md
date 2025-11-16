@@ -41,7 +41,7 @@ Thanks to all of the contributors who helped bring these projects to life:
 | ![Joseph George](https://github.com/Joseph-George1.png?size=100) | [@Joseph-George1](https://github.com/Joseph-George1) - Joseph George |
 | ![Zyad Gamal](https://github.com/zyadgamal77.png?size=100) | [@zyadgamal77](https://github.com/zyadgamal77) - Zyad Gamal |
 | ![Zeyad Saad](https://github.com/temanhattan.png?size=100) | [@temanhattan](https://github.com/temanhattan) - Zeyad Saad |
-| ![Abdelhalem Ramadan](https://github.com/Haleez007.png?size=100) | [@Haleez007](https://github.com/Haleez007) - Abdelhalem Ramadan |
+| ![Abdelhalim Ramadan](https://github.com/abdelhalimramadan.png?size=100) | [@abdelhalimramadan](https://github.com/abdelhalimramadan) - Abdelhalim Ramadan |
 | ![Muhammad El Kateb](https://github.com/MuhammamdElKateb.png?size=100) | [@MuhammamdElKateb](https://github.com/MuhammamdElKateb) - Muhammad El Kateb |
 
 
