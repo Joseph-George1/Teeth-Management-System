@@ -6,112 +6,104 @@
 set -euo pipefail
 
 # -----------------------------
+# Define color variables for output
 # -----------------------------
-# Function: Check and fix prerequisites for Oracle Database
-# Notes:
-# - We do NOT attempt to automatically install Oracle DB on arbitrary distros.
-#   Automatic RPM installation was removed because it fails on non-OL systems
-#   and is potentially dangerous. If Oracle is not present we simply skip
-#   Oracle-specific tweaks and inform the user how to proceed manually.
-# -----------------------------
-ensure_oracle_prereqs() {
-    msg "Checking for Oracle Database presence..."
+RED="\033[1;31m"
+GREEN="\033[1;32m"
+YELLOW="\033[1;33m"
+BLUE="\033[1;34m"
+RESET="\033[0m"
 
-    # Detect Oracle by checking for 'oracle' user or /etc/oratab
-    if ! id -u oracle >/dev/null 2>&1 && [[ ! -f /etc/oratab ]]; then
-        ok "Oracle Database not detected. Skipping Oracle-specific prerequisites."
-        msg "If you need Oracle Database installed, perform a manual install on Oracle Linux (OL8) or provide a reachable DB."
+# -----------------------------
+# Helper functions for messages
+# -----------------------------
+msg() { echo -e "${BLUE}==>${RESET} $1"; }   # Print normal info message
+ok()  { echo -e "${GREEN}✔${RESET} $1"; }    # Print success message
+warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; }   # Print warning message
+err() { echo -e "${RED}✖ $1${RESET}"; exit 1; }  # Print error and exit
+
+# -----------------------------
+# Resolve script paths
+# -----------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Directory where the script is located
+AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Main project folder
+REQ_FILE="$AI_DIR/requirements.txt"                         # Path to Python requirements file
+ASTART="$AI_DIR/astart"                                     # Path to the 'astart' executable
+VENV_DIR="$AI_DIR/venv"                                     # Virtual environment folder
+oracle_url="https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm"
+# -----------------------------
+# Function: Create Python virtual environment
+# -----------------------------
+create_venv() {
+    # If venv already exists, skip creation
+    if [[ -d "$VENV_DIR" && -f "$VENV_DIR/bin/activate" ]]; then
+        ok "Virtual environment already exists at: $VENV_DIR"
         return 0
     fi
 
-    warn "Oracle Database presence detected. Checking system prerequisites..."
-
-    # 1. Check and create Swap space (min 4GB)
-    # Use a safe default (0) if parsing fails so arithmetic doesn't blow up.
-    SWAP_KB=$(grep SwapTotal /proc/meminfo | awk '{print $2}' 2>/dev/null || true)
-    SWAP_KB=${SWAP_KB:-0}
-    MIN_SWAP_KB=4194304 # 4GB in KB
-
-    if (( SWAP_KB < MIN_SWAP_KB )); then
-        warn "Insufficient swap space (Found ${SWAP_KB} kB). Creating 4GB swap file at /swapfile..."
-        # fallocate may not exist on all systems; try dd as fallback
-        if command -v fallocate >/dev/null 2>&1; then
-            sudo fallocate -l 4G /swapfile
-        else
-            sudo dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress || true
-        fi
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile
-
-        # Make swap persistent across reboots
-        if ! grep -q '/swapfile' /etc/fstab 2>/dev/null; then
-            echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
-            ok "Swap file created, enabled, and added to /etc/fstab."
-        else
-            ok "Swap file created and enabled."
-        fi
-    else
-        ok "Sufficient swap space found (${SWAP_KB} kB)."
+    # If python3 is missing, warn and exit gracefully
+    if ! command -v python3 >/dev/null 2>&1; then
+        warn "python3 not found; cannot create virtual environment now. It will be created after python3 is available."
+        return 1
     fi
 
-    # 2. Install required packages (package-manager aware)
-    msg "Installing Oracle-specific dependencies (libaio, bc, sysstat, unixODBC)..."
+    # Try to create the virtual environment
+    msg "Creating virtual environment at: $VENV_DIR"
+    if python3 -m venv "$VENV_DIR"; then
+        ok "Virtual environment created at: $VENV_DIR"
+    else
+        warn "Failed to create virtual environment at: $VENV_DIR"
+        return 1
+    fi
+}
+
+# Try to create venv right away, but don't stop if it fails (|| true)
+create_venv || true
+
+# -----------------------------
+# Function: Detect available package manager
+# -----------------------------
+detect_pkg_mgr() {
+    if command -v apt-get >/dev/null 2>&1; then echo "apt-get"
+    elif command -v dnf >/dev/null 2>&1; then echo "dnf"
+    elif command -v yum >/dev/null 2>&1; then echo "yum"
+    elif command -v pacman >/dev/null 2>&1; then echo "pacman"
+    elif command -v zypper >/dev/null 2>&1; then echo "zypper"
+    else echo ""; fi
+}
+
+# Save detected package manager name
+PKG_MGR="$(detect_pkg_mgr)"
+
+# If no supported package manager is found, warn user
+if [[ -z "$PKG_MGR" ]]; then warn "No supported package manager found. You must install python3 and pip manually."; fi
+
+# -----------------------------
+# Function: Install Python packages based on detected manager
+# -----------------------------
+install_pkgs() {
     case "$PKG_MGR" in
         apt-get)
+            msg "Updating apt and installing python3, python3-venv, python3-pip..."
             sudo apt-get update -y
-            sudo apt-get install -y libaio1 bc sysstat unixodbc build-essential || true
+            sudo apt-get install -y python3 python3-venv python3-pip
             ;;
-        dnf|yum)
-            sudo "$PKG_MGR" install -y libaio bc sysstat unixODBC || true
+        dnf)
+            msg "Installing python3 and pip (dnf)..."
+            sudo dnf install -y python3 python3-pip
+            ;;
+        yum)
+            msg "Installing python3 and pip (yum)..."
+            sudo yum install -y python3 python3-pip || sudo yum install -y python36 python36-pip
             ;;
         pacman)
-            sudo pacman -Sy --noconfirm libaio bc sysstat unixodbc || true
+            msg "Installing python and pip (pacman)..."
+            sudo pacman -Sy --noconfirm python python-pip
             ;;
         zypper)
-            sudo zypper install -y libaio1 bc sysstat unixODBC || true
+            msg "Installing python3 and pip (zypper)..."
+            sudo zypper install -y python3 python3-pip
             ;;
-        *)
-            warn "Cannot auto-install Oracle dependencies for unknown package manager. Please install libaio, bc, sysstat, unixODBC manually."
-            ;;
-    esac
-
-    # 3. Set security limits for 'oracle' user (append only if missing)
-    if ! grep -q "oracle hard nproc" /etc/security/limits.conf 2>/dev/null; then
-        msg "Setting Oracle security limits in /etc/security/limits.conf"
-        printf "%s\n" \
-            "oracle soft nofile 1024" \
-            "oracle hard nofile 65536" \
-            "oracle soft nproc 2047" \
-            "oracle hard nproc 16384" \
-            "oracle soft stack 10240" \
-            "oracle hard stack 32768" | sudo tee -a /etc/security/limits.conf >/dev/null
-    else
-        ok "Oracle security limits seem to be set."
-    fi
-
-    # 4. Set kernel parameters if not already set
-    if ! grep -q "fs.file-max" /etc/sysctl.conf 2>/dev/null; then
-        msg "Setting Oracle kernel parameters in /etc/sysctl.conf"
-        printf "%s\n" \
-            "fs.file-max = 6815744" \
-            "kernel.shmmax = 68719476736" \
-            "kernel.shmall = 4294967296" \
-            "kernel.sem = 250 32000 100 128" \
-            "net.ipv4.ip_local_port_range = 9000 65500" \
-            "net.core.rmem_default = 262144" \
-            "net.core.wmem_default = 262144" \
-            "net.core.rmem_max = 4194304" \
-            "net.core.wmem_max = 1048576" | sudo tee -a /etc/sysctl.conf >/dev/null
-
-        msg "Applying kernel parameters..."
-        sudo sysctl -p || true
-    else
-        ok "Oracle kernel parameters seem to be set."
-    fi
-
-    ok "Oracle prerequisites check and fix complete."
-}
         *)
             warn "Skipping automatic install of python/pip."
             ;;
