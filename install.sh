@@ -346,16 +346,64 @@ install_node_system_wide() {
 ensure_oracle_prereqs() {
     msg "Checking for Oracle Database presence..."
 
-    # Detect Oracle by checking for 'oracle' user or /etc/oratab
+    # Detect Oracle NOT installed
     if ! id -u oracle >/dev/null 2>&1 && [[ ! -f /etc/oratab ]]; then
-        ok "Oracle Database not detected. Skipping Oracle-specific prerequisites."
-        msg "Installing Oracle Database..."
+        warn "Oracle Database not detected on this system."
+        msg "Proceeding with Oracle Database installation..."
         sudo wget -q -O /tmp/oracle-database.rpm "$oracle_url"
-        sudo dnf install -y /tmp/oracle-database.rpm
+
+        # ---------------------
+        # Progress bar function
+        # ---------------------
+        show_progress() {
+            local pid=$1
+            local spin='|/-\'
+            local i=0
+
+            printf "Progress: ["
+
+            while kill -0 "$pid" 2>/dev/null; do
+                printf "\b${spin:i++%4:1}"
+                sleep 0.15
+            done
+
+            printf "\b✓]\n"
+        }
+
+        case "$PKG_MGR" in
+            apt-get)
+                msg "Updating package lists..."
+                sudo apt-get update -y >/dev/null 2>&1 &
+                show_progress $!
+
+                msg "Installing 'alien' (required for converting RPM to DEB)..."
+                sudo apt-get install -y alien >/dev/null 2>&1 &
+                show_progress $!
+
+                msg "Converting Oracle RPM to DEB and installing it (this may take several minutes)..."
+                sudo alien -i /tmp/oracle-database.rpm >/dev/null 2>&1 &
+                show_progress $!
+
+                ;;
+            dnf|yum)
+                sudo "$PKG_MGR" install -y /tmp/oracle-database.rpm
+                ;;
+            zypper)
+                sudo zypper install -y /tmp/oracle-database.rpm
+                ;;
+            pacman)
+                msg "Pacman does not support RPM installation. Skipping."
+                ;;
+            *)
+                warn "Unknown package manager. Cannot install Oracle automatically."
+                ;;
+        esac
+
+        ok "Oracle installation step completed."
         return 0
     fi
 
-    warn "Oracle Database presence detected. Checking system prerequisites..."
+    ok "Oracle installation detected. Continuing with prerequisite checks..."
 
     # 1. Check and create Swap space (min 4GB)
     local SWAP_KB
@@ -369,7 +417,6 @@ ensure_oracle_prereqs() {
         sudo mkswap /swapfile
         sudo swapon /swapfile
 
-        # Make swap persistent across reboots
         if ! grep -q '/swapfile' /etc/fstab; then
             echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
             ok "Swap file created, enabled, and added to /etc/fstab."
@@ -435,7 +482,7 @@ ensure_oracle_prereqs() {
     fi
 
     ok "Oracle prerequisites check and fix complete."
-}
+} 
 
 # -----------------------------
 # Main installer function
