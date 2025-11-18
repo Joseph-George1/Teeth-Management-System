@@ -1,5 +1,20 @@
+:root{
+    --color-1:#95F8C9;
+    --color-2:#53CAF9;
+    --color-4:#53caf92f;
+    --white:#ffff;
+    --color-3:#53caf928;
+    --hover-color:#46a5cb;
+}
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 body {
   font-family: 'Cairo', sans-serif;
   direction: rtl;
   text-align: right;
+  /* background-image: linear-gradient(170deg , var(--color-1), white, var(--color-2)); */
+
 }

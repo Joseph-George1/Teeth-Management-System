@@ -76,6 +76,7 @@ export default function ChatBot({ setIsAuthenticated }) {
   }
   return(
     <>
+    <div className="body">
     <div className="container">
       <div className="chatbot-popup">
         {/* chatbot header */}
@@ -119,7 +120,7 @@ export default function ChatBot({ setIsAuthenticated }) {
         </div>
       </div>
     </div>
-
+    </div>
     </>
   )
 }
