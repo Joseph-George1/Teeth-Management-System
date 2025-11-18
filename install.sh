@@ -494,11 +494,11 @@ main() {
     # Run Oracle checks first
     ensure_oracle_prereqs
 
-    # Create Python virtual environment
-    create_venv
-
     # Ensure Python and pip are available
     ensure_python_pip
+
+    # Create Python virtual environment
+    create_venv
 
     # Install Python requirements
     install_requirements

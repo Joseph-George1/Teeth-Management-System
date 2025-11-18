@@ -36,10 +36,19 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-      _pageController.jumpToPage(index);
-    });
+    if (index == 3) { // Profile button index is 3
+      // Navigate to login screen and remove all previous routes
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        Routes.loginScreen,
+            (route) => false,
+      );
+    } else {
+      setState(() {
+        _currentIndex = index;
+        _pageController.jumpToPage(index);
+      });
+    }
   }
 
   @override
