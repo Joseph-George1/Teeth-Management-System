@@ -9,16 +9,6 @@ import Profile from "./Pages/Profile";
 import TermsConditions from "./Pages/TermsConditions";
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Check if user is authenticated from localStorage on initial load
-    return localStorage.getItem('isAuthenticated') === 'true';
-  });
-
-  // Update localStorage when authentication state changes
-  useEffect(() => {
-    localStorage.setItem('isAuthenticated', isAuthenticated);
-  }, [isAuthenticated]);
-
   return (
     <>
     <NavBar/>
