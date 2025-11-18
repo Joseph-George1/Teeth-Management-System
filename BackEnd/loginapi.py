@@ -11,6 +11,7 @@ real deployment, use salted hashing (bcrypt/argon2) and HTTPS.
 """
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import json
 import base64
@@ -51,6 +52,9 @@ def create_demo_user(path=USERS_FILE):
 
 
 app = Flask(__name__)
+# Allow cross-origin requests from browser/React clients. For development
+# we allow all origins; restrict this in production to your frontend origin.
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/health', methods=['GET'])
