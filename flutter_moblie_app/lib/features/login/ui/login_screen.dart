@@ -6,6 +6,7 @@ import '../../../core/routing/routes.dart';
 import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
+import '../../auth/data/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,14 +18,84 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   String? passwordError;
+  String? errorMessage;
   bool rememberMe = false;
   bool isObscureText = true;
+  late final GlobalKey<FormState> _formKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormState>();
+  }
 
   @override
   Widget build(BuildContext context) {
 
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
+    
+    // Handle login form submission
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) {
+      return; // Stop if form validation fails
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      passwordError = null;
+    });
+
+    try {
+      // Call the login API
+      final result = await AuthService().login(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+      
+      if (result['success'] == true) {
+        if (mounted) {
+          // Navigate to home screen on successful login
+          Navigator.pushReplacementNamed(context, Routes.categoriesScreen);
+        }
+      } else {
+        // Show error message if login fails
+        String errorMsg = result['error'] ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
+        
+        // More specific error messages based on status code
+        if (result['statusCode'] == 401) {
+          errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+        } else if (result['statusCode'] == 404) {
+          errorMsg = 'لا يوجد حساب مسجل بهذا البريد الإلكتروني. الرجاء إنشاء حساب أولاً';
+        }
+        
+        setState(() {
+          errorMessage = errorMsg;
+        });
+      }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            errorMessage = 'Login failed. Please try again.';
+            // You can add more specific error handling here
+          });
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      }
+    }
+
+    @override
+    void dispose() {
+      emailController.dispose();
+      passwordController.dispose();
+      super.dispose();
+    }
 
     return Scaffold(
       body: SizedBox(
@@ -87,113 +158,177 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Directionality(
                       textDirection: TextDirection.rtl,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          verticalSpace(10),
-                          Image.asset(
-                            'assets/images/splash-logo.png',
-                            width: 80.w,
-                            height: 80.h,
-                          ),
-                          Text(' تسجيل دخول', style: TextStyles.font24BlueBold,),
-                          verticalSpace(8),
-                          Text(
-                            'ادخل الايميل او رقم الهاتف و كلمه المرور',
-                            style: TextStyles.font14GrayRegular,
-                            textAlign: TextAlign.right,
-                          ),
-                          verticalSpace(12),
-                          // Login Form
-                          Form(
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  controller: emailController,
-                                  decoration: InputDecoration(
-                                    labelText: 'البريد الإلكتروني',
-                                    // errorText: emailError,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            verticalSpace(10),
+                            Center(
+                              child: Image.asset(
+                                'assets/images/splash-logo.png',
+                                width: 80.w,
+                                height: 80.h,
+                              ),
+                            ),
+                            Text('تسجيل الدخول', 
+                              style: TextStyles.font24BlueBold,
+                              textAlign: TextAlign.center,
+                            ),
+                            verticalSpace(8),
+                            Text(
+                              'ادخل البريد الإلكتروني وكلمة المرور',
+                              style: TextStyles.font14GrayRegular,
+                              textAlign: TextAlign.center,
+                            ),
+                            verticalSpace(16),
+                            
+                            // Error message
+                            if (errorMessage != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.red[200]!),
                                 ),
-                                verticalSpace(16),
-                                TextFormField(
-                                  controller: passwordController,
-                                  decoration: InputDecoration(
-                                    labelText: 'كلمة المرور',
-                                    errorText: passwordError,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        isObscureText ? Icons.visibility_off : Icons.visibility,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          isObscureText = !isObscureText;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  obscureText: isObscureText,
-                                ),
-                                verticalSpace(5),
-                                // Forgot Password & Remember Me
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                child: Row(
                                   children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).pushNamed(Routes.forgotPasswordScreen);
-                                      },
+                                    const Icon(Icons.error_outline, color: Colors.red),
+                                    const SizedBox(width: 8),
+                                    Expanded(
                                       child: Text(
-                                        'هل نسيت كلمة المرور؟',
-                                        style: TextStyles.font13BlueRegular.copyWith(
-                                          decoration: TextDecoration.underline,
-                                        ),
+errorMessage ?? 'An error occurred',
+                                        style: const TextStyle(color: Colors.red),
                                       ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Transform.scale(
-                                          scale: 0.9,
-                                          child: Checkbox(
-                                            value: rememberMe,
-                                            onChanged: (bool? value) {
-                                              setState(() {
-                                                rememberMe = value ?? false;
-                                              });
-                                            },
-                                            activeColor: ColorsManager.mainBlue,
-                                          ),
-                                        ),
-                                        Text(
-                                          'تذكرني',
-                                          style: TextStyles.font13DarkBlueMedium,
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
-                                verticalSpace(10),
-                                // Login Button
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: AppTextButton(
-                                      buttonText: "تسجيل الدخول",
-                                      onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).pushNamed(Routes.categoriesScreen);
-                                      },
-                                      textStyle: TextStyle(color: Colors.white),
+                              ),
+                            
+                            // Email Field
+                            TextFormField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: 'البريد الإلكتروني',
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الرجاء إدخال البريد الإلكتروني';
+                                }
+                                if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(value)) {
+                                  return 'الرجاء إدخال بريد إلكتروني صالح';
+                                }
+                                return null;
+                              },
+                            ),
+                            
+                            verticalSpace(16),
+                            
+                            // Password Field
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: isObscureText,
+                              decoration: InputDecoration(
+                                labelText: 'كلمة المرور',
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    isObscureText ? Icons.visibility_off : Icons.visibility,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isObscureText = !isObscureText;
+                                    });
+                                  },
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الرجاء إدخال كلمة المرور';
+                                }
+                                if (value.length < 6) {
+                                  return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+                                }
+                                return null;
+                              },
+                            ),
+                            
+                            verticalSpace(8),
+                            
+                            // Forgot Password & Remember Me
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pushNamed(Routes.forgotPasswordScreen);
+                                  },
+                                  child: Text(
+                                    'نسيت كلمة المرور؟',
+                                    style: TextStyles.font13BlueRegular.copyWith(
+                                      decoration: TextDecoration.underline,
+                                    ),
                                   ),
                                 ),
+                                Row(
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.9,
+                                      child: Checkbox(
+                                        value: rememberMe,
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            rememberMe = value ?? false;
+                                          });
+                                        },
+                                        activeColor: ColorsManager.mainBlue,
+                                      ),
+                                    ),
+                                    Text(
+                                      'تذكرني',
+                                      style: TextStyles.font13DarkBlueMedium,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            
+                            verticalSpace(16),
+                            
+                            // Login Button
+                            SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: ColorsManager.mainBlue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                ),
+                                child: isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('تسجيل الدخول', style: TextStyle(fontSize: 16, color: Colors.white)),
+                              ),
+                            ),
                                 verticalSpace(10),
                                 // Terms & Conditions
                                 Text(
@@ -226,15 +361,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                             ),
                           ),
-                    ]
+
                       ),
                     ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+                          ],
+                        ),
+                      ),
                     );
   }
 }

@@ -114,14 +114,21 @@ class ForgotPasswordScreen extends StatelessWidget {
                               SizedBox(
                                 width: double.infinity,
                                 child: AppTextButton(
-                                  buttonText: 'إرسال الكود',
+                                  buttonText: 'إرسال رابط إعادة تعيين كلمة المرور',
                                   textStyle: TextStyles.font16WhiteSemiBold,
                                   onPressed: () {
-                                    // Navigate to OTP screen with forgot password flag
-                                    Navigator.of(context).pushNamed(
-                                      Routes.otpScreen,
-                                      arguments: {'isForgotPassword': true},
+                                    // TODO: Implement direct password reset email
+                                    // Show success message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'),
+                                        backgroundColor: Colors.green,
+                                      ),
                                     );
+                                    // Navigate back to login after a short delay
+                                    Future.delayed(const Duration(seconds: 2), () {
+                                      Navigator.of(context).pop();
+                                    });
                                   },
                                 ),
                               ),

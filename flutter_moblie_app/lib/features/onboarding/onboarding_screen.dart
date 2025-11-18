@@ -52,10 +52,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onSkipPressed() {
-    // Navigate to login screen and remove all previous routes from the stack
+    // Navigate directly to categories screen and remove all previous routes from the stack
     Navigator.pushNamedAndRemoveUntil(
       context,
-      Routes.loginScreen,
+      Routes.categoriesScreen,
       (route) => false, // This removes all previous routes
     );
   }
@@ -166,7 +166,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // Skip Button - Only show if not on last page
                 if (_currentPage < _numPages - 1)
                   TextButton(
-                    onPressed: _onSkipPressed,
+                    onPressed: () {
+                      // Navigate directly to categories screen
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        Routes.categoriesScreen,
+                        (route) => false,
+                      );
+                    },
                     child: Text(
                       'ندخل في الموضوع علي طول',
                       style: TextStyle(
