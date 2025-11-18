@@ -11,7 +11,15 @@ real deployment, use salted hashing (bcrypt/argon2) and HTTPS.
 """
 
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+try:
+    from flask_cors import CORS
+except Exception:
+    # Provide a clear error message when the optional package is missing.
+    import sys
+    print("Missing Python package 'flask-cors'. Install it with:")
+    print("  python3 -m pip install flask-cors")
+    print("If you use a virtualenv, activate it first then run the command.")
+    sys.exit(1)
 import os
 import json
 import base64
