@@ -296,17 +296,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ],*/
                           verticalSpace(16),
+                            // Email Field
+                            TextFormField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: 'البريد الإلكتروني',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                              ),
+                            ),
+                          verticalSpace(16),
                           // Phone Number with Country Code
                             // Phone Number Field
                             TextFormField(
                               controller: phoneController,
                               keyboardType: TextInputType.phone,
                               decoration: InputDecoration(
-                                labelText: 'البريد الاكتروني',
+                                labelText: 'رقم الهاتف',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                prefixIcon: const Icon(Icons.email_outlined),
+                                prefixIcon: const Icon(Icons.phone_outlined),
                               ),
                             ),
                           verticalSpace(16),
@@ -356,6 +369,50 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                             );
                                             return;
                                           }
+
+                                          // Validate email
+                                        //  if (emailController.text.isEmpty) {
+                                          //  ScaffoldMessenger.of(context).showSnackBar(
+                                            //  const SnackBar(
+                                              //  content: Text('الرجاء إدخال البريد الإلكتروني'),
+                                               // backgroundColor: Colors.red,
+                                             // ),
+                                           // );
+                                           // return;
+                                          //}
+
+                                          // Validate password
+                                          if (passwordController.text.isEmpty) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('الرجاء إدخال كلمة المرور'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          // Validate password length
+                                          if (passwordController.text.length < 6) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('يجب أن تكون كلمة المرور 6 أحرف على الأقل'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          // Validate email format
+                                          if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(emailController.text.trim())) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('الرجاء إدخال بريد إلكتروني صالح'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
                                           
                                           // For patients, use email as the primary contact
                                           // For doctors, use phone number with country code
@@ -363,11 +420,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                               ? '${selectedCountryCode}${phoneController.text.trim()}'
                                               : emailController.text.trim();
                                               
+                                          // If all validations pass, proceed with sign up
                                           context.read<SignUpCubit>().signUp(
                                                 email: emailController.text.trim(),
                                                 password: passwordController.text,
-                                                name: nameController.text.trim(),
-                                                phone: phone,
                                                 userType: _selectedUserType!,
                                               );
                                         },

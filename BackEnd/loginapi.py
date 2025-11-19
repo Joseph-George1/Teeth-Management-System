@@ -11,15 +11,6 @@ real deployment, use salted hashing (bcrypt/argon2) and HTTPS.
 """
 
 from flask import Flask, request, jsonify
-try:
-    from flask_cors import CORS
-except Exception:
-    # Provide a clear error message when the optional package is missing.
-    import sys
-    print("Missing Python package 'flask-cors'. Install it with:")
-    print("  python3 -m pip install flask-cors")
-    print("If you use a virtualenv, activate it first then run the command.")
-    sys.exit(1)
 import os
 import json
 import base64
@@ -60,9 +51,6 @@ def create_demo_user(path=USERS_FILE):
 
 
 app = Flask(__name__)
-# Allow cross-origin requests from browser/React clients. For development
-# we allow all origins; restrict this in production to your frontend origin.
-CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/health', methods=['GET'])
@@ -121,6 +109,12 @@ def register():
     users[email] = encoded
     save_users(users)
     return jsonify({'status': 'success', 'message': 'User registered'}), 201
+
+
+@app.route('/sendotp', methods=['GET'])
+def sendotp():
+    """Return a fixed OTP for testing."""
+    return jsonify({'status': 'success', 'otp': '123123'}), 200
 
 
 def prepare_store():

@@ -6,9 +6,67 @@ import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
 import '../../../core/routing/routes.dart';
+import '../data/forgot_password_service.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _sendOtp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await ForgotPasswordService().sendOtp(_emailController.text.trim());
+      
+      if (response['success'] == true) {
+        if (mounted) {
+          Navigator.pushNamed(
+            context,
+            Routes.otpVerificationScreen,
+            arguments: {
+              'email': _emailController.text.trim(),
+            },
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'حدث خطأ في إرسال رمز التحقق';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'حدث خطأ في إرسال رمز التحقق. الرجاء المحاولة مرة أخرى';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,11 +146,14 @@ class ForgotPasswordScreen extends StatelessWidget {
                         ),
                         verticalSpace(24),
                         Form(
+                          key: _formKey,
                           child: Column(
                             children: [
                               TextFormField(
+                                controller: _emailController,
                                 decoration: InputDecoration(
-                                  labelText: 'رقم الهاتف / البريد الإلكتروني',
+                                  labelText: 'البريد الإلكتروني',
+                                  hintText: 'أدخل بريدك الإلكتروني',
                                   prefixIcon: const Icon(Icons.email_outlined),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -109,28 +170,34 @@ class ForgotPasswordScreen extends StatelessWidget {
                                 keyboardType: TextInputType.emailAddress,
                                 textDirection: TextDirection.rtl,
                                 textAlign: TextAlign.right,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'الرجاء إدخال البريد الإلكتروني';
+                                  }
+                                  if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(value)) {
+                                    return 'الرجاء إدخال بريد إلكتروني صالح';
+                                  }
+                                  return null;
+                                },
                               ),
-                              verticalSpace(32),
+                              
+                              if (_errorMessage != null) ...[
+                                verticalSpace(16),
+                                Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(color: Colors.red),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                               SizedBox(
                                 width: double.infinity,
-                                child: AppTextButton(
-                                  buttonText: 'إرسال رابط إعادة تعيين كلمة المرور',
-                                  textStyle: TextStyles.font16WhiteSemiBold,
-                                  onPressed: () {
-                                    // TODO: Implement direct password reset email
-                                    // Show success message
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'),
-                                        backgroundColor: Colors.green,
+                                child: _isLoading
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : AppTextButton(
+                                        buttonText: 'إرسال رمز التحقق',
+                                        textStyle: TextStyles.font16WhiteSemiBold,
+                                        onPressed: _sendOtp,
                                       ),
-                                    );
-                                    // Navigate back to login after a short delay
-                                    Future.delayed(const Duration(seconds: 2), () {
-                                      Navigator.of(context).pop();
-                                    });
-                                  },
-                                ),
                               ),
                               verticalSpace(16),
                               Align(

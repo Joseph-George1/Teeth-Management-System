@@ -14,8 +14,6 @@ class SignUpCubit extends Cubit<SignUpState> {
   Future<void> signUp({
     required String email,
     required String password,
-    required String name,
-    required String phone,
     required String userType,
   }) async {
     try {
@@ -27,10 +25,10 @@ class SignUpCubit extends Cubit<SignUpState> {
         return;
       }
 
-      if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
+     /* if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
         emit(SignUpError('الرجاء إدخال بريد إلكتروني صالح'));
         return;
-      }
+      }*/
 
       if (password.length < 6) {
         emit(SignUpError('يجب أن تكون كلمة المرور 6 أحرف على الأقل'));
@@ -38,30 +36,60 @@ class SignUpCubit extends Cubit<SignUpState> {
       }
 
       // Call the registration API
+      print('Sending sign-up request with email: ${email.trim()} and userType: $userType');
+
+      // Prepare the request data
+      final requestData = {
+        'email': email.trim().toLowerCase(),
+        'password': password,
+        //'user_type': userType == 'طبيب' ? 'doctor' : 'patient',
+       // 'name': email.trim().split('@')[0], // Use email prefix as name if not provided
+      };
+
+      print('Request data: $requestData');
+
       final response = await _dio.post(
         '$_baseUrl/register',
-        data: {
-          'email': email.trim(),
-          'password': password,
-        },
+        data: requestData,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
           validateStatus: (status) => status! < 500,
         ),
       );
+
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      print('API Response Status: ${response.statusCode}');
+      print('API Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         emit(SignUpSuccess('تم إنشاء الحساب بنجاح'));
       } else {
         // Handle different error status codes
         String errorMessage = 'حدث خطأ في التسجيل';
+        if (response.data != null) {
+          if (response.data is Map) {
+            errorMessage = response.data['message'] ??
+                         response.data['error'] ??
+                         'حدث خطأ في التسجيل';
+          } else if (response.data is String) {
+            errorMessage = response.data;
+          }
+        }
+
+        // Common error messages
         if (response.statusCode == 400) {
-          errorMessage = response.data?['message'] ?? 'بيانات غير صالحة';
+          errorMessage = 'بيانات غير صالحة: $errorMessage';
         } else if (response.statusCode == 409) {
           errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً';
+        } else if (response.statusCode == 422) {
+          errorMessage = 'بيانات غير صالحة: $errorMessage';
         }
+
         emit(SignUpError(errorMessage));
       }
     } on DioException catch (e) {

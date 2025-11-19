@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/login/ui/login_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/reset_password/ui/otp_verification_screen.dart';
 import '../../features/sign_up/ui/sign_up_screen.dart';
 import '../../features/splash_screen/splash_screen.dart';
 import '../../features/chat/ui/chat_screen.dart';
@@ -37,6 +38,13 @@ class AppRouter {
       case Routes.forgotPasswordScreen:
         return MaterialPageRoute(
           builder: (context) => const ForgotPasswordScreen(),
+        );
+      case Routes.otpVerificationScreen:
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        return MaterialPageRoute(
+          builder: (context) => OtpVerificationScreen(
+            email: args['email'] ?? '',
+          ),
         );
       case Routes.resetPasswordScreen:
         return MaterialPageRoute(

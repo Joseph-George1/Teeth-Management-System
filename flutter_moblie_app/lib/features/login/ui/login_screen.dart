@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/helpers/spacing.dart';
 import '../../../core/routing/routes.dart';
@@ -22,23 +23,65 @@ class _LoginScreenState extends State<LoginScreen> {
   bool rememberMe = false;
   bool isObscureText = true;
   late final GlobalKey<FormState> _formKey;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
+    _loadSavedCredentials();
+  }
+
+  // Load saved credentials if they exist
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      rememberMe = prefs.getBool('rememberMe') ?? false;
+      if (rememberMe) {
+        emailController.text = prefs.getString('savedEmail') ?? '';
+        passwordController.text = prefs.getString('savedPassword') ?? '';
+      }
+    });
+  }
+
+  // Save or clear credentials based on rememberMe value
+  Future<void> _handleRememberMe(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      rememberMe = value;
+    });
+    
+    if (value) {
+      // Save credentials
+      await prefs.setBool('rememberMe', true);
+      await prefs.setString('savedEmail', emailController.text);
+      await prefs.setString('savedPassword', passwordController.text);
+    } else {
+      // Clear saved credentials
+      await prefs.remove('rememberMe');
+      await prefs.remove('savedEmail');
+      await prefs.remove('savedPassword');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
 
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    
     // Handle login form submission
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return; // Stop if form validation fails
+    }
+    
+    // Save credentials if remember me is checked
+    if (rememberMe) {
+      await _handleRememberMe(true);
+    }
+    
+    // Save credentials if remember me is checked
+    if (rememberMe) {
+      await _handleRememberMe(true);
     }
 
     setState(() {
@@ -288,9 +331,7 @@ errorMessage ?? 'An error occurred',
                                       child: Checkbox(
                                         value: rememberMe,
                                         onChanged: (bool? value) {
-                                          setState(() {
-                                            rememberMe = value ?? false;
-                                          });
+                                          _handleRememberMe(value ?? false);
                                         },
                                         activeColor: ColorsManager.mainBlue,
                                       ),
