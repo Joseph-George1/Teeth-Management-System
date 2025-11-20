@@ -1,23 +1,11 @@
 import {useRef, useState} from "react"; 
-import { useNavigate } from "react-router-dom";
 import ChatBotIcon from "../Components/ChatBotIcon";
 import '../Css/ChatBot.css';
 
-export default function ChatBot({ setIsAuthenticated }) {
-  const navigate = useNavigate();
+export default function ChatBot() {
   const inputRef = useRef();
   const [chatHistory, setChatHistory] = useState([]);
   const [sessionId, setSessionId] = useState(null);
-
-  const handleLogout = () => {
-    // Clear session data
-    setSessionId(null);
-    setChatHistory([]);
-    // Update authentication state
-    setIsAuthenticated(false);
-    // Navigate to login page
-    navigate('/login');
-  };
 
  const generateBotResponse = async (userMessage) => {
   try {
@@ -84,7 +72,6 @@ export default function ChatBot({ setIsAuthenticated }) {
           <div className="header-info">
             <ChatBotIcon/>
             <p className="logo-text">ثوثة الطبيب الذكي</p>
-            <button onClick={handleLogout} className="logout-button">تسجيل الخروج</button>
           </div>
         </div>
 
