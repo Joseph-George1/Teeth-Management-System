@@ -11,8 +11,7 @@ NC="\033[0m"
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 Source_path="venv/bin/activate"
-
-# To run the full AI chatbot with web interface
+webui_path=""
 AI_chatbot_with_web(){
     cd "$core_path" || exit 1
     if [[ -f "$Source_path" ]]; then
@@ -31,6 +30,12 @@ AI_chatbot_api_only(){
     fi
     python3 api.py
 }
+
+start_web_ui() {
+    cd 
+}
+
+
 
 while getopts ":ca" option; do
     case $option in
