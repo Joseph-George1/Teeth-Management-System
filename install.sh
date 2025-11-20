@@ -26,9 +26,10 @@ err() { echo -e "${RED}✖ $1${RESET}"; exit 1; }  # Print error and exit
 # Resolve script paths
 # -----------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Directory where the script is located
-AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Main project folder
+AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Ai-chatbot folder (if present)
 REQ_FILE="$AI_DIR/requirements.txt"                         # Path to Python requirements file
-ASTART="$AI_DIR/astart"                                     # Path to the 'astart' executable
+# Primary `astart` location is now next to the installer (project root).
+ASTART="$SCRIPT_DIR/astart"
 VENV_DIR="$AI_DIR/venv"                                     # Virtual environment folder
 oracle_url="https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm"
 # -----------------------------
@@ -193,87 +194,31 @@ install_requirements() {
 
 # -----------------------------
 # Function: Install 'astart' launcher script
+# Behavior: copy existing `astart` script from the repository (prefer
+# $SCRIPT_DIR/astart, `/bin/astart`,
+# overwriting any existing file. Do not rewrite/regen the launcher.
 # -----------------------------
 install_astart() {
-    # Warn if source exists or not; we'll still create a launcher script
-    if [[ ! -f "$ASTART" ]]; then
-        warn "astart source not found at: $ASTART. Creating a default launcher instead."
+    # Prefer an `astart` sitting next to this installer, otherwise look in Ai-chatbot/
+    SRC="$SCRIPT_DIR/astart"
+
+    if [[ ! -f "$SRC" ]]; then
+        warn "No 'astart' launcher found at '$SCRIPT_DIR/astart' Skipping install."
+        return 0
     fi
 
-    # Choose best destination directory
-    DEST="/bin"
-    if [[ -d "/usr/local/bin" ]]; then
-        DEST="/usr/local/bin"
-    fi
+    DEST="/bin/astart"
+    msg "Installing astart to $DEST (will overwrite if exists)..."
 
-    msg "Installing astart to $DEST and making it executable..."
-
-    # Launcher script content (creates a small CLI to start the chatbot)
-    # Note: NC is used here as 'no color' to match common conventions.
-    LAUNCHER_CONTENT='#!/usr/bin/env bash
-# astart - launcher for Ai-chatbot
-# Usage: astart -c   # run Streamlit web UI
-#        astart -a   # run API only
-
-# Colors
-RED="\033[1;31m"
-GREEN="\033[1;32m"
-NC="\033[0m"
-
-# Define paths
-core_path="$HOME/Teeth-Management-System/Ai-chatbot"
-Source_path="venv/bin/activate"
-
-# To run the full AI chatbot with web interface
-AI_chatbot_with_web(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    streamlit run app.py
-}
-
-# To run only the API without the web interface
-AI_chatbot_api_only(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    python3 api.py
-}
-
-while getopts ":ca" option; do
-    case $option in
-        c)
-            echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
-            AI_chatbot_with_web
-            ;;
-        a)
-            echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
-            AI_chatbot_api_only
-            ;;
-        *)
-            echo -e "${RED}Invalid option. Please try again.${NC}"
-            ;;
-    esac
-done
-
-if [ $OPTIND -eq 1 ]; then
-    echo -e "${RED}No options were passed. Use -c for Chatbot with Web Interface or -a for API Only.${NC}"
-fi'
-
-    # Write launcher script, using sudo when not root
     if [[ $EUID -eq 0 ]]; then
-        printf "%s\n" "$LAUNCHER_CONTENT" > "$DEST/astart"
-        chmod +x "$DEST/astart"
+        cp -f "$SRC" "$DEST"
+        chmod +x "$DEST"
     else
-        sudo bash -c "printf '%s\n' \"$LAUNCHER_CONTENT\" > '$DEST/astart'"
-        sudo chmod +x "$DEST/astart"
+        sudo cp -f "$SRC" "$DEST"
+        sudo chmod +x "$DEST"
     fi
 
-    ok "astart installed to $DEST/astart"
+    ok "astart installed to $DEST"
     msg "You can run it as: astart (-c or -a)"
 }
 
