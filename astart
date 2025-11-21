@@ -388,6 +388,7 @@ while getopts ":cawbxh" option; do
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
             AI_chatbot_api_only
+            exit 0
             ;;
         w)
             echo -e "${GREEN}Starting the whole system...${NC}"
@@ -396,10 +397,12 @@ while getopts ":cawbxh" option; do
         b)
             echo -e "${GREEN}Starting Backend server only...${NC}"
             BackEnd_start
+            exit 0
             ;;
         x)
             echo -e "${GREEN}Starting Login/Registration script only...${NC}"
             Loginreg_script
+            exit 0
             ;;
         h)
             display_help
