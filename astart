@@ -8,18 +8,54 @@ RED="\033[1;31m"
 GREEN="\033[1;32m"
 NC="\033[0m"
 
-# Logging setup
+#-------------------------------------------------------------
+# Logging subsystem
+# Purpose: centralized, human-readable logging for the launcher.
+# - Creates a global activity log (`astart_activity.log`) with one-line
+#   records for each start/stop and launcher events (timestamp, user, ip,
+#   flag, process, exit code when applicable).
+# - Maintains per-process log files under `process_logs/` which contain
+#   a START block, the full stdout/stderr output (redirected), and a
+#   STOP block with the exit code and timestamp.
+# - Stores PID files for backgrounded processes under `pids/` so the
+#   launcher (or other tooling) can locate and stop/reread PIDs.
+#
+# Notes:
+# - Designed for interactive developer use on a Unix-like host (bash).
+# - Uses AWS metadata service to attempt to record instance public IP
+#   when available; falls back to public IP services or hostname.
+#-------------------------------------------------------------
 LOG_DIR="$HOME/Teeth-Management-System/logs"
 PROCESS_LOG_DIR="$LOG_DIR/process_logs"
 PID_DIR="$LOG_DIR/pids"
 ACTIVITY_LOG="$LOG_DIR/astart_activity.log"
 
+#-------------------------------------------------------------
+# init_logging
+# Ensures log directories and the global activity log file exist.
+# Side effects:
+# - Creates directories: `process_logs/` and `pids/` (mode inherits umask).
+# - Creates an empty activity logfile at `astart_activity.log` if missing.
+# This is safe to call multiple times.
+#-------------------------------------------------------------
 init_logging() {
     mkdir -p "$PROCESS_LOG_DIR"
     mkdir -p "$PID_DIR"
     touch "$ACTIVITY_LOG"
 }
 
+#-------------------------------------------------------------
+# get_instance_ip
+# Attempts to determine the server's public IP for auditing purposes.
+# Strategy (in order):
+# 1) Query AWS metadata (http://169.254.169.254/latest/meta-data/public-ipv4).
+#    - Note: IMDSv2 may require session token; this simple call uses IMDSv1.
+#    - We use a short timeout to avoid blocking startup if metadata is not reachable.
+# 2) Fallback to a public IP lookup service (`ifconfig.me`).
+# 3) Fallback to local hostname inspection (`hostname -I` or `hostname`).
+# Returns: IP string or `unknown` if detection fails.
+# Side effects: performs network calls when `curl` is present.
+#-------------------------------------------------------------
 get_instance_ip() {
     ip=""
     if command -v curl >/dev/null 2>&1; then
@@ -36,6 +72,17 @@ get_instance_ip() {
     echo "${ip:-unknown}"
 }
 
+#-------------------------------------------------------------
+# log_activity
+# Append a single-line, machine-friendly activity record to the global
+# activity log. This log is intended for quick scans and aggregated
+# auditing (timestamp, user, ip, flag, process).
+# Parameters:
+# - $1: flag (string) — the CLI flag or reason (e.g. -a, -b, -w, bg, launcher-exit)
+# - $2: process name (string) — logical name used for process logs and pid files
+# Example record:
+# 2025-11-21T12:34:56Z | user=ubuntu | ip=3.120.45.67 | flag=-b | process=backend
+#-------------------------------------------------------------
 log_activity() {
     # params: flag, process_name
     flag="$1"
@@ -46,6 +93,18 @@ log_activity() {
     echo "$ts | user=$user | ip=$ip | flag=$flag | process=$pname" >> "$ACTIVITY_LOG"
 }
 
+#-------------------------------------------------------------
+# log_process_start
+# Writes a START block to the per-process logfile and records the
+# invoked command for later debugging. Per-process logs contain:
+# - A START header with timestamp and user
+# - A `CMD:` line showing the exact shell command executed
+# - The stdout/stderr captured (redirected by start_bg)
+# The per-process logfile path is: `$PROCESS_LOG_DIR/<name>.log`.
+# Parameters:
+# - $1: name (string)
+# - $2: cmd  (string) command executed
+#-------------------------------------------------------------
 log_process_start() {
     # params: name, cmd
     name="$1"
@@ -57,6 +116,15 @@ log_process_start() {
     echo "CMD: $cmd" >> "$plog"
 }
 
+#-------------------------------------------------------------
+# log_process_stop
+# Appends a STOP header with timestamp and exit code to the process log.
+# This complements the START header and signals that the process has
+# terminated (normally or abnormally).
+# Parameters:
+# - $1: name (string)
+# - $2: exit_code (integer)
+#-------------------------------------------------------------
 log_process_stop() {
     # params: name, exit_code
     name="$1"
@@ -66,6 +134,18 @@ log_process_stop() {
     echo "==== STOP ${name} ${ts} exit=${code} ====" >> "$plog"
 }
 
+#-------------------------------------------------------------
+# _wait_and_log
+# Internal helper used for background-started processes.
+# - Waits for PID to exit, captures its exit code, writes a STOP
+#   block to the process log, appends a one-line activity record,
+#   and removes the pid file.
+# - This function is launched in background for each start_bg PID so
+#   it does not block the launcher.
+# Parameters:
+# - $1: name (string)
+# - $2: pid  (integer)
+#-------------------------------------------------------------
 _wait_and_log() {
     name="$1"
     pid="$2"
@@ -85,6 +165,24 @@ _wait_and_log() {
     fi
 }
 
+#-------------------------------------------------------------
+# start_bg
+# Start a command in background while wiring logging and pid tracking.
+# Behavior:
+# - Initializes logging directories/files.
+# - Writes a one-line activity entry and a START block in process log.
+# - Uses `nohup` + `bash -lc` to background the command and redirect
+#   stdout/stderr into the process log file.
+# - Stores the background PID into `$PID_DIR/<name>.pid`.
+# - Launches `_wait_and_log` in the background to monitor and record
+#   the process termination (STOP block + activity entry) and clean up
+#   the pid file.
+# Parameters:
+# - $1: name (string)
+# - $2: flag (string)
+# - $3: cmd  (string) the shell command to run
+# Returns: 0 on successful start (note: the process itself may fail later).
+#-------------------------------------------------------------
 start_bg() {
     # params: name, flag, cmd
     name="$1"
@@ -102,6 +200,21 @@ start_bg() {
     return 0
 }
 
+#-------------------------------------------------------------
+# start_fg
+# Run a command in the foreground while recording start/stop entries.
+# Behavior:
+# - Writes a START block to the per-process log and a one-line activity
+#   record indicating the start.
+# - Executes the command in the foreground so the user sees live output.
+# - When the command exits, writes a STOP block and appends a one-line
+#   activity entry with the exit code.
+# Parameters:
+# - $1: name (string)
+# - $2: flag (string)
+# - $3: cmd  (string) the shell command to run
+# Returns: the exit code from the executed command.
+#-------------------------------------------------------------
 start_fg() {
     # params: name, flag, cmd
     name="$1"
@@ -121,6 +234,23 @@ start_fg() {
     return $code
 }
 
+#---------------------------------------------
+# On exit handler to log running processes
+#  
+#---------------------------------------------
+
+#-------------------------------------------------------------
+# on_exit
+# Trap handler executed when the launcher process exits.
+# Purpose:
+# - Inspect stored pid files and record in the global activity log which
+#   of those PIDs were still running at launcher exit. This is useful
+#   for post-mortem or automated monitoring to know which services
+#   remained active after the launcher terminated.
+# Notes:
+# - Does not attempt to kill processes; it only records state.
+# - Safe to run multiple times; uses `kill -0` to test liveness.
+#-------------------------------------------------------------
 on_exit() {
     # When launcher exits, note current PIDs still running
     init_logging
