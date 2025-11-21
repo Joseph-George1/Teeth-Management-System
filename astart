@@ -11,7 +11,13 @@ NC="\033[0m"
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 Source_path="venv/bin/activate"
-webui_path=""
+webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
+backend_path="$HOME/Teeth-Management-System/Backend"
+
+#-------------------------------------------------------------
+# Function to start the chatbot with streamlit web interface
+#-------------------------------------------------------------
+
 AI_chatbot_with_web(){
     cd "$core_path" || exit 1
     if [[ -f "$Source_path" ]]; then
@@ -21,7 +27,10 @@ AI_chatbot_with_web(){
     streamlit run app.py
 }
 
+#-------------------------------------------------------------
 # To run only the API without the web interface
+#-------------------------------------------------------------
+
 AI_chatbot_api_only(){
     cd "$core_path" || exit 1
     if [[ -f "$Source_path" ]]; then
@@ -31,13 +40,67 @@ AI_chatbot_api_only(){
     python3 api.py
 }
 
+
+# Function to start the Frontend server
 start_web_ui() {
-    cd 
+    cd "$webui_path" || exit 1
+    npm run dev -- --host 0.0.0.0
+}
+
+#-------------------------------------------------------------
+# Function to start the Backend server
+#Note: This function assumes that Maven is installed and configured properly.
+# Also, it assumes that the database connection details are correct.
+#if there are any issues with the database connection, the backend may fail to start.
+#-------------------------------------------------------------
+
+BackEnd_start() {
+    cd "$backend_path" || exit 1
+     mvn clean spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha"
+}
+
+#-------------------------------------------------------------
+#Function to run the login/registration script (temporary)
+#-------------------------------------------------------------
+
+Loginreg_script() {
+    cd "$backend_path" || exit 1
+    python3 loginapi.py 
+}
+
+#-------------------------------------------------------------
+#Function to run the whole system (temporary parts)
+#-------------------------------------------------------------
+Run_whole_system() {
+    BackEnd_start &
+    Loginreg_script &
+    AI_chatbot_api_only &
+    start_web_ui 
+    wait
 }
 
 
+#-------------------------------------------------------------
+# Function to display help message
+#-------------------------------------------------------------
+display_help() {
+    echo "Usage: $0 [options]"
+    echo "Options:"
+    echo -e "  ${RED}-c${NC}    ${GREEN}Start AI Chatbot with Web Interface${NC}"
+    echo -e "  ${RED}-a${NC}    ${GREEN}Start AI Chatbot API Only${NC}"
+    echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
+    echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
+    echo -e "  ${RED}-x${NC}    ${GREEN}Start Login/Registration script only${NC}"
+    echo -e "  ${RED}-h${NC}    ${GREEN}Display this help message${NC}"
+    exit 0
+}
 
-while getopts ":ca" option; do
+
+#-------------------------------------------------------------
+# Main script logic to parse command-line arguments
+#-------------------------------------------------------------
+
+while getopts ":cawbxh" option; do
     case $option in
         c)
             echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
@@ -46,6 +109,21 @@ while getopts ":ca" option; do
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
             AI_chatbot_api_only
+            ;;
+        w)
+            echo -e "${GREEN}Starting the whole system...${NC}"
+            Run_whole_system
+            ;;
+        b)
+            echo -e "${GREEN}Starting Backend server only...${NC}"
+            BackEnd_start
+            ;;
+        x)
+            echo -e "${GREEN}Starting Login/Registration script only...${NC}"
+            Loginreg_script
+            ;;
+        h)
+            display_help
             ;;
         *)
             echo -e "${RED}Invalid option. Please try again.${NC}"
