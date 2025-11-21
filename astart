@@ -361,6 +361,13 @@ display_help() {
 # Main script logic to parse command-line arguments
 #-------------------------------------------------------------
 
+# Parse command-line options robustly.
+# - If ASTART_DEBUG=1, print debug info about received arguments.
+DEBUG=${ASTART_DEBUG:-0}
+if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
+    echo "DEBUG: invoked as: $0 $*" >&2
+fi
+
 while getopts ":cawbxh" option; do
     case $option in
         c)
@@ -385,6 +392,17 @@ while getopts ":cawbxh" option; do
             ;;
         h)
             display_help
+            ;;
+        \?)
+            # Unknown option (getopts sets OPTARG to the option character)
+            echo -e "${RED}Invalid option: -${OPTARG}. Please try again.${NC}"
+            if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
+                echo "DEBUG: raw args: $*" >&2
+            fi
+            ;;
+        :)
+            # Missing option argument (shouldn't occur with current flags)
+            echo -e "${RED}Missing argument for -${OPTARG}.${NC}"
             ;;
         *)
             echo -e "${RED}Invalid option. Please try again.${NC}"
