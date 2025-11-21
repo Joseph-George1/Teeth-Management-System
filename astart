@@ -159,7 +159,12 @@ _wait_and_log() {
     done
     # Process exited; we cannot reliably obtain its exit code here.
     code="UNKNOWN"
-    log_process_stop "$name" "$code"
+    # Determine the logfile recorded in the pid file (if present)
+    plog=$(sed -n '2p' "$PID_DIR/${name}.pid" 2>/dev/null || true)
+    if [ -z "$plog" ]; then
+        plog="$PROCESS_LOG_DIR/${name}.log"
+    fi
+    log_process_stop "$name" "$code" "$plog"
     # also append to global activity log
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     user=$(whoami 2>/dev/null || echo unknown)
@@ -192,18 +197,20 @@ start_bg() {
     flag="$2"
     cmd="$3"
     init_logging
+    # Create a timestamped logfile for this run
+    TIMESTAMP=$(date +"%H-%M-%S_%d-%m-%Y")
+    logfile="$PROCESS_LOG_DIR/${name}_${TIMESTAMP}.log"
     log_activity "$flag" "$name"
-    log_process_start "$name" "$cmd"
-    logfile="$PROCESS_LOG_DIR/${name}.log"
+    log_process_start "$name" "$cmd" "$logfile"
     nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
     pid=$!
-    echo "$pid" > "$PID_DIR/${name}.pid"
-    # record the pid in the global activity log immediately so operators
-    # can correlate running PIDs with logical names
+    # Store both pid and logfile path so stop/wait routines can find the file
+    printf "%s\n%s\n" "$pid" "$logfile" > "$PID_DIR/${name}.pid"
+    # record the pid immediately in the global activity log
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     user=$(whoami 2>/dev/null || echo unknown)
     ip=$(get_instance_ip)
-    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | pid=$pid | state=started" >> "$ACTIVITY_LOG"
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | pid=$pid | logfile=$(basename "$logfile") | state=started" >> "$ACTIVITY_LOG"
     # spawn waiter to log stop when it finishes
     (_wait_and_log "$name" "$pid") &
     return 0
@@ -230,11 +237,13 @@ start_fg() {
     flag="$2"
     cmd="$3"
     init_logging
+    # Create a timestamped logfile for this run
+    TIMESTAMP=$(date +"%H-%M-%S_%d-%m-%Y")
+    logfile="$PROCESS_LOG_DIR/${name}_${TIMESTAMP}.log"
     log_activity "$flag" "$name"
-    log_process_start "$name" "$cmd"
+    log_process_start "$name" "$cmd" "$logfile"
     # run the command and tee its output to both the console and the
     # per-process logfile so that runtime output is persisted.
-    logfile="$PROCESS_LOG_DIR/${name}.log"
     # Use a subshell with pipefail so the subshell exit code reflects
     # failures from the command (not just tee). The subshell's output
     # is piped to `tee -a` which appends to the log and also writes to
@@ -244,11 +253,11 @@ start_fg() {
         bash -lc "$cmd" 2>&1 | tee -a "$logfile"
     )
     code=$?
-    log_process_stop "$name" "$code"
+    log_process_stop "$name" "$code" "$logfile"
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     user=$(whoami 2>/dev/null || echo unknown)
     ip=$(get_instance_ip)
-    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | exit=$code" >> "$ACTIVITY_LOG"
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | exit=$code | logfile=$(basename "$logfile")" >> "$ACTIVITY_LOG"
     return $code
 }
 
@@ -278,7 +287,7 @@ on_exit() {
     for f in "$PID_DIR"/*.pid; do
         [ -e "$f" ] || continue
         name=$(basename "$f" .pid)
-        pid=$(cat "$f" 2>/dev/null || true)
+        pid=$(sed -n '1p' "$f" 2>/dev/null || true)
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
             echo "$ts | user=$user | ip=$ip | launcher-exit | process=$name | pid=$pid | state=running" >> "$ACTIVITY_LOG"
         fi
@@ -305,7 +314,8 @@ stop_all() {
     for f in "$PID_DIR"/*.pid; do
         [ -e "$f" ] || continue
         name=$(basename "$f" .pid)
-        pid=$(cat "$f" 2>/dev/null || true)
+        pid=$(sed -n '1p' "$f" 2>/dev/null || true)
+        plog=$(sed -n '2p' "$f" 2>/dev/null || true)
         if [ -z "$pid" ]; then
             echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | state=no-pid" >> "$ACTIVITY_LOG"
             rm -f "$f"
@@ -335,17 +345,17 @@ stop_all() {
             fi
         done
 
-        # Write STOP to process log
-        if [ ! -z "$name" ]; then
+        # Determine which logfile to mark stopped (if stored in pid file)
+        if [ -z "$plog" ]; then
             plog="$PROCESS_LOG_DIR/${name}.log"
-            ts2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            if kill -0 "$pid" 2>/dev/null; then
-                echo "==== STOP ${name} ${ts2} exit=KILLED ====" >> "$plog"
-                echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=KILLED" >> "$ACTIVITY_LOG"
-            else
-                echo "==== STOP ${name} ${ts2} exit=STOPPED ====" >> "$plog"
-                echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=STOPPED" >> "$ACTIVITY_LOG"
-            fi
+        fi
+        ts2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        if kill -0 "$pid" 2>/dev/null; then
+            echo "==== STOP ${name} ${ts2} exit=KILLED ====" >> "$plog"
+            echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=KILLED" >> "$ACTIVITY_LOG"
+        else
+            echo "==== STOP ${name} ${ts2} exit=STOPPED ====" >> "$plog"
+            echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=STOPPED" >> "$ACTIVITY_LOG"
         fi
 
         rm -f "$f"
