@@ -152,17 +152,22 @@ _wait_and_log() {
     if [ -z "$pid" ] || [ "$pid" -eq 0 ] 2>/dev/null; then
         return
     fi
-    if kill -0 "$pid" 2>/dev/null; then
-        wait "$pid"
-        code=$?
-        log_process_stop "$name" "$code"
-        # also append to global activity log
-        ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        user=$(whoami 2>/dev/null || echo unknown)
-        ip=$(get_instance_ip)
-        echo "$ts | user=$user | ip=$ip | flag=bg | process=$name | pid=$pid | exit=$code" >> "$ACTIVITY_LOG"
-        rm -f "$PID_DIR/${name}.pid"
-    fi
+    # Poll for process liveness since this function may not be the parent
+    # of the started process (wait would fail in that case). We detect
+    # process termination and then write a STOP record. Exact exit code
+    # is not available when not a parent; we record `UNKNOWN` in that case.
+    while kill -0 "$pid" 2>/dev/null; do
+        sleep 1
+    done
+    # Process exited; we cannot reliably obtain its exit code here.
+    code="UNKNOWN"
+    log_process_stop "$name" "$code"
+    # also append to global activity log
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=bg | process=$name | pid=$pid | exit=$code" >> "$ACTIVITY_LOG"
+    rm -f "$PID_DIR/${name}.pid"
 }
 
 #-------------------------------------------------------------
@@ -195,6 +200,12 @@ start_bg() {
     nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
     pid=$!
     echo "$pid" > "$PID_DIR/${name}.pid"
+    # record the pid in the global activity log immediately so operators
+    # can correlate running PIDs with logical names
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | pid=$pid | state=started" >> "$ACTIVITY_LOG"
     # spawn waiter to log stop when it finishes
     (_wait_and_log "$name" "$pid") &
     return 0
@@ -277,6 +288,71 @@ on_exit() {
 }
 
 trap on_exit EXIT
+
+#-------------------------------------------------------------
+# stop_all
+# Stop all processes that were started by this launcher (reads pid files)
+# Behavior:
+# - Iterates over `$PID_DIR/*.pid` files, reads the PID and logical name
+# - Attempts graceful shutdown: SIGTERM, wait up to 5 seconds, then SIGKILL
+# - Writes per-process STOP entry and a one-line activity record
+# - Removes pid file after process is no longer running
+#-------------------------------------------------------------
+stop_all() {
+    init_logging
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+
+    for f in "$PID_DIR"/*.pid; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .pid)
+        pid=$(cat "$f" 2>/dev/null || true)
+        if [ -z "$pid" ]; then
+            echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | state=no-pid" >> "$ACTIVITY_LOG"
+            rm -f "$f"
+            continue
+        fi
+
+        if ! kill -0 "$pid" 2>/dev/null; then
+            echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | state=not-running" >> "$ACTIVITY_LOG"
+            rm -f "$f"
+            continue
+        fi
+
+        # Attempt graceful shutdown
+        echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=term" >> "$ACTIVITY_LOG"
+        kill "$pid" 2>/dev/null || true
+
+        # Wait up to 5 seconds for process to exit
+        waited=0
+        while kill -0 "$pid" 2>/dev/null; do
+            sleep 0.5
+            waited=$((waited + 1))
+            if [ $waited -ge 10 ]; then
+                # escalate to SIGKILL
+                echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=kill" >> "$ACTIVITY_LOG"
+                kill -9 "$pid" 2>/dev/null || true
+                break
+            fi
+        done
+
+        # Write STOP to process log
+        if [ ! -z "$name" ]; then
+            plog="$PROCESS_LOG_DIR/${name}.log"
+            ts2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            if kill -0 "$pid" 2>/dev/null; then
+                echo "==== STOP ${name} ${ts2} exit=KILLED ====" >> "$plog"
+                echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=KILLED" >> "$ACTIVITY_LOG"
+            else
+                echo "==== STOP ${name} ${ts2} exit=STOPPED ====" >> "$plog"
+                echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=STOPPED" >> "$ACTIVITY_LOG"
+            fi
+        fi
+
+        rm -f "$f"
+    done
+}
 
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
@@ -379,7 +455,7 @@ if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
     echo "DEBUG: invoked as: $0 $*" >&2
 fi
 
-while getopts ":cawbxh" option; do
+while getopts ":cawbxsh" option; do
     case $option in
         c)
             echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
@@ -406,6 +482,11 @@ while getopts ":cawbxh" option; do
             ;;
         h)
             display_help
+            ;;
+        s)
+            echo -e "${GREEN}Stopping all services started by astart...${NC}"
+            stop_all
+            exit 0
             ;;
         \?)
             # Unknown option (getopts sets OPTARG to the option character)
