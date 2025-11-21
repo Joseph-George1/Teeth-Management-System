@@ -223,8 +223,17 @@ start_fg() {
     init_logging
     log_activity "$flag" "$name"
     log_process_start "$name" "$cmd"
-    # run in a subshell so we can capture exit code and still continue
-    bash -lc "$cmd"
+    # run the command and tee its output to both the console and the
+    # per-process logfile so that runtime output is persisted.
+    logfile="$PROCESS_LOG_DIR/${name}.log"
+    # Use a subshell with pipefail so the subshell exit code reflects
+    # failures from the command (not just tee). The subshell's output
+    # is piped to `tee -a` which appends to the log and also writes to
+    # the user's terminal.
+    (
+        set -o pipefail
+        bash -lc "$cmd" 2>&1 | tee -a "$logfile"
+    )
     code=$?
     log_process_stop "$name" "$code"
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -282,6 +291,7 @@ backend_path="$HOME/Teeth-Management-System/Backend"
 AI_chatbot_with_web(){
     # Run Streamlit web UI in foreground with logging
     cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && streamlit run app.py"
+    # keep Streamlit in foreground so the developer can see live UI logs
     start_fg "ai_chatbot_web" "-c" "$cmd"
 }
 
@@ -291,8 +301,9 @@ AI_chatbot_with_web(){
 
 AI_chatbot_api_only(){
     # Run API in foreground with logging
+    # Run API in background; output goes to process log only
     cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
-    start_fg "ai_chatbot_api" "-a" "$cmd"
+    start_bg "ai_chatbot_api" "-a" "$cmd"
 }
 
 
@@ -311,9 +322,9 @@ start_web_ui() {
 #-------------------------------------------------------------
 
 BackEnd_start() {
-    # Run backend in foreground with logging
+    # Run backend in background; output goes to process log only
     cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
-    start_fg "backend" "-b" "$cmd"
+    start_bg "backend" "-b" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -321,9 +332,9 @@ BackEnd_start() {
 #-------------------------------------------------------------
 
 Loginreg_script() {
-    # Run login/registration script in foreground with logging
+    # Run login/registration script in background; output goes to process log only
     cmd="cd \"$backend_path\" && python3 loginapi.py"
-    start_fg "loginreg" "-x" "$cmd"
+    start_bg "loginreg" "-x" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -412,5 +423,4 @@ done
 
 if [ $OPTIND -eq 1 ]; then
     echo -e "${RED}No options were passed. Use -h for help.${NC}"
-fi
 fi
