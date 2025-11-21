@@ -8,6 +8,137 @@ RED="\033[1;31m"
 GREEN="\033[1;32m"
 NC="\033[0m"
 
+# Logging setup
+LOG_DIR="$HOME/Teeth-Management-System/logs"
+PROCESS_LOG_DIR="$LOG_DIR/process_logs"
+PID_DIR="$LOG_DIR/pids"
+ACTIVITY_LOG="$LOG_DIR/astart_activity.log"
+
+init_logging() {
+    mkdir -p "$PROCESS_LOG_DIR"
+    mkdir -p "$PID_DIR"
+    touch "$ACTIVITY_LOG"
+}
+
+get_instance_ip() {
+    ip=""
+    if command -v curl >/dev/null 2>&1; then
+        ip=$(curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
+        if [ -z "$ip" ]; then
+            ip=$(curl -s --connect-timeout 3 http://ifconfig.me 2>/dev/null || true)
+        fi
+    fi
+    if [ -z "$ip" ]; then
+        if command -v hostname >/dev/null 2>&1; then
+            ip=$(hostname -I 2>/dev/null | awk '{print $1}' 2>/dev/null || hostname 2>/dev/null || true)
+        fi
+    fi
+    echo "${ip:-unknown}"
+}
+
+log_activity() {
+    # params: flag, process_name
+    flag="$1"
+    pname="$2"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$pname" >> "$ACTIVITY_LOG"
+}
+
+log_process_start() {
+    # params: name, cmd
+    name="$1"
+    cmd="$2"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    plog="$PROCESS_LOG_DIR/${name}.log"
+    echo "==== START ${name} ${ts} user=${user} ====" >> "$plog"
+    echo "CMD: $cmd" >> "$plog"
+}
+
+log_process_stop() {
+    # params: name, exit_code
+    name="$1"
+    code="$2"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    plog="$PROCESS_LOG_DIR/${name}.log"
+    echo "==== STOP ${name} ${ts} exit=${code} ====" >> "$plog"
+}
+
+_wait_and_log() {
+    name="$1"
+    pid="$2"
+    if [ -z "$pid" ] || [ "$pid" -eq 0 ] 2>/dev/null; then
+        return
+    fi
+    if kill -0 "$pid" 2>/dev/null; then
+        wait "$pid"
+        code=$?
+        log_process_stop "$name" "$code"
+        # also append to global activity log
+        ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        user=$(whoami 2>/dev/null || echo unknown)
+        ip=$(get_instance_ip)
+        echo "$ts | user=$user | ip=$ip | flag=bg | process=$name | pid=$pid | exit=$code" >> "$ACTIVITY_LOG"
+        rm -f "$PID_DIR/${name}.pid"
+    fi
+}
+
+start_bg() {
+    # params: name, flag, cmd
+    name="$1"
+    flag="$2"
+    cmd="$3"
+    init_logging
+    log_activity "$flag" "$name"
+    log_process_start "$name" "$cmd"
+    logfile="$PROCESS_LOG_DIR/${name}.log"
+    nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
+    pid=$!
+    echo "$pid" > "$PID_DIR/${name}.pid"
+    # spawn waiter to log stop when it finishes
+    (_wait_and_log "$name" "$pid") &
+    return 0
+}
+
+start_fg() {
+    # params: name, flag, cmd
+    name="$1"
+    flag="$2"
+    cmd="$3"
+    init_logging
+    log_activity "$flag" "$name"
+    log_process_start "$name" "$cmd"
+    # run in a subshell so we can capture exit code and still continue
+    bash -lc "$cmd"
+    code=$?
+    log_process_stop "$name" "$code"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | exit=$code" >> "$ACTIVITY_LOG"
+    return $code
+}
+
+on_exit() {
+    # When launcher exits, note current PIDs still running
+    init_logging
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    for f in "$PID_DIR"/*.pid; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .pid)
+        pid=$(cat "$f" 2>/dev/null || true)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo "$ts | user=$user | ip=$ip | launcher-exit | process=$name | pid=$pid | state=running" >> "$ACTIVITY_LOG"
+        fi
+    done
+}
+
+trap on_exit EXIT
+
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 Source_path="venv/bin/activate"
@@ -19,12 +150,9 @@ backend_path="$HOME/Teeth-Management-System/Backend"
 #-------------------------------------------------------------
 
 AI_chatbot_with_web(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    streamlit run app.py
+    # Run Streamlit web UI in foreground with logging
+    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && streamlit run app.py"
+    start_fg "ai_chatbot_web" "-c" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -32,19 +160,17 @@ AI_chatbot_with_web(){
 #-------------------------------------------------------------
 
 AI_chatbot_api_only(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    python3 api.py
+    # Run API in foreground with logging
+    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    start_fg "ai_chatbot_api" "-a" "$cmd"
 }
 
 
 # Function to start the Frontend server
 start_web_ui() {
-    cd "$webui_path" || exit 1
-    npm run dev -- --host 0.0.0.0
+    # Run frontend (vite) in foreground with logging
+    cmd="cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
+    start_fg "web_ui" "-web" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -55,8 +181,9 @@ start_web_ui() {
 #-------------------------------------------------------------
 
 BackEnd_start() {
-    cd "$backend_path" || exit 1
-     mvn clean spring-boot:run -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha"
+    # Run backend in foreground with logging
+    cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
+    start_fg "backend" "-b" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -64,18 +191,22 @@ BackEnd_start() {
 #-------------------------------------------------------------
 
 Loginreg_script() {
-    cd "$backend_path" || exit 1
-    python3 loginapi.py 
+    # Run login/registration script in foreground with logging
+    cmd="cd \"$backend_path\" && python3 loginapi.py"
+    start_fg "loginreg" "-x" "$cmd"
 }
 
 #-------------------------------------------------------------
 #Function to run the whole system (temporary parts)
 #-------------------------------------------------------------
 Run_whole_system() {
-    BackEnd_start &
-    Loginreg_script &
-    AI_chatbot_api_only &
-    start_web_ui 
+    # Start backend, login script, and API in background and the web UI in foreground
+    start_bg "backend" "-b" "cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
+    start_bg "loginreg" "-x" "cd \"$backend_path\" && python3 loginapi.py"
+    start_bg "ai_api" "-a" "cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    # Start web UI in foreground so user sees its output
+    start_fg "web_ui" "-w" "cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
+    # wait for any background waiters (they log stops independently)
     wait
 }
 
