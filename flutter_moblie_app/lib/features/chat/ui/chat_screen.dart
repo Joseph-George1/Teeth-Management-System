@@ -9,6 +9,7 @@ import '../../../core/theming/styles.dart';
 import '../../../core/networking/dio_factory.dart';
 import '../../../core/helpers/shared_pref_helper.dart';
 import '../../../core/helpers/constants.dart';
+import '../../main_layout/ui/main_layout_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -133,6 +134,19 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () {
+            // Navigate to main layout with categories tab (index 0) selected
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainLayoutScreen(initialIndex: 0),
+              ),
+            );
+          },
+        ),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
