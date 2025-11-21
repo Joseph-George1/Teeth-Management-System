@@ -282,7 +282,7 @@ trap on_exit EXIT
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 Source_path="venv/bin/activate"
 webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
-backend_path="$HOME/Teeth-Management-System/Backend"
+backend_path="$HOME/Teeth-Management-System/BackEnd"
 
 #-------------------------------------------------------------
 # Function to start the chatbot with streamlit web interface
