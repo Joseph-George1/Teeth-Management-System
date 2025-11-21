@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# astart - launcher for Ai-chatbot
-# Usage: astart -c   # run Streamlit web UI
-#        astart -a   # run API only
+
 
 # Colors
 RED="\033[1;31m"
@@ -106,12 +104,12 @@ log_activity() {
 # - $2: cmd  (string) command executed
 #-------------------------------------------------------------
 log_process_start() {
-    # params: name, cmd
+    # params: name, cmd, [logfile]
     name="$1"
     cmd="$2"
+    plog="${3:-$PROCESS_LOG_DIR/${name}.log}"
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     user=$(whoami 2>/dev/null || echo unknown)
-    plog="$PROCESS_LOG_DIR/${name}.log"
     echo "==== START ${name} ${ts} user=${user} ====" >> "$plog"
     echo "CMD: $cmd" >> "$plog"
 }
@@ -126,11 +124,11 @@ log_process_start() {
 # - $2: exit_code (integer)
 #-------------------------------------------------------------
 log_process_stop() {
-    # params: name, exit_code
+    # params: name, exit_code, [logfile]
     name="$1"
     code="$2"
+    plog="${3:-$PROCESS_LOG_DIR/${name}.log}"
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    plog="$PROCESS_LOG_DIR/${name}.log"
     echo "==== STOP ${name} ${ts} exit=${code} ====" >> "$plog"
 }
 
