@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/theming/styles.dart';
@@ -19,14 +20,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   
   // Sample categories data
   final List<Map<String, dynamic>> categories = [
-    {'name': 'تقويم الأسنان'},
-    {'name': 'حشو الأسنان'},
-    {'name': 'تبييض الأسنان'},
-    {'name': 'زراعة الأسنان'},
-    {'name': 'علاج الجذور'},
-    {'name': 'تركيبات الأسنان'},
-    {'name': 'جراحة الفم'},
-    {'name': 'أمراض اللثة'},
+    {'name': 'تقويم الأسنان', 'iconPath': 'assets/svg/تقويم اسنان.svg'},
+    {'name': 'حشو الأسنان', 'iconPath': 'assets/svg/حشو اسنان.svg'},
+    {'name': 'تبييض الأسنان', 'iconPath': 'assets/svg/تبيض اسنان.svg'},
+    {'name': 'زراعة الأسنان', 'iconPath': 'assets/svg/زراعه اسنان.svg'},
+    {'name': 'خلع الاسنان', 'iconPath': 'assets/svg/خلع اسنان.svg'},
+    {'name': 'تركيبات الأسنان', 'iconPath': 'assets/svg/تركيبات اسنان.svg'},
+    {'name': 'فحص شامل', 'iconPath': 'assets/svg/فحص شامل.svg'},
+   // {'name': 'أمراض اللثة'},
   ];
 
   @override
@@ -207,9 +208,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 itemBuilder: (context, index) {
                   return CategoryCard(
                     name: _filteredCategories[index]['name'],
+                    iconPath: _filteredCategories[index]['iconPath'],
                     color: const Color(0xFF7BC1B7), // #7BC1B7 color
-                    searchQuery: _searchController.text.isNotEmpty 
-                        ? _searchController.text 
+                    searchQuery: _searchController.text.isNotEmpty
+                        ? _searchController.text
                         : null,
                   );
                 },
@@ -270,12 +272,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 class CategoryCard extends StatelessWidget {
   static const Color _textColor = Colors.white;
   final String name;
+  final String? iconPath;
   final Color color;
   final String? searchQuery;
 
   const CategoryCard({
     Key? key,
     required this.name,
+    this.iconPath,
     required this.color,
     this.searchQuery,
   }) : super(key: key);
@@ -286,7 +290,7 @@ class CategoryCard extends StatelessWidget {
       onTap: () {
         Navigator.pushNamed(
           context,
-          Routes.chatScreen,
+          Routes.doctorsScreen,
           arguments: {'category': name},
         );
       },
@@ -296,30 +300,88 @@ class CategoryCard extends StatelessWidget {
           color: color,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Center(
-          child: searchQuery != null && searchQuery!.isNotEmpty
-              ? RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    children: TextUtils.buildHighlightedText(name, searchQuery!),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                )
-              : Text(
-                  name,
-                  textAlign: TextAlign.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (iconPath != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: SvgPicture.asset(
+                  iconPath!,
+                  width: 200,
+                  height: 80,
+                ),
+              ),
+            if (searchQuery != null && searchQuery!.isNotEmpty)
+              RichText(
+                text: TextSpan(
+                  children: _buildHighlightedText(name, searchQuery!),
                   style: const TextStyle(
-                    fontSize: 20,
+                    color: _textColor,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
                   ),
                 ),
+                textAlign: TextAlign.center,
+              )
+            else
+              Text(
+                name,
+                style: const TextStyle(
+                  color: _textColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+          ],
         ),
       ),
     );
   }
+}
+
+List<TextSpan> _buildHighlightedText(String text, String query) {
+  if (query.isEmpty) {
+    return [TextSpan(text: text)];
+  }
+
+  final matches = <TextSpan>[];
+  var start = 0;
+  final textLower = text.toLowerCase();
+  final queryLower = query.toLowerCase();
+
+  while (true) {
+    final matchIndex = textLower.indexOf(queryLower, start);
+    if (matchIndex == -1) {
+      if (start < text.length) {
+        matches.add(TextSpan(
+          text: text.substring(start),
+          style: const TextStyle(color: Colors.black87),
+        ));
+      }
+      break;
+    }
+
+    if (matchIndex > start) {
+      matches.add(TextSpan(
+        text: text.substring(start, matchIndex),
+        style: const TextStyle(color: Colors.black87),
+      ));
+    }
+
+    matches.add(
+      TextSpan(
+        text: text.substring(matchIndex, matchIndex + query.length),
+        style: const TextStyle(
+          color: Color(0xFF0B8FAC),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    start = matchIndex + query.length;
+  }
+
+  return matches;
 }

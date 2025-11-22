@@ -10,6 +10,7 @@ import '../../features/chat/ui/chat_screen.dart';
 import '../../features/forgot_password/ui/forgot_password_screen.dart';
 import '../../features/reset_password/ui/reset_password_screen.dart';
 import '../../features/categories/ui/categories_screen.dart';
+import '../../features/doctors/ui/doctors_screen.dart';
 import '../../features/main_layout/ui/main_layout_screen.dart';
 
 class AppRouter {
@@ -57,6 +58,10 @@ class AppRouter {
       case Routes.chatScreen:
         return MaterialPageRoute(
           builder: (context) => const MainLayoutScreen(initialIndex: 1),
+        );
+      case Routes.doctorsScreen:
+        return MaterialPageRoute(
+          builder: (context) => const DoctorsScreen(),
         );
 
       default:
