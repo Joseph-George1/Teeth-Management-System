@@ -55,19 +55,12 @@ init_logging() {
 # Side effects: performs network calls when `curl` is present.
 #-------------------------------------------------------------
 get_instance_ip() {
-    ip=""
-    if command -v curl >/dev/null 2>&1; then
-        ip=$(curl -s --connect-timeout 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
-        if [ -z "$ip" ]; then
-            ip=$(curl -s --connect-timeout 3 http://ifconfig.me 2>/dev/null || true)
-        fi
-    fi
+    # Prefer the SSH client IP when the launcher is invoked over SSH
+    ip=$(echo "$SSH_CLIENT" | awk '{print $1}' 2>/dev/null || true)
     if [ -z "$ip" ]; then
-        if command -v hostname >/dev/null 2>&1; then
-            ip=$(hostname -I 2>/dev/null | awk '{print $1}' 2>/dev/null || hostname 2>/dev/null || true)
-        fi
+        ip="unknown"
     fi
-    echo "${ip:-unknown}"
+    echo "$ip"
 }
 
 #-------------------------------------------------------------
