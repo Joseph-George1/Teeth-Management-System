@@ -440,6 +440,7 @@ display_help() {
     echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
     echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
     echo -e "  ${RED}-x${NC}    ${GREEN}Start Login/Registration script only${NC}"
+    echo -e "  ${RED}-s${NC}    ${GREEN}Stop all services started by astart${NC}"
     echo -e "  ${RED}-h${NC}    ${GREEN}Display this help message${NC}"
     exit 0
 }
