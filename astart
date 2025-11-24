@@ -435,7 +435,7 @@ Run_whole_system() {
 display_help() {
     echo "Usage: $0 [options]"
     echo "Options:"
-    echo -e "  ${RED}-c${NC}    ${GREEN}Start AI Chatbot with Web Interface${NC}"
+    echo -e "  ${RED}-c${NC}    ${GREEN}Start Web Interface${NC}"
     echo -e "  ${RED}-a${NC}    ${GREEN}Start AI Chatbot API Only${NC}"
     echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
     echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
@@ -460,8 +460,8 @@ fi
 while getopts ":cawbxsh" option; do
     case $option in
         c)
-            echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
-            AI_chatbot_with_web
+            echo -e "${GREEN}StartingWeb Interface...${NC}"
+            start_web_ui
             ;;
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
