@@ -117,8 +117,8 @@
 @media (max-width: 480px) {
     .signup-page{ padding: 24px 12px; }
     .signup-container{ width: 100%; padding: 16px; }
-    .signup-title{ font-size: 22px; }
-    .signup-subtitle{ font-size: 13px; }
+    .signup-title{ font-size: 22px; text-align: center; }
+    .signup-subtitle{ font-size: 13px; text-align: center; }
     .input-field-2{ font-size: 14px; height: 44px; }
     .signup-button{ height: 44px; font-size: 15px; }
     .login-link{ font-size: 13px; gap: 6px; justify-content: center; }
