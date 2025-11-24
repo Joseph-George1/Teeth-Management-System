@@ -2,7 +2,7 @@ import {useRef, useState} from "react";
 import ChatBotIcon from "../Components/ChatBotIcon";
 import '../Css/ChatBot.css';
 
-export default function ChatBot({ setIsAuthenticated }) {
+export default function ChatBot() {
   const inputRef = useRef();
   const [chatHistory, setChatHistory] = useState([]);
   const [sessionId, setSessionId] = useState(null);
