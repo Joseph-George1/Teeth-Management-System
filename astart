@@ -1,43 +1,463 @@
 #!/usr/bin/env bash
-# astart - launcher for Ai-chatbot
-# Usage: astart -c   # run Streamlit web UI
-#        astart -a   # run API only
+
 
 # Colors
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 NC="\033[0m"
 
+#-------------------------------------------------------------
+# Logging subsystem
+# Purpose: centralized, human-readable logging for the launcher.
+# - Creates a global activity log (`astart_activity.log`) with one-line
+#   records for each start/stop and launcher events (timestamp, user, ip,
+#   flag, process, exit code when applicable).
+# - Maintains per-process log files under `process_logs/` which contain
+#   a START block, the full stdout/stderr output (redirected), and a
+#   STOP block with the exit code and timestamp.
+# - Stores PID files for backgrounded processes under `pids/` so the
+#   launcher (or other tooling) can locate and stop/reread PIDs.
+#
+# Notes:
+# - Designed for interactive developer use on a Unix-like host (bash).
+# - Uses AWS metadata service to attempt to record instance public IP
+#   when available; falls back to public IP services or hostname.
+#-------------------------------------------------------------
+LOG_DIR="$HOME/Teeth-Management-System/logs"
+PROCESS_LOG_DIR="$LOG_DIR/process_logs"
+PID_DIR="$LOG_DIR/pids"
+ACTIVITY_LOG="$LOG_DIR/astart_activity.log"
+
+#-------------------------------------------------------------
+# init_logging
+# Ensures log directories and the global activity log file exist.
+# Side effects:
+# - Creates directories: `process_logs/` and `pids/` (mode inherits umask).
+# - Creates an empty activity logfile at `astart_activity.log` if missing.
+# This is safe to call multiple times.
+#-------------------------------------------------------------
+init_logging() {
+    mkdir -p "$PROCESS_LOG_DIR"
+    mkdir -p "$PID_DIR"
+    touch "$ACTIVITY_LOG"
+}
+
+#-------------------------------------------------------------
+# get_instance_ip
+# Attempts to determine the server's public IP for auditing purposes.
+# Strategy (in order):
+# 1) Query AWS metadata (http://169.254.169.254/latest/meta-data/public-ipv4).
+#    - Note: IMDSv2 may require session token; this simple call uses IMDSv1.
+#    - We use a short timeout to avoid blocking startup if metadata is not reachable.
+# 2) Fallback to a public IP lookup service (`ifconfig.me`).
+# 3) Fallback to local hostname inspection (`hostname -I` or `hostname`).
+# Returns: IP string or `unknown` if detection fails.
+# Side effects: performs network calls when `curl` is present.
+#-------------------------------------------------------------
+get_instance_ip() {
+    # Prefer the SSH client IP when the launcher is invoked over SSH
+    ip=$(echo "$SSH_CLIENT" | awk '{print $1}' 2>/dev/null || true)
+    if [ -z "$ip" ]; then
+        ip="unknown"
+    fi
+    echo "$ip"
+}
+
+#-------------------------------------------------------------
+# log_activity
+# Append a single-line, machine-friendly activity record to the global
+# activity log. This log is intended for quick scans and aggregated
+# auditing (timestamp, user, ip, flag, process).
+# Parameters:
+# - $1: flag (string) — the CLI flag or reason (e.g. -a, -b, -w, bg, launcher-exit)
+# - $2: process name (string) — logical name used for process logs and pid files
+# Example record:
+# 2025-11-21T12:34:56Z | user=ubuntu | ip=3.120.45.67 | flag=-b | process=backend
+#-------------------------------------------------------------
+log_activity() {
+    # params: flag, process_name
+    flag="$1"
+    pname="$2"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$pname" >> "$ACTIVITY_LOG"
+}
+
+#-------------------------------------------------------------
+# log_process_start
+# Writes a START block to the per-process logfile and records the
+# invoked command for later debugging. Per-process logs contain:
+# - A START header with timestamp and user
+# - A `CMD:` line showing the exact shell command executed
+# - The stdout/stderr captured (redirected by start_bg)
+# The per-process logfile path is: `$PROCESS_LOG_DIR/<name>.log`.
+# Parameters:
+# - $1: name (string)
+# - $2: cmd  (string) command executed
+#-------------------------------------------------------------
+log_process_start() {
+    # params: name, cmd, [logfile]
+    name="$1"
+    cmd="$2"
+    plog="${3:-$PROCESS_LOG_DIR/${name}.log}"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    echo "==== START ${name} ${ts} user=${user} ====" >> "$plog"
+    echo "CMD: $cmd" >> "$plog"
+}
+
+#-------------------------------------------------------------
+# log_process_stop
+# Appends a STOP header with timestamp and exit code to the process log.
+# This complements the START header and signals that the process has
+# terminated (normally or abnormally).
+# Parameters:
+# - $1: name (string)
+# - $2: exit_code (integer)
+#-------------------------------------------------------------
+log_process_stop() {
+    # params: name, exit_code, [logfile]
+    name="$1"
+    code="$2"
+    plog="${3:-$PROCESS_LOG_DIR/${name}.log}"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    echo "==== STOP ${name} ${ts} exit=${code} ====" >> "$plog"
+}
+
+#-------------------------------------------------------------
+# _wait_and_log
+# Internal helper used for background-started processes.
+# - Waits for PID to exit, captures its exit code, writes a STOP
+#   block to the process log, appends a one-line activity record,
+#   and removes the pid file.
+# - This function is launched in background for each start_bg PID so
+#   it does not block the launcher.
+# Parameters:
+# - $1: name (string)
+# - $2: pid  (integer)
+#-------------------------------------------------------------
+_wait_and_log() {
+    name="$1"
+    pid="$2"
+    if [ -z "$pid" ] || [ "$pid" -eq 0 ] 2>/dev/null; then
+        return
+    fi
+    # Poll for process liveness since this function may not be the parent
+    # of the started process (wait would fail in that case). We detect
+    # process termination and then write a STOP record. Exact exit code
+    # is not available when not a parent; we record `UNKNOWN` in that case.
+    while kill -0 "$pid" 2>/dev/null; do
+        sleep 1
+    done
+    # Process exited; we cannot reliably obtain its exit code here.
+    code="UNKNOWN"
+    # Determine the logfile recorded in the pid file (if present)
+    plog=$(sed -n '2p' "$PID_DIR/${name}.pid" 2>/dev/null || true)
+    if [ -z "$plog" ]; then
+        plog="$PROCESS_LOG_DIR/${name}.log"
+    fi
+    log_process_stop "$name" "$code" "$plog"
+    # also append to global activity log
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=bg | process=$name | pid=$pid | exit=$code" >> "$ACTIVITY_LOG"
+    rm -f "$PID_DIR/${name}.pid"
+}
+
+#-------------------------------------------------------------
+# start_bg
+# Start a command in background while wiring logging and pid tracking.
+# Behavior:
+# - Initializes logging directories/files.
+# - Writes a one-line activity entry and a START block in process log.
+# - Uses `nohup` + `bash -lc` to background the command and redirect
+#   stdout/stderr into the process log file.
+# - Stores the background PID into `$PID_DIR/<name>.pid`.
+# - Launches `_wait_and_log` in the background to monitor and record
+#   the process termination (STOP block + activity entry) and clean up
+#   the pid file.
+# Parameters:
+# - $1: name (string)
+# - $2: flag (string)
+# - $3: cmd  (string) the shell command to run
+# Returns: 0 on successful start (note: the process itself may fail later).
+#-------------------------------------------------------------
+start_bg() {
+    # params: name, flag, cmd
+    name="$1"
+    flag="$2"
+    cmd="$3"
+    init_logging
+    # Create a timestamped logfile for this run
+    TIMESTAMP=$(date +"%H-%M-%S_%d-%m-%Y")
+    logfile="$PROCESS_LOG_DIR/${name}_${TIMESTAMP}.log"
+    log_activity "$flag" "$name"
+    log_process_start "$name" "$cmd" "$logfile"
+    nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
+    pid=$!
+    # Store both pid and logfile path so stop/wait routines can find the file
+    printf "%s\n%s\n" "$pid" "$logfile" > "$PID_DIR/${name}.pid"
+    # record the pid immediately in the global activity log
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | pid=$pid | logfile=$(basename "$logfile") | state=started" >> "$ACTIVITY_LOG"
+    # spawn waiter to log stop when it finishes
+    (_wait_and_log "$name" "$pid") &
+    return 0
+}
+
+#-------------------------------------------------------------
+# start_fg
+# Run a command in the foreground while recording start/stop entries.
+# Behavior:
+# - Writes a START block to the per-process log and a one-line activity
+#   record indicating the start.
+# - Executes the command in the foreground so the user sees live output.
+# - When the command exits, writes a STOP block and appends a one-line
+#   activity entry with the exit code.
+# Parameters:
+# - $1: name (string)
+# - $2: flag (string)
+# - $3: cmd  (string) the shell command to run
+# Returns: the exit code from the executed command.
+#-------------------------------------------------------------
+start_fg() {
+    # params: name, flag, cmd
+    name="$1"
+    flag="$2"
+    cmd="$3"
+    init_logging
+    # Create a timestamped logfile for this run
+    TIMESTAMP=$(date +"%H-%M-%S_%d-%m-%Y")
+    logfile="$PROCESS_LOG_DIR/${name}_${TIMESTAMP}.log"
+    log_activity "$flag" "$name"
+    log_process_start "$name" "$cmd" "$logfile"
+    # run the command and tee its output to both the console and the
+    # per-process logfile so that runtime output is persisted.
+    # Use a subshell with pipefail so the subshell exit code reflects
+    # failures from the command (not just tee). The subshell's output
+    # is piped to `tee -a` which appends to the log and also writes to
+    # the user's terminal.
+    (
+        set -o pipefail
+        bash -lc "$cmd" 2>&1 | tee -a "$logfile"
+    )
+    code=$?
+    log_process_stop "$name" "$code" "$logfile"
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | exit=$code | logfile=$(basename "$logfile")" >> "$ACTIVITY_LOG"
+    return $code
+}
+
+#---------------------------------------------
+# On exit handler to log running processes
+#  
+#---------------------------------------------
+
+#-------------------------------------------------------------
+# on_exit
+# Trap handler executed when the launcher process exits.
+# Purpose:
+# - Inspect stored pid files and record in the global activity log which
+#   of those PIDs were still running at launcher exit. This is useful
+#   for post-mortem or automated monitoring to know which services
+#   remained active after the launcher terminated.
+# Notes:
+# - Does not attempt to kill processes; it only records state.
+# - Safe to run multiple times; uses `kill -0` to test liveness.
+#-------------------------------------------------------------
+on_exit() {
+    # When launcher exits, note current PIDs still running
+    init_logging
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    for f in "$PID_DIR"/*.pid; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .pid)
+        pid=$(sed -n '1p' "$f" 2>/dev/null || true)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo "$ts | user=$user | ip=$ip | launcher-exit | process=$name | pid=$pid | state=running" >> "$ACTIVITY_LOG"
+        fi
+    done
+}
+
+trap on_exit EXIT
+
+#-------------------------------------------------------------
+# stop_all
+# Stop all processes that were started by this launcher (reads pid files)
+# Behavior:
+# - Iterates over `$PID_DIR/*.pid` files, reads the PID and logical name
+# - Attempts graceful shutdown: SIGTERM, wait up to 5 seconds, then SIGKILL
+# - Writes per-process STOP entry and a one-line activity record
+# - Removes pid file after process is no longer running
+#-------------------------------------------------------------
+stop_all() {
+    init_logging
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+
+    for f in "$PID_DIR"/*.pid; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .pid)
+        pid=$(sed -n '1p' "$f" 2>/dev/null || true)
+        plog=$(sed -n '2p' "$f" 2>/dev/null || true)
+        if [ -z "$pid" ]; then
+            echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | state=no-pid" >> "$ACTIVITY_LOG"
+            rm -f "$f"
+            continue
+        fi
+
+        if ! kill -0 "$pid" 2>/dev/null; then
+            echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | state=not-running" >> "$ACTIVITY_LOG"
+            rm -f "$f"
+            continue
+        fi
+
+        # Attempt graceful shutdown
+        echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=term" >> "$ACTIVITY_LOG"
+        kill "$pid" 2>/dev/null || true
+
+        # Wait up to 5 seconds for process to exit
+        waited=0
+        while kill -0 "$pid" 2>/dev/null; do
+            sleep 0.5
+            waited=$((waited + 1))
+            if [ $waited -ge 10 ]; then
+                # escalate to SIGKILL
+                echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=kill" >> "$ACTIVITY_LOG"
+                kill -9 "$pid" 2>/dev/null || true
+                break
+            fi
+        done
+
+        # Determine which logfile to mark stopped (if stored in pid file)
+        if [ -z "$plog" ]; then
+            plog="$PROCESS_LOG_DIR/${name}.log"
+        fi
+        ts2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        if kill -0 "$pid" 2>/dev/null; then
+            echo "==== STOP ${name} ${ts2} exit=KILLED ====" >> "$plog"
+            echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=KILLED" >> "$ACTIVITY_LOG"
+        else
+            echo "==== STOP ${name} ${ts2} exit=STOPPED ====" >> "$plog"
+            echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=STOPPED" >> "$ACTIVITY_LOG"
+        fi
+
+        rm -f "$f"
+    done
+}
+
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 Source_path="venv/bin/activate"
-webui_path=""
+webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
+backend_path="$HOME/Teeth-Management-System/BackEnd"
+
+#-------------------------------------------------------------
+# Function to start the chatbot with streamlit web interface
+#-------------------------------------------------------------
+
 AI_chatbot_with_web(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    streamlit run app.py
+    # Run Streamlit web UI in foreground with logging
+    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && streamlit run app.py"
+    # keep Streamlit in foreground so the developer can see live UI logs
+    start_fg "ai_chatbot_web" "-c" "$cmd"
 }
 
+#-------------------------------------------------------------
 # To run only the API without the web interface
+#-------------------------------------------------------------
+
 AI_chatbot_api_only(){
-    cd "$core_path" || exit 1
-    if [[ -f "$Source_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$Source_path"
-    fi
-    python3 api.py
+    # Run API in foreground with logging
+    # Run API in background; output goes to process log only
+    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    start_bg "ai_chatbot_api" "-a" "$cmd"
 }
 
+
+# Function to start the Frontend server
 start_web_ui() {
-    cd 
+    # Run frontend (vite) in foreground with logging
+    cmd="cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
+    start_fg "web_ui" "-web" "$cmd"
+}
+
+#-------------------------------------------------------------
+# Function to start the Backend server
+#Note: This function assumes that Maven is installed and configured properly.
+# Also, it assumes that the database connection details are correct.
+#if there are any issues with the database connection, the backend may fail to start.
+#-------------------------------------------------------------
+
+BackEnd_start() {
+    # Run backend in background; output goes to process log only
+    cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
+    start_bg "backend" "-b" "$cmd"
+}
+
+#-------------------------------------------------------------
+#Function to run the login/registration script (temporary)
+#-------------------------------------------------------------
+
+Loginreg_script() {
+    # Run login/registration script in background; output goes to process log only
+    cmd="cd \"$backend_path\" && python3 loginapi.py"
+    start_bg "loginreg" "-x" "$cmd"
+}
+
+#-------------------------------------------------------------
+#Function to run the whole system (temporary parts)
+#-------------------------------------------------------------
+Run_whole_system() {
+    # Start backend, login script, and API in background and the web UI in foreground
+    start_bg "backend" "-b" "cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
+    start_bg "loginreg" "-x" "cd \"$backend_path\" && python3 loginapi.py"
+    start_bg "ai_api" "-a" "cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    # Start web UI in foreground so user sees its output
+    start_fg "web_ui" "-w" "cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
+    # wait for any background waiters (they log stops independently)
+    wait
 }
 
 
+#-------------------------------------------------------------
+# Function to display help message
+#-------------------------------------------------------------
+display_help() {
+    echo "Usage: $0 [options]"
+    echo "Options:"
+    echo -e "  ${RED}-c${NC}    ${GREEN}Start AI Chatbot with Web Interface${NC}"
+    echo -e "  ${RED}-a${NC}    ${GREEN}Start AI Chatbot API Only${NC}"
+    echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
+    echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
+    echo -e "  ${RED}-x${NC}    ${GREEN}Start Login/Registration script only${NC}"
+    echo -e "  ${RED}-s${NC}    ${GREEN}Stop all services started by astart${NC}"
+    echo -e "  ${RED}-h${NC}    ${GREEN}Display this help message${NC}"
+    exit 0
+}
 
-while getopts ":ca" option; do
+
+#-------------------------------------------------------------
+# Main script logic to parse command-line arguments
+#-------------------------------------------------------------
+
+# Parse command-line options robustly.
+# - If ASTART_DEBUG=1, print debug info about received arguments.
+DEBUG=${ASTART_DEBUG:-0}
+if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
+    echo "DEBUG: invoked as: $0 $*" >&2
+fi
+
+while getopts ":cawbxsh" option; do
     case $option in
         c)
             echo -e "${GREEN}Starting AI Chatbot with Web Interface...${NC}"
@@ -46,6 +466,40 @@ while getopts ":ca" option; do
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
             AI_chatbot_api_only
+            exit 0
+            ;;
+        w)
+            echo -e "${GREEN}Starting the whole system...${NC}"
+            Run_whole_system
+            ;;
+        b)
+            echo -e "${GREEN}Starting Backend server only...${NC}"
+            BackEnd_start
+            exit 0
+            ;;
+        x)
+            echo -e "${GREEN}Starting Login/Registration script only...${NC}"
+            Loginreg_script
+            exit 0
+            ;;
+        h)
+            display_help
+            ;;
+        s)
+            echo -e "${GREEN}Stopping all services started by astart...${NC}"
+            stop_all
+            exit 0
+            ;;
+        \?)
+            # Unknown option (getopts sets OPTARG to the option character)
+            echo -e "${RED}Invalid option: -${OPTARG}. Please try again.${NC}"
+            if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
+                echo "DEBUG: raw args: $*" >&2
+            fi
+            ;;
+        :)
+            # Missing option argument (shouldn't occur with current flags)
+            echo -e "${RED}Missing argument for -${OPTARG}.${NC}"
             ;;
         *)
             echo -e "${RED}Invalid option. Please try again.${NC}"
@@ -54,5 +508,5 @@ while getopts ":ca" option; do
 done
 
 if [ $OPTIND -eq 1 ]; then
-    echo -e "${RED}No options were passed. Use -c for Chatbot with Web Interface or -a for API Only.${NC}"
+    echo -e "${RED}No options were passed. Use -h for help.${NC}"
 fi
