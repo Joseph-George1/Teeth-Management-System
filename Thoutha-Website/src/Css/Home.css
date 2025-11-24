@@ -1,8 +1,13 @@
 :root{
-    --color-1:#95F8C9;
-    --color-2:#53CAF9;
-    --color-4:#53caf92f;
-    --white:#ffff;
-    --color-3:#53caf928;
-    --hover-color:#46a5cb;
+    --color-1-background:#C4EDFC;
+    --color-2-background:#A2F9CF;
+    --color-3-background:#FFFFFF99;
+    --button-color-1:#1D61E7;
+    --button-color-2:#25B4E5;
+    --text-color-1:#FFFFFF;
+    --text-color-2:#4D81E7;
+    --text-color-3:#6C7278;
+    --text-color-4:#111827;
+    --text-color-5:#D2EBE7;
+    --border-radius-1:12px;
 }

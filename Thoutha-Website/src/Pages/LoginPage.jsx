@@ -56,11 +56,11 @@ export default function LoginPage() {
       <div className="login-container">
         {/* Logo */}
         <div className="logo-container">
-          <img src="/ثوثة.png" alt="ثوثة Logo" className="logo" style={{ width: '110px' }} />
+          <img src="/ثوثة.png" alt="ثوثة Logo" className="logo" />
         </div>
 
         {/* Title */}
-        <h1 className="login-title">تسجيل الدخول</h1>
+        <p className="login-title">تسجيل الدخول</p>
         <p className="login-subtitle">ادخل الرقم او الايميل</p>
 
         {/* Form */}
@@ -111,36 +111,31 @@ export default function LoginPage() {
 
           {/* Remember Me & Forgot Password */}
           <div className="form-options">
-            <label className="remember-me">
-              <input
-                type="checkbox"
-              />
-              <span>تذكرني</span>
-            </label>
             <p className="forgot-password">
               نسيت كلمة المرور؟
             </p>
+            <label className="remember-me">
+              <p>تذكرني</p>       
+              <input
+                type="checkbox"
+                className='remember-me-input'
+              />
+            </label>
           </div>
 
           {/* Login Button */}
           <button 
             type="submit" 
             className="login-button"
-            disabled={loading}
-            style={{
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
           >
-            {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+            تسجيل الدخول
           </button>
         </form>
         
         {/* Create Account Link */}
         <div className="create-account">
-          <Link to="/sign" className="create-account-link">
-            انشئ حساب ليس لديك حساب
-          </Link>
+          <Link to="/sign" className="create-account-link">انشئ حساب  </Link>
+          <span>ليس لديك حساب</span>
         </div>
       </div>
     </div>

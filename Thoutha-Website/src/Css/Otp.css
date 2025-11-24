@@ -9,15 +9,8 @@
     --text-color-3:#6C7278;
     --text-color-4:#111827;
     --text-color-5:#D2EBE7;
+    --text-color-6:#101828;
+    --border-color:#EDF1F3;
     --border-radius-1:12px;
-}
-*{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  font-family: 'Cairo', sans-serif;
-  direction: rtl;
-  text-align: right;
+    --button-raduis-1:10px;
 }

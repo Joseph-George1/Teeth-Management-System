@@ -1,61 +1,150 @@
-:root{
-    --color-1:#95F8C9;
-    --color-2:#53CAF9;
-    --color-4:#53caf92f;
-    --white:#ffff;
-    --color-3:#53caf928;
-    --hover-color:#46a5cb;
-}
-nav{
-    display: flex;
-    justify-content: space-between;
-    padding-inline: 28px;
-    padding-block: 6px;
-    border-radius: 32px;
-    margin: 12px 12px 0px 12px;
-    align-items: center;
-    background-color: var(--white);
-    box-shadow: 0 0 128px 0 rgba(0,0,0,0.2),
-    0 32px 64px -48px rgba(0,0,0,0.5);
-}
-.navbar{
-    display: flex;
-    align-items: center;
-    padding-inline: 16px;
-}
-.webName{
-    padding:  0px 10px 0px 70px;
-
-}
-ul{
-    list-style-type: none;
-    display: flex;
-    gap: 22px;
-}
-.category{
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-a{
-    text-decoration: none;
-    color: #000;
-}
-.buttonNav{
-    padding-inline: 16px;
-    padding-block: 8px;
-    border-radius: 32px;
-    background-color: var(--color-2);
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 150ms ease;
-    border-color: transparent;
-    font-family: 'Cairo', sans-serif;
+:root {
+  --color-1-background: #C4EDFC;
+  --color-2-background: #A2F9CF;
+  --color-3-background: #FFFFFF99;
+  --button-color-1: #1D61E7;
+  --button-color-2: #25B4E5;
+  --button-color-hover: #1a7e9f;
+  --text-color-1: #FFFFFF;
+  --text-color-2: #4D81E7;
+  --text-color-3: #6C7278;
+  --text-color-4: #111827;
+  --text-color-5: #D2EBE7;
+  --border-radius-1: 12px;
 }
 
-.buttonNav:hover{
-    background-color: var(--hover-color);
+/* ---------------- NAVBAR CONTAINER ---------------- */
+.navbar-container {
+  width: 100%;
+  background: var(--color-3-background);
+  box-shadow: 0 2px 8px #00000010;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 25px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
-a:hover{
-    text-decoration: underline;
+
+/* For login & signup pages where background is gradient */
+.gradient-bg .navbar-container {
+  background: #ffffffdd !important;
+}
+
+/* ---------------- LEFT SIDE (LOGO + NAME) ---------------- */
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.web-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--text-color-4);
+}
+
+/* ---------------- DESKTOP NAV LINKS ---------------- */
+.nav-links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 8px 15px;
+  border-radius: var(--border-radius-1);
+  color: var(--text-color-4);
+  transition: 0.3s ease;
+}
+
+/* Active oval background */
+.active-link {
+  background: var(--button-color-2);
+  color: var(--text-color-1) !important;
+  border-radius: 30px;
+  padding: 8px 18px;
+}
+
+/* Hover */
+.nav-links li a:hover {
+ background: var(--button-color-2);
+  color: var(--text-color-1) !important;
+}
+
+/* ---------------- LOGIN BUTTON ---------------- */
+.login-btn {
+  background: var(--button-color-2);
+  color: var(--text-color-1);
+  padding: 10px 18px;
+  border-radius: var(--border-radius-1);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+/* ---------------- MOBILE MENU ICON ---------------- */
+.menu-icon {
+  background: none;
+  border: none;
+  display: none;
+  cursor: pointer;
+}
+
+/* ---------------- MOBILE MENU ---------------- */
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  background: var(--color-3-background);
+  padding: 18px;
+  gap: 18px;
+  position: absolute;
+  width: 100%;
+  top: 70px;
+  left: 0;
+  z-index: 900;
+}
+
+.mobile-menu a {
+  text-decoration: none;
+  font-size: 1.1rem;
+  padding: 10px 10px;
+  border-radius: var(--border-radius-1);
+  color: var(--text-color-4);
+  transition: 0.3s ease;
+}
+
+.mobile-menu a:hover  {
+  background: var(--color-1-background);
+}
+
+.mobile-login-btn {
+  background: var(--button-color-2) !important;
+  color: var(--text-color-1) !important;
+  padding: 12px;
+  text-align: center;
+  border-radius: var(--border-radius-1);
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width: 850px) {
+  .nav-links,
+  .login-btn {
+    display: none;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
+  .mobile-menu a {
+    font-size: 0.95rem;
+    padding: 8px 14px;
+  }
 }

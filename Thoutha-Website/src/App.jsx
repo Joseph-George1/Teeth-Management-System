@@ -7,6 +7,8 @@ import RegisterForm from "./Pages/RegisterForm";
 import ChatBot from "./Pages/ChatBot";
 import Profile from "./Pages/Profile";
 import TermsConditions from "./Pages/TermsConditions";
+import Footer from "./Components/Footer";
+import Otp from "./Pages/Otp";
 
 export default function App() {
   return (
@@ -16,10 +18,12 @@ export default function App() {
       <Route path="/" element={<Home/>}/>
       <Route path="/login" element={<LoginPage/>}/>
       <Route path="/sign" element={<RegisterForm/>}/>
+      <Route path="/otp" element={<Otp/>}/>
       <Route path="/profile" element={<Profile/>}></Route>
       <Route path="chatbot" element={<ChatBot/>}/>
       <Route path="/terms&conditions" element={<TermsConditions/>}></Route>
     </Routes>
+    <Footer/>
     </>
   );
 }
