@@ -9,7 +9,7 @@ export default function ChatBot() {
 
  const generateBotResponse = async (userMessage) => {
   try {
-    const response = await fetch("http://16.16.218.118:5010/chat", {
+    const response = await fetch("https://thoutha.page/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 

@@ -21,7 +21,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch("http://13.49.221.187:5000/login", {
+      const response = await fetch("https://thoutha.page/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
