@@ -15,6 +15,12 @@ class SignUpCubit extends Cubit<SignUpState> {
     required String email,
     required String password,
     required String userType,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? college,
+    String? studyYear,
+    String? governorate,
   }) async {
     try {
       emit(SignUpLoading());
@@ -25,7 +31,7 @@ class SignUpCubit extends Cubit<SignUpState> {
         return;
       }
 
-     /* if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
+      /* if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
         emit(SignUpError('الرجاء إدخال بريد إلكتروني صالح'));
         return;
       }*/
@@ -42,8 +48,13 @@ class SignUpCubit extends Cubit<SignUpState> {
       final requestData = {
         'email': email.trim().toLowerCase(),
         'password': password,
-        //'user_type': userType == 'طبيب' ? 'doctor' : 'patient',
-       // 'name': email.trim().split('@')[0], // Use email prefix as name if not provided
+        'user_type': userType == 'طبيب' ? 'doctor' : 'patient',
+        if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+        if (college != null && college.isNotEmpty) 'college': college,
+        if (studyYear != null && studyYear.isNotEmpty) 'study_year': studyYear,
+        if (governorate != null && governorate.isNotEmpty) 'governorate': governorate,
       };
 
       print('Request data: $requestData');
@@ -74,8 +85,8 @@ class SignUpCubit extends Cubit<SignUpState> {
         if (response.data != null) {
           if (response.data is Map) {
             errorMessage = response.data['message'] ??
-                         response.data['error'] ??
-                         'حدث خطأ في التسجيل';
+                response.data['error'] ??
+                'حدث خطأ في التسجيل';
           } else if (response.data is String) {
             errorMessage = response.data;
           }
@@ -109,4 +120,4 @@ class SignUpCubit extends Cubit<SignUpState> {
     } catch (e) {
       emit(SignUpError('حدث خطأ غير متوقع'));
     }
-}}
+  }}
