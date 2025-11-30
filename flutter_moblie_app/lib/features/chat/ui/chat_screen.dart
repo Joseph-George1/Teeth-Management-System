@@ -83,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
               })
           .toList(growable: false);
       final response = await dio.post(
-        'http://13.51.250.240:5000/chat',
+        'https://thoutha.page/api/chat',
         data: {
           'message': text,
           'history': history,
