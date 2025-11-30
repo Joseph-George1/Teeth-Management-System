@@ -52,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onSkipPressed() {
-    // Navigate directly to categories screen and remove all previous routes from the stack
+    // Navigate directly to home_screen screen and remove all previous routes from the stack
     Navigator.pushNamedAndRemoveUntil(
       context,
       Routes.categoriesScreen,
