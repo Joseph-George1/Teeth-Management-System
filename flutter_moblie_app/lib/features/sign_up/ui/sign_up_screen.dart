@@ -111,7 +111,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 );
                 // Navigate to login after a short delay
-                Future.delayed(const Duration(seconds: 2), () {
+                Future.delayed(const Duration(seconds: 3), () {
                   Navigator.pushReplacementNamed(context, Routes.loginScreen);
                 });
               } else if (state is SignUpError) {
