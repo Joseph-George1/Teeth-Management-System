@@ -202,7 +202,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     textAlign: TextAlign.right,
                                   ),
                                   verticalSpace(10),
-                                  verticalSpace(16),
+                                  verticalSpace(15),
                                   // First Name Field
                                   TextFormField(
                                     controller: firstNameController,
