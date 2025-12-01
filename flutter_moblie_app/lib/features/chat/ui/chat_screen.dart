@@ -83,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
               })
           .toList(growable: false);
       final response = await dio.post(
-        'http://13.51.250.240:5000/chat',
+        'https://thoutha.page/api/chat',
         data: {
           'message': text,
           'history': history,
@@ -137,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
-            // Navigate to main layout with categories tab (index 0) selected
+            // Navigate to main layout with home_screen tab (index 0) selected
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
