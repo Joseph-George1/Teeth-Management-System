@@ -9,6 +9,7 @@ import Profile from "./Pages/Profile";
 import TermsConditions from "./Pages/TermsConditions";
 import Footer from "./Components/Footer";
 import Otp from "./Pages/Otp";
+import NotFoundPage from "./Pages/NotFoundPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
       <Route path="/profile" element={<Profile/>}></Route>
       <Route path="chatbot" element={<ChatBot/>}/>
       <Route path="/terms&conditions" element={<TermsConditions/>}></Route>
+      <Route path="404" element={<NotFoundPage/>}/>
     </Routes>
     <Footer/>
     </>
