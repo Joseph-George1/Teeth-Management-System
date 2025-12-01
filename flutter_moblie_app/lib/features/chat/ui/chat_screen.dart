@@ -248,7 +248,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                   clipBehavior: Clip.antiAlias,
                                   child: Image.asset(
-                                    'assets/images/chatbot.jpg',
+                                    'assets/images/chatbo t.jpg',
                                     fit: BoxFit.cover,
                                   ),
                                 ),
