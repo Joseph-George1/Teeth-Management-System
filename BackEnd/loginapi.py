@@ -45,7 +45,13 @@ def save_users(users: dict, path=USERS_FILE):
 
 def get_encoded_password(email: str):
     users = load_users()
-    return users.get(email)
+    entry = users.get(email)
+    # Support two storage formats:
+    # - legacy: email -> base64(password) (string)
+    # - new: email -> { "password": base64(password), ... } (dict)
+    if isinstance(entry, dict):
+        return entry.get('password')
+    return entry
 
 
 def create_demo_user(path=USERS_FILE):
@@ -54,7 +60,16 @@ def create_demo_user(path=USERS_FILE):
         demo_email = 'test@example.com'
         demo_password = 'password123'
         encoded = base64.b64encode(demo_password.encode('utf-8')).decode('ascii')
-        users[demo_email] = encoded
+        # Store demo user as a structured record (new format)
+        users[demo_email] = {
+            'password': encoded,
+            'first_name': 'Test',
+            'last_name': 'User',
+            'phone': '0000000000',
+            'faculty': 'dentistry',
+            'year': '1',
+            'governorate': 'cairo'
+        }
         save_users(users, path)
         print(f'Created demo user: {demo_email} / {demo_password}')
 
@@ -100,7 +115,15 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    """Register a new user (stores base64-encoded password in users.json).
+    """Register a new user.
+
+    Accepts JSON with the following fields:
+      - first_name, last_name, email, phone
+      - faculty, year, governorate
+      - password, confirm_password
+
+    Stores each user as a structured object in `users.json`:
+      { email: { 'password': base64(...), 'first_name': ..., ... } }
 
     Returns 201 on success, 400 on bad request, 409 if user exists.
     """
@@ -108,18 +131,39 @@ def register():
         return jsonify({'status': 'error', 'message': 'Bad request; content-type must be application/json'}), 400
 
     data = request.get_json()
+    # Accept common key names
+    first_name = data.get('first_name') or data.get('firstname') or data.get('firstName')
+    last_name = data.get('last_name') or data.get('lastname') or data.get('lastName')
     email = data.get('email')
+    phone = data.get('phone') or data.get('tel') or data.get('telephone')
+    faculty = data.get('faculty')
+    year = data.get('year')
+    governorate = data.get('governorate') or data.get('governorate_id')
     password = data.get('password')
+    confirm = data.get('confirm_password') or data.get('confirmPassword') or data.get('password_confirm')
 
-    if not email or not password:
-        return jsonify({'status': 'error', 'message': 'Bad request; email and password required'}), 400
+    # Basic presence checks
+    required = [first_name, last_name, email, phone, faculty, year, governorate, password, confirm]
+    if not all(required):
+        return jsonify({'status': 'error', 'message': 'Bad request; all registration fields required'}), 400
+
+    if password != confirm:
+        return jsonify({'status': 'error', 'message': 'Password and confirmation do not match'}), 400
 
     users = load_users()
     if email in users:
         return jsonify({'status': 'error', 'message': 'User already exists'}), 409
 
     encoded = base64.b64encode(password.encode('utf-8')).decode('ascii')
-    users[email] = encoded
+    users[email] = {
+        'password': encoded,
+        'first_name': first_name,
+        'last_name': last_name,
+        'phone': phone,
+        'faculty': faculty,
+        'year': str(year),
+        'governorate': governorate
+    }
     save_users(users)
     return jsonify({'status': 'success', 'message': 'User registered'}), 201
 
