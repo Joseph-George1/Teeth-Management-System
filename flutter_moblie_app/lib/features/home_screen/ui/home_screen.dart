@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _showDoctorDetails(context),
       child: Container(
-        width: 365.w,
+        width: double.infinity,
         height: 132.h,
         margin: EdgeInsets.only(
             top: 16.h, left: 15.98.w, right: 15.98.w, bottom: 15.98.h),
@@ -180,99 +180,108 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(width: 15.98.w),
             // Middle Section with Doctor Info
-            SizedBox(
-              width: 117.w,
-              height: 100.h,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Doctor Name and Title
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'د/ كريستيانو رونالدو',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          // Updated to 600 (SemiBold)
-                          height: 1.5,
-                          // 24px line height for 16px font size
-                          color: Colors.black,
-                          letterSpacing: 0,
+            Expanded(
+              child: SizedBox(
+                height: 100.h,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Doctor Name and Title
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'د/ كريستيانو رونالدو',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            // Updated to 600 (SemiBold)
+                            height: 1.5,
+                            // 24px line height for 16px font size
+                            color: Colors.black,
+                            letterSpacing: 0,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        'تدريب تقويم أسنان',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
-                          height: 1.5,
-                          // 21px line height for 14px font size
-                          letterSpacing: 0,
-                          color: Colors.grey,
+                        Text(
+                          'تدريب تقويم أسنان',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                            // 21px line height for 14px font size
+                            letterSpacing: 0,
+                            color: Colors.grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  // Rating and Location
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.star, size: 12.r, color: Colors.amber),
-                          SizedBox(width: 4.w),
-                          Text(
-                            '4.9',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.black,
+                      ],
+                    ),
+                    // Rating and Location
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 12.r, color: Colors.amber),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '4.9',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.5,
+                                letterSpacing: 0,
+                                color: Colors.black,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            '(128)',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.grey,
+                            SizedBox(width: 4.w),
+                            Text(
+                              '(128)',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.5,
+                                letterSpacing: 0,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 12.r, color: Colors.grey),
-                          SizedBox(width: 4.w),
-                          Text(
-                            '2.5 كم',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.grey,
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 12.r, color: Colors.grey),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: Text(
+                                '2.5 كم',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.5,
+                                  letterSpacing: 0,
+                                  color: Colors.grey,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             // Right Section (Availability)
@@ -560,7 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Services Header
                 Container(
-                  width: 500.w,
+                  width: double.infinity,
                   height: 35.h,
                   margin: EdgeInsets.only(top: 20.h, bottom: 10.h),
                   child: Row(
@@ -587,7 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         alignment: Alignment.centerRight,
-                        margin: EdgeInsets.only(left: 50.w),
+                        margin: EdgeInsets.only(left: 12.w),
                         child: GestureDetector(
                           onTap: () {
                             // TODO: Add navigation to see more services
@@ -638,7 +647,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ), // Services Header
                 Container(
-                  width: 500.w,
+                  width: double.infinity,
                   height: 30.h,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -671,14 +680,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 // Two equal containers side by side
                 Container(
-                  width: 350.w,
+                  width: double.infinity,
                   margin: EdgeInsets.only(top: 20.h, left: 22.w, right: 22.w),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // First container - المدن
-                      Container(
-                        width: 150.w,
+                      Expanded(
+                        child: Container(
+                        // width: 150.w,
                         height: 47.81.h,
                         padding: const EdgeInsets.only(
                           top: 0,
@@ -745,10 +755,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                      ),
+                      )),
                       // Second container - المناطق
-                      Container(
-                        width: 150.w,
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: Container(
+                        // width: 150.w,
                         height: 47.81.h,
                         padding: const EdgeInsets.only(
                           top: 0,
@@ -813,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ),
