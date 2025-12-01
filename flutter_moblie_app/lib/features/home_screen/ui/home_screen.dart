@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _showDoctorDetails(BuildContext context) {
     showModalBottomSheet(
@@ -362,12 +364,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Column(
+        title: GestureDetector(
+          onTap: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -400,17 +407,19 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none,
-                color: Colors.black, size: 28),
-            onPressed: () {
-              // TODO: Add notification functionality
-            },
-          ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none,
+              color: Colors.black, size: 28),
+          onPressed: () {
+            // TODO: Add notification functionality
+          },
+        ),
           const SizedBox(width: 12),
         ],
       ),
+      drawer: const HomeDrawer(),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -588,13 +597,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             'المزيد',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.bold,
                               fontSize: 16,
                               height: 1.0,
                               // 100% line height
                               letterSpacing: -0.02,
                               // -2% letter spacing
-                              color: Colors.grey,
+                              color: Colors.black,
                             ),
                             textAlign: TextAlign.right,
                           ),
@@ -613,19 +622,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // List of SVG files from the assets/svg directory with their corresponding category names
                       _buildCircularIcon(
-                          'assets/svg/icon_1.svg', 1, 'فحص شامل'),
+                          'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
                       _buildCircularIcon(
-                          'assets/svg/icon_2.svg', 2, 'حشو أسنان'),
+                          'assets/svg/حشو اسنان.svg', 2, 'حشو أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_3.svg', 3, 'زراعة أسنان'),
+                          'assets/svg/زراعه اسنان.svg', 3, 'زراعة أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_4.svg', 4, 'خلع أسنان'),
+                          'assets/svg/خلع اسنان.svg', 4, 'خلع أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_5.svg', 5, 'تبييض أسنان'),
+                          'assets/svg/تبيض اسنان.svg', 5, 'تبييض أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_6.svg', 6, 'تقويم أسنان'),
+                          'assets/svg/تقويم اسنان.svg', 6, 'تقويم أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_7.svg', 7, 'تركيبات أسنان'),
+                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات أسنان'),
                     ],
                   ),
                 ), // Services Header
