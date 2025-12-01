@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/routing/routes.dart';
 import '../../../features/chat/ui/chat_screen.dart';
+import '../../../features/appointments/ui/appointments_screen.dart';
 import '../../home_screen/ui/home_screen.dart';
 
 class MainLayoutScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     _screens = const [
       HomeScreen(),
       ChatScreen(),
-      Placeholder(), // For appointments screen (index 2)
+      AppointmentsScreen(), // Appointments screen (index 2)
       Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))), // For profile screen (index 3)
     ];
   }
