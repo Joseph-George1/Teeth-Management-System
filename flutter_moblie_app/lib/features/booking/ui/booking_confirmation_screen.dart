@@ -50,21 +50,50 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('تم الحجز بنجاح', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+            titlePadding: EdgeInsets.only(top: 20.h, left: 20.w, right: 20.w),
+            contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+            actionsPadding: EdgeInsets.only(bottom: 16.h, left: 16.w, right: 16.w),
+            title: Text(
+              'تم الحجز بنجاح',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0B8FAC),
+              ),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 60),
-                const SizedBox(height: 16),
+                Container(
+                  width: 72.w,
+                  height: 72.w,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B8FAC).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check_rounded, color: const Color(0xFF0B8FAC), size: 42.w),
+                ),
+                SizedBox(height: 16.h),
                 Text(
                   'تم حجز موعدك بنجاح مع ${widget.doctorName}\nفي يوم ${widget.date} الساعة ${widget.time}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontFamily: 'Cairo'),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 14.sp,
+                    color: const Color(0xFF1F2937),
+                    height: 1.6,
+                  ),
                 ),
               ],
             ),
+            actionsAlignment: MainAxisAlignment.center,
             actions: [
-              Center(
+              SizedBox(
+                width: 140.w,
+                height: 40.h,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
@@ -73,10 +102,13 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0B8FAC),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
-                  child: const Text('حسناً', style: TextStyle(fontFamily: 'Cairo')),
+                  child: Text(
+                    'حسناً',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 14.sp, color: Colors.white, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -91,163 +123,226 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('تأكيد الحجز', style: TextStyle(fontFamily: 'Cairo')),
-          centerTitle: true,
-          backgroundColor: const Color(0xFF0B8FAC),
-          foregroundColor: Colors.white,
-        ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(16.r),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Doctor Info Card
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+        body: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: Stack(
+            children: [
+              // Full screen gradient overlay (top-left)
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.7, -0.7),
+                    radius: 1.5,
+                    colors: [
+                      const Color(0xFF84E5F3).withOpacity(0.4),
+                      const Color(0xFF84E5F3).withOpacity(0.1),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.3, 0.8],
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.r),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'معلومات الطبيب',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
+                ),
+              ),
+              // Bottom-right gradient overlay
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.7, 0.7),
+                    radius: 1.5,
+                    colors: [
+                      const Color(0xFF8DECB4).withOpacity(0.4),
+                      const Color(0xFF8DECB4).withOpacity(0.1),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.1, 0.3, 0.8],
+                  ),
+                ),
+              ),
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0.w),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(24.0.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        SizedBox(height: 12.h),
-                        _buildInfoRow('الطبيب:', widget.doctorName),
-                        SizedBox(height: 8.h),
-                        _buildInfoRow('التاريخ:', widget.date),
-                        SizedBox(height: 8.h),
-                        _buildInfoRow('الوقت:', widget.time),
                       ],
                     ),
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                
-                // Patient Info Form
-                Text(
-                  'معلومات المريض',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                
-                // First Name Field
-                TextFormField(
-                  controller: _firstNameController,
-                  decoration: InputDecoration(
-                    labelText: 'الاسم الأول',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    prefixIcon: const Icon(Icons.person_outline),
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء إدخال الاسم الأول';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                
-                // Last Name Field
-                TextFormField(
-                  controller: _lastNameController,
-                  decoration: InputDecoration(
-                    labelText: 'اسم العائلة',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    prefixIcon: const Icon(Icons.person_outline),
-                  ),
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء إدخال اسم العائلة';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                
-                // Phone Number Field
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    // Allow Western (0-9) and Arabic-Indic (٠-٩) digits
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\u0660-\u0669]')),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: 'رقم الجوال',
-                    hintText: '01X XXX XXXXX',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    prefixIcon: const Icon(Icons.phone_android),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء إدخال رقم الجوال';
-                    }
-                    if (value.length < 10) {
-                      return 'يجب أن يتكون رقم الجوال من 10 أرقام على الأقل';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 32.h),
-                
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0B8FAC),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Title
+                            Center(
+                              child: Text(
+                                'تأكيد الحجز',
+                                style: TextStyle(
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
+                                  color: const Color(0xFF0B8FAC),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            // Doctor Info Card
+                            Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(16.r),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'معلومات الطبيب',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Cairo',
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    _buildInfoRow('الطبيب:', widget.doctorName),
+                                    SizedBox(height: 8.h),
+                                    _buildInfoRow('التاريخ:', widget.date),
+                                    SizedBox(height: 8.h),
+                                    _buildInfoRow('الوقت:', widget.time),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 24.h),
+                            // Patient Info Form title
+                            Text(
+                              'معلومات المريض',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            // First Name Field
+                            TextFormField(
+                              controller: _firstNameController,
+                              decoration: InputDecoration(
+                                labelText: 'الاسم الأول',
+                                prefixIcon: const Icon(Icons.person_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0.r),
+                                ),
+                              ),
+                              textInputAction: TextInputAction.next,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الرجاء إدخال الاسم الأول';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16.h),
+                            // Last Name Field
+                            TextFormField(
+                              controller: _lastNameController,
+                              decoration: InputDecoration(
+                                labelText: 'اسم العائلة',
+                                prefixIcon: const Icon(Icons.person_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0.r),
+                                ),
+                              ),
+                              textInputAction: TextInputAction.next,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الرجاء إدخال اسم العائلة';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16.h),
+                            // Phone Number Field
+                            TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9\u0660-\u0669]')),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: 'رقم الجوال',
+                                hintText: '01X XXX XXXXX',
+                                prefixIcon: const Icon(Icons.phone_android),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0.r),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'الرجاء إدخال رقم الجوال';
+                                }
+                                if (value.length < 10) {
+                                  return 'يجب أن يتكون رقم الجوال من 10 أرقام على الأقل';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 24.h),
+                            // Submit Button
+                            SizedBox(
+                              height: 48.h,
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0B8FAC),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0.r),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'تأكيد الحجز',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Cairo',
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'تأكيد الحجز',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Cairo',
-                            ),
-                          ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
