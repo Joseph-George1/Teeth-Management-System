@@ -189,13 +189,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 // Phone Number Field
                 TextFormField(
                   controller: _phoneController,
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
                   inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
+                    // Allow Western (0-9) and Arabic-Indic (٠-٩) digits
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\u0660-\u0669]')),
                   ],
                   decoration: InputDecoration(
                     labelText: 'رقم الجوال',
-                    hintText: '05XXXXXXXX',
+                    hintText: '01X XXX XXXXX',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
@@ -239,6 +240,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                               fontFamily: 'Cairo',
                             ),
                           ),

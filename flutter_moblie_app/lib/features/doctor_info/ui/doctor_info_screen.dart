@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thotha_mobile_app/features/booking/ui/booking_confirmation_screen.dart';
 
 class DoctorInfoContent extends StatefulWidget {
   final ScrollController controller;
@@ -479,15 +480,17 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                         child: GestureDetector(
                                           onTap: _isBookingEnabled
                                               ? () {
-                                                  // Handle booking confirmation
-                                                  Navigator.pop(context);
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                          'تم تأكيد الحجز بنجاح'),
-                                                      backgroundColor:
-                                                          Color(0xFF10B981),
+                                                  final String doctorName = 'ZEZO';
+                                                  final String date = _selectedDay ?? '';
+                                                  final String time = _selectedTime?.format(context) ?? '';
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => BookingConfirmationScreen(
+                                                        doctorName: doctorName,
+                                                        date: date,
+                                                        time: time,
+                                                      ),
                                                     ),
                                                   );
                                                 }

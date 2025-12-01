@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../features/chat/ui/chat_screen.dart';
 import '../../home_screen/ui/home_screen.dart';
+import '../../appointments/ui/appointments_screen.dart';
 
 class MainLayoutScreen extends StatefulWidget {
   final int initialIndex;
@@ -25,11 +26,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
-    _screens = const [
-      HomeScreen(),
-      ChatScreen(),
-      //AppointmentsScreen(), // Appointments screen (index 2)
-      Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))),
+    _screens = [
+      const HomeScreen(),
+      const ChatScreen(),
+      const AppointmentsScreen(), // Appointments screen (index 2)
+      //const Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))),
       // For profile screen (index 3)
     ];
   }
