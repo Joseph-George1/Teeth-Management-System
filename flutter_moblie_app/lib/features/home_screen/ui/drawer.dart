@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
@@ -17,13 +18,13 @@ class HomeDrawer extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Row(
             children: [
               Icon(icon, color: iconColor),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   title,
@@ -31,7 +32,7 @@ class HomeDrawer extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.w500,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     color: textColor,
                   ),
                 ),
@@ -51,9 +52,9 @@ class HomeDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: topPad + 160,
+            height: topPad + 160.h,
             padding: EdgeInsets.only(top: topPad),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
@@ -64,16 +65,16 @@ class HomeDrawer extends StatelessWidget {
               mainAxisSize: MainAxisSize.max,
               children: [
                 SizedBox(
-                  height: 56,
+                  height: 56.h,
                   child: Stack(
                     children: [
-                      const Center(
+                      Center(
                         child: Text(
                           'القائمة',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontWeight: FontWeight.w700,
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             color: Colors.white,
                           ),
                         ),
@@ -81,7 +82,7 @@ class HomeDrawer extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
+                          icon: Icon(Icons.close, color: Colors.white),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -89,52 +90,52 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
                   child: Container(
-                    height: 64,
+                    height: 64.h,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Directionality(
                       textDirection: TextDirection.rtl,
                       child: Row(
                         children: [
                           Container(
-                            margin: const EdgeInsets.only(left: 12, right: 12),
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
+                            margin: EdgeInsets.only(left: 12.w, right: 12.w),
+                            width: 40.w,
+                            height: 40.h,
+                            decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.person_outline, color: _cCyan),
+                            child: Icon(Icons.person_outline, color: _cCyan),
                           ),
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: EdgeInsets.symmetric(horizontal: 12.w),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
-                                children: const [
+                                children: [
                                   Text(
                                     'زياد جمال',
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 16,
+                                      fontSize: 16.sp,
                                       color: Colors.white,
                                     ),
                                   ),
-                                  SizedBox(height: 2),
+                                  SizedBox(height: 2.h),
                                   Text(
                                     'zyadgamal@gmail.com',
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
                                       fontWeight: FontWeight.w400,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -160,23 +161,23 @@ class HomeDrawer extends StatelessWidget {
                 _menuItem(context, title: 'تصفح الخدمات', icon: Icons.calendar_month_outlined),
                 _menuItem(context, title: 'الإعدادات', icon: Icons.settings_outlined),
                 _menuItem(context, title: 'المساعدة والدعم', icon: Icons.help_outline),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(height: 24),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Divider(height: 24.h),
                 ),
                 _menuItem(context, title: 'تسجيل الخروج', icon: Icons.logout_outlined, iconColor: Colors.red, textColor: Colors.red),
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
             child: Center(
               child: Text(
                 'الإصدار 1.0.0',
                 style: TextStyle(
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.w400,
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   color: Colors.grey,
                 ),
               ),

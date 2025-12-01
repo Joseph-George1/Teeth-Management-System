@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer.dart';
@@ -80,11 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 80,
-          // Increased container size
-          height: 80,
-          // Increased container size
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          width: 80.w,
+          height: 80.h,
+          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -92,40 +91,40 @@ class _HomeScreenState extends State<HomeScreen> {
               color: const Color(0xFF111827),
               width: 0.5, // Slightly thicker border
             ),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 4, // Slightly more prominent shadow
-                offset: Offset(0, 2),
+                color: const Color(0x1A000000),
+                blurRadius: 4.r, // Slightly more prominent shadow
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Center(
             child: SvgPicture.asset(
               resolvedAssetPath,
-              width: 40, // Icon size
-              height: 40, // Icon size
+              width: 40.w, // Icon size
+              height: 40.h, // Icon size
               fit: BoxFit.contain,
               placeholderBuilder: (BuildContext context) => Container(
-                width: 40,
-                height: 40,
+                width: 40.w,
+                height: 40.h,
                 color: Colors.grey[200],
-                child: const Icon(Icons.image, size: 20, color: Colors.grey),
+                child: Icon(Icons.image, size: 20.r, color: Colors.grey),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         SizedBox(
-          width: 80,
+          width: 80.w,
           child: Text(
             resolvedCategoryName,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Cairo',
               fontWeight: FontWeight.w400,
               // Regular
-              fontSize: 11,
+              fontSize: 11.sp,
               height: 1.0,
               // line-height 24px for 11px font size
               letterSpacing: 0.1,
@@ -143,22 +142,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _showDoctorDetails(context),
       child: Container(
-        width: 365,
-        height: 132,
-        margin: const EdgeInsets.only(
-            top: 16, left: 15.98, right: 15.98, bottom: 15.98),
-        padding: const EdgeInsets.only(top: 15.98, right: 15.98, left: 5.61),
+        width: 365.w,
+        height: 132.h,
+        margin: EdgeInsets.only(
+            top: 16.h, left: 15.98.w, right: 15.98.w, bottom: 15.98.h),
+        padding: EdgeInsets.only(top: 15.98.h, right: 15.98.w, left: 5.61.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: const Border(
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border(
             top: BorderSide(color: Color(0xFFE5E7EB), width: 1.1),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
-              blurRadius: 4,
+              blurRadius: 4.r,
               offset: const Offset(0, 2),
             ),
           ],
@@ -168,35 +167,35 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Doctor Image Container (Right side)
             Container(
-              width: 99.98,
-              height: 99.98,
+              width: 99.98.w,
+              height: 99.98.h,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.r),
                 color: Colors.grey[200],
-                image: const DecorationImage(
+                image: DecorationImage(
                   image: AssetImage('assets/images/dr.cr7.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            const SizedBox(width: 15.98),
+            SizedBox(width: 15.98.w),
             // Middle Section with Doctor Info
             SizedBox(
-              width: 117,
-              height: 100,
+              width: 117.w,
+              height: 100.h,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Doctor Name and Title
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'د/ كريستيانو رونالدو',
                         style: TextStyle(
                           fontFamily: 'Cairo',
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                           // Updated to 600 (SemiBold)
                           height: 1.5,
@@ -209,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'تدريب تقويم أسنان',
                         style: TextStyle(
                           fontFamily: 'Cairo',
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w400,
                           height: 1.5,
                           // 21px line height for 14px font size
@@ -225,25 +224,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 12, color: Colors.amber),
-                          const SizedBox(width: 4),
+                          Icon(Icons.star, size: 12.r, color: Colors.amber),
+                          SizedBox(width: 4.w),
                           Text(
                             '4.9',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                               letterSpacing: 0,
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             '(128)',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                               letterSpacing: 0,
@@ -252,17 +251,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Row(
                         children: [
-                          const Icon(Icons.location_on,
-                              size: 12, color: Colors.grey),
-                          const SizedBox(width: 4),
+                          Icon(Icons.location_on,
+                              size: 12.r, color: Colors.grey),
+                          SizedBox(width: 4.w),
                           Text(
                             '2.5 كم',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 13,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                               letterSpacing: 0,
@@ -277,27 +276,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             // Right Section (Availability)
-            const SizedBox(width: 15.98),
+            SizedBox(width: 15.98.w),
             Container(
-              width: 73,
-              height: 100,
+              width: 73.w,
+              height: 100.h,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Location and Area
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 12, color: Colors.grey),
-                          SizedBox(width: 4),
+                          Icon(Icons.location_on, size: 12.r, color: Colors.grey),
+                          SizedBox(width: 4.w),
                           Text(
                             'المعادي',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                               // 18px line height
@@ -312,30 +311,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Availability Badge
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(4.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.green.withOpacity(0.2),
-                          blurRadius: 4,
+                          blurRadius: 4.r,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.access_time,
-                            size: 11.85, color: Colors.green),
-                        SizedBox(width: 4),
+                            size: 11.85.r, color: Colors.green),
+                        SizedBox(width: 4.w),
                         Text(
                           'متاح غداً',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontWeight: FontWeight.w400,
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             height: 1.0,
                             // 18px line height
                             letterSpacing: 0,
@@ -375,48 +374,48 @@ class _HomeScreenState extends State<HomeScreen> {
             _scaffoldKey.currentState?.openDrawer();
           },
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'مرحباً, أهلاً بعودتك',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.w400,
-                fontSize: 16,
-                height: 1.0,
-                // 100% line height
-                letterSpacing: -0.02,
-                // -2% letter spacing
-                color: Colors.grey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'مرحباً, أهلاً بعودتك',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 16.sp,
+                  height: 1.0,
+                  // 100% line height
+                  letterSpacing: -0.02,
+                  // -2% letter spacing
+                  color: Colors.grey,
+                ),
               ),
-            ),
-            // No extra spacing needed as line height handles it
-            const Text(
-              'عبدالحليم رمضان',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.w600,
-                // SemiBold
-                fontSize: 18,
-                height: 1.2,
-                letterSpacing: -0.02,
-                // -2% letter spacing
-                color: Colors.black,
+              // No extra spacing needed as line height handles it
+              Text(
+                'عبدالحليم رمضان',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w600,
+                  // SemiBold
+                  fontSize: 18.sp,
+                  height: 1.2,
+                  letterSpacing: -0.02,
+                  // -2% letter spacing
+                  color: Colors.black,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none,
-              color: Colors.black, size: 28),
-          onPressed: () {
-            // TODO: Add notification functionality
-          },
-        ),
-          const SizedBox(width: 12),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications_none,
+                color: Colors.black, size: 28.r),
+            onPressed: () {
+              // TODO: Add notification functionality
+            },
+          ),
+          SizedBox(width: 12.w),
         ],
       ),
       drawer: const HomeDrawer(),
@@ -424,24 +423,24 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SingleChildScrollView(
           child: Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                EdgeInsets.symmetric(horizontal: 20.0.w, vertical: 16.0.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Search Bar
                 Container(
-                  height: 42,
-                  margin: const EdgeInsets.only(top: 10),
+                  height: 42.h,
+                  margin: EdgeInsets.only(top: 10.h),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD9D9D9).withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Row(
                     children: [
                       // Search Icon
-                      const Padding(
-                        padding: EdgeInsets.only(right: 12.0, left: 8.0),
-                        child: Icon(Icons.search, color: Colors.grey, size: 24),
+                      Padding(
+                        padding: EdgeInsets.only(right: 12.0.w, left: 8.0.w),
+                        child: Icon(Icons.search, color: Colors.grey, size: 24.r),
                       ),
                       // Search Text
                       Expanded(
@@ -454,25 +453,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             hintText: 'ابحث عن قسم...',
                             hintStyle: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 16,
+                              fontSize: 16.sp,
                             ),
                             border: InputBorder.none,
                             contentPadding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                                EdgeInsets.symmetric(vertical: 16.h),
                           ),
                         ),
                       ),
                       // Microphone Icon
                       IconButton(
                         icon:
-                            const Icon(Icons.mic, color: Colors.grey, size: 24),
+                            Icon(Icons.mic, color: Colors.grey, size: 24.r),
                         onPressed: () {
                           // TODO: Add voice search functionality
                         },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                     ],
                   ),
                 ),
@@ -480,10 +479,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Gradient Card
                 Container(
                   width: double.infinity,
-                  height: 148,
-                  margin: const EdgeInsets.only(top: 20),
+                  height: 148.h,
+                  margin: EdgeInsets.only(top: 20.h),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                     gradient: const LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
@@ -495,58 +494,58 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Image on the left
                       Positioned(
                         left: 0,
-                        top: 13,
+                        top: 13.h,
                         child: Image.asset(
                           'assets/images/دكتور.png',
-                          width: 180,
-                          height: 135,
+                          width: 180.w,
+                          height: 135.h,
                           fit: BoxFit.contain,
                         ),
                       ),
 
                       // Text Content on the right
                       Positioned(
-                        right: 20,
-                        top: 20,
+                        right: 20.w,
+                        top: 20.h,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text(
+                            Text(
                               'احجز و سجل',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.right,
                             ),
-                            const SizedBox(height: 8),
-                            const SizedBox(
-                              width: 163,
+                            SizedBox(height: 8.h),
+                            SizedBox(
+                              width: 163.w,
                               child: Text(
                                 'مع افضل الاطباء في نطاقك',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.right,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12.h),
                             Container(
-                              width: 87,
-                              height: 27,
+                              width: 87.w,
+                              height: 27.h,
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(4.r),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
                                   'احجز الان',
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 12,
+                                    fontSize: 12.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -561,19 +560,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Services Header
                 Container(
-                  width: 500,
-                  height: 35,
-                  margin: const EdgeInsets.only(top: 20, bottom: 10),
+                  width: 500.w,
+                  height: 35.h,
+                  margin: EdgeInsets.only(top: 20.h, bottom: 10.h),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'الخدمات المتوفرة',
                         style: TextStyle(
                           fontFamily: 'Cairo',
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                           // SemiBold
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           height: 1.2,
                           letterSpacing: -0.02,
                           // -2% letter spacing
@@ -581,24 +580,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Container(
-                        width: 50,
-                        height: 20,
+                        width: 50.w,
+                        height: 20.h,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(4.r),
                         ),
                         alignment: Alignment.centerRight,
-                        margin: const EdgeInsets.only(left: 50),
+                        margin: EdgeInsets.only(left: 50.w),
                         child: GestureDetector(
                           onTap: () {
                             // TODO: Add navigation to see more services
                           },
-                          child: const Text(
+                          child: Text(
                             'المزيد',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               height: 1.0,
                               // 100% line height
                               letterSpacing: -0.02,
@@ -615,10 +614,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Circular Categories Row with Horizontal Scroll and SVG Icons
                 SizedBox(
-                  height: 130, // Increased height to accommodate labels
+                  height: 130.h, // Increased height to accommodate labels
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
                     children: [
                       // List of SVG files from the assets/svg directory with their corresponding category names
                       _buildCircularIcon(
@@ -639,19 +638,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ), // Services Header
                 Container(
-                  width: 500,
-                  height: 35,
-                  margin: const EdgeInsets.only(top: 20, bottom: 10),
+                  width: 500.w,
+                  height: 30.h,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'الاطباء الاقرب لك',
                         style: TextStyle(
                           fontFamily: 'Cairo',
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                           // SemiBold
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           height: 1.2,
                           letterSpacing: -0.02,
                           // -2% letter spacing
@@ -659,48 +657,29 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Container(
-                        width: 50,
-                        height: 20,
+                        width: 50.w,
+                        height: 20.h,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(4.r),
                         ),
                         alignment: Alignment.centerRight,
-                        margin: const EdgeInsets.only(left: 50),
-                        child: GestureDetector(
-                          onTap: () {
-                            // TODO: Add navigation to see more services
-                          },
-                          child: const Text(
-                            'المزيد',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
-                              height: 1.0,
-                              // 100% line height
-                              letterSpacing: -0.02,
-                              // -2% letter spacing
-                              color: Colors.grey,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
+                        margin: EdgeInsets.only(left: 50.w),
                       ),
                     ],
                   ),
                 ),
                 // Two equal containers side by side
                 Container(
-                  width: 350,
-                  margin: const EdgeInsets.only(top: 20, left: 22, right: 22),
+                  width: 350.w,
+                  margin: EdgeInsets.only(top: 20.h, left: 22.w, right: 22.w),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // First container - المدن
                       Container(
-                        width: 150,
-                        height: 47.81,
+                        width: 150.w,
+                        height: 47.81.h,
                         padding: const EdgeInsets.only(
                           top: 0,
                           right: 0,
@@ -709,7 +688,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: const Color(0xFFD1D5DC),
                             width: 1.1,
@@ -717,7 +696,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
+                              blurRadius: 4.r,
                               offset: const Offset(0, 2),
                             ),
                           ],
@@ -725,15 +704,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Stack(
                           children: [
                             // Centered text with padding
-                            const Padding(
-                              padding: EdgeInsets.only(left: 35),
+                            Padding(
+                              padding: EdgeInsets.only(left: 35.w),
                               // Added left padding to avoid divider
                               child: Center(
                                 child: Text(
                                   'المدن',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 18,
+                                    fontSize: 18.sp,
                                     fontWeight: FontWeight.w700,
                                     height: 2.33,
                                     letterSpacing: 0.1,
@@ -744,21 +723,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             // Left-aligned arrow and divider
                             Positioned(
-                              left: 8,
+                              left: 8.w,
                               top: 0,
                               bottom: 0,
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.arrow_drop_down,
-                                    size: 24,
+                                    size: 24.r,
                                     color: Colors.black,
                                   ),
                                   Container(
-                                    height: 46.5,
-                                    width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                    height: 46.5.h,
+                                    width: 1.w,
+                                    margin: EdgeInsets.symmetric(
+                                        horizontal: 4.w),
                                     color: const Color(0xFFD1D5DC),
                                   ),
                                 ],
@@ -769,8 +748,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       // Second container - المناطق
                       Container(
-                        width: 150,
-                        height: 47.81,
+                        width: 150.w,
+                        height: 47.81.h,
                         padding: const EdgeInsets.only(
                           top: 0,
                           right: 0,
@@ -779,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: const Color(0xFFD1D5DC),
                             width: 1.1,
@@ -787,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
+                              blurRadius: 4.r,
                               offset: const Offset(0, 2),
                             ),
                           ],
@@ -795,15 +774,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Stack(
                           children: [
                             // Centered text with padding
-                            const Padding(
-                              padding: EdgeInsets.only(left: 35),
+                            Padding(
+                              padding: EdgeInsets.only(left: 35.w),
                               // Added left padding to avoid divider
                               child: Center(
                                 child: Text(
                                   'المناطق',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 18,
+                                    fontSize: 18.sp,
                                     fontWeight: FontWeight.w700,
                                     height: 2.33,
                                     letterSpacing: 0.1,
@@ -814,19 +793,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             // Left-aligned arrow and divider
                             Positioned(
-                              left: 8,
+                              left: 8.w,
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.arrow_drop_down,
-                                    size: 24,
+                                    size: 24.r,
                                     color: Colors.black,
                                   ),
                                   Container(
-                                    height: 46.5,
-                                    width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                    height: 46.5.h,
+                                    width: 1.w,
+                                    margin: EdgeInsets.symmetric(
+                                        horizontal: 4.w),
                                     color: const Color(0xFFD1D5DC),
                                   ),
                                 ],
