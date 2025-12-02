@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +29,8 @@ export default function RegisterForm() {
       return;
     }
 
-    // حاليًا مفيش API
+    // كل حاجة صحيحة، انتقل للـ OTP
+    navigate('/otp');
   };
 
   return (
@@ -39,24 +41,24 @@ export default function RegisterForm() {
         {error && <div className="error-message">{error}</div>}
         <form className="signup-form" onSubmit={handleSubmit}>
           <div className="input-group">
-            <input type="text" placeholder="الاسم الاول" value={firstName} onChange={(e) => setFirstName(e.target.value)} required  className="input-field-2"/>
-            <input type="text" placeholder="الاسم الاخير" value={lastName} onChange={(e) => setLastName(e.target.value)} required  className="input-field-2"/>
+            <input type="text" placeholder="الاسم الاول" value={firstName} onChange={(e) => {setFirstName(e.target.value); error && setError('');}} required  className="input-field-2"/>
+            <input type="text" placeholder="الاسم الاخير" value={lastName} onChange={(e) => {setLastName(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
 
           <div className="input-group">
-            <input type="email" placeholder="User@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required  className="input-field-2"/>
-            <input type="tel-2" placeholder="رقم التليفون" value={phone} onChange={(e) => setPhone(e.target.value)} required  className="input-field-2"/>
+            <input type="email" placeholder="User@gmail.com" value={email} onChange={(e) => {setEmail(e.target.value); error && setError('');}} required  className="input-field-2"/>
+            <input type="tel-2" placeholder="رقم التليفون" value={phone} onChange={(e) => {setPhone(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
 
           <div className="input-group">
-            <select value={college} onChange={(e) => setCollege(e.target.value)} required className="input-field-2">
+            <select value={college} onChange={(e) => {setCollege(e.target.value); error && setError('');}} required className="input-field-2">
               <option value="">اختر الكلية</option>
               <option value="dentistry">طب الاسنان</option>
               <option value="medicine">الطب البشري</option>
               <option value="pharmacy">الصيدلة</option>
             </select>
 
-            <select value={year} onChange={(e) => setYear(e.target.value)} required className="input-field-2">
+            <select value={year} onChange={(e) => {setYear(e.target.value); error && setError('');}} required className="input-field-2">
               <option value="">السنة الدراسية</option>
               <option value="1">الاولى</option>
               <option value="2">الثانية</option>
@@ -65,7 +67,7 @@ export default function RegisterForm() {
               <option value="5">الخامسة</option>
             </select>
 
-            <select value={governorate} onChange={(e) => setGovernorate(e.target.value)} required className="input-field-2">
+            <select value={governorate} onChange={(e) => {setGovernorate(e.target.value); error && setError('');}} required className="input-field-2">
               <option value="">اختر المحافظة</option>
               <option value="cairo">القاهرة</option>
               <option value="alex">الإسكندرية</option>
@@ -74,12 +76,10 @@ export default function RegisterForm() {
           </div>
 
           <div className="input-group">
-            <input type="password" placeholder="كلمة المرور" value={password} onChange={(e) => setPassword(e.target.value)} required  className="input-field-2"/>
-            <input type="password" placeholder="تأكيد كلمة المرور" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required  className="input-field-2"/>
+            <input type="password" placeholder="كلمة المرور" value={password} onChange={(e) => {setPassword(e.target.value); error && setError('');}} required  className="input-field-2"/>
+            <input type="password" placeholder="تأكيد كلمة المرور" value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
-          <Link to="/otp">
           <button type="submit" className="signup-button">انشاء حساب</button>
-          </Link>
 
         </form>
 
