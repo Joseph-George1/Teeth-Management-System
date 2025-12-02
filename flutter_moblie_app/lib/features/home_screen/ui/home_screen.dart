@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _showDoctorDetails(BuildContext context) {
     showModalBottomSheet(
@@ -78,52 +81,50 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 80,
-          // Increased container size
-          height: 80,
-          // Increased container size
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          width: 72.w,
+          height: 72.h,
+          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color(0xFF111827),
-              width: 0.5, // Slightly thicker border
+              color: Colors.cyan,
+              width: 2, // Slightly thicker border
             ),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 4, // Slightly more prominent shadow
-                offset: Offset(0, 2),
+                color: Colors.cyan,
+                blurRadius: 2.r, // Slightly more prominent shadow
+                offset: const Offset(0, 0.5),
               ),
             ],
           ),
           child: Center(
             child: SvgPicture.asset(
               resolvedAssetPath,
-              width: 40, // Icon size
-              height: 40, // Icon size
+              width: 36.w, // Icon size
+              height: 36.h, // Icon size
               fit: BoxFit.contain,
               placeholderBuilder: (BuildContext context) => Container(
-                width: 40,
-                height: 40,
+                width: 36.w,
+                height: 36.h,
                 color: Colors.grey[200],
-                child: const Icon(Icons.image, size: 20, color: Colors.grey),
+                child: Icon(Icons.image, size: 18.r, color: Colors.grey),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         SizedBox(
-          width: 80,
+          width: 72.w,
           child: Text(
             resolvedCategoryName,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Cairo',
               fontWeight: FontWeight.w400,
               // Regular
-              fontSize: 11,
+              fontSize: 10.sp,
               height: 1.0,
               // line-height 24px for 11px font size
               letterSpacing: 0.1,
@@ -141,22 +142,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _showDoctorDetails(context),
       child: Container(
-        width: 365,
-        height: 132,
-        margin: const EdgeInsets.only(
-            top: 16, left: 15.98, right: 15.98, bottom: 15.98),
-        padding: const EdgeInsets.only(top: 15.98, right: 15.98, left: 5.61),
+        width: double.infinity,
+        height: 120.h,
+        margin: EdgeInsets.only(
+            top: 14.h, left: 15.98.w, right: 15.98.w, bottom: 14.h),
+        padding: EdgeInsets.only(top: 14.h, right: 15.98.w, left: 5.61.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: const Border(
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border(
             top: BorderSide(color: Color(0xFFE5E7EB), width: 1.1),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
-              blurRadius: 4,
+              blurRadius: 4.r,
               offset: const Offset(0, 2),
             ),
           ],
@@ -166,136 +167,146 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Doctor Image Container (Right side)
             Container(
-              width: 99.98,
-              height: 99.98,
+              width: 84.w,
+              height: 84.h,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.r),
                 color: Colors.grey[200],
-                image: const DecorationImage(
+                image: DecorationImage(
                   image: AssetImage('assets/images/dr.cr7.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            const SizedBox(width: 15.98),
+            SizedBox(width: 6.w),
             // Middle Section with Doctor Info
-            SizedBox(
-              width: 117,
-              height: 100,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Doctor Name and Title
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'د/ كريستيانو رونالدو',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          // Updated to 600 (SemiBold)
-                          height: 1.5,
-                          // 24px line height for 16px font size
-                          color: Colors.black,
-                          letterSpacing: 0,
+            Expanded(
+              child: SizedBox(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Doctor Name and Title
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'د/ كريستيانو رونالدو',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            // Updated to 600 (SemiBold)
+                            height: 1.5,
+                            // 24px line height for 16px font size
+                            color: Colors.black,
+                            letterSpacing: 0,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        'تدريب تقويم أسنان',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          height: 1.5,
-                          // 21px line height for 14px font size
-                          letterSpacing: 0,
-                          color: Colors.grey,
+                        Text(
+                          'تدريب تقويم أسنان',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                            // 21px line height for 14px font size
+                            letterSpacing: 0,
+                            color: Colors.grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  // Rating and Location
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.star, size: 12, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text(
-                            '4.9',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.black,
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    // Rating and Location
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 11.r, color: Colors.amber),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '4.9',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.5,
+                                letterSpacing: 0,
+                                color: Colors.black,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '(128)',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.grey,
+                            SizedBox(width: 4.w),
+                            Text(
+                              '(128)',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.5,
+                                letterSpacing: 0,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              size: 12, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            '2.5 كم',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.grey,
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 11.r, color: Colors.grey),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: Text(
+                                '2.5 كم',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.5,
+                                  letterSpacing: 0,
+                                  color: Colors.grey,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             // Right Section (Availability)
-            const SizedBox(width: 15.98),
+            SizedBox(width: 6.w),
             Container(
-              width: 73,
-              height: 100,
+              width: 54.w,
+              height: 84.h,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Location and Area
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 12, color: Colors.grey),
-                          SizedBox(width: 4),
+                          Icon(Icons.location_on,
+                              size: 11.r, color: Colors.grey),
+                          SizedBox(width: 4.w),
                           Text(
                             'المعادي',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 12,
+                              fontSize: 11.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                               // 18px line height
@@ -308,39 +319,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   // Availability Badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.access_time,
-                            size: 11.85, color: Colors.green),
-                        SizedBox(width: 4),
-                        Text(
-                          'متاح غداً',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.0,
-                            // 18px line height
-                            letterSpacing: 0,
-                            color: Colors.green,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(4.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.2),
+                            blurRadius: 4.r,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.access_time,
+                              size: 11.r, color: Colors.green),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'متاح غداً',
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.w400,
+                              fontSize: 11.sp,
+                              height: 1.0,
+                              // 18px line height
+                              letterSpacing: 0,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -362,77 +377,84 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'مرحباً, أهلاً بعودتك',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.w400,
-                fontSize: 16,
-                height: 1.0,
-                // 100% line height
-                letterSpacing: -0.02,
-                // -2% letter spacing
-                color: Colors.grey,
+        title: GestureDetector(
+          onTap: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'مرحباً, أهلاً بعودتك',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15.sp,
+                  height: 1.0,
+                  // 100% line height
+                  letterSpacing: -0.02,
+                  // -2% letter spacing
+                  color: Colors.grey,
+                ),
               ),
-            ),
-            // No extra spacing needed as line height handles it
-            const Text(
-              'عبدالحليم رمضان',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.w600,
-                // SemiBold
-                fontSize: 18,
-                height: 1.2,
-                letterSpacing: -0.02,
-                // -2% letter spacing
-                color: Colors.black,
+              // No extra spacing needed as line height handles it
+              Text(
+                'عبدالحليم رمضان',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w600,
+                  // SemiBold
+                  fontSize: 17.sp,
+                  height: 1.2,
+                  letterSpacing: -0.02,
+                  // -2% letter spacing
+                  color: Colors.black,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none,
-                color: Colors.black, size: 28),
+            icon:
+                Icon(Icons.notifications_none, color: Colors.black, size: 24.r),
             onPressed: () {
               // TODO: Add notification functionality
             },
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
         ],
       ),
+      drawer: const HomeDrawer(),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Search Bar
                 Container(
-                  height: 42,
-                  margin: const EdgeInsets.only(top: 10),
+                  height: 40.h,
+                  margin: EdgeInsets.only(top: 10.h),
                   decoration: BoxDecoration(
                     color: const Color(0xFFD9D9D9).withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Row(
                     children: [
                       // Search Icon
-                      const Padding(
-                        padding: EdgeInsets.only(right: 12.0, left: 8.0),
-                        child: Icon(Icons.search, color: Colors.grey, size: 24),
+                      Padding(
+                        padding: EdgeInsets.only(right: 12.0.w, left: 8.0.w),
+                        child:
+                            Icon(Icons.search, color: Colors.grey, size: 22.r),
                       ),
                       // Search Text
                       Expanded(
@@ -445,25 +467,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             hintText: 'ابحث عن قسم...',
                             hintStyle: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 16,
+                              fontSize: 15.sp,
                             ),
                             border: InputBorder.none,
                             contentPadding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                                EdgeInsets.symmetric(vertical: 14.h),
                           ),
                         ),
                       ),
                       // Microphone Icon
                       IconButton(
-                        icon:
-                            const Icon(Icons.mic, color: Colors.grey, size: 24),
+                        icon: Icon(Icons.mic, color: Colors.grey, size: 22.r),
                         onPressed: () {
                           // TODO: Add voice search functionality
                         },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                     ],
                   ),
                 ),
@@ -471,10 +492,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Gradient Card
                 Container(
                   width: double.infinity,
-                  height: 148,
-                  margin: const EdgeInsets.only(top: 20),
+                  height: 136.h,
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                     gradient: const LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
@@ -486,58 +507,58 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Image on the left
                       Positioned(
                         left: 0,
-                        top: 13,
+                        top: 12.h,
                         child: Image.asset(
                           'assets/images/دكتور.png',
-                          width: 180,
-                          height: 135,
+                          width: 160.w,
+                          height: 120.h,
                           fit: BoxFit.contain,
                         ),
                       ),
 
                       // Text Content on the right
                       Positioned(
-                        right: 20,
-                        top: 20,
+                        right: 20.w,
+                        top: 16.h,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text(
+                            Text(
                               'احجز و سجل',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.right,
                             ),
-                            const SizedBox(height: 8),
-                            const SizedBox(
-                              width: 163,
+                            SizedBox(height: 8.h),
+                            SizedBox(
+                              width: 160.w,
                               child: Text(
                                 'مع افضل الاطباء في نطاقك',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.right,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12.h),
                             Container(
-                              width: 87,
-                              height: 27,
+                              width: 80.w,
+                              height: 24.h,
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(4.r),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
                                   'احجز الان',
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 12,
+                                    fontSize: 11.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -552,52 +573,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Services Header
                 Container(
-                  width: 500,
-                  height: 35,
-                  margin: const EdgeInsets.only(top: 20, bottom: 10),
+                  width: double.infinity,
+                  height: 32.h,
+                  margin: EdgeInsets.symmetric(horizontal: 13.w, vertical: 12.h),
+
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'الخدمات المتوفرة',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontWeight: FontWeight.w600,
-                          // SemiBold
-                          fontSize: 18,
-                          height: 1.2,
-                          letterSpacing: -0.02,
-                          // -2% letter spacing
-                          color: Colors.black,
-                        ),
-                      ),
                       Container(
-                        width: 50,
-                        height: 20,
+                        width: 50.w,
+                        height: 20.h,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(4.r),
                         ),
                         alignment: Alignment.centerRight,
-                        margin: const EdgeInsets.only(left: 50),
+                        margin: EdgeInsets.only(left: 12.w),
                         child: GestureDetector(
                           onTap: () {
                             // TODO: Add navigation to see more services
                           },
-                          child: const Text(
+                          child: Text(
                             'المزيد',
                             style: TextStyle(
                               fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
                               height: 1.0,
                               // 100% line height
                               letterSpacing: -0.02,
                               // -2% letter spacing
-                              color: Colors.grey,
+                              color: Colors.black,
                             ),
                             textAlign: TextAlign.right,
                           ),
+                        ),
+                      ),
+                      Text(
+                        'الخدمات المتوفرة',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          // SemiBold
+                          fontSize: 17.sp,
+                          height: 1.2,
+                          letterSpacing: -0.02,
+                          // -2% letter spacing
+                          color: Colors.black,
                         ),
                       ),
                     ],
@@ -606,92 +628,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Circular Categories Row with Horizontal Scroll and SVG Icons
                 SizedBox(
-                  height: 130, // Increased height to accommodate labels
+                  height: 110.h, // Slightly reduced height
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
                     children: [
                       // List of SVG files from the assets/svg directory with their corresponding category names
                       _buildCircularIcon(
-                          'assets/svg/icon_1.svg', 1, 'فحص شامل'),
+                          'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
                       _buildCircularIcon(
-                          'assets/svg/icon_2.svg', 2, 'حشو أسنان'),
+                          'assets/svg/حشو اسنان.svg', 2, 'حشو أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_3.svg', 3, 'زراعة أسنان'),
+                          'assets/svg/زراعه اسنان.svg', 3, 'زراعة أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_4.svg', 4, 'خلع أسنان'),
+                          'assets/svg/خلع اسنان.svg', 4, 'خلع أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_5.svg', 5, 'تبييض أسنان'),
+                          'assets/svg/تبيض اسنان.svg', 5, 'تبييض أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_6.svg', 6, 'تقويم أسنان'),
+                          'assets/svg/تقويم اسنان.svg', 6, 'تقويم أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/icon_7.svg', 7, 'تركيبات أسنان'),
-                    ],
-                  ),
-                ), // Services Header
-                Container(
-                  width: 500,
-                  height: 35,
-                  margin: const EdgeInsets.only(top: 20, bottom: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'الاطباء الاقرب لك',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontWeight: FontWeight.w600,
-                          // SemiBold
-                          fontSize: 18,
-                          height: 1.2,
-                          letterSpacing: -0.02,
-                          // -2% letter spacing
-                          color: Colors.black,
-                        ),
-                      ),
-                      Container(
-                        width: 50,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        alignment: Alignment.centerRight,
-                        margin: const EdgeInsets.only(left: 50),
-                        child: GestureDetector(
-                          onTap: () {
-                            // TODO: Add navigation to see more services
-                          },
-                          child: const Text(
-                            'المزيد',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
-                              height: 1.0,
-                              // 100% line height
-                              letterSpacing: -0.02,
-                              // -2% letter spacing
-                              color: Colors.grey,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                      ),
+                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات أسنان'),
                     ],
                   ),
                 ),
-                // Two equal containers side by side
                 Container(
-                  width: 350,
-                  margin: const EdgeInsets.only(top: 20, left: 22, right: 22),
+                  width: double.infinity,
+                  margin: EdgeInsets.only(top: 16.h, left: 22.w, right: 22.w),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // First container - المدن
-                      Container(
-                        width: 150,
-                        height: 47.81,
+                      Expanded(
+                          child: Container(
+                        // width: 150.w,
+                        height: 44.h,
                         padding: const EdgeInsets.only(
                           top: 0,
                           right: 0,
@@ -700,31 +670,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: const Color(0xFFD1D5DC),
                             width: 1.1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                              color: Colors.cyan,
+                              blurRadius: 4.r,
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),
                         child: Stack(
                           children: [
                             // Centered text with padding
-                            const Padding(
-                              padding: EdgeInsets.only(left: 35),
+                            Padding(
+                              padding: EdgeInsets.only(left: 35.w),
                               // Added left padding to avoid divider
                               child: Center(
                                 child: Text(
                                   'المدن',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 18,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.w700,
                                     height: 2.33,
                                     letterSpacing: 0.1,
@@ -735,21 +705,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             // Left-aligned arrow and divider
                             Positioned(
-                              left: 8,
+                              left: 8.w,
                               top: 0,
                               bottom: 0,
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.arrow_drop_down,
-                                    size: 24,
+                                    size: 22.r,
                                     color: Colors.black,
                                   ),
                                   Container(
-                                    height: 46.5,
-                                    width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                    height: 44.h,
+                                    width: 1.w,
+                                    margin:
+                                        EdgeInsets.symmetric(horizontal: 4.w),
                                     color: const Color(0xFFD1D5DC),
                                   ),
                                 ],
@@ -757,11 +727,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                      ),
+                      )),
                       // Second container - المناطق
-                      Container(
-                        width: 150,
-                        height: 47.81,
+                      SizedBox(width: 16.w),
+                      Expanded(
+                          child: Container(
+                        // width: 150.w,
+                        height: 47.81.h,
                         padding: const EdgeInsets.only(
                           top: 0,
                           right: 0,
@@ -770,31 +742,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: const Color(0xFFD1D5DC),
                             width: 1.1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                              color: Colors.cyan,
+                              blurRadius: 4.r,
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),
                         child: Stack(
                           children: [
                             // Centered text with padding
-                            const Padding(
-                              padding: EdgeInsets.only(left: 35),
+                            Padding(
+                              padding: EdgeInsets.only(left: 35.w),
                               // Added left padding to avoid divider
                               child: Center(
                                 child: Text(
                                   'المناطق',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 18,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.w700,
                                     height: 2.33,
                                     letterSpacing: 0.1,
@@ -805,19 +777,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             // Left-aligned arrow and divider
                             Positioned(
-                              left: 8,
+                              left: 8.w,
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.arrow_drop_down,
-                                    size: 24,
+                                    size: 22.r,
                                     color: Colors.black,
                                   ),
                                   Container(
-                                    height: 46.5,
-                                    width: 1,
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                    height: 44.h,
+                                    width: 1.w,
+                                    margin:
+                                        EdgeInsets.symmetric(horizontal: 4.w),
                                     color: const Color(0xFFD1D5DC),
                                   ),
                                 ],
@@ -825,11 +797,37 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
+                      )),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 15.h),
+                // Doctor Card Section // Services Header
+                Container(
+                  height: 28.h,
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'الاطباء الاقرب لك',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          // SemiBold
+                          fontSize: 17.sp,
+                          height: 1.2,
+                          letterSpacing: -0.02,
+                          // -2% letter spacing
+                          color: Colors.black,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // Doctor Card Section
+                // Two equal containers side by side
+
                 for (var i = 0; i < 5; i++) _buildDoctorCard(),
               ],
             ),

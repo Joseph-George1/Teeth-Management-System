@@ -9,5 +9,8 @@ class Routes {
   static const String resetPasswordScreen = '/resetPassword';
   static const String signUpSuccessScreen = '/signUpSuccess';
   static const String categoriesScreen = '/home_screen';
+  static const String doctorInfoScreen = '/doctor-info';
+  static const String bookingConfirmationScreen = '/booking-confirmation';
+  static const String appointmentsScreen = '/appointments';
   static const String mainLayoutScreen = '/main-layout';
 }

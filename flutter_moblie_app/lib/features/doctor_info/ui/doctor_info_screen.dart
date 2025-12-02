@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:thotha_mobile_app/features/booking/ui/booking_confirmation_screen.dart';
 
 class DoctorInfoContent extends StatefulWidget {
   final ScrollController controller;
+
   const DoctorInfoContent({super.key, required this.controller});
 
   @override
@@ -9,8 +11,30 @@ class DoctorInfoContent extends StatefulWidget {
 }
 
 class _DoctorInfoContentState extends State<DoctorInfoContent> {
-  String _selectedDay = 'الأحد';
-  String? _selectedTime;
+  String? _selectedDay;
+  TimeOfDay? _selectedTime;
+
+  bool get _isBookingEnabled => _selectedDay != null && _selectedTime != null;
+
+  void _showBookingForm(BuildContext context) {
+    // Format the date and time for display
+    final formattedDate = _selectedDay != null ? '${_selectedDay}' : 'غير محدد';
+
+    final formattedTime =
+        _selectedTime != null ? _selectedTime!.format(context) : 'غير محدد';
+
+    // Navigate to the booking confirmation screen
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => BookingConfirmationScreen(
+    //       doctorName: 'د. زياد', // Using the actual doctor's name from the UI
+    //       date: formattedDate,
+    //       time: formattedTime,
+    //     ),
+    //   ),
+    // );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -313,15 +337,23 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                       scrollDirection: Axis.horizontal,
                                       reverse: true,
                                       itemCount: 4,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(width: 8),
                                       itemBuilder: (context, index) {
-                                        final days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء'];
+                                        final days = [
+                                          'الأحد',
+                                          'الإثنين',
+                                          'الثلاثاء',
+                                          'الأربعاء'
+                                        ];
                                         final label = days[index];
                                         return _DayChip(
                                           label: label,
                                           selected: _selectedDay == label,
-                                          onTap: () => setState(() => _selectedDay = label),
+                                          onTap: () => setState(
+                                              () => _selectedDay = label),
                                         );
                                       },
                                     ),
@@ -331,32 +363,56 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     children: [
                                       _TimeListTile(
                                         label: '9:00 صباحاً',
-                                        selected: _selectedTime == '9:00 صباحاً',
-                                        onTap: () => setState(() => _selectedTime = '9:00 صباحاً'),
+                                        selected: _selectedTime?.hour == 9 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 9, minute: 0)),
                                       ),
                                       const SizedBox(height: 8),
                                       _TimeListTile(
                                         label: '10:00 صباحاً',
-                                        selected: _selectedTime == '10:00 صباحاً',
-                                        onTap: () => setState(() => _selectedTime = '10:00 صباحاً'),
+                                        selected: _selectedTime?.hour == 10 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 10, minute: 0)),
                                       ),
                                       const SizedBox(height: 8),
                                       _TimeListTile(
                                         label: '12:00 ظهراً',
-                                        selected: _selectedTime == '12:00 ظهراً',
-                                        onTap: () => setState(() => _selectedTime = '12:00 ظهراً'),
+                                        selected: _selectedTime?.hour == 12 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 12, minute: 0)),
                                       ),
                                       const SizedBox(height: 8),
                                       _TimeListTile(
                                         label: '02:00 مساءً',
-                                        selected: _selectedTime == '02:00 مساءً',
-                                        onTap: () => setState(() => _selectedTime = '02:00 مساءً'),
+                                        selected: _selectedTime?.hour == 14 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 14, minute: 0)),
                                       ),
                                       const SizedBox(height: 8),
                                       _TimeListTile(
                                         label: '04:00 مساءً',
-                                        selected: _selectedTime == '04:00 مساءً',
-                                        onTap: () => setState(() => _selectedTime = '04:00 مساءً'),
+                                        selected: _selectedTime?.hour == 16 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 16, minute: 0)),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _TimeListTile(
+                                        label: '06:00 مساءً',
+                                        selected: _selectedTime?.hour == 18 &&
+                                            _selectedTime?.minute == 0,
+                                        onTap: () => setState(() =>
+                                            _selectedTime = const TimeOfDay(
+                                                hour: 18, minute: 0)),
                                       ),
                                     ],
                                   ),
@@ -395,13 +451,15 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     children: [
                                       Expanded(
                                         child: InkWell(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           onTap: () => Navigator.pop(context),
                                           child: Container(
                                             height: 44,
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFF3F4F6),
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: const Center(
                                               child: Text(
@@ -419,21 +477,45 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
-                                        child: Container(
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF10B981),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: const Center(
-                                            child: Text(
-                                              'تأكيد الحجز',
-                                              style: TextStyle(
-                                                fontFamily: 'Cairo',
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 14,
-                                                color: Colors.white,
+                                        child: GestureDetector(
+                                          onTap: _isBookingEnabled
+                                              ? () {
+                                                  final String doctorName = 'ZEZO';
+                                                  final String date = _selectedDay ?? '';
+                                                  final String time = _selectedTime?.format(context) ?? '';
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => BookingConfirmationScreen(
+                                                        doctorName: doctorName,
+                                                        date: date,
+                                                        time: time,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              : null,
+                                          child: Container(
+                                            height: 44,
+                                            decoration: BoxDecoration(
+                                              color: _isBookingEnabled
+                                                  ? const Color(0xFF10B981)
+                                                  : const Color(0xFF9CA3AF),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                'تأكيد الحجز',
+                                                style: TextStyle(
+                                                  fontFamily: 'Cairo',
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                  color: _isBookingEnabled
+                                                      ? Colors.white
+                                                      : Colors.white
+                                                          .withOpacity(0.7),
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -580,12 +662,14 @@ class _TimeListTile extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback? onTap;
+
   const _TimeListTile({required this.label, this.selected = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.circular(10);
-    final Color borderColor = selected ? const Color(0xFF8DECB4) : const Color(0xFFE5E7EB);
+    final Color borderColor =
+        selected ? const Color(0xFF8DECB4) : const Color(0xFFE5E7EB);
     final Widget text = Text(
       label,
       style: TextStyle(
@@ -624,7 +708,9 @@ class _TimeListTile extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.access_time, size: 18, color: selected ? Colors.white : const Color(0xFF111827)),
+            Icon(Icons.access_time,
+                size: 18,
+                color: selected ? Colors.white : const Color(0xFF111827)),
             text,
           ],
         ),

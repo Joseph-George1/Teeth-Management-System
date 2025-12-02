@@ -5,9 +5,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../features/chat/ui/chat_screen.dart';
 import '../../home_screen/ui/home_screen.dart';
+import '../../appointments/ui/appointments_screen.dart';
 
 class MainLayoutScreen extends StatefulWidget {
   final int initialIndex;
+
   const MainLayoutScreen({super.key, this.initialIndex = 0});
 
   @override
@@ -24,11 +26,12 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
-    _screens = const [
-      HomeScreen(),
-      ChatScreen(),
-      Placeholder(), // For appointments screen (index 2)
-      Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))), // For profile screen (index 3)
+    _screens = [
+      const HomeScreen(),
+      const ChatScreen(),
+      const AppointmentsScreen(), // Appointments screen (index 2)
+      //const Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))),
+      // For profile screen (index 3)
     ];
   }
 
@@ -39,12 +42,13 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   }
 
   void _onItemTapped(int index) {
-    if (index == 3) { // Profile button index is 3
+    if (index == 3) {
+      // Profile button index is 3
       // Navigate to login screen and remove all previous routes
       Navigator.pushNamedAndRemoveUntil(
         context,
         Routes.loginScreen,
-            (route) => false,
+        (route) => false,
       );
     } else {
       setState(() {
@@ -86,7 +90,6 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 icon: Icons.home_sharp,
                 activeIcon: Icons.home_sharp,
                 label: 'الصفحة الرئيسية',
-
                 isActive: _currentIndex == 0,
                 onTap: () => _onItemTapped(0),
               ),
@@ -145,7 +148,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
             children: [
               Icon(
                 isActive && activeIcon != null ? activeIcon : icon,
-                color: isActive ? const Color(0xFF0B8FAC) : const Color(0xFF9E9E9E),
+                color: isActive
+                    ? const Color(0xFF0B8FAC)
+                    : const Color(0xFF9E9E9E),
                 size: 24.w,
               ),
               SizedBox(height: 4.h),
@@ -153,7 +158,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 label,
                 style: TextStyle(
                   fontFamily: 'Cairo',
-                  color: isActive ? const Color(0xFF0B8FAC) : const Color(0xFF9E9E9E),
+                  color: isActive
+                      ? const Color(0xFF0B8FAC)
+                      : const Color(0xFF9E9E9E),
                   fontSize: 11.sp,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -187,7 +194,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
             label,
             style: TextStyle(
               fontFamily: 'Cairo',
-              color: isActive ? const Color(0xFF0B8FAC) : const Color(0xFF9E9E9E),
+              color:
+                  isActive ? const Color(0xFF0B8FAC) : const Color(0xFF9E9E9E),
               fontSize: 12.sp,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),
