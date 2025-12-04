@@ -440,13 +440,49 @@ Run_whole_system() {
 
 update_production_server() {
     echo -e "${GREEN}Updating production server...${NC}"
-    cd "$webui_path" || { echo -e "${RED}Failed to change directory to $webui_path${NC}"; exit 1; }
-    git pull origin main || { echo -e "${RED}Git pull failed. Please check your network connection or repository status.${NC}"; exit 1; }
-    echo -e "${GREEN}Production server updated successfully.${NC}"
-    npm run build || { echo -e "${RED}Build failed. Please check the build logs for details.${NC}"; exit 1; }
-    # Copy built files to the server directory
-    cp -r dist/* "$server_dir"/ || { echo -e "${RED}Failed to copy files to $server_dir${NC}"; exit 1; }
+
+    # Validate target directory (safety check)
+    if [ ! -d "$server_dir" ] || [ -z "$server_dir" ] || [ "$server_dir" = "/" ]; then
+        echo -e "${RED}ERROR: Invalid or dangerous server_dir: '$server_dir'${NC}"
+        exit 1
+    fi
+
+    # Move to the web UI directory
+    cd "$webui_path" || { 
+        echo -e "${RED}Failed to change directory to $webui_path${NC}"
+        exit 1
+    }
+
+    # Pull latest changes
+    git pull origin main || { 
+        echo -e "${RED}Git pull failed. Please check your network or repo status.${NC}"
+        exit 1
+    }
+    echo -e "${GREEN}Production server updated from Git successfully.${NC}"
+
+    # Build project
+    npm run build || { 
+        echo -e "${RED}Build failed. Check the build logs for details.${NC}"
+        exit 1
+    }
+
+    # Remove old production files except .htaccess
+    echo -e "${GREEN}Cleaning old production files...${NC}"
+    find "$server_dir" -mindepth 1 ! -name ".htaccess" -exec rm -rf {} + || { 
+        echo -e "${RED}Failed to remove old files from $server_dir${NC}"
+        exit 1
+    }
+    echo -e "${GREEN}Old files removed from $server_dir successfully.${NC}"
+
+    # Copy new build
+    sudo cp -r dist/* "$server_dir"/ || { 
+        echo -e "${RED}Failed to copy files to $server_dir${NC}"
+        exit 1
+    }
     echo -e "${GREEN}Files copied to $server_dir successfully.${NC}"
+
+    echo -e "${GREEN}Deployment completed successfully!${NC}"
+}
 
  
 #-------------------------------------------------------------
