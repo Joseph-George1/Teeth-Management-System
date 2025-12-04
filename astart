@@ -23,10 +23,18 @@ NC="\033[0m"
 # - Uses AWS metadata service to attempt to record instance public IP
 #   when available; falls back to public IP services or hostname.
 #-------------------------------------------------------------
+
+# Define paths
+core_path="$HOME/Teeth-Management-System/Ai-chatbot"
+Source_path="venv/bin/activate"
+webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
+backend_path="$HOME/Teeth-Management-System/BackEnd"
 LOG_DIR="$HOME/Teeth-Management-System/logs"
 PROCESS_LOG_DIR="$LOG_DIR/process_logs"
 PID_DIR="$LOG_DIR/pids"
 ACTIVITY_LOG="$LOG_DIR/astart_activity.log"
+server_dir="/var/www/html"
+
 
 #-------------------------------------------------------------
 # init_logging
@@ -355,11 +363,7 @@ stop_all() {
     done
 }
 
-# Define paths
-core_path="$HOME/Teeth-Management-System/Ai-chatbot"
-Source_path="venv/bin/activate"
-webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
-backend_path="$HOME/Teeth-Management-System/BackEnd"
+
 
 #-------------------------------------------------------------
 # Function to start the chatbot with streamlit web interface
@@ -428,6 +432,22 @@ Run_whole_system() {
     wait
 }
 
+
+#---------------------------------------------------------------------
+#Function to fetch the latest code from the repository and update the 
+#Production server 
+#---------------------------------------------------------------------
+
+update_production_server() {
+    echo -e "${GREEN}Updating production server...${NC}"
+    cd "$webui_path" || { echo -e "${RED}Failed to change directory to $webui_path${NC}"; exit 1; }
+    git pull origin main || { echo -e "${RED}Git pull failed. Please check your network connection or repository status.${NC}"; exit 1; }
+    echo -e "${GREEN}Production server updated successfully.${NC}"
+    npm run build || { echo -e "${RED}Build failed. Please check the build logs for details.${NC}"; exit 1; }
+    # Copy built files to the server directory
+    cp -r dist/* "$server_dir"/ || { echo -e "${RED}Failed to copy files to $server_dir${NC}"; exit 1; }
+    echo -e "${GREEN}Files copied to $server_dir successfully.${NC}"
+
  
 #-------------------------------------------------------------
 # Function to display help message
@@ -436,6 +456,7 @@ display_help() {
     echo "Usage: $0 [options]"
     echo "Options:"
     echo -e "  ${RED}-c${NC}    ${GREEN}Start Web Interface${NC}"
+    echo -e "  ${RED}-u${NC}    ${GREEN}Update Production Server${NC}"
     echo -e "  ${RED}-a${NC}    ${GREEN}Start AI Chatbot API Only${NC}"
     echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
     echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
@@ -457,11 +478,16 @@ if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
     echo "DEBUG: invoked as: $0 $*" >&2
 fi
 
-while getopts ":cawbxsh" option; do
+while getopts ":cauwbxsh" option; do
     case $option in
         c)
             echo -e "${GREEN}StartingWeb Interface...${NC}"
             start_web_ui
+            ;;
+        u)
+            echo -e "${GREEN}Update Production Server...${NC}"
+            update_production_server
+            exit 0
             ;;
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
