@@ -30,6 +30,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 .signup-title{
     font-size: 32px; 
@@ -85,6 +86,38 @@
 }
 .login-link span{
     color: var(--text-color-3);
+}
+
+.error-message {
+    background-color: #FEE2E2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+    border-radius: var(--border-radius-1);
+    padding: 14px 20px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    animation: slideDown 0.3s ease-out;
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* ---------------- RESPONSIVE  ---------------- */
