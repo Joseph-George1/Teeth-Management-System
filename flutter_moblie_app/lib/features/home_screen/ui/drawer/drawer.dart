@@ -1,8 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer/booking_history/ui/booking_history_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer/my_bookings/ui/my_bookings_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer/browse_services/ui/browse_services_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/settings_screen.dart';
+import 'package:thotha_mobile_app/features/login/ui/login_screen.dart';
+
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text(
+              'تأكيد تسجيل الخروج',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: const Text(
+              'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: Colors.grey,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+              TextButton(
+                child: const Text(
+                  'تسجيل خروج',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: Colors.red,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  // Navigate to login screen and remove all previous routes
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (Route<dynamic> route) => false,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   static const _cCyan = Color(0xFF84E5F3);
   static const _cGreen = Color(0xFF8DECB4);
@@ -156,16 +222,76 @@ class HomeDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _menuItem(context, title: 'الحساب الشخصي', icon: Icons.person_outline),
-                _menuItem(context, title: 'حجوزاتي', icon: Icons.event_note_outlined),
-                _menuItem(context, title: 'تاريخ الحجوزات', icon: Icons.history),
-                _menuItem(context, title: 'تصفح الخدمات', icon: Icons.calendar_month_outlined),
-                _menuItem(context, title: 'الإعدادات', icon: Icons.settings_outlined),
+                _menuItem(
+                  context,
+                  title: 'حجوزاتي',
+                  icon: Icons.event_note_outlined,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  MyBookingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _menuItem(
+                  context,
+                  title: 'تاريخ الحجوزات',
+                  icon: Icons.history,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  BookingHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _menuItem(
+                  context,
+                  title: 'تصفح الخدمات',
+                  icon: Icons.calendar_month_outlined,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  BrowseServicesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _menuItem(
+                  context,
+                  title: 'الإعدادات',
+                  icon: Icons.settings_outlined,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) =>  SettingsScreen()),
+                    );
+                  },
+                ),
                 _menuItem(context, title: 'المساعدة والدعم', icon: Icons.help_outline),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Divider(height: 24.h),
                 ),
-                _menuItem(context, title: 'تسجيل الخروج', icon: Icons.logout_outlined, iconColor: Colors.red, textColor: Colors.red),
+                _menuItem(
+                  context,
+                  title: 'تسجيل الخروج',
+                  icon: Icons.logout_outlined,
+                  iconColor: Colors.red,
+                  textColor: Colors.red,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    _showLogoutConfirmation(context);
+                  },
+                ),
               ],
             ),
           ),

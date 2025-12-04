@@ -468,7 +468,7 @@ update_production_server() {
 
     # Remove old production files except .htaccess
     echo -e "${GREEN}Cleaning old production files...${NC}"
-    find "$server_dir" -mindepth 1 ! -name ".htaccess" -exec rm -rf {} + || { 
+    sudo find "$server_dir" -mindepth 1 ! -name ".htaccess" -exec rm -rf {} + || { 
         echo -e "${RED}Failed to remove old files from $server_dir${NC}"
         exit 1
     }
