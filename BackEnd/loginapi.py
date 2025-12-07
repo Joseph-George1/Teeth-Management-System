@@ -108,7 +108,31 @@ def login():
         return jsonify({'status': 'error', 'message': 'Stored password invalid'}), 500
 
     if password == stored:
-        return jsonify({'status': 'success', 'message': 'Login successful'}), 200
+        # Load the full user entry to return profile fields when available
+        users = load_users()
+        entry = users.get(email)
+        first_name = None
+        last_name = None
+        faculty = None
+        year = None
+        governorate = None
+        if isinstance(entry, dict):
+            first_name = entry.get('first_name')
+            last_name = entry.get('last_name')
+            faculty = entry.get('faculty')
+            year = entry.get('year')
+            governorate = entry.get('governorate')
+
+        resp = {'status': 'success', 'message': 'Login successful'}
+        # Include names when present (keeps response compact otherwise)
+        if first_name or last_name:
+            resp['first_name'] = first_name
+            resp['last_name'] = last_name
+            resp['faculty'] = faculty
+            resp['year'] = year
+            resp['governorate'] = governorate
+
+        return jsonify(resp), 200
     else:
         return jsonify({'status': 'error', 'message': 'Email/password incorrect'}), 401
 
