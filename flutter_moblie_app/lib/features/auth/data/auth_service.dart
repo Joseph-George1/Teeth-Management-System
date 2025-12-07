@@ -23,7 +23,7 @@ class AuthService {
       final response = await _dio.post(
         '$_baseUrl/login',
         data: {
-          'email': email.trim(),
+          'email': "new@example.com",
           'password': password,
         },
         options: Options(

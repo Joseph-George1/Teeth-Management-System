@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/helpers/spacing.dart';
 import '../../../core/theming/styles.dart';
@@ -134,10 +135,11 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leadingWidth: 8,
+       // backgroundColor: Colors.blue,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
-            // Navigate to main layout with home_screen tab (index 0) selected
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -146,170 +148,148 @@ class _ChatScreenState extends State<ChatScreen> {
             );
           },
         ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [ const SizedBox(width: 8),
+            Text(
+              'الطبيب المساعد ثوثة',
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+
+            ), const SizedBox(width: 8),
+            SvgPicture.asset(
+              'assets/svg/ثوثه الدكتور 1.svg',
+              width: 40,
+              height: 40,
+            ),
+
+          ],
+        ),
         centerTitle: true,
+        backgroundColor: Colors.lightBlueAccent,
+        elevation: 0,
       ),
-      body: Stack(
-        children: [
-          // Top-left gradient overlay (monochrome)
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(-0.7, -0.7),
-                radius: 1.5,
-                colors: [
-                  Colors.black.withOpacity(0.08),
-                  Colors.black.withOpacity(0.03),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.3, 0.8],
-              ),
-            ),
-          ),
-          // Bottom-right gradient overlay (monochrome)
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                radius: 1.5,
-                colors: [
-                  Colors.black.withOpacity(0.06),
-                  Colors.black.withOpacity(0.02),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.3, 0.8],
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Column(
-                  children: [
-                    // Header
-                    Text(
-                      'الطبيب المساعد ثوثه',
-                      style: TextStyles.font24BlackBold,
-                    ),
-                    verticalSpace(8),
-                    // Chatbot header image (centered circle)
-                    Center(
-                      child: CircleAvatar(
-                        radius: 34,
-                        backgroundImage:
-                            const AssetImage('assets/images/chatbot.jpg'),
-                        backgroundColor: Colors.transparent,
-                      ),
-                    ),
-                    verticalSpace(8),
-
-                    // Messages list
-                    Expanded(
-                      child: ListView.separated(
-                        reverse: true,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        itemBuilder: (context, index) {
-                          final msg = _messages[_messages.length - 1 - index];
-                          if (msg.isUser) {
-                            // User bubble (left)
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                constraints: BoxConstraints(maxWidth: 0.8.sw),
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  msg.text,
-                                  style: TextStyles.font15DarkBlueMedium,
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            );
-                          } else {
-                            // Bot bubble (right) with small avatar at the start
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.black12, width: 1),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Image.asset(
-                                    'assets/images/chatbo t.jpg',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(maxWidth: 0.75.sw),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      msg.text,
-                                      style: TextStyles.font15DarkBlueMedium,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }
-                        },
-                        separatorBuilder: (_, __) => verticalSpace(8),
-                        itemCount: _messages.length,
-                      ),
-                    ),
-
-                    // Input bar
-                    Row(
+      body: Container(
+        color: Colors.white,
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Column(
+            children: [
+              // Chat messages
+            Expanded(
+              child: ListView.separated(
+                reverse: true,
+                padding: const EdgeInsets.all(16),
+                itemBuilder: (context, index) {
+                  final msg = _messages[_messages.length - 1 - index];
+                  if (msg.isUser) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _msgController,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendMessage(),
-                            decoration: InputDecoration(
-                              hintText: 'اكتب رسالتك...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 0.75 * MediaQuery.of(context).size.width),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlueAccent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Text(
+                              msg.text,
+                              style: GoogleFonts.cairo(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                height: 1.6, // 160% line height
+                                letterSpacing: 0.15,
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                              textAlign: TextAlign.right,
                             ),
                           ),
                         ),
-                        horizontalSpace(8),
-                        IconButton(
-                          onPressed: _isSending ? null : _sendMessage,
-                          icon: const Icon(Icons.send),
-                          color: Colors.black,
+                      ],
+                    );
+                  } else {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+
+                          width: 40,
+                          height: 40,
+                          child: SvgPicture.asset(
+                            'assets/svg/ثوثه الدكتور 1.svg',
+
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 0.75 * MediaQuery.of(context).size.width),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlueAccent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              msg.text,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                  ],
-                ),
+                    );
+                  }
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemCount: _messages.length,
               ),
             ),
-          ),
-        ],
+
+            // Input bar
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _msgController,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: InputDecoration(
+                        hintText: 'اكتب رسالتك...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _isSending ? null : _sendMessage,
+                    icon: const Icon(Icons.send),
+                    color: Colors.black,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    );
+      ));
   }
 }
 
