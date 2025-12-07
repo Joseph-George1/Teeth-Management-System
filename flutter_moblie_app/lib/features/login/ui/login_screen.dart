@@ -8,6 +8,7 @@ import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
 import '../../auth/data/auth_service.dart';
+import '../../home_screen/doctor_home/ui/doctor_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -99,8 +100,23 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (result['success'] == true) {
         if (mounted) {
-          // Navigate to home screen on successful login
-          Navigator.pushReplacementNamed(context, Routes.categoriesScreen);
+          // Navigate to doctor home screen with fade transition and white background
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const DoctorHomeScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: Container(
+                    color: Colors.white, // Ensures white background during transition
+                    child: child,
+                  ),
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 300),
+            ),
+          );
+          
         }
       } else {
         // Show error message if login fails

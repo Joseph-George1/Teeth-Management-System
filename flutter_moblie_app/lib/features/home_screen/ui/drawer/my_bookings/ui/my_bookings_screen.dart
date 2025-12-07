@@ -188,9 +188,14 @@ class MyBookingsScreen extends StatelessWidget {
             ),
 
           Container(
-            width: 373.8,
-            height: 170, // Slightly increased to prevent any overflow
-            margin: const EdgeInsets.only(top: 15),
+            width: 373.01,
+            height: 175.97,
+            margin: const EdgeInsets.symmetric(vertical: 11.99),
+            padding: const EdgeInsets.only(
+              top: 23.99,
+              right: 20,
+              left: 20,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -202,180 +207,112 @@ class MyBookingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            // ... rest of your existing Stack children
             child: Stack(
               children: [
                 // Left Container - Adjusted for better layout
                 Positioned(
-                  left: 11.99,
-                  top: 10,
-                  child: Container(
-                    width: 250.0,
-                    height: 100.0, // Increased height to accommodate buttons
-                    padding: const EdgeInsets.only(right: 0, bottom: 0),
+                  right: 90,
+                  top: -10,
+                  child: SizedBox(
+                    width: 333.80426025390625,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 200,
-                          height: 26.99,
-                          alignment: Alignment.centerRight,
-                          child: const Text(
-                            'زياد جمال ',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 18,
-                              height: 1.5,
-                              color: Color(0xFF0A0A0A),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4), // Small spacing between the name and specialty
-                        Container(
-                          width: 200,
-                          height: 21.0,
-                          alignment: Alignment.centerRight,
-                          child: const Text(
-                            'تدريب زراعة اسنان',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14,
-                              height: 1.5,
-                              color: Color(0xFF858585),
-                            ),
-                          ),
-                        ),
-                        // Date and Time Row
-                        Container(
-                          width: 250.0,
-                          height: 21.0,
-                          margin: const EdgeInsets.only(top: 5.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                          width: double.infinity,
+                          height: 80.99864196777344,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Status Badge (Green) - Right side in RTL
-
-
-                              // Time and Date in a single row
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Time with clock icon
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        '11:30 صباحا' ,
-                                        style: TextStyle(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
-                                          height: 1.5,
-                                          color: Color(0xFF6A7282),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(
-                                        Icons.access_time,
-                                        size: 16,
-                                        color: Color(0xFF6A7282),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 24), // Increased space between time and date
-                                  // Date with calendar icon
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        '2025-11-29',
-                                        style: TextStyle(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
-                                          height: 1.5,
-                                          color: Color(0xFF6A7282),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(
-                                        Icons.calendar_month,
-                                        size: 16,
-                                        color: Color(0xFF6A7282),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Buttons Row
-                        Container(
-                          width: 350.0,
-                          margin: const EdgeInsets.only(top: 30.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              // Edit Button
-                              SizedBox(
-                                width: 150,
-                                height: 37,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // Add edit action
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFEFF6FF),
-                                    foregroundColor: const Color(0xFF155DFC),
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                      side: const BorderSide(color: Color(0xFF155DFC)),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                  child: const Text(
-                                    'تعديل',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Cairo',
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                              Container(
+                                width: double.infinity,
+                                height: 26.99,
+                                alignment: Alignment.centerRight,
+                                child: const Text(
+                                  'زياد جمال ',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                    height: 1.5,
+                                    color: Color(0xFF0A0A0A),
                                   ),
                                 ),
                               ),
-                              // Cancel Button
-                              SizedBox(
-                                width: 150,
-                                height: 37,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    // Add cancel action
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFEF2F2),
-                                    foregroundColor: const Color(0xFFE7000B),
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                      side: const BorderSide(color: Color(0xFFE7000B)),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                              const SizedBox(height: 4),
+                              Container(
+                                width: double.infinity,
+                                height: 21.0,
+                                alignment: Alignment.centerRight,
+                                child: const Text(
+                                  'تدريب زراعة اسنان',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    color: Color(0xFF858585),
                                   ),
-                                  child: const Text(
-                                    'إلغاء',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Cairo',
-                                      fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Container(
+                                width: double.infinity,
+                                height: 21.0,
+                                margin: const EdgeInsets.only(top: 5.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          '11:30 صباحا',
+                                          style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 14,
+                                            height: 1.5,
+                                            color: Color(0xFF6A7282),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          Icons.access_time,
+                                          size: 16,
+                                          color: Color(0xFF6A7282),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                    const SizedBox(width: 24),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          '2025-11-29',
+                                          style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 14,
+                                            height: 1.5,
+                                            color: Color(0xFF6A7282),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          Icons.calendar_month,
+                                          size: 16,
+                                          color: Color(0xFF6A7282),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -388,11 +325,11 @@ class MyBookingsScreen extends StatelessWidget {
                 // Image Container - Adjusted position
                 Positioned(
                   right: 10,
-                  top: 10,
+                  top: 0,
                   child: Opacity(
                     opacity: 0.8,
                     child: Container(
-                      width: 79.99,
+                      width: 78.99,
                       height: 79.99,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
@@ -401,6 +338,88 @@ class MyBookingsScreen extends StatelessWidget {
                           fit: BoxFit.cover,
                         ),
                       ),
+                    ),
+                  ),
+                ),
+                // Buttons - independent from info container
+                Positioned(
+                  bottom: 19,
+                  child: SizedBox(
+                    width: 331.80426025390625,
+                    height: 36.99217987060547,
+                    child: Row(
+                      textDirection: TextDirection.ltr,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: 162.90621948242188,
+                          height: 36.99217987060547,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Add edit action
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEFF6FF),
+                              foregroundColor: const Color(0xFF155DFC),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                side: const BorderSide(color: Color(0xFF155DFC)),
+                              ),
+                              padding: const EdgeInsets.only(
+
+                                right: 60.64,
+                                left: 66.62,
+                              ),
+                            ),
+                            child: const Text(
+                              'تعديل',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.w400,
+                                height: 21 / 14,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 160.90621948242188,
+                          height: 36.99217987060547,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Add cancel action
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFEF2F2),
+                              foregroundColor: const Color(0xFFE7000B),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                                side: const BorderSide(color: Color(0xFFE7000B)),
+                              ),
+                              padding: const EdgeInsets.only(
+
+                                right: 60.33,
+                                left: 67.31,
+                              ),
+                            ),
+                            child: const Text(
+                              'إلغاء',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.w400,
+                                height: 21 / 14,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
