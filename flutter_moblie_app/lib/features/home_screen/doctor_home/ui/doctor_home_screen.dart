@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // In case you need SVG support later
-// Add these imports at the top of the file
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 class DoctorHomeScreen extends StatelessWidget {
@@ -681,11 +680,17 @@ class DoctorHomeScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                  ]))))]))],
-                      ),
-                    );
-
-
-                // Add your content below the header here
+                  ]
+                      )
+                    )
+                  )
+                )
+              ]
+            )
+          )
+        ],
+      ),
+    );
+    // Add your content below the header here
   }
 }
