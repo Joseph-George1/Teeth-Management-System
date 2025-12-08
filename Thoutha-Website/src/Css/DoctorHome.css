@@ -1,0 +1,171 @@
+:root{
+    --color-1-background:#C4EDFC;
+    --color-2-background:#A2F9CF;
+    --color-3-background:#FFFFFF99;
+    --button-color-1:#1D61E7;
+    --button-color-2:#25B4E5;
+    --text-color-1:#FFFFFF;
+    --text-color-2:#4D81E7;
+    --text-color-3:#6C7278;
+    --text-color-4:#111827;
+    --text-color-5:#D2EBE7;
+    --text-color-6:#101828;
+    --text-color-7:#323232;
+    --text-color-8:#B6B6B6;
+    --text-color-9: #858585;
+    --border-color:#EDF1F3;
+    --border-radius-1:12px;
+    --button-raduis-1:10px;
+}
+
+.doctorhome{
+    padding: 40px;
+}
+
+.doctor-name2{
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 42px;
+    text-align: right;
+    color: var(--text-color-6);
+}
+
+.doctor-subtitle{
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: right;
+    color: var(--text-color-9);
+}
+
+.doctor-work{
+    display: flex;
+    margin-top: 40px;
+    gap: 20px;
+}
+
+.doctor-last-patient{
+    display: flex;
+    flex-direction: column;
+    width: 613px;
+    height: 349px;
+}
+
+.last-patient-title{
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 30px;
+    color: var(--text-color-6);
+    padding-bottom: 20px;
+}
+
+.bottom{
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.last-patient-blog{
+    display: flex;
+    flex-direction: column;
+    width: 613px;
+    height: 349px;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    padding: 21px 21px 1px 21px;
+}
+
+.last-patient-details{
+    display: flex;
+    justify-content: space-between;
+    padding-top: 10px;
+}
+
+.top{
+    padding-top: 20px;
+}
+
+.last-patient-img-name{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.patient-img-circle img{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.last-patient-name{
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--text-color-6);
+}
+
+.date{
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--text-color-9);
+}
+
+/* ------------------------------------------------------------------- */
+/* ---------------------- RESPONSIVE SECTION -------------------------- */
+/* ------------------------------------------------------------------- */
+
+/* 📱 موبايل لحد 768px */
+@media (max-width: 768px) {
+
+    .doctorhome {
+        padding: 20px;
+    }
+
+    .doctor-name2 {
+        font-size: 22px;
+        line-height: 32px;
+        text-align: center;
+    }
+
+    .doctor-subtitle {
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .doctor-work {
+        flex-wrap: wrap;      /* 👈 مهم علشان العناصر تنزل تحت بعض */
+        justify-content: center;
+        width: 100%;
+    }
+
+    .doctor-last-patient,
+    .last-patient-blog {
+        width: 100%;          /* 👈 ياخد العرض بالكامل */
+        height: auto;         /* 👈 الارتفاع يتظبط لوحده */
+    }
+
+    .last-patient-details {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+/* 📱 موبايل صغير جدًا (max 500px) */
+@media (max-width: 500px) {
+    .last-patient-img-name {
+        gap: 6px;
+    }
+
+    .patient-img-circle img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .last-patient-name {
+        font-size: 14px;
+    }
+
+    .date {
+        font-size: 12px;
+    }
+}

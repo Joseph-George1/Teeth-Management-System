@@ -79,11 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (rememberMe) {
       await _handleRememberMe(true);
     }
-    
-    // Save credentials if remember me is checked
-    if (rememberMe) {
-      await _handleRememberMe(true);
-    }
 
     setState(() {
       isLoading = true;

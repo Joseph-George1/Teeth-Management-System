@@ -101,10 +101,10 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - path: assets/images/
-    - path: assets/svg/
-      transformers:
-        - package: vector_graphics_compiler
+    - assets/images/
+   # - assets/images/splash-logo.png
+    #- assets/images/dr.cr7.jpg
+    - assets/svg/
     - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see

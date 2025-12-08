@@ -3,6 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:dio/dio.dart';
+import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 
 
 class SettingsScreen extends StatefulWidget {
@@ -17,6 +20,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = false;
   bool _receiveOffers = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Doctor name/email state (loaded from cache or server)
+  String? _firstName;
+  String? _lastName;
+  String? _email;
+  bool _isLoadingName = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDoctorName();
+  }
+
+  Future<void> _fetchDoctorName() async {
+    if (!mounted) return;
+    setState(() { _isLoadingName = true; });
+
+    try {
+      // Try cache first
+      final cachedFirstName = await SharedPrefHelper.getString('first_name');
+      final cachedLastName = await SharedPrefHelper.getString('last_name');
+      final cachedEmail = await SharedPrefHelper.getString('email');
+
+      if (cachedFirstName != null && cachedFirstName.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _firstName = cachedFirstName;
+          _lastName = cachedLastName;
+          _email = cachedEmail;
+          _isLoadingName = false;
+        });
+        return;
+      }
+
+      final dio = DioFactory.getDio();
+      Response response;
+      try {
+        response = await dio.get('/me');
+      } catch (_) {
+        response = await dio.get('/profile');
+      }
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        String? f;
+        String? l;
+        String? e;
+        if (data is Map) {
+          f = (data['first_name'] ?? data['firstName']) as String?;
+          l = (data['last_name'] ?? data['lastName']) as String?;
+          e = (data['email'] ?? (data['user']?['email'])) as String?;
+
+          if ((f == null || f.isEmpty) && data['user'] != null) {
+            final user = data['user'];
+            f = f ?? (user['first_name'] ?? user['firstName']) as String?;
+            l = l ?? (user['last_name'] ?? user['lastName']) as String?;
+          }
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _firstName = f;
+          _lastName = l;
+          _email = e;
+        });
+
+        if (f != null && f.isNotEmpty) {
+          await SharedPrefHelper.setData('first_name', f);
+          await SharedPrefHelper.setData('last_name', l ?? '');
+          if (e != null) await SharedPrefHelper.setData('email', e);
+        }
+      }
+    } catch (e) {
+      // ignore errors, fall back to defaults
+    } finally {
+      if (!mounted) return;
+      setState(() { _isLoadingName = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // User greeting container
           Container(
             width: 400,
-            height: 80,
+            height:95,
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             padding: const EdgeInsets.only(top: 15),
             child: Stack(
@@ -80,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   left: 20,
                   child: Container(
                     width: 70,
-                    height: 39.99,
+                    height: 050.99,
                     alignment: Alignment.centerLeft,
                     child: const Icon(
                       Icons.notifications_none,
@@ -110,17 +192,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Color(0xFF858585),
                         ),
                       ),
-                      // Name
-                      const Text(
-                        'يوسف ايمن',
+                      // Name (dynamic)
+                      _isLoadingName
+                          ? SizedBox(
+                              width: 16,
+                              height: 20,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF858585),
+                              ),
+                            )
+                          : Text(
+                              _firstName != null
+                                  ? 'د/ ${_firstName!} ${_lastName ?? ''}'
+                                  : 'يوسف ايمن',
+                              textDirection: TextDirection.rtl,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 22,
+                                height: 1.5,
+                                letterSpacing: 0.1,
+                                color: Color(0xFF101828),
+                              ),
+                            ),
+                      SizedBox(height: 2),
+                      Text(
+                        _email != null && _email!.isNotEmpty ? _email! : 'zyadgamal@gmail.com',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Cairo',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 22,
-                          height: 1.5,
-                          letterSpacing: 0.1,
-                          color: Color(0xFF101828),
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          color: Color(0xFF858585),
                         ),
                       ),
                     ],

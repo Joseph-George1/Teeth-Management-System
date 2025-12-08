@@ -23,7 +23,7 @@ class AuthService {
       final response = await _dio.post(
         '$_baseUrl/login',
         data: {
-          'email': "new@example.com",
+          'email': email.trim(),
           'password': password,
         },
         options: Options(
@@ -97,6 +97,13 @@ class AuthService {
   }
   
   String _handleDioError(DioException e) {
+    print('Dio Error: ${e.message}');
+    print('Error Type: ${e.type}');
+    if (e.response != null) {
+      print('Response Status: ${e.response?.statusCode}');
+      print('Response Data: ${e.response?.data}');
+    }
+    
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return 'انتهت مهلة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';
@@ -112,9 +119,21 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
+    required String confirmPassword,
+    required String firstName,
+    required String last_name,
+    required String phone,
+    required String faculty,
+    required String year,
+    required String governorate,
   }) async {
     try {
-      if (email.isEmpty || password.isEmpty) {
+      if (email.isEmpty || password.isEmpty
+          ||firstName.isEmpty || last_name.isEmpty
+          || phone.isEmpty    || faculty.isEmpty
+          || year.isEmpty     || governorate.isEmpty
+      )
+      {
         return {
           'success': false,
           'error': 'البريد الإلكتروني وكلمة المرور مطلوبان',
@@ -122,10 +141,10 @@ class AuthService {
         };
       }
 
-      if (password.length < 6) {
+      if (password.length <= 6) {
         return {
           'success': false,
-          'error': 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
+          'error': 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
           'statusCode': 400,
         };
       }
@@ -135,6 +154,15 @@ class AuthService {
         data: {
           'email': email.trim(),
           'password': password,
+          'faculty' : faculty,
+              'first_name': firstName,
+          'last_name' :last_name,
+          'governorate':governorate,
+              'year' : year,
+          'phone' : phone,
+          'confirm_password': confirmPassword,
+
+
         },
         options: Options(
           headers: {
