@@ -1,9 +1,11 @@
 
-import { useState } from 'react';
+import { useContext , useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
 
 export default function LoginPage() {
+  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch("https://thoutha.page/api/login", {
+      const response = await fetch("http://13.49.221.187:5000/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,7 +37,15 @@ export default function LoginPage() {
       const data = await response.json();
       console.log("Server response:", data);
       if (response.ok) {
-        navigate('/'); 
+        login({
+        first_name: data.first_name,
+        last_name: data.last_name,
+        faculty: data.faculty,
+        email: data.email, 
+        governorate: data.governorate,
+        year: data.year
+      }); 
+        navigate('/doctor-home'); 
       } else {
         setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات');
       }

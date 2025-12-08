@@ -58,6 +58,7 @@
   gap: 25px;
 }
 .doctor-card{
+  position: relative;
   width: 100%;
   max-width: 677.5px;
   height: auto;
@@ -164,8 +165,392 @@ line-height: 19.5px;
   padding-right: 12px;
   border-radius: 6px;
 }
+/* blog-review */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #00000060;
+  z-index: 900;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  padding: 20px;
+}
+.blog-review{
+  width: 700px;
+  max-height: 90vh;
+  opacity: 1;
+  border-radius: 16px;
+  background-color: var(--text-color-1);
+  padding: 15px;
+  position: relative;
+  overflow-y: auto;
+  margin: auto;
+}
+.blog-top{
+  display: flex;
+  flex-direction: column;
+}
+.blog-top-x{
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 5px 10px 5px;
+}
+.top-x{
+  position: relative;
+  top: 0px;
+  right: 0;
+  cursor: pointer;
+}
+.blog-title{
+font-weight: 600;
+font-size: 24px;
+line-height: 36px;
+color:#0A0A0A;
+}
+.student-details{
+  padding: 10px 5px 10px 5px;
+}
+.student-info{
+font-weight: 600;
+font-size: 20px;
+line-height: 30px;
+color:#0A0A0A;
+}
+.student-info-details{
+font-weight: 400;
+font-size: 16px;
+line-height: 26px;
+color:#858585;
+padding-top: 4px;
+}
+.student-number-email{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 5px 10px 5px;
+}
+.flex-row1{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.flex-col1{
+  display:flex ;
+  flex-direction: column;
+  width: 300px;
+  background-color: #F9FAFB;
+  border-radius: 8px;
+  padding: 16px;
+  gap: 5px;
+}
+.icon-row{
+  display: flex;
+ align-items: center;
+ gap: 5px;
+}
+.collage{
+font-weight: 600;
+font-size: 16px;
+line-height: 24px;
+color: #0A0A0A;
+}
+.collage-info{
+font-weight: 400;
+font-size: 14px;
+line-height: 21px;
+color: #858585;
+padding-right: 25px;
+}
 
-/* Responsive */
+.doctor-days-available{
+  padding: 10px 5px 10px 5px;
+}
+.doctor-days-title-available{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.days-title{
+font-weight: 600;
+font-size: 20px;
+line-height: 30px;
+color: #0A0A0A;
+}
+.doctor-days ,.doctor-time{
+  display: flex;
+  gap: 20px;
+  padding-right: 50px;
+  padding-top: 5px;
+  align-items: center;
+}
+.day1 , .time1{
+    background-color:#F3F4F6;
+  width: 100.0625px;
+  height: 48px;
+  opacity: 1;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.day1:active{
+  background: linear-gradient(180deg, #84E5F3 0%, #8DECB4 100%);
+  color: var(--text-color-1);
+}
+.important-info{
+  border: 1px solid #BEDBFF;
+  border-radius: 8px;
+  background-color: #EFF6FF;
+  padding: 10px;
+  margin-top: 10px;
+}
+.button-booking{
+  background: linear-gradient(180deg, #84E5F3 0%, #8DECB4 100%);
+  width: 100.578125px;
+  height: 48px;
+  opacity: 1;
+  border-radius: 8px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+ a{
+  text-decoration: none;
+  color: var(--text-color-1);
+}
+/* Responsive - blog-review section */
+@media (max-width: 1024px) {
+  .blog-review {
+    width: 90%;
+    max-height: 90vh;
+    padding: 12px;
+  }
+
+  .flex-col1 {
+    width: 100%;
+  }
+
+  .flex-row1 {
+    flex-direction: column;
+  }
+
+  .doctor-days, .doctor-time {
+    padding-right: 20px;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .day1, .time1 {
+    width: 90px;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .blog-top-x {
+    padding: 8px;
+  }
+
+  .blog-title {
+    font-size: 20px;
+  }
+
+  .student-info {
+    font-size: 18px;
+  }
+
+  .student-info-details {
+    font-size: 14px;
+  }
+
+  .collage {
+    font-size: 14px;
+  }
+
+  .collage-info {
+    font-size: 12px;
+  }
+
+  .days-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-review {
+    width: 95%;
+    max-height: 90vh;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .blog-top {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blog-top-x {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+  }
+
+  .top-x {
+    width: 24px;
+    height: 24px;
+  }
+
+  .blog-title {
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  .student-details {
+    padding: 8px;
+  }
+
+  .student-info {
+    font-size: 16px;
+  }
+
+  .student-info-details {
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .student-number-email {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .flex-row1 {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .flex-col1 {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: #F9FAFB;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon-row svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .collage {
+    font-size: 14px;
+  }
+
+  .collage-info {
+    font-size: 12px;
+    padding-right: 0;
+  }
+
+  .doctor-days-available {
+    padding: 8px;
+  }
+
+  .doctor-days-title-available {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .days-title {
+    font-size: 16px;
+  }
+
+  .doctor-days, .doctor-time {
+    display: flex;
+    gap: 10px;
+    padding-right: 0;
+    padding-top: 8px;
+    align-items: center;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .day1, .time1 {
+    width: 80px;
+    height: 40px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .important-info {
+    border: 1px solid #BEDBFF;
+    border-radius: 8px;
+    background-color: #EFF6FF;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .button-booking {
+    width: 100%;
+    height: 44px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .blog-review {
+    width: 98%;
+    max-height: 90vh;
+    padding: 8px;
+  }
+
+  .blog-title {
+    font-size: 16px;
+  }
+
+  .student-info {
+    font-size: 14px;
+  }
+
+  .student-info-details {
+    font-size: 12px;
+  }
+
+  .day1, .time1 {
+    width: 70px;
+    height: 36px;
+    font-size: 11px;
+  }
+
+  .days-title {
+    font-size: 14px;
+  }
+
+  .button-booking {
+    height: 40px;
+  }
+}
+
+/* Responsive - doctors list section */
 @media (max-width: 1024px) {
   .doctors-section{
     padding: 0 36px;
