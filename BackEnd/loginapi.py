@@ -172,7 +172,7 @@ def register():
         return jsonify({'status': 'error', 'message': 'Bad request; all registration fields required'}), 400
 
     if password != confirm:
-        return jsonify({'status': 'error', 'message': 'Password and confirmation do not match'}), 400
+        return jsonify({'status': 'error', 'message': 'Password and confirmation do not match'}), 402
 
     users = load_users()
     if email in users:
