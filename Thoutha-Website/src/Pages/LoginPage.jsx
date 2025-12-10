@@ -1,11 +1,9 @@
 
-import { useContext , useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
 
 export default function LoginPage() {
-  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,14 +21,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      // Determine if the login is for a doctor or patient based on email format
-      // You might want to adjust this logic based on your actual requirements
-      const isDoctorLogin = email.endsWith('@example.com'); // Example condition
-      const endpoint = isDoctorLogin ? 
-        'http://localhost:8080/api/doctor/login' : 
-        'http://localhost:8080/api/patient/login';
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch("https://thoutha.page/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,33 +29,15 @@ export default function LoginPage() {
         body: JSON.stringify({
           email: email,
           password: password,
-          // For patient login, you might need to send phoneNumber instead of email
-          ...(!isDoctorLogin && { phoneNumber: email }) // Use email as phoneNumber for patient login
         }),
       });
 
       const data = await response.json();
       console.log("Server response:", data);
-      
       if (response.ok) {
-        login({
-          id: data.id,
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.email || email,
-          phoneNumber: data.phoneNumber || '',
-          role: isDoctorLogin ? 'doctor' : 'patient',
-          // Include any additional user data you need
-          ...(isDoctorLogin && { 
-            specialty: data.specialty,
-            licenseNumber: data.licenseNumber
-          })
-        }); 
-        
-        // Redirect based on user role
-        navigate(isDoctorLogin ? '/doctor-home' : '/patient-home'); 
+        navigate('/'); 
       } else {
-        setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور');
+        setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات');
       }
     } catch (err) {
       if (err.message.includes('CORS') || err.message.includes('Failed to fetch')) {
