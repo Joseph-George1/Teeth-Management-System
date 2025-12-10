@@ -126,6 +126,88 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         width: 300,
         child: DoctorDrawer(),
       ),
+      appBar: AppBar(
+        toolbarHeight: 75.6,
+        elevation: 0,
+        backgroundColor: const Color(0xFFFFFFFF),
+        foregroundColor: Colors.black87,
+        automaticallyImplyLeading: true,
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            SizedBox(width: 16.w),
+            SizedBox(
+              width: 37.w,
+              height: 40.h,
+              child: Image.asset(
+                'assets/images/splash-logo.png',
+                width: 37.w,
+                height: 40.h,
+                fit: BoxFit.contain,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            SizedBox(
+              width: 92.w,
+              height: 27.h,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'لوحة التحكم',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
+                    color: const Color(0xFF101828),
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications_none, size: 24.w),
+                onPressed: () {},
+              ),
+              Positioned(
+                right: 8,
+                top: 10,
+                child: Container(
+                  width: 16.w,
+                  height: 16.w,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '3',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: 8.w),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.1),
+          child: Container(
+            height: 1.1,
+            color: const Color(0xFFE5E7EB),
+          ),
+        ),
+      ),
       body: _buildMainContent(),
     );
   }
@@ -135,101 +217,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         color: const Color(0xFFF5F5F5),
         child: SingleChildScrollView(
             child: Column(children: [
-          // Your existing content here
-          Container(
-            width: 430.w,
-            height: 75.6.h,
-            padding: EdgeInsets.only(
-              top: 15.98.h,
-              right: 20.w,
-              bottom: 1.1.h,
-              left: 20.w,
-            ),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFFFFF), // #FFFFFF
-              border: Border(
-                bottom: BorderSide(
-                  width: 1.1,
-                  color: Color(0xFFE5E7EB), // #E5E7EB
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Menu Icon
-                IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.black87),
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
-
-                // Logo and Control Panel Text
-                Row(
-                  children: [
-                    Container(
-                      width: 37.w,
-                      height: 40.h,
-                      child: Image.asset(
-                        'assets/images/splash-logo.png',
-                        width: 37.w,
-                        height: 40.h,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Container(
-                      width: 92.w,
-                      height: 27.h,
-                      alignment: Alignment.center,
-                      child: Text(
-                        'لوحة التحكم',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w600,
-                          height: 1.5,
-                          color: const Color(0xFF101828),
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // Notification Icon with Badge
-                Stack(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.notifications_none,
-                          size: 24.w, color: Colors.black87),
-                      onPressed: () {},
-                    ),
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        width: 16.w,
-                        height: 16.w,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '3',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           // Welcome Container
           SizedBox(width: 8.w),
           Container(
