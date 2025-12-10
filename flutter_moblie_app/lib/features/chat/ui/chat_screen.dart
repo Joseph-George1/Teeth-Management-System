@@ -132,13 +132,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leadingWidth: 8,
-       // backgroundColor: Colors.blue,
+       // Use themed defaults for AppBar background
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios, color: theme.iconTheme.color),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -153,10 +156,10 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [ const SizedBox(width: 8),
             Text(
               'الطبيب المساعد ثوثة',
-              style: TextStyle(
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
 
@@ -170,11 +173,10 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.lightBlueAccent,
         elevation: 0,
       ),
       body: Container(
-        color: Colors.white,
+        color: colorScheme.surface,
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: Column(
@@ -195,14 +197,14 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.lightBlueAccent,
+                              color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB)),
                             ),
                             child: Text(
                               msg.text,
-                              style: GoogleFonts.cairo(
-                                color: Colors.black87,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 height: 1.6, // 160% line height
@@ -234,13 +236,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.lightBlueAccent,
+                              color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               msg.text,
-                              style: TextStyle(
-                                color: Colors.white,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onPrimary,
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -260,7 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
             // Input bar
             Container(
               padding: const EdgeInsets.all(16),
-              color: Colors.white,
+              color: colorScheme.surface,
               child: Row(
                 children: [
                   Expanded(
@@ -280,8 +282,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: _isSending ? null : _sendMessage,
-                    icon: const Icon(Icons.send),
-                    color: Colors.black,
+                    icon: Icon(Icons.send, color: theme.iconTheme.color),
                   ),
                 ],
               ),

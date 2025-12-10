@@ -120,6 +120,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -169,11 +172,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     width: double.infinity,
                     padding: EdgeInsets.all(24.0.w),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardTheme.color ?? colorScheme.surface,
                       borderRadius: BorderRadius.circular(16.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -189,11 +192,10 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                             Center(
                               child: Text(
                                 'تأكيد الحجز',
-                                style: TextStyle(
+                                style: theme.textTheme.titleLarge?.copyWith(
                                   fontSize: 24.sp,
                                   fontWeight: FontWeight.bold,
-                                  fontFamily: 'Cairo',
-                                  color: const Color(0xFF0B8FAC),
+                                  color: colorScheme.primary,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -212,10 +214,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                   children: [
                                     Text(
                                       'معلومات الطبيب',
-                                      style: TextStyle(
+                                      style: theme.textTheme.titleMedium?.copyWith(
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.bold,
-                                        fontFamily: 'Cairo',
                                       ),
                                     ),
                                     SizedBox(height: 12.h),
@@ -232,10 +233,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                             // Patient Info Form title
                             Text(
                               'معلومات المريض',
-                              style: TextStyle(
+                              style: theme.textTheme.titleLarge?.copyWith(
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
                               ),
                             ),
                             SizedBox(height: 16.h),
@@ -244,7 +244,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               controller: _firstNameController,
                               decoration: InputDecoration(
                                 labelText: 'الاسم الأول',
-                                prefixIcon: const Icon(Icons.person_outline),
+                                prefixIcon: Icon(Icons.person_outline, color: theme.iconTheme.color),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8.0.r),
                                 ),
@@ -263,7 +263,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               controller: _lastNameController,
                               decoration: InputDecoration(
                                 labelText: 'اسم العائلة',
-                                prefixIcon: const Icon(Icons.person_outline),
+                                prefixIcon: Icon(Icons.person_outline, color: theme.iconTheme.color),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8.0.r),
                                 ),
@@ -287,7 +287,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               decoration: InputDecoration(
                                 labelText: 'رقم الجوال',
                                 hintText: '01X XXX XXXXX',
-                                prefixIcon: const Icon(Icons.phone_android),
+                                prefixIcon: Icon(Icons.phone_android, color: theme.iconTheme.color),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8.0.r),
                                 ),
@@ -310,7 +310,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _submitForm,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0B8FAC),
+                                  backgroundColor: colorScheme.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8.0.r),
                                   ),
@@ -324,13 +324,12 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'تأكيد الحجز',
-                                        style: TextStyle(
+                                        style: theme.textTheme.titleMedium?.copyWith(
                                           fontSize: 16,
-                                          color: Colors.white,
+                                          color: colorScheme.onPrimary,
                                           fontWeight: FontWeight.bold,
-                                          fontFamily: 'Cairo',
                                         ),
                                       ),
                               ),
@@ -354,19 +353,17 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: 14.sp,
-            color: Colors.grey[600],
-            fontFamily: 'Cairo',
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
           ),
         ),
         SizedBox(width: 8.w),
         Text(
           value,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontSize: 14.sp,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Cairo',
           ),
         ),
       ],

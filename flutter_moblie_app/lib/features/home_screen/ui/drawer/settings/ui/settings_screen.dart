@@ -195,27 +195,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // Name (dynamic)
                       _isLoadingName
                           ? SizedBox(
-                              width: 16,
-                              height: 20,
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Color(0xFF858585),
-                              ),
-                            )
+                        width: 16,
+                        height: 20,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF858585),
+                        ),
+                      )
                           : Text(
-                              _firstName != null
-                                  ? 'د/ ${_firstName!} ${_lastName ?? ''}'
-                                  : 'يوسف ايمن',
-                              textDirection: TextDirection.rtl,
-                              style: const TextStyle(
-                                fontFamily: 'Cairo',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 22,
-                                height: 1.5,
-                                letterSpacing: 0.1,
-                                color: Color(0xFF101828),
-                              ),
-                            ),
+                        _firstName != null
+                            ? 'د/ ${_firstName!} ${_lastName ?? ''}'
+                            : 'يوسف ايمن',
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 22,
+                          height: 1.5,
+                          letterSpacing: 0.1,
+                          color: Color(0xFF101828),
+                        ),
+                      ),
                       SizedBox(height: 2),
                       Text(
                         _email != null && _email!.isNotEmpty ? _email! : 'zyadgamal@gmail.com',
@@ -457,7 +457,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         activeTrackColor: const Color(0xFF8DECB8),
                                         inactiveThumbColor: Colors.white,
                                         inactiveTrackColor: const Color(0xFFE5E7EB),
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         thumbColor: MaterialStateProperty.all(Colors.white),
                                       ),
                                     ),
@@ -478,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      
+
                       // Change Password Button
                       GestureDetector(
                         onTap: () {

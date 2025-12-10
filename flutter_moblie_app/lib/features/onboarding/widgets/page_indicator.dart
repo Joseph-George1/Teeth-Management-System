@@ -19,7 +19,7 @@ class PageIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         pageCount,
-        (index) => _buildIndicator(index == currentPage),
+            (index) => _buildIndicator(index == currentPage),
       ),
     );
   }

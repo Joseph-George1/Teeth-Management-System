@@ -76,7 +76,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (Route<dynamic> route) => false,
+                        (Route<dynamic> route) => false,
                   );
                 },
               ),
@@ -323,7 +323,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                   title: 'الحجوزات القادمة',
                   icon: Icons.event_note_outlined,
                   onTap: () {
-                   /* Navigator.pop(context); // Close drawer
+                    /* Navigator.pop(context); // Close drawer
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -351,13 +351,13 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                   title: 'المرضي',
                   icon: Icons.people_outline,
                   onTap: () {
-                   // Navigator.pop(context); // Close drawer
-                   // Navigator.push(
-                      //context,
-                     // MaterialPageRoute(
-                       // builder: (context) => BrowseServicesScreen(),
+                    // Navigator.pop(context); // Close drawer
+                    // Navigator.push(
+                    //context,
+                    // MaterialPageRoute(
+                    // builder: (context) => BrowseServicesScreen(),
                     //  ),
-                   // );
+                    // );
                   },
                 ),
                 _menuItem(
@@ -365,10 +365,10 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                   title: 'الإعدادات',
                   icon: Icons.settings_outlined,
                   onTap: () {Navigator.pop(context); // Close drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) =>  SettingsScreen()),
-                    );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) =>  SettingsScreen()),
+                  );
                   },
                 ),
                 _menuItem(context, title: ' اخباري', icon: Icons.messenger_rounded),

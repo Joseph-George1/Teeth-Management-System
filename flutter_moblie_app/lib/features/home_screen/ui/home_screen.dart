@@ -6,6 +6,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
 
+import 'drawer/browse_services/ui/browse_services_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -46,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCircularIcon(String assetPath, int index, String categoryName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // List of SVG file names in order
     final svgFiles = [
       'فحص شامل.svg',
@@ -70,9 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Resolve file and label from inputs or fallbacks
     final fileName =
-        index <= svgFiles.length ? svgFiles[index - 1] : 'placeholder.svg';
+    index <= svgFiles.length ? svgFiles[index - 1] : 'placeholder.svg';
     final resolvedAssetPath =
-        assetPath.isNotEmpty ? assetPath : 'assets/svg/$fileName';
+    assetPath.isNotEmpty ? assetPath : 'assets/svg/$fileName';
     final resolvedCategoryName = categoryName.isNotEmpty
         ? categoryName
         : (index <= categoryNames.length ? categoryNames[index - 1] : '');
@@ -85,16 +89,16 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 72.h,
           margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.cyan,
-              width: 2, // Slightly thicker border
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.cyan,
-                blurRadius: 2.r, // Slightly more prominent shadow
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                blurRadius: 2.r,
                 offset: const Offset(0, 0.5),
               ),
             ],
@@ -102,13 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Center(
             child: SvgPicture.asset(
               resolvedAssetPath,
-              width: 36.w, // Icon size
-              height: 36.h, // Icon size
+              width: 36.w,
+              height: 36.h,
               fit: BoxFit.contain,
               placeholderBuilder: (BuildContext context) => Container(
                 width: 36.w,
                 height: 36.h,
-                color: Colors.grey[200],
+                color: isDark ? Colors.grey[800] : Colors.grey[200],
                 child: Icon(Icons.image, size: 18.r, color: Colors.grey),
               ),
             ),
@@ -120,15 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text(
             resolvedCategoryName,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Cairo',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w400,
-              // Regular
               fontSize: 10.sp,
               height: 1.0,
-              // line-height 24px for 11px font size
               letterSpacing: 0.1,
-              color: Colors.black87,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -139,6 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDoctorCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () => _showDoctorDetails(context),
       child: Container(
@@ -148,14 +150,17 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 14.h, left: 15.98.w, right: 15.98.w, bottom: 14.h),
         padding: EdgeInsets.only(top: 14.h, right: 15.98.w, left: 5.61.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(8.r),
-          border: Border(
-            top: BorderSide(color: Color(0xFFE5E7EB), width: 1.1),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+            width: 1.1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: isDark
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 4.r,
               offset: const Offset(0, 2),
@@ -171,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 84.h,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8.r),
-                color: Colors.grey[200],
+                color: isDark ? Colors.grey[800] : Colors.grey[200],
                 image: DecorationImage(
                   image: AssetImage('assets/images/dr.cr7.jpg'),
                   fit: BoxFit.cover,
@@ -192,14 +197,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'د/ كريستيانو رونالدو',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
-                            // Updated to 600 (SemiBold)
                             height: 1.5,
-                            // 24px line height for 16px font size
-                            color: Colors.black,
                             letterSpacing: 0,
                           ),
                           maxLines: 1,
@@ -207,12 +208,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Text(
                           'تدريب تقويم أسنان',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w400,
                             height: 1.5,
-                            // 21px line height for 14px font size
                             letterSpacing: 0,
                             color: Colors.grey,
                           ),
@@ -232,13 +231,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             SizedBox(width: 4.w),
                             Text(
                               '4.9',
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w400,
                                 height: 1.5,
                                 letterSpacing: 0,
-                                color: Colors.black,
                               ),
                             ),
                             SizedBox(width: 4.w),
@@ -309,7 +306,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
-                              // 18px line height
                               letterSpacing: 0,
                               color: Colors.grey,
                             ),
@@ -324,9 +320,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     alignment: Alignment.centerLeft,
                     child: Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
+                        color: isDark
+                            ? Colors.green.withOpacity(0.2)
+                            : const Color(0xFFE8F5E9),
                         borderRadius: BorderRadius.circular(4.r),
                         boxShadow: [
                           BoxShadow(
@@ -349,7 +347,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.w400,
                               fontSize: 11.sp,
                               height: 1.0,
-                              // 18px line height
                               letterSpacing: 0,
                               color: Colors.green,
                             ),
@@ -376,12 +373,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         automaticallyImplyLeading: false,
         title: GestureDetector(
           onTap: () {
@@ -393,29 +390,21 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'مرحباً, أهلاً بعودتك',
-                style: TextStyle(
-                  fontFamily: 'Cairo',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
                   fontSize: 15.sp,
                   height: 1.0,
-                  // 100% line height
                   letterSpacing: -0.02,
-                  // -2% letter spacing
                   color: Colors.grey,
                 ),
               ),
-              // No extra spacing needed as line height handles it
               Text(
                 'عبدالحليم رمضان',
-                style: TextStyle(
-                  fontFamily: 'Cairo',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  // SemiBold
                   fontSize: 17.sp,
                   height: 1.2,
                   letterSpacing: -0.02,
-                  // -2% letter spacing
-                  color: Colors.black,
                 ),
               ),
             ],
@@ -423,8 +412,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon:
-                Icon(Icons.notifications_none, color: Colors.black, size: 24.r),
+            icon: Icon(Icons.notifications_none,
+                color: Theme.of(context).iconTheme.color,
+                size: 24.r),
             onPressed: () {
               // TODO: Add notification functionality
             },
@@ -443,9 +433,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Search Bar
                 Container(
                   height: 40.h,
-                  margin: EdgeInsets.only(top: 10.h),
+                  margin: EdgeInsets.only(top: 10.h, left: 16.w, right: 16.w),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD9D9D9).withOpacity(0.3),
+                    color: isDark
+                        ? Colors.grey[800]?.withOpacity(0.5)
+                        : const Color(0xFFD9D9D9).withOpacity(0.3),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Row(
@@ -454,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Padding(
                         padding: EdgeInsets.only(right: 12.0.w, left: 8.0.w),
                         child:
-                            Icon(Icons.search, color: Colors.grey, size: 22.r),
+                        Icon(Icons.search, color: Colors.grey, size: 22.r),
                       ),
                       // Search Text
                       Expanded(
@@ -463,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           focusNode: _searchFocusNode,
                           textAlign: TextAlign.right,
                           textDirection: TextDirection.rtl,
+                          style: Theme.of(context).textTheme.bodyMedium,
                           decoration: InputDecoration(
                             hintText: 'ابحث عن قسم...',
                             hintStyle: TextStyle(
@@ -471,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             border: InputBorder.none,
                             contentPadding:
-                                EdgeInsets.symmetric(vertical: 14.h),
+                            EdgeInsets.symmetric(vertical: 14.h),
                           ),
                         ),
                       ),
@@ -576,7 +569,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   height: 32.h,
                   margin: EdgeInsets.symmetric(horizontal: 13.w, vertical: 12.h),
-
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -584,26 +576,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 50.w,
                         height: 20.h,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         alignment: Alignment.centerRight,
                         margin: EdgeInsets.only(left: 12.w),
                         child: GestureDetector(
                           onTap: () {
-                            // TODO: Add navigation to see more services
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>  BrowseServicesScreen(),
+                                ),
+                            );
                           },
                           child: Text(
                             'المزيد',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 14.sp,
                               height: 1.0,
-                              // 100% line height
                               letterSpacing: -0.02,
-                              // -2% letter spacing
-                              color: Colors.black,
                             ),
                             textAlign: TextAlign.right,
                           ),
@@ -611,29 +604,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Text(
                         'الخدمات المتوفرة',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          // SemiBold
                           fontSize: 17.sp,
                           height: 1.2,
                           letterSpacing: -0.02,
-                          // -2% letter spacing
-                          color: Colors.black,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Circular Categories Row with Horizontal Scroll and SVG Icons
+                // Circular Categories Row
                 SizedBox(
-                  height: 110.h, // Slightly reduced height
+                  height: 110.h,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     children: [
-                      // List of SVG files from the assets/svg directory with their corresponding category names
                       _buildCircularIcon(
                           'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
                       _buildCircularIcon(
@@ -651,6 +639,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+
+                // City and Area Dropdowns
                 Container(
                   width: double.infinity,
                   margin: EdgeInsets.only(top: 16.h, left: 22.w, right: 22.w),
@@ -660,174 +650,158 @@ class _HomeScreenState extends State<HomeScreen> {
                       // First container - المدن
                       Expanded(
                           child: Container(
-                        // width: 150.w,
-                        height: 44.h,
-                        padding: const EdgeInsets.only(
-                          top: 0,
-                          right: 0,
-                          bottom: 1.1,
-                          left: 0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: const Color(0xFFD1D5DC),
-                            width: 1.1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.cyan,
-                              blurRadius: 4.r,
-                              offset: const Offset(0, 1),
+                            height: 44.h,
+                            padding: const EdgeInsets.only(
+                              top: 0,
+                              right: 0,
+                              bottom: 1.1,
+                              left: 0,
                             ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // Centered text with padding
-                            Padding(
-                              padding: EdgeInsets.only(left: 35.w),
-                              // Added left padding to avoid divider
-                              child: Center(
-                                child: Text(
-                                  'المدن',
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w700,
-                                    height: 2.33,
-                                    letterSpacing: 0.1,
-                                    color: Colors.black,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: isDark ? Colors.grey[700]! : const Color(0xFFD1D5DC),
+                                width: 1.1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 4.r,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 35.w),
+                                  child: Center(
+                                    child: Text(
+                                      'المدن',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w700,
+                                        height: 2.33,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            // Left-aligned arrow and divider
-                            Positioned(
-                              left: 8.w,
-                              top: 0,
-                              bottom: 0,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 22.r,
-                                    color: Colors.black,
-                                  ),
-                                  Container(
-                                    height: 44.h,
-                                    width: 1.w,
-                                    margin:
+                                Positioned(
+                                  left: 8.w,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        size: 22.r,
+                                        color: Theme.of(context).iconTheme.color,
+                                      ),
+                                      Container(
+                                        height: 44.h,
+                                        width: 1.w,
+                                        margin:
                                         EdgeInsets.symmetric(horizontal: 4.w),
-                                    color: const Color(0xFFD1D5DC),
+                                        color: isDark ? Colors.grey[700] : const Color(0xFFD1D5DC),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      )),
-                      // Second container - المناطق
+                          )),
                       SizedBox(width: 16.w),
+                      // Second container - المناطق
                       Expanded(
                           child: Container(
-                        // width: 150.w,
-                        height: 47.81.h,
-                        padding: const EdgeInsets.only(
-                          top: 0,
-                          right: 0,
-                          bottom: 1.1,
-                          left: 0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: const Color(0xFFD1D5DC),
-                            width: 1.1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.cyan,
-                              blurRadius: 4.r,
-                              offset: const Offset(0, 1),
+                            height: 47.81.h,
+                            padding: const EdgeInsets.only(
+                              top: 0,
+                              right: 0,
+                              bottom: 1.1,
+                              left: 0,
                             ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // Centered text with padding
-                            Padding(
-                              padding: EdgeInsets.only(left: 35.w),
-                              // Added left padding to avoid divider
-                              child: Center(
-                                child: Text(
-                                  'المناطق',
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w700,
-                                    height: 2.33,
-                                    letterSpacing: 0.1,
-                                    color: Colors.black,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: isDark ? Colors.grey[700]! : const Color(0xFFD1D5DC),
+                                width: 1.1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 4.r,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 35.w),
+                                  child: Center(
+                                    child: Text(
+                                      'المناطق',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w700,
+                                        height: 2.33,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            // Left-aligned arrow and divider
-                            Positioned(
-                              left: 8.w,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 22.r,
-                                    color: Colors.black,
-                                  ),
-                                  Container(
-                                    height: 44.h,
-                                    width: 1.w,
-                                    margin:
+                                Positioned(
+                                  left: 8.w,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        size: 22.r,
+                                        color: Theme.of(context).iconTheme.color,
+                                      ),
+                                      Container(
+                                        height: 44.h,
+                                        width: 1.w,
+                                        margin:
                                         EdgeInsets.symmetric(horizontal: 4.w),
-                                    color: const Color(0xFFD1D5DC),
+                                        color: isDark ? Colors.grey[700] : const Color(0xFFD1D5DC),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      )),
+                          )),
                     ],
                   ),
                 ),
                 SizedBox(height: 15.h),
-                // Doctor Card Section // Services Header
+
+                // Doctors Section Header
                 Container(
                   height: 28.h,
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         'الاطباء الاقرب لك',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          // SemiBold
                           fontSize: 17.sp,
                           height: 1.2,
                           letterSpacing: -0.02,
-                          // -2% letter spacing
-                          color: Colors.black,
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Two equal containers side by side
 
+                // Doctor Cards
                 for (var i = 0; i < 5; i++) _buildDoctorCard(),
               ],
             ),

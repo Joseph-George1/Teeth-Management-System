@@ -77,8 +77,8 @@ class HomeDrawer extends StatelessWidget {
     BuildContext context, {
     required String title,
     required IconData icon,
-    Color iconColor = _cCyan,
-    Color textColor = Colors.black,
+    Color? iconColor,
+    Color? textColor,
     VoidCallback? onTap,
   }) {
     return InkWell(
@@ -89,18 +89,19 @@ class HomeDrawer extends StatelessWidget {
           textDirection: TextDirection.rtl,
           child: Row(
             children: [
-              Icon(icon, color: iconColor),
+              Icon(icon, color: iconColor ?? Theme.of(context).iconTheme.color),
               SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   title,
                   textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16.sp,
-                    color: textColor,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16.sp,
+                        color:
+                            textColor ?? Theme.of(context).colorScheme.onSurface,
+                      ),
                 ),
               ),
             ],
@@ -113,6 +114,9 @@ class HomeDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double topPad = MediaQuery.of(context).padding.top;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -124,7 +128,7 @@ class HomeDrawer extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
-                colors: [_cCyan, _cGreen],
+                colors: [colorScheme.primary, colorScheme.secondary],
               ),
             ),
             child: Column(
@@ -137,18 +141,18 @@ class HomeDrawer extends StatelessWidget {
                       Center(
                         child: Text(
                           'القائمة',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 20.sp,
-                            color: Colors.white,
-                          ),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 20.sp,
+                                color: colorScheme.onPrimary,
+                              ),
                         ),
                       ),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
-                          icon: Icon(Icons.close, color: Colors.white),
+                          icon: Icon(Icons.close, color: colorScheme.onPrimary),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -160,7 +164,7 @@ class HomeDrawer extends StatelessWidget {
                   child: Container(
                     height: 64.h,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: colorScheme.onPrimary.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Directionality(
@@ -172,7 +176,7 @@ class HomeDrawer extends StatelessWidget {
                             width: 40.w,
                             height: 40.h,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.person_outline, color: _cCyan),
@@ -187,23 +191,23 @@ class HomeDrawer extends StatelessWidget {
                                   Text(
                                     'زياد جمال',
                                     textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16.sp,
-                                      color: Colors.white,
-                                    ),
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                          fontFamily: 'Cairo',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16.sp,
+                                          color: colorScheme.onPrimary,
+                                        ),
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
                                     'zyadgamal@gmail.com',
                                     textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12.sp,
-                                      color: Colors.white,
-                                    ),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                          fontFamily: 'Cairo',
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 12.sp,
+                                          color: colorScheme.onPrimary,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -285,8 +289,8 @@ class HomeDrawer extends StatelessWidget {
                   context,
                   title: 'تسجيل الخروج',
                   icon: Icons.logout_outlined,
-                  iconColor: Colors.red,
-                  textColor: Colors.red,
+                  iconColor: colorScheme.error,
+                  textColor: colorScheme.error,
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     _showLogoutConfirmation(context);
@@ -300,12 +304,12 @@ class HomeDrawer extends StatelessWidget {
             child: Center(
               child: Text(
                 'الإصدار 1.0.0',
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 12.sp,
-                  color: Colors.grey,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12.sp,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
           ),

@@ -11,14 +11,17 @@ class MyBookingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const Drawer(
         child: HomeDrawer(),
       ),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false, // Disable default back button
         title: Container(
@@ -30,9 +33,9 @@ class MyBookingsScreen extends StatelessWidget {
               Positioned(
                 left: 0,
                 child: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.menu,
-                    color: Colors.black,
+                    color: theme.iconTheme.color,
                     size: 40,
                     weight: 700, // Bold weight
                   ),
@@ -73,10 +76,10 @@ class MyBookingsScreen extends StatelessWidget {
                     width: 70,
                     height: 39.99,
                     alignment: Alignment.centerLeft,
-                    child: const Icon(
+                    child: Icon(
                       Icons.notifications_none,
                       size: 30,
-                      color: Colors.black,
+                      color: theme.iconTheme.color,
                     ),
                   ),
                 ),
@@ -89,29 +92,28 @@ class MyBookingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // Greeting
-                      const Text(
+                      Text(
                         'مرحباً، أهلاً بعودتك',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontFamily: 'Cairo',
                           fontWeight: FontWeight.w400,
                           fontSize: 16,
                           height: 1.5,
                           letterSpacing: 0.4,
-                          color: Color(0xFF858585),
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                         ),
                       ),
                       // Name
-                      const Text(
+                      Text(
                         'يوسف ايمن',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontFamily: 'Cairo',
                           fontWeight: FontWeight.w600,
                           fontSize: 22,
                           height: 1.5,
                           letterSpacing: 0.1,
-                          color: Color(0xFF101828),
                         ),
                       ),
                     ],
@@ -128,7 +130,7 @@ class MyBookingsScreen extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
               border: Border.all(
-                color: const Color(0xFF021433),
+                color: isDark ? Colors.grey[700]! : const Color(0xFF021433),
                 width: 0.25,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -136,10 +138,9 @@ class MyBookingsScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Text(
+                Text(
                   ' ابحث عن ',
-                  style: TextStyle(
-                    color: Color(0xFF021433),
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontFamily: 'Cairo',
                   ),
                 ),
@@ -148,10 +149,10 @@ class MyBookingsScreen extends StatelessWidget {
                   width: 17,
                   height: 17,
                   alignment: Alignment.center,
-                  child: const Icon(
+                  child: Icon(
                     Icons.search,
                     size: 12,
-                    color: Color(0x70111827), // #111827 with 70% opacity
+                    color: theme.iconTheme.color?.withOpacity(0.7), // #111827 with 70% opacity
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -171,18 +172,17 @@ class MyBookingsScreen extends StatelessWidget {
               height: 42,
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 10),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
               ),
-              child: const Text(
+              child: Text(
                 'حجوزاتي القادمه',
                 textAlign: TextAlign.right,
-                style: TextStyle(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.w700,
                   fontSize: 28,
                   height: 1.5,
-                  color: Color(0xFF0A0A0A),
                 ),
               ),
             ),
@@ -197,11 +197,11 @@ class MyBookingsScreen extends StatelessWidget {
               left: 20,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color ?? colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),

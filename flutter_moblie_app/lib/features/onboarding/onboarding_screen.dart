@@ -18,7 +18,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final int _numPages = 3;
-  
+
   // List of onboarding pages data
   final List<Map<String, String>> _pages = [
     {
@@ -37,14 +37,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'description': 'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة. نحن نهتم بابتسامتك من أول زيارة.',
     },
   ];
-  
+
   @override
   void initState() {
     super.initState();
     // Precache all images when the widget is first created
     _precacheImages();
   }
-  
+
   Future<void> _precacheImages() async {
     for (var page in _pages) {
       await precacheImage(AssetImage(page['image']!), context);
@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Navigator.pushNamedAndRemoveUntil(
       context,
       Routes.categoriesScreen,
-      (route) => false, // This removes all previous routes
+          (route) => false, // This removes all previous routes
     );
   }
 
@@ -171,7 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Navigator.pushNamedAndRemoveUntil(
                         context,
                         Routes.categoriesScreen,
-                        (route) => false,
+                            (route) => false,
                       );
                     },
                     child: Text(

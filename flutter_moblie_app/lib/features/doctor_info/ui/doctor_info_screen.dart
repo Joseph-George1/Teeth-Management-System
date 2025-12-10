@@ -38,13 +38,16 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color ?? colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
         ),
         child: SafeArea(
@@ -59,9 +62,9 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                 width: double.infinity,
                 height: 89.06,
                 padding: const EdgeInsets.symmetric(horizontal: 23.99),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1.1),
+                    bottom: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB), width: 1.1),
                   ),
                 ),
                 child: Row(
@@ -69,16 +72,14 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close,
-                          size: 24, color: Colors.black),
+                      child: Icon(Icons.close,
+                          size: 24, color: theme.iconTheme.color),
                     ),
-                    const Text(
+                    Text(
                       'تفاصيل الطالب',
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
                       ),
                     ),
                   ],
@@ -107,7 +108,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                             width: double.infinity,
                             margin: const EdgeInsets.only(top: 7.9876),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardTheme.color ?? colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Container(
@@ -116,10 +117,9 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'ZEZO',
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
+                                    style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 28,
                                       height: 1.5,
@@ -128,16 +128,15 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 16),
-                                  const Text(
+                                  Text(
                                     'تدريب جراحة وتجميل الأسنان',
                                     textAlign: TextAlign.end,
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
                                       fontWeight: FontWeight.w400,
                                       fontSize: 18,
                                       height: 1.5,
                                       letterSpacing: 0,
-                                      color: Color(0xFF858585),
+                                      color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 16),

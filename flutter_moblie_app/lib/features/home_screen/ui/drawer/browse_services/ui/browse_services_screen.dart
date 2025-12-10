@@ -50,14 +50,17 @@ class BrowseServicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const Drawer(
         child: HomeDrawer(),
       ),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false, // Disable default back button
         title: Container(
@@ -69,9 +72,9 @@ class BrowseServicesScreen extends StatelessWidget {
               Positioned(
                 left: 0,
                 child: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.menu,
-                    color: Colors.black,
+                    color: theme.iconTheme.color,
                     size: 40,
                     weight: 700, // Bold weight
                   ),
@@ -112,10 +115,10 @@ class BrowseServicesScreen extends StatelessWidget {
                     width: 70,
                     height: 39.99,
                     alignment: Alignment.centerLeft,
-                    child: const Icon(
+                    child: Icon(
                       Icons.notifications_none,
                       size: 30,
-                      color: Colors.black,
+                      color: theme.iconTheme.color,
                     ),
                   ),
                 ),
@@ -163,14 +166,13 @@ class BrowseServicesScreen extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(right: 35, top: 20, bottom: 10),
-            child: const Text(
+            child: Text(
               'جميع الخدمات المتوفرة',
-              style: TextStyle(
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
                 height: 1.5,
-                color: Color(0xFF0A0A0A),
               ),
               textAlign: TextAlign.right,
             ),
@@ -184,7 +186,7 @@ class BrowseServicesScreen extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: const Color(0xFFE5E7EB),
+                    color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                     width: 1.1,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -200,11 +202,11 @@ class BrowseServicesScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 15),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardTheme.color ?? colorScheme.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             width: 1.1,
-                            color: const Color(0xFFE5E7EB),
+                            color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                           ),
                         ),
                         child: Row(
@@ -269,13 +271,12 @@ class BrowseServicesScreen extends StatelessWidget {
                                       alignment: Alignment.centerRight,
                                       child: Text(
                                         categoryNames[index],
-                                        style: const TextStyle(
+                                        style: theme.textTheme.titleMedium?.copyWith(
                                           fontFamily: 'Cairo',
                                           fontWeight: FontWeight.w600,
                                           fontSize: 18,
                                           height: 1.5, // 27px line height / 18px font size
                                           letterSpacing: 0,
-                                          color: Color(0xFF0A0A0A),
                                         ),
                                         textAlign: TextAlign.right,
                                       ),
@@ -289,13 +290,13 @@ class BrowseServicesScreen extends StatelessWidget {
                                       alignment: Alignment.centerRight,
                                       child: Text(
                                         serviceDescriptions[categoryNames[index]] ?? '',
-                                        style: const TextStyle(
+                                        style: theme.textTheme.bodyMedium?.copyWith(
                                           fontFamily: 'Cairo',
                                           fontWeight: FontWeight.w400,
                                           fontSize: 14,
                                           height: 1.5, // 21px line height / 14px font size
                                           letterSpacing: 0,
-                                          color: Color(0xFF858585),
+                                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
                                         ),
                                         textAlign: TextAlign.right,
                                         maxLines: 1,
@@ -323,26 +324,26 @@ class BrowseServicesScreen extends StatelessWidget {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'طالب متاح ',
-                                      style: TextStyle(
+                                      style: theme.textTheme.bodySmall?.copyWith(
                                         fontFamily: 'Cairo',
                                         fontSize: 12,
-                                        color: Color(0xFF84E5F3),
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
                                     Text(
                                       '${index + 5} ',
-                                      style: const TextStyle(
+                                      style: theme.textTheme.bodySmall?.copyWith(
                                         fontFamily: 'Cairo',
                                         fontSize: 12,
-                                        color: Color(0xFF84E5F3),
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
                                     const SizedBox(width: 4), // Add spacing before icon
-                                    const Icon(
+                                    Icon(
                                       Icons.person_outline,
-                                      color: Color(0xFF84E5F3),
+                                      color: theme.colorScheme.primary,
                                       size: 16,
                                     ),
                                   ],

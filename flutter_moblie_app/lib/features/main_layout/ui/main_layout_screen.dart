@@ -60,10 +60,13 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: Container(
-        color: Colors.white,
+        color: colorScheme.surface,
         child: PageView(
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(),
@@ -72,13 +75,13 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
       ),
       bottomNavigationBar: Container(
         padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 8.w),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: colorScheme.shadow.withOpacity(isDark ? 0.4 : 0.12),
               blurRadius: 8,
-              offset: Offset(0, -2),
+              offset: const Offset(0, -2),
             ),
           ],
         ),
@@ -112,8 +115,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               ),
             ),
             Flexible(
-              child: _buildSvgNavItem(
-                iconPath: 'assets/svg/الملف الشخصي.svg',
+              child: _buildNavItem(
+                icon : Icons.person,
+                activeIcon: Icons.person,
                 label: 'الملف',
                 isActive: _currentIndex == 3,
                 onTap: () => _onItemTapped(3),
@@ -137,8 +141,14 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.r),
-        splashColor: Colors.black12,
-        highlightColor: Colors.black.withOpacity(0.1),
+        splashColor: Theme.of(context)
+            .colorScheme
+            .onSurface
+            .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.12),
+        highlightColor: Theme.of(context)
+            .colorScheme
+            .onSurface
+            .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.1),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -149,21 +159,22 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               Icon(
                 isActive && activeIcon != null ? activeIcon : icon,
                 color: isActive
-                    ? const Color(0xFF0B8FAC)
-                    : const Color(0xFF9E9E9E),
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 size: 24.w,
               ),
               SizedBox(height: 4.h),
               Text(
                 label,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  color: isActive
-                      ? const Color(0xFF0B8FAC)
-                      : const Color(0xFF9E9E9E),
-                  fontSize: 11.sp,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontFamily: 'Cairo',
+                      color: isActive
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 11.sp,
+                      fontWeight:
+                          isActive ? FontWeight.w600 : FontWeight.normal,
+                    ),
               ),
             ],
           ),
@@ -192,13 +203,14 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           SizedBox(height: 4.h),
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              color:
-                  isActive ? const Color(0xFF0B8FAC) : const Color(0xFF9E9E9E),
-              fontSize: 12.sp,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontFamily: 'Cairo',
+                  color: isActive
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12.sp,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
           ),
         ],
       ),
