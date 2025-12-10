@@ -249,7 +249,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                         : Text(
                             _firstName != null
                                 ? 'مرحباً، د. ${_firstName!} ${_lastName ?? ''}'
-                                : 'مرحباً، د.',
+                                : ' مرحباً، د.',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontSize: 24.sp,

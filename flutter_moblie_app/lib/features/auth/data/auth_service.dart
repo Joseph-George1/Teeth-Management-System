@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
+import 'package:thotha_mobile_app/core/helpers/constants.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://13.49.221.187:5000';
@@ -39,9 +41,42 @@ class AuthService {
       if (response.statusCode == 200) {
         // Assuming the API returns a token in the response
         final token = response.data['token'];
-        if (token != null) {
-          // TODO: Save the token to secure storage
-          // await _saveToken(token);
+        if (token != null && token is String && token.isNotEmpty) {
+          // Save token securely and set header for subsequent requests
+          await SharedPrefHelper.setSecuredString(SharedPrefKeys.userToken, token);
+          DioFactory.setTokenIntoHeaderAfterLogin(token);
+        }
+
+        // Try to persist user's name/email from the login response if available
+        try {
+          final data = response.data;
+          String? f;
+          String? l;
+          String? e;
+
+          if (data is Map) {
+            // Common shapes: top-level or nested under 'user'
+            if (data['user'] is Map) {
+              final user = data['user'] as Map;
+              f = (user['first_name'] ?? user['firstName']) as String?;
+              l = (user['last_name'] ?? user['lastName']) as String?;
+              e = (user['email']) as String?;
+            }
+
+            f = f ?? (data['first_name'] ?? data['firstName']) as String?;
+            l = l ?? (data['last_name'] ?? data['lastName']) as String?;
+            e = e ?? (data['email']) as String?;
+          }
+
+          if (f != null && f.isNotEmpty) {
+            await SharedPrefHelper.setData('first_name', f);
+            await SharedPrefHelper.setData('last_name', l ?? '');
+            if (e != null && e.isNotEmpty) {
+              await SharedPrefHelper.setData('email', e);
+            }
+          }
+        } catch (_) {
+          // ignore persistence failures; UI can fallback to /me
         }
         
         return {
@@ -173,6 +208,15 @@ class AuthService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Persist provided user info so UI can greet correctly after signup
+        try {
+          if (firstName.isNotEmpty) {
+            await SharedPrefHelper.setData('first_name', firstName);
+            await SharedPrefHelper.setData('last_name', last_name);
+            await SharedPrefHelper.setData('email', email.trim());
+          }
+        } catch (_) {}
+
         return {
           'success': true,
           'data': response.data,
