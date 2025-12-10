@@ -17,7 +17,8 @@ class DioFactory {
       dio = Dio();
       dio!
         ..options.connectTimeout = timeOut
-        ..options.receiveTimeout = timeOut;
+        ..options.receiveTimeout = timeOut
+        ..options.baseUrl = 'http://13.49.221.187:5000';
       addDioHeaders();
       addDioInterceptor();
       return dio!;
@@ -38,7 +39,12 @@ class DioFactory {
   }
 
   static void setTokenIntoHeaderAfterLogin(String token) {
+    final existing = dio?.options.headers ?? {};
     dio?.options.headers = {
+      // حافظ على Accept لو كان متضبط قبل كده
+      'Accept': existing['Accept'] ?? 'application/json',
+      ...existing,
+      // وحط التوكن
       'Authorization': 'Bearer $token',
     };
   }

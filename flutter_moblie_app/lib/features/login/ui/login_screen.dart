@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../core/helpers/spacing.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
 import '../../auth/data/auth_service.dart';
-import '../../home_screen/doctor_home/ui/doctor_home_screen.dart';
+import '../../home_screen/doctor_home/ui/main_layout_doctor.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -95,10 +94,10 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (result['success'] == true) {
         if (mounted) {
-          // Navigate to doctor home screen with fade transition and white background
+          // Navigate to doctor main layout with fade transition and white background
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const DoctorHomeScreen(),
+              pageBuilder: (context, animation, secondaryAnimation) => const MainLayoutDoctor(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,

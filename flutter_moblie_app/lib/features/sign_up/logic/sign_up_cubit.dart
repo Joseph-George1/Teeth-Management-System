@@ -14,7 +14,6 @@ class SignUpCubit extends Cubit<SignUpState> {
   Future<void> signUp({
     required String email,
     required String password,
-    required String userType,
     String? firstName,
     String? lastName,
     String? phone,
@@ -42,13 +41,13 @@ class SignUpCubit extends Cubit<SignUpState> {
       }
 
       // Call the registration API
-      print('Sending sign-up request with email: ${email.trim()} and userType: $userType');
+      print('Sending sign-up request with email: ${email.trim()} and password: $password');
 
       // Prepare the request data
       final requestData = {
         'email': email.trim().toLowerCase(),
         'password': password,
-        'user_type': userType == 'طبيب' ? 'doctor' : 'patient',
+
         if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
         if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
         if (phone != null && phone.isNotEmpty) 'phone': phone,

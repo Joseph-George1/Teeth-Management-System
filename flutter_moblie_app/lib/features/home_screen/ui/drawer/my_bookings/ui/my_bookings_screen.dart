@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/settings_screen.dart';
+import 'package:thotha_mobile_app/core/theming/app_theme.dart';
 
 
 
@@ -17,8 +18,11 @@ class MyBookingsScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const Drawer(
-        child: HomeDrawer(),
+      drawer: Theme(
+        data: AppTheme.lightTheme,
+        child: const Drawer(
+          child: HomeDrawer(),
+        ),
       ),
       appBar: AppBar(
         backgroundColor: theme.appBarTheme.backgroundColor,
@@ -59,8 +63,10 @@ class MyBookingsScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
           // User greeting container
           Container(
             width: 400,
@@ -161,7 +167,7 @@ class MyBookingsScreen extends StatelessWidget {
           ),
         Container(
             width: 414,
-            height: 650,
+            height: null,
             padding: const EdgeInsets.only(top: 15, left: 20, right:15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -426,11 +432,13 @@ class MyBookingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
 
             ])
-        )
-    ])
-
+        ),
+    ]),
+        ),
+      ),
     );
 
   }
