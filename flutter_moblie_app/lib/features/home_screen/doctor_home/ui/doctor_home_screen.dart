@@ -119,9 +119,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const Drawer(
         width: 300,
         child: DoctorDrawer(),
@@ -129,13 +133,14 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       appBar: AppBar(
         toolbarHeight: 75.6,
         elevation: 0,
-        backgroundColor: const Color(0xFFFFFFFF),
-        foregroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         automaticallyImplyLeading: true,
         titleSpacing: 0,
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(width: 16.w),
+
             SizedBox(
               width: 37.w,
               height: 40.h,
@@ -154,12 +159,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'لوحة التحكم',
-                  style: TextStyle(
+                  style: textTheme.titleLarge?.copyWith(
                     fontFamily: 'Cairo',
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
                     height: 1.5,
-                    color: const Color(0xFF101828),
                     letterSpacing: 0,
                   ),
                 ),
@@ -180,15 +184,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 child: Container(
                   width: 16.w,
                   height: 16.w,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
+                  decoration: BoxDecoration(
+                    color: colorScheme.error,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       '3',
-                      style: TextStyle(
-                        color: Colors.white,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onError,
                         fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
@@ -204,7 +208,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           preferredSize: const Size.fromHeight(1.1),
           child: Container(
             height: 1.1,
-            color: const Color(0xFFE5E7EB),
+            color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
           ),
         ),
       ),
@@ -213,8 +217,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   }
 
   Widget _buildMainContent() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     return Container(
-        color: const Color(0xFFF5F5F5),
+        color: theme.scaffoldBackgroundColor,
         child: SingleChildScrollView(
             child: Column(children: [
           // Welcome Container
@@ -244,14 +252,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                           _firstName != null
                               ? ' Welcome $_firstName'
                               : ' مرحباً، د.',
-                          style: TextStyle(
+                          style: textTheme.titleLarge?.copyWith(
                             fontFamily: 'Cairo',
                             fontSize: 24.sp,
                             fontWeight: FontWeight.w700,
-                            // Bold
                             height: 1.5,
-                            // 36px line height
-                            color: const Color(0xFF101828),
                           ),
                           textAlign: TextAlign.right,
                         ),
@@ -264,14 +269,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     'إليك نظرة عامة على حجوزاتك وأدائك',
-                    style: TextStyle(
+                    style: textTheme.bodyMedium?.copyWith(
                       fontFamily: 'Cairo',
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
-                      // Regular
                       height: 1.5,
-                      // 22.5px line height
-                      color: const Color(0xFF858585),
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                     textAlign: TextAlign.right,
                   ),
@@ -296,24 +299,21 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // First Card - Total Patients
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+                      color:
+                          isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                       width: 1.1,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x1A000000),
-                        offset: Offset(0, 1),
+                        color: isDark
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.grey.withOpacity(0.1),
+                        offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Color.fromRGBO(0, 0, 0, 0.1),
-                        offset: Offset(0, 1),
-                        blurRadius: 1,
-                        spreadRadius: -1,
                       ),
                     ],
                   ),
@@ -333,10 +333,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                               alignment: Alignment.center,
                               child: Text(
                                 'الحجوزات اليوم',
-                                style: TextStyle(
+                                style: textTheme.bodySmall?.copyWith(
                                   fontFamily: 'Cairo',
                                   fontSize: 12.sp,
-                                  color: const Color(0xFF6B7280),
+                                  color: colorScheme.onSurface.withOpacity(0.6),
                                   height: 1.0,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -348,11 +348,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             SizedBox(height: 2.h),
                             Text(
                               '28',
-                              style: TextStyle(
+                              style: textTheme.titleMedium?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 22.sp,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
                                 height: 1.1,
                               ),
                               textAlign: TextAlign.center,
@@ -364,14 +363,14 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       Container(
                         width: 52.w,
                         height: 52.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE3F5FF),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.people_outline,
-                          color: Color(0xFF040400),
                           size: 24,
+                          color: Theme.of(context).iconTheme.color,
                         ),
                       ),
                     ],
@@ -380,24 +379,21 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // Second Card - Appointments
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+                      color:
+                          isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                       width: 1.1,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x1A000000),
-                        offset: Offset(0, 1),
+                        color: isDark
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.grey.withOpacity(0.1),
+                        offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Color.fromRGBO(0, 0, 0, 0.1),
-                        offset: Offset(0, 1),
-                        blurRadius: 1,
-                        spreadRadius: -1,
                       ),
                     ],
                   ),
@@ -417,10 +413,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                               alignment: Alignment.center,
                               child: Text(
                                 'الحجوزات اليوم',
-                                style: TextStyle(
+                                style: textTheme.bodySmall?.copyWith(
                                   fontFamily: 'Cairo',
                                   fontSize: 12.sp,
-                                  color: const Color(0xFF6B7280),
+                                  color: colorScheme.onSurface.withOpacity(0.6),
                                   height: 1.0,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -432,11 +428,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             SizedBox(height: 2.h),
                             Text(
                               '28',
-                              style: TextStyle(
+                              style: textTheme.titleMedium?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 22.sp,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
                                 height: 1.1,
                               ),
                               textAlign: TextAlign.center,
@@ -448,13 +443,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       Container(
                         width: 52.w,
                         height: 52.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFFF3CD),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.calendar_today,
-                          color: Color(0xFF040400),
+                          color: theme.iconTheme.color,
                           size: 24,
                         ),
                       ),
@@ -465,24 +460,21 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // Third Card - Today's Appointments
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+                      color:
+                          isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                       width: 1.1,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x1A000000),
-                        offset: Offset(0, 1),
+                        color: isDark
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.grey.withOpacity(0.1),
+                        offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Color.fromRGBO(0, 0, 0, 0.1),
-                        offset: Offset(0, 1),
-                        blurRadius: 1,
-                        spreadRadius: -1,
                       ),
                     ],
                   ),
@@ -498,10 +490,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                           children: [
                             Text(
                               'الحجوزات المكتملة',
-                              style: TextStyle(
+                              style: textTheme.bodySmall?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 12.sp,
-                                color: const Color(0xFF6B7280),
+                                color: colorScheme.onSurface.withOpacity(0.6),
                                 height: 1.0,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -511,11 +503,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             SizedBox(height: 2.h),
                             Text(
                               '20',
-                              style: TextStyle(
+                              style: textTheme.titleMedium?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 22.sp,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
                                 height: 1.1,
                               ),
                             ),
@@ -526,22 +517,23 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       Container(
                         width: 52.w,
                         height: 52.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE8F5E9),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: Container(
                             width: 52.w,
                             height: 52.h,
-                            decoration: const BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.grey[800] : Colors.grey[200],
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Icon(
                                 Icons.check_circle_outline_sharp,
-                                color: Colors.black,
+                                color: theme.iconTheme.color,
                                 size: 18.sp,
                               ),
                             ),
@@ -555,24 +547,21 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 // Fourth Card - Available Time
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+                      color:
+                          isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                       width: 1.1,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x1A000000),
-                        offset: Offset(0, 1),
+                        color: isDark
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.grey.withOpacity(0.1),
+                        offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Color.fromRGBO(0, 0, 0, 0.1),
-                        offset: Offset(0, 1),
-                        blurRadius: 1,
-                        spreadRadius: -1,
                       ),
                     ],
                   ),
@@ -587,10 +576,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                         children: [
                           Text(
                             'التقييم',
-                            style: TextStyle(
+                            style: textTheme.bodySmall?.copyWith(
                               fontFamily: 'Cairo',
                               fontSize: 13.sp,
-                              color: const Color(0xFF6B7280),
+                              color: colorScheme.onSurface.withOpacity(0.6),
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
@@ -600,11 +589,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               '4.8',
-                              style: TextStyle(
+                              style: textTheme.titleMedium?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 20.sp,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
                                 height: 1.2,
                               ),
                               textAlign: TextAlign.right,
@@ -615,13 +603,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       Container(
                         width: 52.w,
                         height: 52.h,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFFF3CD),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200],
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.star_border,
-                          color: Color(0xFF040400),
+                          color: theme.iconTheme.color,
                           size: 24,
                         ),
                       ),
@@ -638,24 +626,20 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
               height: 305.66.h,
               margin: EdgeInsets.only(top: 12.h, left: 20.w, right: 20.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(16.r),
                 border: Border.all(
-                  color: const Color(0xFFE5E7EB),
+                  color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
                   width: 1.1,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x1A000000),
-                    offset: Offset(0, 1),
+                    color: isDark
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.1),
+                    offset: const Offset(0, 1),
                     blurRadius: 3,
                     spreadRadius: 0,
-                  ),
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.1),
-                    offset: Offset(0, 1),
-                    blurRadius: 1,
-                    spreadRadius: -1,
                   ),
                 ],
               ),
@@ -668,12 +652,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       EdgeInsets.only(right: 12.w, top: 12.h, bottom: 16.h),
                   child: Text(
                     'الحجوزات الأسبوعية',
-                    style: TextStyle(
+                    style: textTheme.titleMedium?.copyWith(
                       fontFamily: 'Cairo',
                       fontWeight: FontWeight.w600,
                       fontSize: 18.sp,
                       height: 1.5,
-                      color: const Color(0xFF101828),
                     ),
                     textAlign: TextAlign.right,
                   ),
@@ -684,10 +667,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                         width: 347.82.w,
                         height: 220.h,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardTheme.color,
                           borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
-                            color: const Color(0xFFE5E7EB),
+                            color: isDark
+                                ? Colors.grey[700]!
+                                : const Color(0xFFE5E7EB),
                             width: 1.1,
                           ),
                         ),
@@ -728,9 +713,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                                           top: 8.0),
                                                   child: Text(
                                                     days[value.toInt()],
-                                                    style: TextStyle(
-                                                      color: const Color(
-                                                          0xFF858585),
+                                                    style: textTheme.labelSmall
+                                                        ?.copyWith(
+                                                      color: colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.6),
                                                       fontSize: 10.sp,
                                                       fontFamily: 'Inter',
                                                     ),
@@ -751,9 +738,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                                     value == 20) {
                                                   return Text(
                                                     value.toInt().toString(),
-                                                    style: TextStyle(
-                                                      color: const Color(
-                                                          0xFF858585),
+                                                    style: textTheme.labelSmall
+                                                        ?.copyWith(
+                                                      color: colorScheme
+                                                          .onSurface
+                                                          .withOpacity(0.6),
                                                       fontSize: 10.sp,
                                                       fontFamily: 'Inter',
                                                     ),
@@ -776,7 +765,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                             if ([0.0, 5.0, 10.0, 15.0, 20.0]
                                                 .contains(value)) {
                                               return FlLine(
-                                                color: const Color(0xFFF0F0F0),
+                                                color: (isDark
+                                                    ? Colors.grey[700]
+                                                    : Colors.grey[300])!,
                                                 strokeWidth: 1.0,
                                                 dashArray: [
                                                   3,
@@ -831,12 +822,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     'الحجوزات القادمة اليوم',
-                    style: TextStyle(
+                    style: textTheme.titleMedium?.copyWith(
                       fontFamily: 'Cairo',
                       fontWeight: FontWeight.w600,
                       fontSize: 18.sp,
-                      color: const Color(0xFF101828),
                       height: 1.5,
+                      color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.right,
                   ),
@@ -848,11 +839,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   height: 120,
                   margin: const EdgeInsets.only(top: 15),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+                      width: 1.1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromRGBO(0, 0, 0, 0.1),
+                        color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -876,7 +871,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 26.99,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   'محمد اشرف',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -884,7 +879,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w600,
                                     fontSize: 18,
                                     height: 1.5,
-                                    color: Color(0xFF0A0A0A),
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -894,7 +889,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 21.0,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   'تنضيف اسنان',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -902,7 +897,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: Color(0xFF858585),
+                                    color: colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ),
@@ -973,11 +968,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   height: 120,
                   margin: const EdgeInsets.only(top: 15),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+                      width: 1.1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromRGBO(0, 0, 0, 0.1),
+                        color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -1001,7 +1000,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 26.99,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   'عبدالحليم رمضان',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -1009,7 +1008,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w600,
                                     fontSize: 18,
                                     height: 1.5,
-                                    color: Color(0xFF0A0A0A),
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -1019,7 +1018,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 21.0,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   'حشو العصب ',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -1027,7 +1026,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: Color(0xFF858585),
+                                    color: colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ),
@@ -1098,11 +1097,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   height: 120,
                   margin: const EdgeInsets.only(top: 15),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+                      width: 1.1,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromRGBO(0, 0, 0, 0.1),
+                        color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -1126,7 +1129,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 26.99,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   'زياد جمال',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -1134,7 +1137,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w600,
                                     fontSize: 18,
                                     height: 1.5,
-                                    color: Color(0xFF0A0A0A),
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -1144,7 +1147,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 width: 200,
                                 height: 21.0,
                                 alignment: Alignment.centerRight,
-                                child: const Text(
+                                child: Text(
                                   ' تقويم الأسنان',
                                   textAlign: TextAlign.right,
                                   style: TextStyle(
@@ -1152,7 +1155,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: Color(0xFF858585),
+                                    color: colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               ),

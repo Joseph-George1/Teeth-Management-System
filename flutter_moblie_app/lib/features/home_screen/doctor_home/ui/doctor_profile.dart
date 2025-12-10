@@ -1,0 +1,412 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
+import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+
+class DoctorProfile extends StatefulWidget {
+  const DoctorProfile({Key? key}) : super(key: key);
+
+  @override
+  State<DoctorProfile> createState() => _DoctorProfileState();
+}
+
+class _DoctorProfileState extends State<DoctorProfile> {
+  bool _loading = false;
+  String? _error;
+
+  String? _firstName;
+  String? _lastName;
+  String? _email;
+  String? _phone;
+  String? _faculty;
+  String? _year;
+  String? _governorate;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    setState(() => _loading = true);
+    try {
+      final cachedFirst = await SharedPrefHelper.getString('first_name');
+      final cachedLast = await SharedPrefHelper.getString('last_name');
+      final cachedEmail = await SharedPrefHelper.getString('email');
+      if (mounted) {
+        setState(() {
+          _firstName =
+              (cachedFirst?.isNotEmpty ?? false) ? cachedFirst : _firstName;
+          _lastName =
+              (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
+          _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
+        });
+      }
+      await _fetchProfile();
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _fetchProfile() async {
+    setState(() {
+      _error = null;
+    });
+    try {
+      final dio = DioFactory.getDio();
+      Response? response;
+      // Try common profile endpoints
+      final candidates = ['/me', '/profile', '/users/me', '/auth/me'];
+      for (final path in candidates) {
+        try {
+          final res = await dio.get(path);
+          if (res.statusCode == 200) {
+            response = res;
+            break;
+          }
+        } on DioException catch (e) {
+          // Ignore 404s and try next candidate
+          if (e.response?.statusCode == 404) {
+            continue;
+          }
+          // Network/timeouts bubble up
+          rethrow;
+        }
+      }
+
+      if (response != null && response.statusCode == 200) {
+        final data = response.data;
+        Map<String, dynamic>? userMap;
+        if (data is Map<String, dynamic>) {
+          userMap = Map<String, dynamic>.from(data);
+          if (userMap['user'] is Map) {
+            userMap = Map<String, dynamic>.from(userMap['user']);
+          }
+        }
+
+        String? getVal(String a, String b) {
+          if (userMap == null) return null;
+          return (userMap![a] ?? userMap![b])?.toString();
+        }
+
+        final firstName = getVal('first_name', 'firstName');
+        final lastName = getVal('last_name', 'lastName');
+        final email = userMap?['email']?.toString();
+        final phone = userMap?['phone']?.toString();
+        final faculty = userMap?['faculty']?.toString();
+        final year = userMap?['year']?.toString();
+        final governorate = userMap?['governorate']?.toString();
+
+        if (mounted) {
+          setState(() {
+            _firstName = firstName ?? _firstName;
+            _lastName = lastName ?? _lastName;
+            _email = email ?? _email;
+            _phone = phone ?? _phone;
+            _faculty = faculty ?? _faculty;
+            _year = year ?? _year;
+            _governorate = governorate ?? _governorate;
+          });
+        }
+
+        if ((firstName?.isNotEmpty ?? false)) {
+          await SharedPrefHelper.setData('first_name', firstName);
+          await SharedPrefHelper.setData('last_name', lastName ?? '');
+          if ((email?.isNotEmpty ?? false)) {
+            await SharedPrefHelper.setData('email', email);
+          }
+        }
+      } else {
+        // No known endpoint found. Do not show scary banner; keep cached data.
+        return;
+      }
+    } on DioException catch (e) {
+      // For 404 specifically, suppress the error and keep cached values
+      if (e.response?.statusCode == 404) return;
+      setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
+    } catch (_) {
+      setState(() => _error = 'حدث خطأ غير متوقع');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Text(
+              'الملف الشخصي',
+              style:
+                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: theme.brightness == Brightness.dark
+                ? Colors.grey[700]
+                : const Color(0xFFE5E7EB),
+          ),
+        ),
+      ),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: RefreshIndicator(
+          onRefresh: _fetchProfile,
+          color: colorScheme.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _headerCard(theme, textTheme, colorScheme),
+                  SizedBox(height: 12.h),
+                  _infoCard(theme, textTheme, colorScheme),
+                  if (_error != null) ...[
+                    SizedBox(height: 12.h),
+                    _errorBanner(textTheme, colorScheme, _error!),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _headerCard(
+      ThemeData theme, TextTheme textTheme, ColorScheme colorScheme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(16.r),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28.r,
+            backgroundColor: theme.brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[200],
+            child: Icon(Icons.person_outline, color: theme.iconTheme.color),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _loading
+                    ? _shimmerLine(width: 120.w, height: 18.h, theme: theme)
+                    : Text(
+                        _composeName(_firstName, _lastName) ?? 'دكتور',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18.sp,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                SizedBox(height: 4.h),
+                _loading
+                    ? _shimmerLine(width: 180.w, height: 14.h, theme: theme)
+                    : Text(
+                        _email ?? '-',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(
+      ThemeData theme, TextTheme textTheme, ColorScheme colorScheme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final items = <_InfoItem>[
+      _InfoItem(
+          icon: Icons.badge_outlined, label: 'الاسم الأول', value: _firstName),
+      _InfoItem(
+          icon: Icons.perm_identity, label: 'اسم العائلة', value: _lastName),
+      _InfoItem(
+          icon: Icons.email_outlined,
+          label: 'البريد الإلكتروني',
+          value: _email),
+      _InfoItem(icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
+      _InfoItem(icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
+      _InfoItem(
+          icon: Icons.event_note_outlined,
+          label: 'السنة الدراسية',
+          value: _year),
+      _InfoItem(
+          icon: Icons.place_outlined, label: 'المحافظة', value: _governorate),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      child: Column(
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            _infoRow(items[i], theme, textTheme, colorScheme),
+            if (i != items.length - 1)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]
+                    : const Color(0xFFE5E7EB),
+              ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
+      ColorScheme colorScheme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+      child: Row(
+        children: [
+          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  item.label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 12.sp,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+                SizedBox(height: 2.h),
+                _loading
+                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                    : Text(
+                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _errorBanner(
+      TextTheme textTheme, ColorScheme colorScheme, String message) {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.error.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: colorScheme.error),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.onErrorContainer),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _composeName(String? f, String? l) {
+    if ((f == null || f.isEmpty) && (l == null || l.isEmpty)) return null;
+    if (f != null && f.isNotEmpty && l != null && l.isNotEmpty) return '$f $l';
+    return f?.isNotEmpty == true ? f : l;
+  }
+
+  Widget _shimmerLine(
+      {required double width,
+      required double height,
+      required ThemeData theme}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? Colors.grey[800]
+            : Colors.grey[200],
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+    );
+  }
+}
+
+class _InfoItem {
+  final IconData icon;
+  final String label;
+  final String? value;
+
+  _InfoItem({required this.icon, required this.label, required this.value});
+}

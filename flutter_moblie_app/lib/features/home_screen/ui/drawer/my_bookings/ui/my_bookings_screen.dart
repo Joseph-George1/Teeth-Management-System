@@ -59,8 +59,10 @@ class MyBookingsScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
           // User greeting container
           Container(
             width: 400,
@@ -161,7 +163,7 @@ class MyBookingsScreen extends StatelessWidget {
           ),
         Container(
             width: 414,
-            height: 650,
+            height: null,
             padding: const EdgeInsets.only(top: 15, left: 20, right:15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -426,11 +428,13 @@ class MyBookingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 24),
 
             ])
-        )
-    ])
-
+        ),
+    ]),
+        ),
+      ),
     );
 
   }
