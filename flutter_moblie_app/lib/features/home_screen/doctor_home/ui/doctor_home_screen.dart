@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
+// Add this import at the top of the file
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({Key? key}) : super(key: key);
@@ -123,19 +126,23 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final unreadCount = NotificationHelper.getUnreadCount();
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const Drawer(
-        width: 300,
-        child: DoctorDrawer(),
-      ),
+      drawer: const DoctorDrawer(),
       appBar: AppBar(
         toolbarHeight: 75.6,
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, size: 24.w),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ),
         titleSpacing: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -176,30 +183,41 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.notifications_none, size: 24.w),
-                onPressed: () {},
+                onPressed: () {
+                  // Mark notifications as read when opened
+                  NotificationHelper.hasUnreadNotifications = false;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  ).then((_) {
+                    // This will refresh the notification badge when returning to the screen
+                    if (mounted) setState(() {});
+                  });
+                },
               ),
-              Positioned(
-                right: 8,
-                top: 10,
-                child: Container(
-                  width: 16.w,
-                  height: 16.w,
-                  decoration: BoxDecoration(
-                    color: colorScheme.error,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '3',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onError,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
+              if (unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 10,
+                  child: Container(
+                    width: 16.w,
+                    height: 16.w,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onError,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           SizedBox(width: 8.w),
@@ -274,7 +292,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
                       height: 1.5,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.right,
                   ),
@@ -309,8 +327,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: isDark
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.withValues(alpha: 0.1),
                         offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
@@ -336,7 +354,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 style: textTheme.bodySmall?.copyWith(
                                   fontFamily: 'Cairo',
                                   fontSize: 12.sp,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   height: 1.0,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -389,8 +407,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: isDark
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.withValues(alpha: 0.1),
                         offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
@@ -416,7 +434,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                 style: textTheme.bodySmall?.copyWith(
                                   fontFamily: 'Cairo',
                                   fontSize: 12.sp,
-                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   height: 1.0,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -470,8 +488,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: isDark
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.withValues(alpha: 0.1),
                         offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
@@ -493,7 +511,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                               style: textTheme.bodySmall?.copyWith(
                                 fontFamily: 'Cairo',
                                 fontSize: 12.sp,
-                                color: colorScheme.onSurface.withOpacity(0.6),
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 height: 1.0,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -557,8 +575,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: isDark
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.withValues(alpha: 0.1),
                         offset: const Offset(0, 1),
                         blurRadius: 3,
                         spreadRadius: 0,
@@ -579,7 +597,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             style: textTheme.bodySmall?.copyWith(
                               fontFamily: 'Cairo',
                               fontSize: 13.sp,
-                              color: colorScheme.onSurface.withOpacity(0.6),
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
@@ -635,8 +653,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 boxShadow: [
                   BoxShadow(
                     color: isDark
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.grey.withOpacity(0.1),
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.grey.withValues(alpha: 0.1),
                     offset: const Offset(0, 1),
                     blurRadius: 3,
                     spreadRadius: 0,
@@ -717,7 +735,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                                         ?.copyWith(
                                                       color: colorScheme
                                                           .onSurface
-                                                          .withOpacity(0.6),
+                                                          .withValues(alpha: 0.6),
                                                       fontSize: 10.sp,
                                                       fontFamily: 'Inter',
                                                     ),
@@ -742,7 +760,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                                         ?.copyWith(
                                                       color: colorScheme
                                                           .onSurface
-                                                          .withOpacity(0.6),
+                                                          .withValues(alpha: 0.6),
                                                       fontSize: 10.sp,
                                                       fontFamily: 'Inter',
                                                     ),
@@ -847,7 +865,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+                        color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -897,7 +915,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),
@@ -1026,7 +1044,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),
@@ -1155,7 +1173,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                     fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),

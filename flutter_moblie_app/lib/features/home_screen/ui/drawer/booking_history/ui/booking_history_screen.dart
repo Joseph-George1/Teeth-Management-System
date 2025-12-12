@@ -1,4 +1,6 @@
+/*
 import 'package:flutter/material.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_settings_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/settings_screen.dart';
 
@@ -818,7 +820,8 @@ extension SettingsNavigation on BuildContext {
   void navigateToSettings() {
     Navigator.push(
       this,
-      MaterialPageRoute(builder: (context) => SettingsScreen()),
+      MaterialPageRoute(builder: (context) =>DoctorSettingsScreen()),
     );
   }
 }
+*/

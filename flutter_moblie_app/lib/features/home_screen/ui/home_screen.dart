@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/core/theming/app_theme.dart';
+import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
 import 'drawer/browse_services/ui/browse_services_screen.dart';
 
@@ -411,17 +413,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_none,
-                color: Theme.of(context).iconTheme.color,
-                size: 24.r),
-            onPressed: () {
-              // TODO: Add notification functionality
-            },
-          ),
-          SizedBox(width: 12.w),
-        ],
       ),
       drawer: const HomeDrawer(),
       body: SafeArea(
@@ -812,3 +803,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

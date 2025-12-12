@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
 class DoctorNextBookingScreen extends StatelessWidget {
   DoctorNextBookingScreen({super.key});
@@ -18,16 +19,19 @@ class DoctorNextBookingScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const Drawer(
-        width: 300,
-        child: DoctorDrawer(),
-      ),
+      drawer: const DoctorDrawer(),
       appBar: AppBar(
         toolbarHeight: 75.6,
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, size: 24.w),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ),
         titleSpacing: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -67,7 +71,12 @@ class DoctorNextBookingScreen extends StatelessWidget {
             children: [
               IconButton(
                 icon: Icon(Icons.notifications_none, size: 24.w),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  );
+                },
               ),
               Positioned(
                 right: 8,
@@ -418,4 +427,3 @@ class DoctorNextBookingScreen extends StatelessWidget {
         );
       }
     }
-

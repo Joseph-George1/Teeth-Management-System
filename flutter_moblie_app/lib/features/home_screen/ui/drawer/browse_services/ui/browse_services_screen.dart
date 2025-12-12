@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
 final List<String> categoryNames = [
   'فحص شامل',
@@ -31,8 +33,14 @@ final Map<String, String> serviceDescriptions = {
   'تركيبات الأسنان': 'تركيبات ثابتة ومتحركة',
 };
 
-class BrowseServicesScreen extends StatelessWidget {
+class BrowseServicesScreen extends StatefulWidget {
   BrowseServicesScreen({super.key});
+
+  @override
+  State<BrowseServicesScreen> createState() => _BrowseServicesScreenState();
+}
+
+class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Helper method to load SVG with error handling
@@ -115,11 +123,8 @@ class BrowseServicesScreen extends StatelessWidget {
                     width: 70,
                     height: 39.99,
                     alignment: Alignment.centerLeft,
-                    child: Icon(
-                      Icons.notifications_none,
-                      size: 30,
-                      color: theme.iconTheme.color,
-                    ),
+                    // Notification icon removed
+                    child: Container(),
                   ),
                 ),
                 // User name and greeting (right side)
@@ -144,7 +149,7 @@ class BrowseServicesScreen extends StatelessWidget {
                       ),
                       // Name
                       const Text(
-                        'يوسف ايمن',
+                        'تصفح ما لدينا',
                         textDirection: TextDirection.rtl,
                         style: TextStyle(
                           fontFamily: 'Cairo',
@@ -362,4 +367,3 @@ class BrowseServicesScreen extends StatelessWidget {
                     );
   }
 }
-

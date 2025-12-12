@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
-class DoctorBookingRecordsScreen extends StatelessWidget {
+class DoctorBookingRecordsScreen extends StatefulWidget {
   DoctorBookingRecordsScreen({super.key});
 
+  @override
+  State<DoctorBookingRecordsScreen> createState() => _DoctorBookingRecordsScreenState();
+}
+
+class _DoctorBookingRecordsScreenState extends State<DoctorBookingRecordsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -17,16 +24,19 @@ class DoctorBookingRecordsScreen extends StatelessWidget {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const Drawer(
-        width: 300,
-        child: DoctorDrawer(),
-      ),
+      drawer: const DoctorDrawer(),
       appBar: AppBar(
         toolbarHeight: 75.6,
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, size: 24.w),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ),
         titleSpacing: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -66,8 +76,19 @@ class DoctorBookingRecordsScreen extends StatelessWidget {
             children: [
               IconButton(
                 icon: Icon(Icons.notifications_none, size: 24.w),
-                onPressed: () {},
+                onPressed: () {
+                  // Mark notifications as read when opened
+                  NotificationHelper.hasUnreadNotifications = false;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  ).then((_) {
+                    // This will refresh the notification badge when returning to the screen
+                    if (mounted) setState(() {});
+                  });
+                },
               ),
+              if (NotificationHelper.getUnreadCount() > 0)
               Positioned(
                 right: 8,
                 top: 10,
@@ -80,7 +101,7 @@ class DoctorBookingRecordsScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '3',
+                      NotificationHelper.getUnreadCount() > 9 ? '9+' : '${NotificationHelper.getUnreadCount()}',
                       style: textTheme.labelSmall?.copyWith(
                         color: colorScheme.onError,
                         fontSize: 10.sp,
@@ -340,4 +361,3 @@ class DoctorBookingRecordsScreen extends StatelessWidget {
     );
   }
 }
-

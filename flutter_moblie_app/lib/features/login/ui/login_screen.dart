@@ -7,7 +7,7 @@ import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
 import '../../auth/data/auth_service.dart';
-import '../../home_screen/doctor_home/ui/main_layout_doctor.dart';
+import '../../home_screen/doctor_home/ui/doctor_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Navigate to doctor main layout with fade transition and white background
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const MainLayoutDoctor(),
+              pageBuilder: (context, animation, secondaryAnimation) => const DoctorHomeScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,

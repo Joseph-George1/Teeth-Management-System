@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 
 class DoctorProfile extends StatefulWidget {
   const DoctorProfile({Key? key}) : super(key: key);
@@ -12,6 +13,7 @@ class DoctorProfile extends StatefulWidget {
 }
 
 class _DoctorProfileState extends State<DoctorProfile> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loading = false;
   String? _error;
 
@@ -30,7 +32,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   }
 
   Future<void> _bootstrap() async {
-    setState(() => _loading = true);
+    setState(() => _loading = false);
     try {
       final cachedFirst = await SharedPrefHelper.getString('first_name');
       final cachedLast = await SharedPrefHelper.getString('last_name');
@@ -138,10 +140,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const DoctorDrawer(),
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
+        toolbarHeight: 75.6,
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, size: 24.w),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -317,39 +330,51 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
       ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
-      child: Row(
-        children: [
-          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  item.label,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12.sp,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-                SizedBox(height: 2.h),
-                _loading
-                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
-                    : Text(
-                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14.sp,
-                        ),
-                        textAlign: TextAlign.right,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // Open the drawer when any menu item is tapped
+          if (context.mounted) {
+            context.findAncestorStateOfType<ScaffoldState>()?.openDrawer();
+          }
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+          child: Row(
+            children: [
+              Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      item.label,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                        fontSize: 12.sp,
                       ),
-              ],
-            ),
+                      textAlign: TextAlign.right,
+                    ),
+                    SizedBox(height: 2.h),
+                    _loading
+                        ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                        : Text(
+                            (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.sp,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

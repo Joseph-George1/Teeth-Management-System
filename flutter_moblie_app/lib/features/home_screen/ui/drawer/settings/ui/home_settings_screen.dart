@@ -1,164 +1,72 @@
-/*
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
-import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:thotha_mobile_app/core/theming/colors.dart';
 
-import '../../../../../../core/theming/colors.dart';
-import 'package:thotha_mobile_app/core/routing/routes.dart';
-
-class SettingsScreen extends StatefulWidget {
-  /// If true, the screen will show the Doctor drawer when opening the menu.
-  final bool useDoctorDrawer;
-
-  const SettingsScreen({super.key, this.useDoctorDrawer = false});
+class HomeSettingsScreen extends StatefulWidget {
+  const HomeSettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  State<HomeSettingsScreen> createState() => _HomeSettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
   // State variables for each toggle
   bool _notificationsEnabled = false;
   bool _receiveOffers = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Doctor name/email state (loaded from cache or server)
-  String? _firstName;
-  String? _lastName;
-  String? _email;
-  bool _isLoadingName = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchDoctorName();
-  }
-
-  Future<void> _fetchDoctorName() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingName = true;
-    });
-
-    try {
-      // Try cache first
-      final cachedFirstName = await SharedPrefHelper.getString('first_name');
-      final cachedLastName = await SharedPrefHelper.getString('last_name');
-      final cachedEmail = await SharedPrefHelper.getString('email');
-
-      if (cachedFirstName != null && cachedFirstName.isNotEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _firstName = cachedFirstName;
-          _lastName = cachedLastName;
-          _email = cachedEmail;
-          _isLoadingName = false;
-        });
-        return;
-      }
-
-      final dio = DioFactory.getDio();
-      Response response;
-      try {
-        response = await dio.get('/me');
-      } catch (_) {
-        response = await dio.get('/profile');
-      }
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        String? f;
-        String? l;
-        String? e;
-        if (data is Map) {
-          f = (data['first_name'] ?? data['firstName']) as String?;
-          l = (data['last_name'] ?? data['lastName']) as String?;
-          e = (data['email'] ?? (data['user']?['email'])) as String?;
-
-          if ((f == null || f.isEmpty) && data['user'] != null) {
-            final user = data['user'];
-            f = f ?? (user['first_name'] ?? user['firstName']) as String?;
-            l = l ?? (user['last_name'] ?? user['lastName']) as String?;
-          }
-        }
-
-        if (!mounted) return;
-        setState(() {
-          _firstName = f;
-          _lastName = l;
-          _email = e;
-        });
-
-        if (f != null && f.isNotEmpty) {
-          await SharedPrefHelper.setData('first_name', f);
-          await SharedPrefHelper.setData('last_name', l ?? '');
-          if (e != null) await SharedPrefHelper.setData('email', e);
-        }
-      }
-    } catch (e) {
-      // ignore errors, fall back to defaults
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingName = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
     return Scaffold(
-        key: _scaffoldKey,
+      key: _scaffoldKey,
+      backgroundColor: Colors.white,
+      drawer: const HomeDrawer(),
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        // Show the drawer based on where Settings was opened from
-        drawer: widget.useDoctorDrawer
-            ? const Drawer(child: DoctorDrawer())
-            : const Drawer(child: HomeDrawer()),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          // Disable default back button
-          title: Container(
-            width: double.infinity,
-            height: 50,
-            child: Stack(
-              children: [
-                // Menu icon on the left
-                Positioned(
-                  left: 0,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.menu,
-                      color: Colors.black,
-                      size: 30,
-                      weight: 700, // Bold weight
-                    ),
-                    onPressed: () {
-                      _scaffoldKey.currentState?.openDrawer();
-                    },
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Container(
+          width: double.infinity,
+          height: 50,
+          child: Stack(
+            children: [
+              // Menu icon on the left
+              Positioned(
+                left: 0,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.menu,
+                    color: Colors.black,
+                    size: 30,
+                    weight: 700,
                   ),
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
                 ),
-                // Logo centered
-                Center(
-                  child: Image.asset(
-                    'assets/images/splash-logo.png',
-                    width: 46,
-                    height: 50,
-                    fit: BoxFit.contain,
-                  ),
+              ),
+              // Logo centered
+              Center(
+                child: Image.asset(
+                  'assets/images/splash-logo.png',
+                  width: 46,
+                  height: 50,
+                  fit: BoxFit.contain,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          centerTitle: true,
         ),
-        body: Column(children: [
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
           // Main Settings Container
           Column(
             children: [
@@ -166,9 +74,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Container(
                 color: Colors.white,
                 alignment: Alignment.center,
-                padding: const EdgeInsets.only(right: 20),
+                padding: const EdgeInsets.only(right: 20, top: 20),
                 child: const Text(
-                  'الإعدادات',
+                  'إعدادات المستخدم',
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.w700,
@@ -184,6 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Main Content Container
               Container(
                 width: 374.01,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -219,7 +128,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     setState(() {
                                       _notificationsEnabled = value;
                                     });
-                                    // Add any additional logic here (e.g., save to preferences)
                                   },
                                   activeColor: const Color(0xFF8DECB8),
                                   activeTrackColor: const Color(0xFF8DECB8),
@@ -240,14 +148,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF0A0A0A),
-                              height: 1.5, // 24/16 = 1.5 line height
+                              height: 1.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                    // Receive Offers Toggle
                     Container(
                       width: double.infinity,
                       height: 49.0,
@@ -283,9 +189,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   inactiveThumbColor: Colors.white,
                                   inactiveTrackColor: const Color(0xFFE5E7EB),
                                   materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  MaterialTapTargetSize.shrinkWrap,
                                   thumbColor:
-                                      MaterialStateProperty.all(Colors.white),
+                                  MaterialStateProperty.all(Colors.white),
                                 ),
                               ),
                             ),
@@ -356,22 +262,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF0A0A0A),
-                              height: 1.5, // 24/16 = 1.5 line height
+                              height: 1.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 14),
-
-                    // Change Password Button
-                    // Password change functionality removed as requested
                   ],
                 ),
               ),
             ],
           )
-        ]));
+        ],
+      ),
+    );
   }
 }
-*/

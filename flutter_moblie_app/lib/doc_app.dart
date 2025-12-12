@@ -7,6 +7,7 @@ import 'core/routing/routes.dart';
 import 'core/theming/app_theme.dart';
 import 'core/theming/theme_provider.dart';
 
+
 class DocApp extends StatelessWidget {
   final AppRouter appRouter;
   const DocApp({super.key, required this.appRouter});
@@ -28,6 +29,7 @@ class DocApp extends StatelessWidget {
               themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
               initialRoute: Routes.splashScreen,
               onGenerateRoute: appRouter.generateRoute,
+             // navigatorObservers: [routeObserver],
             ),
           );
         },
