@@ -1,19 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
-import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_news_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_next_booking_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/patient_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_booking_records_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_home_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_profile.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/settings_screen.dart';
 import 'package:thotha_mobile_app/features/login/ui/login_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/patient_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_news_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/main_layout_doctor.dart';
+import 'package:dio/dio.dart';
+import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 
 class DoctorDrawer extends StatefulWidget {
   const DoctorDrawer({super.key});
@@ -50,8 +41,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
             title: Text(
               'تأكيد تسجيل الخروج',
               textAlign: TextAlign.right,
-              style:
-                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             content: Text(
               'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
@@ -82,7 +72,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                     MaterialPageRoute(
                       builder: (context) => const LoginScreen(),
                     ),
-                    (Route<dynamic> route) => false,
+                        (Route<dynamic> route) => false,
                   );
                 },
               ),
@@ -94,13 +84,13 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
   }
 
   Widget _menuItem(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    Color iconColor = _cCyan,
-    Color? textColor,
-    VoidCallback? onTap,
-  }) {
+      BuildContext context, {
+        required String title,
+        required IconData icon,
+        Color iconColor = _cCyan,
+        Color? textColor,
+        VoidCallback? onTap,
+      }) {
     final textTheme = Theme.of(context).textTheme;
     return InkWell(
       onTap: onTap,
@@ -277,25 +267,25 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                                   children: [
                                     _isLoadingName
                                         ? SizedBox(
-                                            width: 16.w,
-                                            height: 16.w,
-                                            child:
-                                                const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
+                                      width: 16.w,
+                                      height: 16.w,
+                                      child:
+                                      const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
                                         : Text(
-                                            _firstName != null
-                                                ? 'د/ ${_firstName!} ${_lastName ?? ''}'
-                                                : 'د/ أحمد محمود',
-                                            style:
-                                                textTheme.titleMedium?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surface,
-                                            ),
-                                          ),
+                                      _firstName != null
+                                          ? 'د/ ${_firstName!} ${_lastName ?? ''}'
+                                          : 'د/ أحمد محمود',
+                                      style: textTheme.titleMedium
+                                          ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                      ),
+                                    ),
                                     SizedBox(height: 2.h),
                                     Text(
                                       _email != null && _email!.isNotEmpty
@@ -323,68 +313,10 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _menuItem(context,
-                    title: ' الصفحةالرئيسية', icon: Icons.home,onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const MainLayoutDoctor(initialIndex: 0)),
-                      );
-                    },),
-                  _menuItem(
-                    context,
-                    title: 'الملف الشخصي ',
-                    icon: Icons.person,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainLayoutDoctor(initialIndex: 5),
-                        ),
-                      );
-                    },
-                  ),
-                  _menuItem(
-                    context,
-                    title: 'الحجوزات القادمة',
-                    icon: Icons.calendar_today,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainLayoutDoctor(initialIndex: 1),
-                        ),
-                      );
-                    },
-                  ),
-                  _menuItem(
-                    context,
-                    title: 'سجل الحجوزات',
-                    icon: Icons.list_alt_rounded,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainLayoutDoctor(initialIndex: 2),
-                        ),
-                      );
-                    },
-                  ),
-                  _menuItem(context,
-                      title: 'المرضي', icon: Icons.people_outline,onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainLayoutDoctor(initialIndex: 3),
-                        ),
-                      );
-                    },
-                  ),
+                  _menuItem(context, title: 'الملف الشخصي', icon: Icons.person_outline),
+                  _menuItem(context, title: 'الحجوزات القادمة', icon: Icons.event_note_outlined),
+                  _menuItem(context, title: 'سجل الحجوزات', icon: Icons.list_alt_rounded),
+                  _menuItem(context, title: 'المرضي', icon: Icons.people_outline),
                   _menuItem(
                     context,
                     title: 'الإعدادات',
@@ -393,21 +325,11 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) =>  SettingsScreen()),
+                        MaterialPageRoute(builder: (context) => const SettingsScreen()),
                       );
                     },
                   ),
-                  _menuItem(context,
-                      title: ' اخباري', icon: Icons.messenger_outlined,onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainLayoutDoctor(initialIndex: 4),
-                        ),
-                      );
-                    },),
+                  _menuItem(context, title: ' اخباري', icon: Icons.messenger_rounded),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Divider(height: 24.h),
