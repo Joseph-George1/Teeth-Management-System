@@ -3,13 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  /// If true, the screen will show the Doctor drawer when opening the menu.
+  final bool useDoctorDrawer;
+
+  const SettingsScreen({super.key, this.useDoctorDrawer = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -105,9 +109,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.white,
-      drawer: const Drawer(
-        child: HomeDrawer(),
-      ),
+      // Show the drawer based on where Settings was opened from
+      drawer: widget.useDoctorDrawer
+          ? const Drawer(child: DoctorDrawer())
+          : const Drawer(child: HomeDrawer()),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -440,7 +445,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Consumer<ThemeProvider>(
-                              builder: (context, themeProvider, _) {
+                              builder: (context, themeProvider, child) {
                                 return Transform.translate(
                                   offset: const Offset(0, -0.29),
                                   child: SizedBox(
@@ -525,10 +530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          )]));
 
   }
 }

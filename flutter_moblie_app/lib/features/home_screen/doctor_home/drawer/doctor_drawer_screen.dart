@@ -5,6 +5,7 @@ import 'package:thotha_mobile_app/features/login/ui/login_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/main_layout_doctor.dart';
 
 class DoctorDrawer extends StatefulWidget {
   const DoctorDrawer({super.key});
@@ -67,12 +68,18 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                 ),
                 onPressed: () {
                   Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(useDoctorDrawer: true),
+                    ),
+                  );
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const LoginScreen(),
                     ),
-                        (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
                   );
                 },
               ),
@@ -89,30 +96,57 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
         required IconData icon,
         Color iconColor = _cCyan,
         Color? textColor,
+        bool isSelected = false,
         VoidCallback? onTap,
       }) {
     final textTheme = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Row(
-            children: [
-              Icon(icon, color: Theme.of(context).iconTheme.color),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.right,
-                  style: textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: textColor ?? Theme.of(context).colorScheme.onSurface,
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: isSelected 
+            ? _cCyan.withOpacity(0.1) 
+            : null,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Row(
+              children: [
+                Icon(
+                  icon, 
+                  color: isSelected ? _cCyan : Theme.of(context).iconTheme.color
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.right,
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected 
+                          ? _cCyan 
+                          : textColor ?? Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                if (isSelected)
+                  Container(
+                    width: 4.w,
+                    height: 24.h,
+                    decoration: BoxDecoration(
+                      color: _cCyan,
+                      borderRadius: BorderRadius.horizontal(
+                        left: Radius.circular(4.r),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -177,11 +211,22 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
     }
   }
 
+  int _getCurrentIndex() {
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    if (currentRoute.contains('doctor-home')) return 0;
+    if (currentRoute.contains('upcoming-bookings')) return 1;
+    if (currentRoute.contains('booking-records')) return 2;
+    if (currentRoute.contains('profile')) return 3;
+    if (currentRoute.contains('settings')) return 4;
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textTheme = Theme.of(context).textTheme;
     final double topPad = MediaQuery.of(context).padding.top;
+    final int currentIndex = _getCurrentIndex();
 
     return Drawer(
       child: Container(
@@ -210,7 +255,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                           child: Text(
                             'القائمة',
                             style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: Theme.of(context).colorScheme.surface,
                             ),
                           ),
@@ -313,23 +358,112 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _menuItem(context, title: 'الملف الشخصي', icon: Icons.person_outline),
-                  _menuItem(context, title: 'الحجوزات القادمة', icon: Icons.event_note_outlined),
-                  _menuItem(context, title: 'سجل الحجوزات', icon: Icons.list_alt_rounded),
-                  _menuItem(context, title: 'المرضي', icon: Icons.people_outline),
+                  _menuItem(
+                    context,
+                    title: 'الرئيسية',
+                    icon: Icons.home,
+                    isSelected: currentIndex == 0,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'doctor-home'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 0),
+                        ),
+                      );
+                    },
+                  ),
+                  _menuItem(
+                    context,
+                    title: 'الملف الشخصي',
+                    icon: Icons.person_outline,
+                    isSelected: currentIndex == 1,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'doctor-profile'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 4),
+                        ),
+                      );
+                    },
+                  ),
+                  _menuItem(
+                    context,
+                    title: 'الحجوزات القادمة',
+                    icon: Icons.event_note_outlined,
+                    isSelected: currentIndex == 2,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'upcoming-bookings'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 1),
+                        ),
+                      );
+                    },
+                  ),
+                  _menuItem(
+                    context,
+                    title: 'سجل الحجوزات',
+                    icon: Icons.list_alt_rounded,
+                    isSelected: currentIndex == 3,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'booking-records'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 2),
+                        ),
+                      );
+                    },
+                  ),
+                  _menuItem(
+                    context,
+                    title: 'المرضي',
+                    icon: Icons.people_outline,
+                    isSelected: currentIndex == 4,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'patients'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 7),
+                        ),
+                      );
+                    },
+                  ),
                   _menuItem(
                     context,
                     title: 'الإعدادات',
                     icon: Icons.settings_outlined,
+                    isSelected: currentIndex == 5,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'settings'),
+                          builder: (context) => SettingsScreen(useDoctorDrawer: true),
+                        ),
                       );
                     },
                   ),
-                  _menuItem(context, title: ' اخباري', icon: Icons.messenger_rounded),
+                  _menuItem(
+                    context,
+                    title: 'اخباري',
+                    icon: Icons.messenger_rounded,
+                    isSelected: currentIndex == 6,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'news'),
+                          builder: (context) => const MainLayoutDoctor(initialIndex: 3),
+                        ),
+                      );
+                    },
+                  ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Divider(height: 24.h),

@@ -4,6 +4,7 @@ import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_news_s
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_next_booking_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/patient_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_booking_records_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_profile.dart';
 
 
 import 'doctor_home_screen.dart';
@@ -28,12 +29,18 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
     _screens = [
-      const DoctorHomeScreen(),
-      DoctorNextBookingScreen(),
-      DoctorBookingRecordsScreen(),
-      DoctorNewsScreen(),
-
+      const DoctorHomeScreen(), // 0 - Home
+      DoctorNextBookingScreen(), // 1 - Upcoming Bookings
+      DoctorBookingRecordsScreen(), // 2 - Booking Records
+       DoctorNewsScreen(), // 3 - News
+      DoctorProfile(), //4 -profile
     ];
+    
+    // Ensure initialIndex is within bounds
+    if (_currentIndex >= _screens.length) {
+      _currentIndex = 0;
+      _pageController.jumpToPage(0);
+    }
   }
 
   @override
@@ -43,6 +50,8 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
   }
 
   void _onItemTapped(int index) {
+    if (index == _currentIndex) return;
+    
     setState(() {
       _currentIndex = index;
       _pageController.jumpToPage(index);
@@ -66,51 +75,66 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
         ),
       ),
       bottomNavigationBar: Container(
-        height: 75.h,
-        padding: EdgeInsets.symmetric(vertical: 8.h),
+        height: 70.h,
+        padding: EdgeInsets.symmetric(vertical: 6.h),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withAlpha(isDark ? (0.4 * 255).round() : (0.12 * 255).round()),
-              blurRadius: 8,
+              color: colorScheme.shadow.withOpacity(0.08),
+              blurRadius: 10,
               offset: const Offset(0, -2),
             ),
           ],
+          border: Border(
+            top: BorderSide(
+              color: colorScheme.outlineVariant.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            _buildNavItem(
-              icon: Icons.calendar_today,
-              label: 'الحجوزات',
-              isActive: _currentIndex == 1,
-              onTap: () => _onItemTapped(1),
-            ),
-            SizedBox(width: 24.w),
-            _buildNavItem(
-              icon: Icons.list_alt_rounded,
-              label: 'السجل',
-              isActive: _currentIndex == 2,
-              onTap: () => _onItemTapped(2),
-            ),
-            SizedBox(width: 24.w),
-            _buildNavItem(
-              icon: Icons.home_sharp,
-              label: 'الرئيسية',
-              isActive: _currentIndex == 0,
-              onTap: () => _onItemTapped(0),
-            ),
-            SizedBox(width: 24.w),
-            _buildNavItem(
-              icon: Icons.messenger_rounded,
-              label: 'اخباري',
-              isActive: _currentIndex == 3,
-              onTap: () => _onItemTapped(3),
-            ),
-          ],
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildNavItem(
+                icon: Icons.home_sharp,
+                activeIcon: Icons.home_rounded,
+                label: 'الرئيسية',
+                isActive: _currentIndex == 0,
+                onTap: () => _onItemTapped(0),
+              ),
+              _buildNavItem(
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_month_rounded,
+                label: 'الحجوزات',
+                isActive: _currentIndex == 1,
+                onTap: () => _onItemTapped(1),
+              ),
+              _buildNavItem(
+                icon: Icons.list_alt_outlined,
+                activeIcon: Icons.list_alt_rounded,
+                label: 'السجل',
+                isActive: _currentIndex == 2,
+                onTap: () => _onItemTapped(2),
+              ),
+              _buildNavItem(
+                icon: Icons.chat_bubble_outline_rounded,
+                activeIcon: Icons.chat_bubble_rounded,
+                label: 'اخباري',
+                isActive: _currentIndex == 3,
+                onTap: () => _onItemTapped(3),
+              ),_buildNavItem(
+                icon: Icons.person,
+                activeIcon: Icons.person,
+                label: 'الملف',
+                isActive: _currentIndex == 4,
+                onTap: () => _onItemTapped(4),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -123,54 +147,58 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
     required VoidCallback onTap,
     IconData? activeIcon,
   }) {
-    final double iconSize = 25.w;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final iconSize = 24.w;
+    final activeColor = colorScheme.primary;
+    final inactiveColor = colorScheme.onSurfaceVariant.withOpacity(0.8);
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            transform: Matrix4.translationValues(0, isActive ? -5.h : 0, 0),
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: isActive ? 8.h : 5.h),
-            decoration: BoxDecoration(
-              color: isActive ? Theme.of(context).colorScheme.primary.withAlpha((0.08 * 255).round()) : Colors.transparent,
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withAlpha((0.12 * 255).round()),
-                        blurRadius: 8,
-                        offset: const Offset(0, 6),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Icon(
-              isActive && activeIcon != null ? activeIcon : icon,
-              size: iconSize,
-              color: isActive ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        splashColor: activeColor.withOpacity(0.1),
+        highlightColor: activeColor.withOpacity(0.05),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: isActive ? activeColor.withOpacity(0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  isActive && activeIcon != null ? activeIcon : icon,
+                  size: iconSize,
+                  color: isActive ? activeColor : inactiveColor,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: theme.textTheme.labelSmall!.copyWith(
+                  fontFamily: 'Cairo',
+                  fontSize: 10.sp,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: isActive ? activeColor : inactiveColor,
+                  height: 1.2,
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 0.h),
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 180),
-            opacity: isActive ? 1.0 : 1.0,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontFamily: 'Cairo',
-                    color: isActive ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12.sp,
-                    fontWeight: isActive ? FontWeight.w400 : FontWeight.normal,
-                  ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  
   }
 }
