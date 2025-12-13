@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
-import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/helpers/constants.dart';
+import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
+import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://13.49.221.187:5000';
@@ -33,7 +33,8 @@ class AuthService {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          validateStatus: (status) => status! < 500, // Handle 4xx errors manually
+          validateStatus: (status) =>
+              status! < 500, // Handle 4xx errors manually
         ),
       );
 
@@ -43,7 +44,8 @@ class AuthService {
         final token = response.data['token'];
         if (token != null && token is String && token.isNotEmpty) {
           // Save token securely and set header for subsequent requests
-          await SharedPrefHelper.setSecuredString(SharedPrefKeys.userToken, token);
+          await SharedPrefHelper.setSecuredString(
+              SharedPrefKeys.userToken, token);
           DioFactory.setTokenIntoHeaderAfterLogin(token);
         }
 
@@ -78,7 +80,7 @@ class AuthService {
         } catch (_) {
           // ignore persistence failures; UI can fallback to /me
         }
-        
+
         return {
           'success': true,
           'data': response.data,
@@ -92,7 +94,6 @@ class AuthService {
         'error': _getErrorMessage(response.statusCode, response.data),
         'statusCode': response.statusCode,
       };
-      
     } on DioException catch (e) {
       // Handle Dio errors (network errors, etc.)
       return {
@@ -109,7 +110,7 @@ class AuthService {
       };
     }
   }
-  
+
   String _getErrorMessage(int? statusCode, dynamic responseData) {
     switch (statusCode) {
       case 400:
@@ -130,7 +131,7 @@ class AuthService {
         return 'حدث خطأ في الخادم. الرجاء المحاولة مرة أخرى';
     }
   }
-  
+
   String _handleDioError(DioException e) {
     print('Dio Error: ${e.message}');
     print('Error Type: ${e.type}');
@@ -138,7 +139,7 @@ class AuthService {
       print('Response Status: ${e.response?.statusCode}');
       print('Response Data: ${e.response?.data}');
     }
-    
+
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return 'انتهت مهلة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';
@@ -154,8 +155,8 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
-    required String confirmPassword,
-    required String firstName,
+    required String confirm,
+    required String first_name,
     required String last_name,
     required String phone,
     required String faculty,
@@ -163,12 +164,15 @@ class AuthService {
     required String governorate,
   }) async {
     try {
-      if (email.isEmpty || password.isEmpty
-          ||firstName.isEmpty || last_name.isEmpty
-          || phone.isEmpty    || faculty.isEmpty
-          || year.isEmpty     || governorate.isEmpty
-      )
-      {
+      if (email.isEmpty ||
+          password.isEmpty ||
+          first_name.isEmpty ||
+          last_name.isEmpty ||
+          phone.isEmpty ||
+          faculty.isEmpty ||
+          year.isEmpty ||
+          governorate.isEmpty ||
+          confirm.isEmpty) {
         return {
           'success': false,
           'error': 'البريد الإلكتروني وكلمة المرور مطلوبان',
@@ -189,15 +193,13 @@ class AuthService {
         data: {
           'email': email.trim(),
           'password': password,
-          'faculty' : faculty,
-              'first_name': firstName,
-          'last_name' :last_name,
-          'governorate':governorate,
-              'year' : year,
-          'phone' : phone,
-          'confirm_password': confirmPassword,
-
-
+          'faculty': faculty,
+          'first_name': first_name,
+          'last_name': last_name,
+          'governorate': governorate,
+          'year': year,
+          'phone': phone,
+          'confirm_password': confirm,
         },
         options: Options(
           headers: {
@@ -210,8 +212,8 @@ class AuthService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Persist provided user info so UI can greet correctly after signup
         try {
-          if (firstName.isNotEmpty) {
-            await SharedPrefHelper.setData('first_name', firstName);
+          if (first_name.isNotEmpty) {
+            await SharedPrefHelper.setData('first_name', first_name);
             await SharedPrefHelper.setData('last_name', last_name);
             await SharedPrefHelper.setData('email', email.trim());
           }
@@ -230,7 +232,7 @@ class AuthService {
         } else if (response.statusCode == 409) {
           errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً';
         }
-        
+
         return {
           'success': false,
           'error': errorMessage,
@@ -240,7 +242,8 @@ class AuthService {
     } on DioException catch (e) {
       return {
         'success': false,
-        'error': e.response?.data?['message'] ?? 'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى',
+        'error': e.response?.data?['message'] ??
+            'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى',
         'statusCode': e.response?.statusCode,
       };
     } catch (e) {

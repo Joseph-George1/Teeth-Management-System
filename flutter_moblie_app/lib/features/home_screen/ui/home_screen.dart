@@ -387,28 +387,35 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             _scaffoldKey.currentState?.openDrawer();
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              Text(
-                'مرحباً, أهلاً بعودتك',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 15.sp,
-                  height: 1.0,
-                  letterSpacing: -0.02,
-                  color: Colors.grey,
-                ),
+              Container(
+
               ),
-              Text(
-                'عبدالحليم رمضان',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 17.sp,
-                  height: 1.2,
-                  letterSpacing: -0.02,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'مرحباً, أهلاً بعودتك',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.sp,
+                      height: 1.0,
+                      letterSpacing: -0.02,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    'عبدالحليم رمضان',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17.sp,
+                      height: 1.2,
+                      letterSpacing: -0.02,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -741,8 +748,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w700,
                                         height: 2.33,
-                                        letterSpacing: 0.1,
-                                      ),
+                                        letterSpacing: 0.1,),
                                     ),
                                   ),
                                 ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/browse_services/ui/browse_services_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/home_settings_screen.dart' show HomeSettingsScreen;
-import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/settings_screen.dart';
 
 import '../../../../core/theming/colors.dart';
 

@@ -47,12 +47,12 @@ class SignUpCubit extends Cubit<SignUpState> {
       final requestData = {
         'email': email.trim().toLowerCase(),
         'password': password,
-
+        'confirm_password': password,
         if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
         if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (college != null && college.isNotEmpty) 'college': college,
-        if (studyYear != null && studyYear.isNotEmpty) 'study_year': studyYear,
+        if (college != null && college.isNotEmpty) 'faculty': college,
+        if (studyYear != null && studyYear.isNotEmpty) 'year': studyYear,
         if (governorate != null && governorate.isNotEmpty) 'governorate': governorate,
       };
 
