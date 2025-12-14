@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
-import 'package:thotha_mobile_app/core/theming/colors.dart';
+import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
 
 class HomeSettingsScreen extends StatefulWidget {
   const HomeSettingsScreen({super.key});
@@ -19,16 +19,15 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const HomeDrawer(),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Container(
@@ -42,7 +41,6 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                 child: IconButton(
                   icon: const Icon(
                     Icons.menu,
-                    color: Colors.black,
                     size: 30,
                     weight: 700,
                   ),
@@ -72,17 +70,15 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
             children: [
               // Settings Header
               Container(
-                color: Colors.white,
+                color: Colors.transparent,
                 alignment: Alignment.center,
                 padding: const EdgeInsets.only(right: 20, top: 20),
-                child: const Text(
+                child: Text(
                   'إعدادات المستخدم',
-                  style: TextStyle(
+                  style: textTheme.headlineSmall?.copyWith(
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.w700,
-                    fontSize: 28,
                     height: 1.5,
-                    color: Color(0xFF0A0A0A),
                   ),
                   textAlign: TextAlign.right,
                 ),
@@ -94,7 +90,7 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                 width: 374.01,
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -129,25 +125,24 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                                       _notificationsEnabled = value;
                                     });
                                   },
-                                  activeColor: const Color(0xFF8DECB8),
                                   activeTrackColor: const Color(0xFF8DECB8),
                                   inactiveThumbColor: Colors.white,
-                                  inactiveTrackColor: const Color(0xFFE5E7EB),
+                                  inactiveTrackColor: theme.dividerColor,
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                   thumbColor:
-                                      MaterialStateProperty.all(Colors.white),
+                                      WidgetStateProperty.all(Colors.white),
                                 ),
                               ),
                             ),
                           ),
-                          const Text(
+                          Text(
                             'الإشعارات',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0A0A0A),
+                              color: textTheme.bodyLarge?.color,
                               height: 1.5,
                             ),
                           ),
@@ -184,26 +179,25 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                                     });
                                     // Add any additional logic here (e.g., save to preferences)
                                   },
-                                  activeColor: const Color(0xFF8DECB8),
                                   activeTrackColor: const Color(0xFF8DECB8),
                                   inactiveThumbColor: Colors.white,
-                                  inactiveTrackColor: const Color(0xFFE5E7EB),
+                                  inactiveTrackColor: theme.dividerColor,
                                   materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
                                   thumbColor:
-                                  MaterialStateProperty.all(Colors.white),
+                                  WidgetStateProperty.all(Colors.white),
                                 ),
                               ),
                             ),
                           ),
-                          const Text(
+                          Text(
                             'تلقي العروض',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0A0A0A),
-                              height: 1.5, // 24/16 = 1.5 line height
+                              color: textTheme.bodyLarge?.color,
+                              height: 1.5,
                             ),
                           ),
                         ],
@@ -240,14 +234,12 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                                       onChanged: (bool value) {
                                         themeProvider.toggleTheme(value);
                                       },
-                                      activeColor: const Color(0xFF8DECB8),
                                       activeTrackColor: const Color(0xFF8DECB8),
                                       inactiveThumbColor: Colors.white,
-                                      inactiveTrackColor:
-                                          const Color(0xFFE5E7EB),
+                                      inactiveTrackColor: theme.dividerColor,
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
-                                      thumbColor: MaterialStateProperty.all(
+                                      thumbColor: WidgetStateProperty.all(
                                           Colors.white),
                                     ),
                                   ),
@@ -255,17 +247,55 @@ class _HomeSettingsScreenState extends State<HomeSettingsScreen> {
                               );
                             },
                           ),
-                          const Text(
+                          Text(
                             'الوضع الداكن',
                             style: TextStyle(
                               fontFamily: 'Cairo',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0A0A0A),
+                              color: textTheme.bodyLarge?.color,
                               height: 1.5,
                             ),
                           ),
                         ],
+                      ),
+                    ),
+
+                    // Terms and Conditions
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TermsAndConditionsScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 49.0,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.arrow_back_ios,
+                              size: 16,
+                              color: textTheme.bodyLarge?.color,
+                            ),
+                            const Spacer(),
+                            Text(
+                              'الشروط والأحكام',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textTheme.bodyLarge?.color,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
-import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
 final List<String> categoryNames = [
   'فحص شامل',
@@ -201,7 +200,18 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: categoryNames.length,
                   itemBuilder: (context, index) {
-                    return Container(
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CategoryDoctorsScreen(
+                              categoryName: categoryNames[index],
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
                         width: 374,
                         height: 121,
                         margin: const EdgeInsets.only(bottom: 15),
@@ -239,7 +249,8 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
                                   ],
                                 ),
                                 child: FutureBuilder<String>(
-                                  future: _loadSvg('assets/svg/${svgFiles[index]}'),                                  builder: (context, snapshot) {
+                                  future: _loadSvg('assets/svg/${svgFiles[index]}'),
+                                  builder: (context, snapshot) {
                                     if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const CircularProgressIndicator(
                                         strokeWidth: 2,
@@ -309,61 +320,62 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
                                       ),
                                     ),
 
-                                // Available students container
-                                Container(
-                                  // Removed fixed width to accommodate the icon and text
-                                  height: 21,
-                                  child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                  // Available status
-                                  Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                const SizedBox(width: 8), // Add some spacing
-                                // Student count
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'طالب متاح ',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        fontFamily: 'Cairo',
-                                        fontSize: 12,
-                                        color: theme.colorScheme.primary,
+                                    // Available students container
+                                    Container(
+                                      height: 21,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const SizedBox(width: 8),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'طالب متاح ',
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: 12,
+                                                  color: theme
+                                                      .colorScheme.primary,
+                                                ),
+                                              ),
+                                              Text(
+                                                '${index + 5} ',
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: 12,
+                                                  color: theme
+                                                      .colorScheme.primary,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Icons.person_outline,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                size: 16,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    Text(
-                                      '${index + 5} ',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        fontFamily: 'Cairo',
-                                        fontSize: 12,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4), // Add spacing before icon
-                                    Icon(
-                                      Icons.person_outline,
-                                      color: theme.colorScheme.primary,
-                                      size: 16,
                                     ),
                                   ],
                                 ),
-                                    ])
-                                ) ],
-                                ),
                               ),
-                            ])
-                    );
-                  })
-                    )
-                    )
-                    )
-                    ])
-                    );
+                            ],
+                          ),
+                        ),
+                      );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

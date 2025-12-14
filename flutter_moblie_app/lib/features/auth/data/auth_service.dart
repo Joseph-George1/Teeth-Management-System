@@ -3,8 +3,7 @@ import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
-class AuthService {
-  static const String _baseUrl = 'http://13.49.221.187:5000';
+class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({
@@ -49,6 +48,9 @@ class AuthService {
           DioFactory.setTokenIntoHeaderAfterLogin(token);
         }
 
+        // Always save the email used for login to support fallback
+        await SharedPrefHelper.setData('email', email);
+
         // Try to persist user's name/email from the login response if available
         try {
           final data = response.data;
@@ -76,6 +78,17 @@ class AuthService {
             if (e != null && e.isNotEmpty) {
               await SharedPrefHelper.setData('email', e);
             }
+
+            // Save additional profile fields
+            final phone = data['phone']?.toString();
+            final faculty = data['faculty']?.toString();
+            final year = data['year']?.toString();
+            final governorate = data['governorate']?.toString();
+
+            if (phone != null) await SharedPrefHelper.setData('phone', phone);
+            if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
+            if (year != null) await SharedPrefHelper.setData('year', year);
+            if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
           }
         } catch (_) {
           // ignore persistence failures; UI can fallback to /me
@@ -216,6 +229,10 @@ class AuthService {
             await SharedPrefHelper.setData('first_name', first_name);
             await SharedPrefHelper.setData('last_name', last_name);
             await SharedPrefHelper.setData('email', email.trim());
+            await SharedPrefHelper.setData('phone', phone);
+            await SharedPrefHelper.setData('faculty', faculty);
+            await SharedPrefHelper.setData('year', year);
+            await SharedPrefHelper.setData('governorate', governorate);
           }
         } catch (_) {}
 

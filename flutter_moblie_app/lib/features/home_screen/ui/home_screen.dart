@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
 
 import 'drawer/browse_services/ui/browse_services_screen.dart';
@@ -81,60 +82,74 @@ class _HomeScreenState extends State<HomeScreen> {
         ? categoryName
         : (index <= categoryNames.length ? categoryNames[index - 1] : '');
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 72.w,
-          height: 72.h,
-          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                blurRadius: 2.r,
-                offset: const Offset(0, 0.5),
+    return GestureDetector(
+      onTap: () {
+        if (resolvedCategoryName.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CategoryDoctorsScreen(
+                categoryName: resolvedCategoryName,
               ),
-            ],
-          ),
-          child: Center(
-            child: SvgPicture.asset(
-              resolvedAssetPath,
-              width: 36.w,
-              height: 36.h,
-              fit: BoxFit.contain,
-              placeholderBuilder: (BuildContext context) => Container(
+            ),
+          );
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72.w,
+            height: 72.h,
+            margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 2.r,
+                  offset: const Offset(0, 0.5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                resolvedAssetPath,
                 width: 36.w,
                 height: 36.h,
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
-                child: Icon(Icons.image, size: 18.r, color: Colors.grey),
+                fit: BoxFit.contain,
+                placeholderBuilder: (BuildContext context) => Container(
+                  width: 36.w,
+                  height: 36.h,
+                  color: isDark ? Colors.grey[800] : Colors.grey[200],
+                  child: Icon(Icons.image, size: 18.r, color: Colors.grey),
+                ),
               ),
             ),
           ),
-        ),
-        SizedBox(height: 8.h),
-        SizedBox(
-          width: 72.w,
-          child: Text(
-            resolvedCategoryName,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 10.sp,
-                  height: 1.0,
-                  letterSpacing: 0.1,
-                ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          SizedBox(height: 8.h),
+          SizedBox(
+            width: 72.w,
+            child: Text(
+              resolvedCategoryName,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 10.sp,
+                    height: 1.0,
+                    letterSpacing: 0.1,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -385,37 +400,33 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: GestureDetector(
-          onTap: () {
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {
             _scaffoldKey.currentState?.openDrawer();
           },
+        ),
+        centerTitle: true,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
           child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'مرحباً, أهلاً بعودتك',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15.sp,
-                          height: 1.0,
-                          letterSpacing: -0.02,
-                          color: Colors.grey,
-                        ),
-                  ),
-                  Text(
-                    'عبدالحليم رمضان',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17.sp,
-                          height: 1.2,
-                          letterSpacing: -0.02,
-                        ),
-                  ),
-                ],
+              // لوجو ثوثه PNG
+              Image.asset(
+                'assets/images/splash-logo.png',
+                height: 44.h,
+                width: 44.w,
+              ),
+              SizedBox(width: 4.w),
+              Text(
+                'ثوثه',
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22.sp,
+                    ),
               ),
             ],
           ),
@@ -629,9 +640,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildCircularIcon(
                           'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
                       _buildCircularIcon(
-                          'assets/svg/حشو اسنان.svg', 2, 'حشو أسنان'),
+                          'assets/svg/حشو اسنان.svg', 2, 'حشو العصب'),
                       _buildCircularIcon(
-                          'assets/svg/زراعه اسنان.svg', 3, 'زراعة أسنان'),
+                          'assets/svg/زراعه اسنان.svg', 3, 'زراعه الأسنان'),
                       _buildCircularIcon(
                           'assets/svg/خلع اسنان.svg', 4, 'خلع أسنان'),
                       _buildCircularIcon(
@@ -639,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildCircularIcon(
                           'assets/svg/تقويم اسنان.svg', 6, 'تقويم أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات أسنان'),
+                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات الأسنان'),
                     ],
                   ),
                 ),

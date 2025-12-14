@@ -5,8 +5,8 @@ import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
-import 'package:thotha_mobile_app/core/theming/colors.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
+import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
 
 class DoctorSettingsScreen extends StatefulWidget {
   const DoctorSettingsScreen({super.key});
@@ -18,7 +18,6 @@ class DoctorSettingsScreen extends StatefulWidget {
 class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
   // State variables for each toggle
   bool _notificationsEnabled = false;
-  bool _receiveOffers = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? _firstName;
   String? _lastName;
@@ -101,10 +100,6 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-    
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.white,
@@ -247,7 +242,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                             _notificationsEnabled = value;
                           });
                         },
-                        activeColor: const Color(0xFF10B981),
+                        activeTrackColor: const Color(0xFF10B981),
                       ),
                     ),
                     Consumer<ThemeProvider>(
@@ -261,7 +256,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                             onChanged: (value) {
                               themeProvider.toggleTheme(value);
                             },
-                            activeColor: const Color(0xFF10B981),
+                            activeTrackColor: const Color(0xFF10B981),
                           ),
                         );
                       },
@@ -274,6 +269,19 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                   context,
                   title: 'المزيد',
                   children: [
+                    _buildSettingsItem(
+                      context,
+                      icon: Icons.description_outlined,
+                      title: 'الشروط والأحكام',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TermsAndConditionsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _buildSettingsItem(
                       context,
                       icon: Icons.help_outline,

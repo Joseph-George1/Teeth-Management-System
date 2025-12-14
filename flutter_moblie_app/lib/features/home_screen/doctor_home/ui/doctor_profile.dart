@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
@@ -24,6 +27,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   String? _faculty;
   String? _year;
   String? _governorate;
+  String? _profileImage;
 
   @override
   void initState() {
@@ -32,11 +36,17 @@ class _DoctorProfileState extends State<DoctorProfile> {
   }
 
   Future<void> _bootstrap() async {
-    setState(() => _loading = false);
+    setState(() => _loading = true);
     try {
       final cachedFirst = await SharedPrefHelper.getString('first_name');
       final cachedLast = await SharedPrefHelper.getString('last_name');
       final cachedEmail = await SharedPrefHelper.getString('email');
+      final cachedPhone = await SharedPrefHelper.getString('phone');
+      final cachedFaculty = await SharedPrefHelper.getString('faculty');
+      final cachedYear = await SharedPrefHelper.getString('year');
+      final cachedGovernorate = await SharedPrefHelper.getString('governorate');
+      final cachedImage = await SharedPrefHelper.getString('profile_image');
+
       if (mounted) {
         setState(() {
           _firstName =
@@ -44,6 +54,17 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _lastName =
               (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
           _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
+          _phone = (cachedPhone?.isNotEmpty ?? false) ? cachedPhone : _phone;
+          _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
+          _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
+          _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
+          _profileImage = (cachedImage?.isNotEmpty ?? false) ? cachedImage : _profileImage;
+
+          // Fallback if name is missing but email exists
+          if ((_firstName == null || _firstName!.isEmpty) &&
+              (_email != null && _email!.isNotEmpty)) {
+            _firstName = _email!.split('@').first;
+          }
         });
       }
       await _fetchProfile();
@@ -55,6 +76,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   Future<void> _fetchProfile() async {
     setState(() {
       _error = null;
+      _loading = true;
     });
     try {
       final dio = DioFactory.getDio();
@@ -87,29 +109,77 @@ class _DoctorProfileState extends State<DoctorProfile> {
             userMap = Map<String, dynamic>.from(userMap['user']);
           }
         }
+        
+        // Debug log the complete response
+        print('API Response: $data');
+        print('User Map: $userMap');
+
+        // Print all keys in the response for debugging
+        if (data is Map) {
+          print('Top-level response keys: ${data.keys.toList()}');
+          if (data['user'] is Map) {
+            print('User object keys: ${(data['user'] as Map).keys.toList()}');
+          }
+        }
 
         String? getVal(String a, String b) {
           if (userMap == null) return null;
-          return (userMap![a] ?? userMap![b])?.toString();
+          return (userMap[a] ?? userMap[b])?.toString();
         }
 
         final firstName = getVal('first_name', 'firstName');
         final lastName = getVal('last_name', 'lastName');
         final email = userMap?['email']?.toString();
-        final phone = userMap?['phone']?.toString();
+        // Try multiple keys for phone
+        // Try to get phone from multiple possible locations
+        String? phone;
+        
+        // Try direct access first
+        phone = userMap?['phone']?.toString();
+        
+        // If not found, try common alternative keys
+        if (phone == null || phone.isEmpty) {
+          phone = userMap?['tel']?.toString();
+        }
+        if (phone == null || phone.isEmpty) {
+          phone = userMap?['telephone']?.toString();
+        }
+        
+        // If still not found, try to get from the root of the response
+        if ((phone == null || phone.isEmpty) && data is Map) {
+          phone = data['phone']?.toString();
+        }
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
-        final governorate = userMap?['governorate']?.toString();
+        final governorate = (userMap?['governorate'] ?? userMap?['governorate_id'])?.toString();
+        final profileImage = userMap?['profile_image']?.toString();
+
+        // Debug log the extracted values
+        print('Extracted phone: $phone');
+        print('All userMap keys: ${userMap?.keys.toList()}');
 
         if (mounted) {
           setState(() {
-            _firstName = firstName ?? _firstName;
-            _lastName = lastName ?? _lastName;
-            _email = email ?? _email;
-            _phone = phone ?? _phone;
-            _faculty = faculty ?? _faculty;
-            _year = year ?? _year;
-            _governorate = governorate ?? _governorate;
+            // Update state with fetched data, falling back to existing state if null
+            if (firstName != null && firstName.isNotEmpty) _firstName = firstName;
+            if (lastName != null && lastName.isNotEmpty) _lastName = lastName;
+            if (email != null && email.isNotEmpty) _email = email;
+            if (phone != null && phone.isNotEmpty) {
+              _phone = phone;
+              print('Setting phone number to: $_phone');
+            } else {
+              print('No phone number found in response');
+            }
+            if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
+            if (year != null && year.isNotEmpty) _year = year;
+            if (governorate != null && governorate.isNotEmpty) _governorate = governorate;
+            if (profileImage != null && profileImage.isNotEmpty) _profileImage = profileImage;
+
+            // Fallback if name is missing but email exists
+            if ((_firstName == null || _firstName!.isEmpty) &&
+                (_email != null && _email!.isNotEmpty)) {
+              _firstName = _email!.split('@').first;
+            }
           });
         }
 
@@ -119,6 +189,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
           if ((email?.isNotEmpty ?? false)) {
             await SharedPrefHelper.setData('email', email);
           }
+          if (phone != null) await SharedPrefHelper.setData('phone', phone);
+          if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
+          if (year != null) await SharedPrefHelper.setData('year', year);
+          if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
+          if (profileImage != null) await SharedPrefHelper.setData('profile_image', profileImage);
         }
       } else {
         // No known endpoint found. Do not show scary banner; keep cached data.
@@ -130,6 +205,54 @@ class _DoctorProfileState extends State<DoctorProfile> {
       setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
     } catch (_) {
       setState(() => _error = 'حدث خطأ غير متوقع');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final bytes = await File(image.path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() {
+          _profileImage = base64Image;
+        });
+
+        await _uploadImage(base64Image);
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء اختيار الصورة')),
+      );
+    }
+  }
+
+  Future<void> _uploadImage(String base64Image) async {
+    try {
+      final dio = DioFactory.getDio();
+      final response = await dio.post(
+        '/update_profile',
+        data: {'profile_image': base64Image},
+      );
+
+      if (response.statusCode == 200) {
+        await SharedPrefHelper.setData('profile_image', base64Image);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تحديث الصورة الشخصية بنجاح')),
+        );
+      } else {
+        throw Exception('Failed to upload image');
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء تحديث الصورة')),
+      );
     }
   }
 
@@ -217,8 +340,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             offset: const Offset(0, 1),
             blurRadius: 3,
           ),
@@ -227,12 +350,41 @@ class _DoctorProfileState extends State<DoctorProfile> {
       padding: EdgeInsets.all(16.r),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28.r,
-            backgroundColor: theme.brightness == Brightness.dark
-                ? Colors.grey[800]
-                : Colors.grey[200],
-            child: Icon(Icons.person_outline, color: theme.iconTheme.color),
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 28.r,
+                backgroundColor: theme.brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[200],
+                backgroundImage: _profileImage != null
+                    ? MemoryImage(base64Decode(_profileImage!))
+                    : null,
+                child: _profileImage == null
+                    ? Icon(Icons.person_outline, color: theme.iconTheme.color)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: InkWell(
+                  onTap: _pickImage,
+                  child: Container(
+                    padding: EdgeInsets.all(4.r),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: theme.cardTheme.color ?? Colors.white, width: 1.5),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 12.sp,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -255,7 +407,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     : Text(
                         _email ?? '-',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.7),
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.right,
                         maxLines: 1,
@@ -302,8 +454,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             offset: const Offset(0, 1),
             blurRadius: 3,
           ),
@@ -353,7 +505,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     Text(
                       item.label,
                       style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12.sp,
                       ),
                       textAlign: TextAlign.right,
@@ -386,7 +538,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: colorScheme.error.withOpacity(0.3)),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

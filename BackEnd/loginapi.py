@@ -137,6 +137,51 @@ def login():
         return jsonify({'status': 'error', 'message': 'Email/password incorrect'}), 401
 
 
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    """Update user profile fields."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'status': 'error', 'message': 'Missing or invalid token'}), 401
+
+    token = auth_header.split(' ')[1]
+    try:
+        email = base64.b64decode(token.encode('utf-8')).decode('utf-8')
+    except Exception:
+        return jsonify({'status': 'error', 'message': 'Invalid token'}), 401
+
+    if not request.is_json:
+        return jsonify({'status': 'error', 'message': 'Bad request; content-type must be application/json'}), 400
+
+    data = request.get_json()
+    users = load_users()
+    entry = users.get(email)
+
+    if not entry:
+        return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+    if isinstance(entry, dict):
+        # Update allowed fields
+        allowed_fields = ['first_name', 'last_name', 'phone', 'faculty', 'year', 'governorate', 'profile_image']
+        for field in allowed_fields:
+            if field in data:
+                entry[field] = data[field]
+
+        users[email] = entry
+        save_users(users)
+
+        # Return updated profile
+        profile = {
+            'email': email,
+        }
+        profile.update({k: v for k, v in entry.items() if k != 'password'})
+        return jsonify({'status': 'success', 'message': 'Profile updated', 'user': profile}), 200
+    else:
+        # Legacy user format (string password only), convert to dict first
+        # This case shouldn't happen for new users but good for robustness
+        return jsonify({'status': 'error', 'message': 'Legacy user format not supported for update'}), 400
+
+
 @app.route('/register', methods=['POST'])
 def register():
     """Register a new user.

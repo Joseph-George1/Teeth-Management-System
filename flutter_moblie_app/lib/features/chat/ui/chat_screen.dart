@@ -136,8 +136,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
+        backgroundColor: Colors.lightBlueAccent,
         leadingWidth: 8,
        // Use themed defaults for AppBar background
         leading: IconButton(
@@ -197,7 +198,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary,
+                              color: Colors.lightBlueAccent ,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB)),
                             ),
@@ -236,7 +237,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary,
+                              color: Colors.lightBlueAccent ,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(

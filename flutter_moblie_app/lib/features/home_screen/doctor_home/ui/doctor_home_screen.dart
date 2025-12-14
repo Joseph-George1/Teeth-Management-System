@@ -74,7 +74,18 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       try {
         response = await dio.get('/me');
       } catch (_) {
-        response = await dio.get('/profile');
+        try {
+          response = await dio.get('/profile');
+        } catch (_) {
+          // If API calls fail, try to fallback to email
+          final email = await SharedPrefHelper.getString('email');
+          if (email.isNotEmpty) {
+            _firstName = email.split('@').first;
+            setState(() => _isLoadingName = false);
+            return;
+          }
+          rethrow;
+        }
       }
 
       if (response.statusCode == 200) {
@@ -116,6 +127,13 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       // Handle exceptions
       print('Exception: $e');
     } finally {
+      // Final fallback if everything failed
+      if (_firstName == null || _firstName!.isEmpty) {
+        final email = await SharedPrefHelper.getString('email');
+        if (email.isNotEmpty) {
+          _firstName = email.split('@').first;
+        }
+      }
       if (mounted) setState(() => _isLoadingName = false);
     }
   }
@@ -256,7 +274,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
               children: [
                 // Welcome Text
                 Container(
-                  width: 220.w,
+                  width: double.infinity,
                   height: 36.h,
                   alignment: Alignment.centerRight,
                   child: _isLoadingName
@@ -282,7 +300,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 SizedBox(height: 5.99.h), // Gap between texts
                 // Subtitle
                 Container(
-                  width: 217.w,
+                  width: double.infinity,
                   height: 20.h,
                   alignment: Alignment.centerRight,
                   child: Text(
@@ -1245,3 +1263,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
         ])));
   }
 }
+
+
+
+
