@@ -168,8 +168,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
         print('After checking userMap[\'phone\']: $phone');
         
         // Try common alternative keys
-        final possiblePhoneKeys = ['tel', 'telephone', 'phone_number', 'mobile', 'phoneNumber'];
-        
+        final possiblePhoneKeys = ['tel', 'telephone', 'phone_number', 'mobile', 'phoneNumber', 'phone'];
+
         for (var key in possiblePhoneKeys) {
           if ((phone == null || phone.isEmpty) && userMap?[key] != null) {
             phone = userMap?[key]?.toString();
@@ -202,6 +202,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
               break;
             }
           }
+        }
+
+        // Ensure phone is not an email
+        if (phone != null && phone.contains('@')) {
+          phone = null;
         }
 
         // Ensure phone is not an email and is a valid number
