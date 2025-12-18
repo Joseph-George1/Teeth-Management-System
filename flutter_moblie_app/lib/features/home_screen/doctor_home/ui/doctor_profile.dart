@@ -54,7 +54,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _lastName =
               (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
           _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
-          _phone = (cachedPhone?.isNotEmpty ?? false) ? cachedPhone : _phone;
+          if (cachedPhone?.isNotEmpty ?? false) {
+            if (!cachedPhone!.contains('@')) {
+              _phone = cachedPhone;
+            }
+          }
           _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
           _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
           _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
@@ -100,6 +104,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         }
       }
 
+      // Fallback: Try POST /update_profile with empty body if GET endpoints failed
+      if (response == null) {
+        try {
+          final res = await dio.post('/update_profile', data: {});
+          if (res.statusCode == 200) {
+            response = res;
+          }
+        } catch (_) {
+          // Ignore errors from fallback attempt
+        }
+      }
+
       if (response != null && response.statusCode == 200) {
         final data = response.data;
         Map<String, dynamic>? userMap;
@@ -117,8 +133,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         // Print all keys in the response for debugging
         if (data is Map) {
           print('Top-level response keys: ${data.keys.toList()}');
+          // Print all key-value pairs for top level
+          data.forEach((key, value) {
+            print('$key: $value (${value.runtimeType})');
+          });
+          
           if (data['user'] is Map) {
-            print('User object keys: ${(data['user'] as Map).keys.toList()}');
+            final userData = data['user'] as Map;
+            print('User object keys: ${userData.keys.toList()}');
+            // Print all key-value pairs for user object
+            userData.forEach((key, value) {
+              print('user.$key: $value (${value.runtimeType})');
+            });
           }
         }
 
@@ -134,21 +160,79 @@ class _DoctorProfileState extends State<DoctorProfile> {
         // Try to get phone from multiple possible locations
         String? phone;
         
+        // Debug: Print all keys that might contain phone info
+        print('Searching for phone number in response...');
+        
         // Try direct access first
         phone = userMap?['phone']?.toString();
+        print('After checking userMap[\'phone\']: $phone');
         
-        // If not found, try common alternative keys
-        if (phone == null || phone.isEmpty) {
-          phone = userMap?['tel']?.toString();
-        }
-        if (phone == null || phone.isEmpty) {
-          phone = userMap?['telephone']?.toString();
+        // Try common alternative keys
+        final possiblePhoneKeys = ['tel', 'telephone', 'phone_number', 'mobile', 'phoneNumber'];
+        
+        for (var key in possiblePhoneKeys) {
+          if ((phone == null || phone.isEmpty) && userMap?[key] != null) {
+            phone = userMap?[key]?.toString();
+            print('Found phone in userMap[\'$key\']: $phone');
+          }
         }
         
         // If still not found, try to get from the root of the response
         if ((phone == null || phone.isEmpty) && data is Map) {
-          phone = data['phone']?.toString();
+          for (var key in possiblePhoneKeys) {
+            if (data[key] != null) {
+              phone = data[key]?.toString();
+              print('Found phone in root[\'$key\']: $phone');
+              if (phone != null && phone.isNotEmpty) break;
+            }
+          }
         }
+
+        // Try to find any key that might contain phone number
+        if ((phone == null || phone.isEmpty) && userMap != null) {
+          final phoneKeys = userMap.keys.where((key) => 
+            key.toString().toLowerCase().contains('phone') || 
+            key.toString().toLowerCase().contains('tel')
+          ).toList();
+          
+          for (final key in phoneKeys) {
+            final value = userMap[key]?.toString();
+            if (value != null && value.isNotEmpty && !value.contains('@')) {
+              phone = value;
+              break;
+            }
+          }
+        }
+
+        // Ensure phone is not an email and is a valid number
+        if (phone != null) {
+          // Clean the phone number
+          String cleanPhone = phone.trim();
+          
+          // If the phone number is empty or contains only special characters, set it to null
+          if (cleanPhone.isEmpty || RegExp(r'^[\s\-_\(\)\[\]\{\}\+\.]+$').hasMatch(cleanPhone)) {
+            print('Invalid phone number format: "$cleanPhone" - setting to null');
+            phone = null;
+          } else {
+            // Remove any non-digit characters except + at the start
+            cleanPhone = cleanPhone.replaceAll(RegExp(r'(?<!^)\+|[^\d+]'), '');
+            
+            // If after cleaning, the number is empty, set to null
+            if (cleanPhone.isEmpty) {
+              print('Phone number became empty after cleaning - setting to null');
+              phone = null;
+            } else {
+              // Add country code if missing (assuming Egypt +20 as default)
+              if (!cleanPhone.startsWith('+') && cleanPhone.length <= 10) {
+                cleanPhone = '+20' + cleanPhone.substring(cleanPhone.startsWith('0') ? 1 : 0);
+                print('Added country code to phone number: $cleanPhone');
+              }
+              phone = cleanPhone;
+              print('Final cleaned phone number: $phone');
+            }
+          }
+        }
+
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
         final governorate = (userMap?['governorate'] ?? userMap?['governorate_id'])?.toString();
@@ -164,11 +248,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
             if (firstName != null && firstName.isNotEmpty) _firstName = firstName;
             if (lastName != null && lastName.isNotEmpty) _lastName = lastName;
             if (email != null && email.isNotEmpty) _email = email;
+            // Update phone number if we found a valid one, otherwise keep the existing one
             if (phone != null && phone.isNotEmpty) {
+              print('Setting phone number to: $phone');
               _phone = phone;
-              print('Setting phone number to: $_phone');
-            } else {
-              print('No phone number found in response');
+            } else if (_phone == null || _phone!.isEmpty) {
+              // Only print this if we don't already have a phone number
+              print('No valid phone number found in API response');
+              // Don't set _phone to null here to preserve any existing value
             }
             if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
             if (year != null && year.isNotEmpty) _year = year;
