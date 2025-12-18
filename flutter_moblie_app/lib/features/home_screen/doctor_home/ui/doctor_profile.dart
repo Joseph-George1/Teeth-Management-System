@@ -209,34 +209,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
           phone = null;
         }
 
-        // Ensure phone is not an email and is a valid number
-        if (phone != null) {
-          // Clean the phone number
-          String cleanPhone = phone.trim();
-          
-          // If the phone number is empty or contains only special characters, set it to null
-          if (cleanPhone.isEmpty || RegExp(r'^[\s\-_\(\)\[\]\{\}\+\.]+$').hasMatch(cleanPhone)) {
-            print('Invalid phone number format: "$cleanPhone" - setting to null');
-            phone = null;
-          } else {
-            // Remove any non-digit characters except + at the start
-            cleanPhone = cleanPhone.replaceAll(RegExp(r'(?<!^)\+|[^\d+]'), '');
-            
-            // If after cleaning, the number is empty, set to null
-            if (cleanPhone.isEmpty) {
-              print('Phone number became empty after cleaning - setting to null');
-              phone = null;
-            } else {
-              // Add country code if missing (assuming Egypt +20 as default)
-              if (!cleanPhone.startsWith('+') && cleanPhone.length <= 10) {
-                cleanPhone = '+20' + cleanPhone.substring(cleanPhone.startsWith('0') ? 1 : 0);
-                print('Added country code to phone number: $cleanPhone');
-              }
-              phone = cleanPhone;
-              print('Final cleaned phone number: $phone');
-            }
-          }
-        }
+
 
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
@@ -253,15 +226,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
             if (firstName != null && firstName.isNotEmpty) _firstName = firstName;
             if (lastName != null && lastName.isNotEmpty) _lastName = lastName;
             if (email != null && email.isNotEmpty) _email = email;
-            // Update phone number if we found a valid one, otherwise keep the existing one
-            if (phone != null && phone.isNotEmpty) {
-              print('Setting phone number to: $phone');
-              _phone = phone;
-            } else if (_phone == null || _phone!.isEmpty) {
-              // Only print this if we don't already have a phone number
-              print('No valid phone number found in API response');
-              // Don't set _phone to null here to preserve any existing value
-            }
+            if (phone != null && phone.isNotEmpty) _phone = phone;
             if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
             if (year != null && year.isNotEmpty) _year = year;
             if (governorate != null && governorate.isNotEmpty) _governorate = governorate;
@@ -285,7 +250,10 @@ class _DoctorProfileState extends State<DoctorProfile> {
           if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
           if (year != null) await SharedPrefHelper.setData('year', year);
           if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
-          if (profileImage != null) await SharedPrefHelper.setData('profile_image', profileImage);
+          if (profileImage != null) {
+            await SharedPrefHelper.setData('profile_image', profileImage);
+            DoctorDrawer.profileImageNotifier.value = profileImage;
+          }
         }
       } else {
         // No known endpoint found. Do not show scary banner; keep cached data.
@@ -334,6 +302,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
       if (response.statusCode == 200) {
         await SharedPrefHelper.setData('profile_image', base64Image);
+        DoctorDrawer.profileImageNotifier.value = base64Image;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم تحديث الصورة الشخصية بنجاح')),
         );
@@ -522,11 +491,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
       _InfoItem(
           icon: Icons.perm_identity, label: 'اسم العائلة', value: _lastName),
       _InfoItem(
-          icon: Icons.email_outlined,
-          label: 'البريد الإلكتروني',
-          value: _email),
-      _InfoItem(icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
-      _InfoItem(icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
+          icon: Icons.email_outlined, label: 'البريد الإلكتروني', value: _email),
+      _InfoItem(
+          icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
+      _InfoItem(
+          icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
       _InfoItem(
           icon: Icons.event_note_outlined,
           label: 'السنة الدراسية',

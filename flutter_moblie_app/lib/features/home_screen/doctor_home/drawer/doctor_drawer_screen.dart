@@ -20,6 +20,8 @@ import 'package:thotha_mobile_app/features/help_and_support/ui/help_and_support_
 class DoctorDrawer extends StatefulWidget {
   const DoctorDrawer({super.key});
 
+  static final ValueNotifier<String?> profileImageNotifier = ValueNotifier(null);
+
   @override
   State<DoctorDrawer> createState() => _DoctorDrawerState();
 }
@@ -38,6 +40,21 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
   void initState() {
     super.initState();
     _fetchDoctorName();
+    DoctorDrawer.profileImageNotifier.addListener(_updateProfileImage);
+  }
+
+  @override
+  void dispose() {
+    DoctorDrawer.profileImageNotifier.removeListener(_updateProfileImage);
+    super.dispose();
+  }
+
+  void _updateProfileImage() {
+    if (DoctorDrawer.profileImageNotifier.value != null) {
+      setState(() {
+        _profileImage = DoctorDrawer.profileImageNotifier.value;
+      });
+    }
   }
 
   void _showLogoutConfirmation(BuildContext context) {

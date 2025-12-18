@@ -414,7 +414,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                  return;
                                                }
 
-                                               final phone = emailController.text.trim();
+                                               final phone = phoneController.text.trim();
 
                                                // If all validations pass, proceed with sign up
                                                context.read<SignUpCubit>().signUp(
@@ -423,7 +423,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                                                  firstName: firstNameController.text.trim(),
                                                  lastName: lastNameController.text.trim(),
-                                                 phone: phone,
+                                                 phone: phoneController.text.trim(),
                                                  college: _selectedCollege,
                                                  studyYear: _selectedStudyYear,
                                                  governorate: _selectedGovernorate,
