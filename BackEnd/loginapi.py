@@ -116,12 +116,14 @@ def login():
         faculty = None
         year = None
         governorate = None
+        phone = None
         if isinstance(entry, dict):
             first_name = entry.get('first_name')
             last_name = entry.get('last_name')
             faculty = entry.get('faculty')
             year = entry.get('year')
             governorate = entry.get('governorate')
+            phone = entry.get('phone')
 
         resp = {'status': 'success', 'message': 'Login successful'}
         # Include names when present (keeps response compact otherwise)
@@ -131,6 +133,7 @@ def login():
             resp['faculty'] = faculty
             resp['year'] = year
             resp['governorate'] = governorate
+            resp['phone'] = phone
 
         return jsonify(resp), 200
     else:
