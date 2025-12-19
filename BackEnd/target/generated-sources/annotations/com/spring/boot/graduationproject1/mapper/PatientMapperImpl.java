@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-10-28T21:56:26+0300",
-    comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
+    date = "2025-12-19T14:05:33+0200",
+    comments = "version: 1.5.2.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class PatientMapperImpl implements PatientMapper {
@@ -25,9 +25,9 @@ public class PatientMapperImpl implements PatientMapper {
 
         PatientDto patientDto = new PatientDto();
 
+        patientDto.setCity( patient.getCity() );
         patientDto.setId( patient.getId() );
         patientDto.setName( patient.getName() );
-        patientDto.setCity( patient.getCity() );
         patientDto.setPhoneNumber( patient.getPhoneNumber() );
         patientDto.setRole( roleMapper.toDto( patient.getRole() ) );
 
@@ -42,10 +42,10 @@ public class PatientMapperImpl implements PatientMapper {
 
         Patient patient = new Patient();
 
-        patient.setId( patientDto.getId() );
-        patient.setPhoneNumber( patientDto.getPhoneNumber() );
-        patient.setName( patientDto.getName() );
         patient.setCity( patientDto.getCity() );
+        patient.setId( patientDto.getId() );
+        patient.setName( patientDto.getName() );
+        patient.setPhoneNumber( patientDto.getPhoneNumber() );
         patient.setRole( roleMapper.toEntity( patientDto.getRole() ) );
 
         return patient;
