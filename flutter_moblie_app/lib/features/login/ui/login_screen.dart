@@ -102,11 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     (context, animation, secondaryAnimation, child) {
                   return FadeTransition(
                     opacity: animation,
-                    child: Container(
-                      color: Colors.white,
-                      // Ensures white background during transition
-                      child: child,
-                    ),
+                    child: child,
                   );
                 },
                 transitionDuration: const Duration(milliseconds: 300),
@@ -259,8 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Expanded(
                                     child: Text(
                                       errorMessage ?? 'An error occurred',
-                                      style:
-                                          const TextStyle(color: Colors.red),
+                                      style: const TextStyle(color: Colors.red),
                                     ),
                                   ),
                                 ],
@@ -339,8 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 child: Text(
                                   'نسيت كلمة المرور؟',
-                                  style:
-                                      TextStyles.font13BlueRegular.copyWith(
+                                  style: TextStyles.font13BlueRegular.copyWith(
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -416,8 +410,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 child: Text(
                                   'إنشاء حساب',
-                                  style:
-                                      TextStyles.font13BlueSemiBold.copyWith(
+                                  style: TextStyles.font13BlueSemiBold.copyWith(
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -431,51 +424,51 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    Routes.categoriesScreen,
-                    (route) => false,
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 48.h,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        ColorsManager.layerBlur1,
-                        ColorsManager.layerBlur2,
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      Routes.categoriesScreen,
+                      (route) => false,
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 48.h,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          ColorsManager.layerBlur1,
+                          ColorsManager.layerBlur2,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      'الرجوع للصفحة الرئيسية',
-                      style: TextStyles.font14GrayRegular.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                    child: Center(
+                      child: Text(
+                        'الرجوع للصفحة الرئيسية',
+                        style: TextStyles.font14GrayRegular.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),

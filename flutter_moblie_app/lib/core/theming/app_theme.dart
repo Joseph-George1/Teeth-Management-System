@@ -56,7 +56,8 @@ class AppTheme {
         displayMedium: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         displaySmall: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         headlineLarge: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
-        headlineMedium: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
+        headlineMedium:
+            TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         headlineSmall: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         titleLarge: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         titleMedium: TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
@@ -101,9 +102,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.red[700]!, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         hintStyle: TextStyle(color: Colors.grey[600], fontFamily: 'Cairo'),
-        labelStyle: const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
+        labelStyle:
+            const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
       ),
 
       // Elevated Button Theme
@@ -171,7 +174,8 @@ class AppTheme {
         backgroundColor: Colors.white,
         selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+        selectedLabelStyle:
+            TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600),
         unselectedLabelStyle: TextStyle(fontFamily: 'Cairo'),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -202,8 +206,10 @@ class AppTheme {
         backgroundColor: Colors.grey[200]!,
         selectedColor: primaryColor,
         disabledColor: Colors.grey[300]!,
-        labelStyle: const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
-        secondaryLabelStyle: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+        labelStyle:
+            const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
+        secondaryLabelStyle:
+            const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -334,7 +340,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFCF6679), width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         hintStyle: TextStyle(color: Colors.grey[500], fontFamily: 'Cairo'),
         labelStyle: const TextStyle(color: Colors.white70, fontFamily: 'Cairo'),
       ),
@@ -404,7 +411,8 @@ class AppTheme {
         backgroundColor: darkSurface,
         selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600),
+        selectedLabelStyle:
+            TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600),
         unselectedLabelStyle: TextStyle(fontFamily: 'Cairo'),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -436,7 +444,8 @@ class AppTheme {
         selectedColor: primaryColor,
         disabledColor: Colors.grey[800]!,
         labelStyle: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
-        secondaryLabelStyle: const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
+        secondaryLabelStyle:
+            const TextStyle(color: Color(0xFF0A0A0A), fontFamily: 'Cairo'),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),

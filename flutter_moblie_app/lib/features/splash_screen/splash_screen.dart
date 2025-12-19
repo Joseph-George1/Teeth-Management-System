@@ -15,13 +15,39 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    
     // Navigate to onboarding screen after a short delay
-    Future.delayed(const Duration(seconds: 2 ), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Precache all onboarding images in parallel
+    _precacheOnboardingImages();
+  }
+
+  Future<void> _precacheOnboardingImages() async {
+    final images = [
+      'assets/images/1-onboarding.jpg',
+      'assets/images/2-inboarding.jpg',
+      'assets/images/3-onboarding.jpg',
+    ];
+
+    try {
+      await Future.wait(
+        images.map((image) => precacheImage(
+              // Must match the cacheWidth used in DoctorImageAndText
+              ResizeImage(AssetImage(image), width: 1500),
+              context,
+            )),
+      );
+    } catch (e) {
+      // debugPrint('Failed to precache images: $e');
+    }
   }
 
   @override

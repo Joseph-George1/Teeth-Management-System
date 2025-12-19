@@ -114,7 +114,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         key: _scaffoldKey,
-        backgroundColor: Colors.white,
         // Show the drawer based on where Settings was opened from
         drawer: widget.useDoctorDrawer
             ? const Drawer(child: DoctorDrawer())
