@@ -49,6 +49,7 @@ def parse_log_paths(astart_file: Path):
 LOG_DIR, PID_DIR, ACTIVITY_LOG = parse_log_paths(ASTART_SCRIPT)
 
 intents = discord.Intents.default()
+intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 
 
@@ -165,9 +166,18 @@ async def help_cmd(ctx: commands.Context):
 
 
 if __name__ == '__main__':
-	token = os.environ.get('')
+	token = os.environ.get('DISCORD_TOKEN')
 	if not token:
 		print('Please set DISCORD_TOKEN in the environment.')
 		raise SystemExit(1)
-	bot.run(token)
+	try:
+		bot.run(token)
+	except Exception as exc:
+		# Provide a clearer message for common login/token errors
+		from discord.errors import LoginFailure
+		if isinstance(exc, LoginFailure):
+			print('Login failed: invalid DISCORD_TOKEN. Ensure you set your bot token (not a user token).')
+		else:
+			print('Bot failed to start:', exc)
+		raise
 
