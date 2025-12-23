@@ -157,12 +157,55 @@ async def status_cmd(ctx: commands.Context):
 
 @bot.command(name='help')
 async def help_cmd(ctx: commands.Context):
-	txt = (
-		'Commands:\n'
-		'!run <flag> - Run astart with a flag (e.g. -c, -a, -w, -b, -x, -s, -u)\n'
-		'!status - Show pid files and recent activity log\n'
+	# Build a rich embed help message for Discord
+	embed = discord.Embed(
+		title="Astart Control Bot — Help",
+		description="Run and monitor the `astart` launcher from Discord.",
+		color=0x2ecc71,
 	)
-	await ctx.send(f'```\n{txt}\n```')
+	embed.add_field(
+		name="Commands",
+		value=(
+			"`!run <flag>` — Run `astart` with a flag (examples below)\n"
+			"`!status` — Show pid files and recent activity log\n"
+			"`!help` — Show this message"
+		),
+		inline=False,
+	)
+	embed.add_field(
+		name="Common flags",
+		value=(
+			"`-c` start Web Interface\n"
+			"`-a` start AI Chatbot API only\n"
+			"`-w` run whole system (backend + web UI + API)\n"
+			"`-b` start backend only\n"
+			"`-x` start login/registration script\n"
+			"`-s` stop all services\n"
+			"`-u` update production server"
+		),
+		inline=False,
+	)
+	embed.add_field(
+		name="Usage examples",
+		value=(
+			"`!run -c` — start the web interface\n"
+			"`!run -s` — stop all services\n"
+			"`!status` — show recent activity and running pids"
+		),
+		inline=False,
+	)
+	embed.add_field(
+		name="Notes",
+		value=(
+			"• Ensure `DISCORD_TOKEN` env var is set to your bot token.\n"
+			"• If using message commands, enable the Message Content Intent in the Developer Portal.\n"
+			"• Optional env vars: `ALLOWED_USER_IDS` (comma list), `ASTART_PATH` (path to `astart`)."
+		),
+		inline=False,
+	)
+	embed.set_footer(text=f"astart: {ASTART_SCRIPT} | logs: {LOG_DIR}")
+
+	await ctx.send(embed=embed)
 
 
 if __name__ == '__main__':
