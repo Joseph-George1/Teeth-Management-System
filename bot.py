@@ -212,9 +212,10 @@ async def help_cmd(ctx: commands.Context):
 
 
 if __name__ == '__main__':
-	token = os.environ.get('DISCORD_TOKEN')
+	# Prefer environment variable, fall back to embedded BOT_TOKEN constant
+	token = os.environ.get('DISCORD_TOKEN') or BOT_TOKEN
 	if not token:
-		print('Please set DISCORD_TOKEN in the environment.')
+		print('Please set DISCORD_TOKEN in the environment or edit BOT_TOKEN in the script.')
 		raise SystemExit(1)
 	try:
 		bot.run(token)
@@ -222,7 +223,7 @@ if __name__ == '__main__':
 		# Provide a clearer message for common login/token errors
 		from discord.errors import LoginFailure
 		if isinstance(exc, LoginFailure):
-			print('Login failed: invalid DISCORD_TOKEN. Ensure you set your bot token (not a user token).')
+			print('Login failed: invalid token. Ensure you set your bot TOKEN correctly (bot token, not user token).')
 		else:
 			print('Bot failed to start:', exc)
 		raise
