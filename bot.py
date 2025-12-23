@@ -165,7 +165,7 @@ async def help_cmd(ctx: commands.Context):
 
 
 if __name__ == '__main__':
-	token = os.environ.get('MTI4MzQ2MzQyMDE3MTEyODg0Mg.Gq0Q-f.hblN2Gld2TFS88_pSESaA8YzzttdgMEqtIrov4')
+	token = os.environ.get('')
 	if not token:
 		print('Please set DISCORD_TOKEN in the environment.')
 		raise SystemExit(1)
