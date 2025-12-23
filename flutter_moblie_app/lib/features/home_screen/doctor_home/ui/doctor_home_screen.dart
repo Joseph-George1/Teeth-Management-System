@@ -265,7 +265,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           SizedBox(width: 8.w),
           Container(
             width: 390.w,
-            height: 70.47.h,
+            height: 100.h,
             margin: EdgeInsets.only(top: 0.h, right: 10.w, left: 20.w),
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
             child: Column(
@@ -843,7 +843,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           // الحجوزات القادمة اليوم Container
           Container(
             width: 390.w,
-            height: 400.h,
             margin: EdgeInsets.only(
                 top: 20.h, left: 20.w, right: 20.w, bottom: 20.h),
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),

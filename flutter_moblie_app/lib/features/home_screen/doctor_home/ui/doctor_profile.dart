@@ -54,7 +54,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _lastName =
               (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
           _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
-          _phone = (cachedPhone?.isNotEmpty ?? false) ? cachedPhone : _phone;
+          if (cachedPhone?.isNotEmpty ?? false) {
+            if (!cachedPhone!.contains('@')) {
+              _phone = cachedPhone;
+            }
+          }
           _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
           _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
           _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
@@ -100,6 +104,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         }
       }
 
+      // Fallback: Try POST /update_profile with empty body if GET endpoints failed
+      if (response == null) {
+        try {
+          final res = await dio.post('/update_profile', data: {});
+          if (res.statusCode == 200) {
+            response = res;
+          }
+        } catch (_) {
+          // Ignore errors from fallback attempt
+        }
+      }
+
       if (response != null && response.statusCode == 200) {
         final data = response.data;
         Map<String, dynamic>? userMap;
@@ -117,8 +133,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         // Print all keys in the response for debugging
         if (data is Map) {
           print('Top-level response keys: ${data.keys.toList()}');
+          // Print all key-value pairs for top level
+          data.forEach((key, value) {
+            print('$key: $value (${value.runtimeType})');
+          });
+          
           if (data['user'] is Map) {
-            print('User object keys: ${(data['user'] as Map).keys.toList()}');
+            final userData = data['user'] as Map;
+            print('User object keys: ${userData.keys.toList()}');
+            // Print all key-value pairs for user object
+            userData.forEach((key, value) {
+              print('user.$key: $value (${value.runtimeType})');
+            });
           }
         }
 
@@ -134,21 +160,57 @@ class _DoctorProfileState extends State<DoctorProfile> {
         // Try to get phone from multiple possible locations
         String? phone;
         
+        // Debug: Print all keys that might contain phone info
+        print('Searching for phone number in response...');
+        
         // Try direct access first
         phone = userMap?['phone']?.toString();
+        print('After checking userMap[\'phone\']: $phone');
         
-        // If not found, try common alternative keys
-        if (phone == null || phone.isEmpty) {
-          phone = userMap?['tel']?.toString();
-        }
-        if (phone == null || phone.isEmpty) {
-          phone = userMap?['telephone']?.toString();
+        // Try common alternative keys
+        final possiblePhoneKeys = ['tel', 'telephone', 'phone_number', 'mobile', 'phoneNumber', 'phone'];
+
+        for (var key in possiblePhoneKeys) {
+          if ((phone == null || phone.isEmpty) && userMap?[key] != null) {
+            phone = userMap?[key]?.toString();
+            print('Found phone in userMap[\'$key\']: $phone');
+          }
         }
         
         // If still not found, try to get from the root of the response
         if ((phone == null || phone.isEmpty) && data is Map) {
-          phone = data['phone']?.toString();
+          for (var key in possiblePhoneKeys) {
+            if (data[key] != null) {
+              phone = data[key]?.toString();
+              print('Found phone in root[\'$key\']: $phone');
+              if (phone != null && phone.isNotEmpty) break;
+            }
+          }
         }
+
+        // Try to find any key that might contain phone number
+        if ((phone == null || phone.isEmpty) && userMap != null) {
+          final phoneKeys = userMap.keys.where((key) => 
+            key.toString().toLowerCase().contains('phone') || 
+            key.toString().toLowerCase().contains('tel')
+          ).toList();
+          
+          for (final key in phoneKeys) {
+            final value = userMap[key]?.toString();
+            if (value != null && value.isNotEmpty && !value.contains('@')) {
+              phone = value;
+              break;
+            }
+          }
+        }
+
+        // Ensure phone is not an email
+        if (phone != null && phone.contains('@')) {
+          phone = null;
+        }
+
+
+
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
         final governorate = (userMap?['governorate'] ?? userMap?['governorate_id'])?.toString();
@@ -164,12 +226,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
             if (firstName != null && firstName.isNotEmpty) _firstName = firstName;
             if (lastName != null && lastName.isNotEmpty) _lastName = lastName;
             if (email != null && email.isNotEmpty) _email = email;
-            if (phone != null && phone.isNotEmpty) {
-              _phone = phone;
-              print('Setting phone number to: $_phone');
-            } else {
-              print('No phone number found in response');
-            }
+            if (phone != null && phone.isNotEmpty) _phone = phone;
             if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
             if (year != null && year.isNotEmpty) _year = year;
             if (governorate != null && governorate.isNotEmpty) _governorate = governorate;
@@ -193,7 +250,10 @@ class _DoctorProfileState extends State<DoctorProfile> {
           if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
           if (year != null) await SharedPrefHelper.setData('year', year);
           if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
-          if (profileImage != null) await SharedPrefHelper.setData('profile_image', profileImage);
+          if (profileImage != null) {
+            await SharedPrefHelper.setData('profile_image', profileImage);
+            DoctorDrawer.profileImageNotifier.value = profileImage;
+          }
         }
       } else {
         // No known endpoint found. Do not show scary banner; keep cached data.
@@ -242,6 +302,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
       if (response.statusCode == 200) {
         await SharedPrefHelper.setData('profile_image', base64Image);
+        DoctorDrawer.profileImageNotifier.value = base64Image;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم تحديث الصورة الشخصية بنجاح')),
         );
@@ -430,11 +491,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
       _InfoItem(
           icon: Icons.perm_identity, label: 'اسم العائلة', value: _lastName),
       _InfoItem(
-          icon: Icons.email_outlined,
-          label: 'البريد الإلكتروني',
-          value: _email),
-      _InfoItem(icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
-      _InfoItem(icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
+          icon: Icons.email_outlined, label: 'البريد الإلكتروني', value: _email),
+      _InfoItem(
+          icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
+      _InfoItem(
+          icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
       _InfoItem(
           icon: Icons.event_note_outlined,
           label: 'السنة الدراسية',

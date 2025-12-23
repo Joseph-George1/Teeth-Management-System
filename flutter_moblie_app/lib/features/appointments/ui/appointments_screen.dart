@@ -175,23 +175,23 @@ class AppointmentsScreen extends StatelessWidget {
           color: selected ? const Color(0xFF0B8FAC) : (Colors.grey[300] ?? Colors.grey),
         ),
       ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.filter_alt_outlined, size: 16.w, color: selected ? const Color(0xFF0B8FAC) : Colors.grey[600]),
-        SizedBox(width: 4.w),
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 12.sp,
-            color: selected ? const Color(0xFF0B8FAC) : Colors.grey[800],
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.filter_alt_outlined, size: 16.w, color: selected ? const Color(0xFF0B8FAC) : Colors.grey[600]),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 12.sp,
+              color: selected ? const Color(0xFF0B8FAC) : Colors.grey[800],
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
   }
 
   Widget _buildInfoChip({required IconData icon, required String text}) {

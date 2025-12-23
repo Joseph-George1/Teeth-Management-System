@@ -23,15 +23,21 @@ class ForgotPasswordService {
           'message': 'تم إرسال رمز التحقق بنجاح',
         };
       } else {
+        String msg = 'فشل إرسال رمز التحقق';
+        if (response.data is Map<String, dynamic>) {
+          msg = response.data['message'] ?? msg;
+        } else if (response.data is String) {
+          msg = response.data;
+        }
         return {
           'success': false,
-          'message': response.data?['message'] ?? 'فشل إرسال رمز التحقق',
+          'message': msg,
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'message': 'حدث خطأ في الاتصال بالخادم',
+        'message': 'حدث خطأ: ${e.toString()}',
       };
     }
   }
@@ -61,15 +67,21 @@ class ForgotPasswordService {
           'resetToken': response.data['resetToken'],
         };
       } else {
+        String msg = 'رمز التحقق غير صالح';
+        if (response.data is Map<String, dynamic>) {
+          msg = response.data['message'] ?? msg;
+        } else if (response.data is String) {
+          msg = response.data;
+        }
         return {
           'success': false,
-          'message': response.data?['message'] ?? 'رمز التحقق غير صالح',
+          'message': msg,
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'message': 'حدث خطأ في التحقق من الرمز',
+        'message': 'حدث خطأ: ${e.toString()}',
       };
     }
   }
@@ -109,15 +121,21 @@ class ForgotPasswordService {
           'message': 'تم إعادة تعيين كلمة المرور بنجاح',
         };
       } else {
+        String msg = 'فشل إعادة تعيين كلمة المرور';
+        if (response.data is Map<String, dynamic>) {
+          msg = response.data['message'] ?? msg;
+        } else if (response.data is String) {
+          msg = response.data;
+        }
         return {
           'success': false,
-          'message': response.data?['message'] ?? 'فشل إعادة تعيين كلمة المرور',
+          'message': msg,
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'message': 'حدث خطأ في إعادة تعيين كلمة المرور',
+        'message': 'حدث خطأ: ${e.toString()}',
       };
     }
   }

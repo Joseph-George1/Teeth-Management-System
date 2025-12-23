@@ -24,31 +24,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       'image': 'assets/images/1-onboarding.jpg',
       'title': 'اعثر على أفضل الأطباء',
-      'description': 'في ثوثة جمعنا أفضل طلاب وأطباء الأسنان عشان نقدم لك رعاية حقيقية بأسعار طلابية. ابتسامتك في أيد أمينة، مع نخبة من أمهر الأطباء الشباب.',
+      'description':
+          'في ثوثة جمعنا أفضل طلاب وأطباء الأسنان عشان نقدم لك رعاية حقيقية بأسعار طلابية. ابتسامتك في أيد أمينة، مع نخبة من أمهر الأطباء الشباب.',
     },
     {
       'image': 'assets/images/2-inboarding.jpg',
       'title': 'احجز موعدك بسهولة',
-      'description': 'اختار الموعد المناسب لك واحجز مع طبيبك المفضل في ثواني. خدمة حجز المواعديد لدينا سهلة وسريعة وآمنة.',
+      'description':
+          'اختار الموعد المناسب لك واحجز مع طبيبك المفضل في ثواني. خدمة حجز المواعديد لدينا سهلة وسريعة وآمنة.',
     },
     {
       'image': 'assets/images/3-onboarding.jpg',
       'title': 'متابعة دقيقة لصحة أسنانك',
-      'description': 'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة. نحن نهتم بابتسامتك من أول زيارة.',
+      'description':
+          'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة. نحن نهتم بابتسامتك من أول زيارة.',
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    // Precache all images when the widget is first created
-    _precacheImages();
-  }
-
-  Future<void> _precacheImages() async {
-    for (var page in _pages) {
-      await precacheImage(AssetImage(page['image']!), context);
-    }
   }
 
   void _onSkipPressed() {
@@ -56,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Navigator.pushNamedAndRemoveUntil(
       context,
       Routes.categoriesScreen,
-          (route) => false, // This removes all previous routes
+      (route) => false, // This removes all previous routes
     );
   }
 
@@ -117,7 +112,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 imagePath: _pages[index]['image']!,
                 title: _pages[index]['title']!,
                 description: _pages[index]['description']!,
-                key: ValueKey('onboarding_$index'), // Add key for better widget updates
+                key: ValueKey(
+                    'onboarding_$index'), // Add key for better widget updates
               );
             },
           ),
@@ -171,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Navigator.pushNamedAndRemoveUntil(
                         context,
                         Routes.categoriesScreen,
-                            (route) => false,
+                        (route) => false,
                       );
                     },
                     child: Text(
@@ -191,5 +187,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
-
 }

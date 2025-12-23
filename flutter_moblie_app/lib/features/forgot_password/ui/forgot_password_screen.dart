@@ -71,7 +71,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Top-left gradient overlay
@@ -134,17 +133,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         verticalSpace(10),
                         Image.asset(
                           'assets/images/splash-logo.png',
-                          width: 80.w,
-                          height: 80.h,
+                          width: 85.w,
+                          height: 85.h,
                         ),
                         Text('نسيت كلمة المرور', style: TextStyles.font24BlueBold),
-                        verticalSpace(8),
+                        verticalSpace(20),
                         Text(
                           'ادخل بريدك الإلكتروني وسنرسل لك كود لإعادة تعيين كلمة المرور',
                           style: TextStyles.font14GrayRegular,
                           textAlign: TextAlign.center,
                         ),
-                        verticalSpace(24),
+                        verticalSpace(30),
                         Form(
                           key: _formKey,
                           child: Column(
@@ -182,14 +181,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               
                               if (_errorMessage != null) ...[
-                                verticalSpace(16),
+                                verticalSpace(30),
                                 Text(
                                   _errorMessage!,
                                   style: const TextStyle(color: Colors.red),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
+                              verticalSpace(24),
                               SizedBox(
+                                height: 50.h,
                                 width: double.infinity,
                                 child: _isLoading
                                     ? const Center(child: CircularProgressIndicator())

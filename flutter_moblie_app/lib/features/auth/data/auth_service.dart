@@ -57,6 +57,10 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
           String? f;
           String? l;
           String? e;
+          String? p;
+          String? y;
+          String? g;
+          String? fa;
 
           if (data is Map) {
             // Common shapes: top-level or nested under 'user'
@@ -64,12 +68,20 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
               final user = data['user'] as Map;
               f = (user['first_name'] ?? user['firstName']) as String?;
               l = (user['last_name'] ?? user['lastName']) as String?;
-              e = (user['email']) as String?;
+              e = (user['email']??user['email']) as String?;
+              p = (user['phone']??user['phone'])?.toString();
+              y = (user['year']??user['year']) as String?;
+              g = (user['governorate']??user['governorate']) as String?;
+              fa = (user['faculty']??user['faculty']) as String?;
             }
 
             f = f ?? (data['first_name'] ?? data['firstName']) as String?;
             l = l ?? (data['last_name'] ?? data['lastName']) as String?;
-            e = e ?? (data['email']) as String?;
+            e = e ?? (data['email']??data['email']) as String?;
+            p = p ?? (data['phone']??data['phone'])?.toString();
+            y = y ?? (data['year']??data['year']) as String?;
+            g = g ?? (data['governorate']??data['governorate']) as String?;
+            fa = fa ?? (data['faculty']??data['faculty']) as String?;
           }
 
           if (f != null && f.isNotEmpty) {
@@ -77,6 +89,10 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
             await SharedPrefHelper.setData('last_name', l ?? '');
             if (e != null && e.isNotEmpty) {
               await SharedPrefHelper.setData('email', e);
+              await SharedPrefHelper.setData('phone', p ?? '');
+              await SharedPrefHelper.setData('year', y ?? '');
+              await SharedPrefHelper.setData('governorate', g ?? '');
+              await SharedPrefHelper.setData('faculty', fa ?? '');
             }
 
             // Save additional profile fields

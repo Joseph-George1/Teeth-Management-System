@@ -102,7 +102,6 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
       drawer: const DoctorDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -196,7 +195,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
             ),
           ),
           const Divider(height: 1, thickness: 1),
-          
+
           // Settings Options
           Expanded(
             child: ListView(
@@ -220,12 +219,13 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                       icon: Icons.lock_outline,
                       title: 'تغيير كلمة المرور',
                       onTap: () {
-                        Navigator.pushNamed(context, Routes.resetPasswordScreen);
+                        Navigator.pushNamed(
+                            context, Routes.resetPasswordScreen);
                       },
                     ),
                   ],
                 ),
-                
+
                 // App Settings
                 _buildSettingsSection(
                   context,
@@ -263,7 +263,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                     ),
                   ],
                 ),
-                
+
                 // More Settings
                 _buildSettingsSection(
                   context,
@@ -277,7 +277,8 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const TermsAndConditionsScreen(),
+                            builder: (context) =>
+                                const TermsAndConditionsScreen(),
                           ),
                         );
                       },
@@ -300,7 +301,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                     ),
                   ],
                 ),
-                
+
                 // Logout Button
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -332,7 +333,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
       ),
     );
   }
-  
+
   Widget _buildSettingsSection(
     BuildContext context, {
     required String title,
@@ -367,7 +368,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
       ],
     );
   }
-  
+
   Widget _buildSettingsItem(
     BuildContext context, {
     required IconData icon,
