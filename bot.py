@@ -111,43 +111,41 @@ async def status_cmd(ctx: commands.Context):
 		await ctx.reply('You are not authorized to run this command.')
 		return
 	lines = []
-	lines.append(f'ASTART: {ASTART_SCRIPT}')
-	lines.append(f'LOG_DIR: {LOG_DIR}')
-	lines.append('')
 
+	# Build a concise list of running process NAMES (from pid files)
+	running = []
+	missing = []
 	if PID_DIR.exists():
 		pids = list(PID_DIR.glob('*.pid'))
-		if not pids:
-			lines.append('No pid files found (no background processes).')
-		else:
-			lines.append('Processes from pid files:')
-			for p in pids:
+		for p in pids:
+			name = p.stem
+			try:
+				pid_text = p.read_text().splitlines()[0].strip()
+				pid = int(pid_text)
+			except Exception:
+				pid = None
+			if pid:
 				try:
-					pid = int(p.read_text().splitlines()[0].strip())
+					os.kill(pid, 0)
+					running.append(f'{name} (pid={pid})')
 				except Exception:
-					pid = None
-				name = p.stem
-				status = 'unknown'
-				if pid:
-					try:
-						os.kill(pid, 0)
-						status = 'running'
-					except Exception:
-						status = 'not running'
-				lines.append(f'- {name}: pid={pid} status={status}')
+					missing.append(f'{name} (pid={pid})')
+			else:
+				missing.append(f'{name} (no-pid)')
 	else:
 		lines.append(f'PID_DIR not found: {PID_DIR}')
 
-	if ACTIVITY_LOG.exists():
-		try:
-			tail = ACTIVITY_LOG.read_text().splitlines()[-10:]
-			lines.append('')
-			lines.append('Recent activity:')
-			lines.extend(tail)
-		except Exception:
-			lines.append('Failed to read activity log.')
+	if running:
+		lines.append('Running processes:')
+		for r in running:
+			lines.append(f'- {r}')
 	else:
-		lines.append(f'Activity log not found: {ACTIVITY_LOG}')
+		lines.append('No running processes detected.')
+
+	if missing:
+		lines.append('Known but not running:')
+		for m in missing:
+			lines.append(f'- {m}')
 
 	msg = '\n'.join(lines)
 	if len(msg) > 1900:
