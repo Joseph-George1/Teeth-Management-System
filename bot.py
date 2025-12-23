@@ -12,6 +12,11 @@ try:
 except Exception:
 	ASTART_SCRIPT = ASTART_PATH
 
+# Optional: embed your bot token here (NOT RECOMMENDED for production).
+# If `DISCORD_TOKEN` env var is set, that value takes precedence.
+# Example: BOT_TOKEN = "Mz...your_token_here..."
+BOT_TOKEN = ""  # <-- paste your bot token here if you want it built into the script
+
 
 def parse_log_paths(astart_file: Path):
 	log_dir = None
