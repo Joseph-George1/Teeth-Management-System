@@ -73,36 +73,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Top-left gradient overlay
           Container(
-            width: double.infinity,
-            height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 center: const Alignment(-0.7, -0.7),
                 radius: 1.5,
                 colors: [
-                  ColorsManager.layerBlur1.withOpacity(0.4),
+                  ColorsManager.layerBlur1.withOpacity(0.5),
                   ColorsManager.layerBlur1.withOpacity(0.1),
                   Colors.transparent,
                 ],
-                stops: const [0.0, 0.3, 0.8],
               ),
             ),
           ),
-          // Bottom-right gradient overlay
           Container(
-            width: double.infinity,
-            height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
+                center: const Alignment(0.7, 0.7),
                 radius: 1.5,
                 colors: [
                   ColorsManager.layerBlur2.withOpacity(0.4),
                   ColorsManager.layerBlur2.withOpacity(0.1),
                   Colors.transparent,
                 ],
-                stops: const [0.0, 0.3, 0.8],
               ),
             ),
           ),

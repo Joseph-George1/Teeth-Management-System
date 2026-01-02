@@ -98,7 +98,7 @@ class HelpAndSupportScreen extends StatelessWidget {
                   'تحدث مع الدعم المباشر',
                   style: TextStyle(
                     fontFamily: 'Cairo',
-                    fontSize: 16.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -140,7 +140,11 @@ class HelpAndSupportScreen extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: 14.sp,
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.color
+                    ?.withValues(alpha: 0.8),
                 height: 1.5,
               ),
             ),
@@ -195,7 +199,8 @@ class HelpAndSupportScreen extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10.r),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -209,4 +214,3 @@ class HelpAndSupportScreen extends StatelessWidget {
     );
   }
 }
-

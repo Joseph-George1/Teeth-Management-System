@@ -1,6 +1,3 @@
-import 'package:thotha_mobile_app/features/onboarding/widgets/doctor_image_and_text.dart';
-import 'package:thotha_mobile_app/features/onboarding/widgets/get_started_button.dart';
-import 'package:thotha_mobile_app/features/onboarding/widgets/page_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -17,48 +14,32 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  final int _numPages = 3;
 
-  // List of onboarding pages data
   final List<Map<String, String>> _pages = [
     {
       'image': 'assets/images/1-onboarding.jpg',
       'title': 'اعثر على أفضل الأطباء',
       'description':
-          'في ثوثة جمعنا أفضل طلاب وأطباء الأسنان عشان نقدم لك رعاية حقيقية بأسعار طلابية. ابتسامتك في أيد أمينة، مع نخبة من أمهر الأطباء الشباب.',
+          'في ثوثة جمعنا أفضل طلاب وأطباء الأسنان عشان نقدم لك رعاية حقيقية بأسعار طلابية.',
     },
     {
       'image': 'assets/images/2-inboarding.jpg',
       'title': 'احجز موعدك بسهولة',
-      'description':
-          'اختار الموعد المناسب لك واحجز مع طبيبك المفضل في ثواني. خدمة حجز المواعديد لدينا سهلة وسريعة وآمنة.',
+      'description': 'اختار الموعد المناسب لك واحجز مع طبيبك المفضل في ثواني.',
     },
     {
       'image': 'assets/images/3-onboarding.jpg',
       'title': 'متابعة دقيقة لصحة أسنانك',
-      'description':
-          'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة. نحن نهتم بابتسامتك من أول زيارة.',
+      'description': 'احصل على سجل كامل لعلاجاتك ومواعيدك القادمة.',
     },
   ];
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _onSkipPressed() {
-    // Navigate directly to home_screen screen and remove all previous routes from the stack
+  void _goToHome() {
     Navigator.pushNamedAndRemoveUntil(
       context,
       Routes.categoriesScreen,
-      (route) => false, // This removes all previous routes
+      (route) => false,
     );
-  }
-
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentPage = index;
-    });
   }
 
   @override
@@ -67,109 +48,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Full screen gradient overlay
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.7, -0.7), // Top-left quadrant
-                radius: 1.5,
-                colors: [
-                  ColorsManager.layerBlur1.withOpacity(0.4),
-                  ColorsManager.layerBlur1.withOpacity(0.1),
-                  Colors.transparent,
-                ],
-                stops: const [0.1, 0.5, 0.8],
-              ),
-            ),
-          ),
-          // Bottom-right gradient overlay
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.7, 0.7), // Bottom-right quadrant
-                radius: 1.5,
-                colors: [
-                  ColorsManager.layerBlur2.withOpacity(0.4),
-                  ColorsManager.layerBlur2.withOpacity(0.1),
-                  Colors.transparent,
-                ],
-                stops: const [0.1, 0.5, 0.8],
-              ),
-            ),
-          ),
-
-          // Optimized PageView.builder for better performance
+          _BackgroundGradient(),
           PageView.builder(
             controller: _pageController,
-            onPageChanged: _onPageChanged,
             itemCount: _pages.length,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
             itemBuilder: (context, index) {
-              return DoctorImageAndText(
+              return _DoctorImageAndText(
                 imagePath: _pages[index]['image']!,
                 title: _pages[index]['title']!,
                 description: _pages[index]['description']!,
-                key: ValueKey(
-                    'onboarding_$index'), // Add key for better widget updates
               );
             },
           ),
-
-          // Page Indicator - Positioned above action buttons
           Positioned(
-            bottom: 25.h, // Increased from 100 to 120 to give more space
-            left: 0,
-            right: 0,
-            child: PageIndicator(
-              currentPage: _currentPage,
-              pageCount: _numPages,
-            ),
-          ),
-
-          // Action Buttons Container
-          Positioned(
-            bottom: 40.h,
+            bottom: 30.h,
             left: 0,
             right: 0,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Next/Get Started Button
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 30.w),
-                  child: GetStartedButton(
-                    isLastPage: _currentPage == _numPages - 1,
+                  child: _GetStartedButton(
+                    isLastPage: _currentPage == _pages.length - 1,
                     onPressed: () async {
-                      if (_currentPage < _numPages - 1) {
-                        // Go to next page
-                        await _pageController.nextPage(
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.ease,
+                      if (_currentPage < _pages.length - 1) {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
                         );
                       } else {
-                        // On last page, navigate to login
-                        if (mounted) {
-                          _onSkipPressed();
-                        }
+                        _goToHome();
                       }
                     },
                   ),
                 ),
-
-                // Skip Button - Only show if not on last page
-                if (_currentPage < _numPages - 1)
+                if (_currentPage < _pages.length - 1)
                   TextButton(
-                    onPressed: () {
-                      // Navigate directly to categories screen
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        Routes.categoriesScreen,
-                        (route) => false,
-                      );
-                    },
+                    onPressed: _goToHome,
                     child: Text(
                       'ندخل في الموضوع علي طول',
                       style: TextStyle(
@@ -184,6 +102,139 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/* ===================== Background ===================== */
+
+class _BackgroundGradient extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(-0.7, -0.7),
+              radius: 1.5,
+              colors: [
+                ColorsManager.layerBlur1.withOpacity(0.5),
+                ColorsManager.layerBlur1.withOpacity(0.1),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0.7, 0.7),
+              radius: 1.5,
+              colors: [
+                ColorsManager.layerBlur2.withOpacity(0.4),
+                ColorsManager.layerBlur2.withOpacity(0.1),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/* ===================== Doctor Image & Text ===================== */
+
+class _DoctorImageAndText extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String description;
+
+  const _DoctorImageAndText({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        child: Column(
+          children: [
+            Container(
+              width: 200.w,
+              height: 200.h,
+              margin: EdgeInsets.only(bottom: 40.h),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+                color: ColorsManager.mainBlue,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* ===================== Button ===================== */
+
+class _GetStartedButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool isLastPage;
+
+  const _GetStartedButton({
+    required this.onPressed,
+    required this.isLastPage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ColorsManager.mainBlue,
+        minimumSize: Size(double.infinity, 50.h),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.r),
+        ),
+      ),
+      child: Text(
+        isLastPage ? 'ابدأ الآن' : 'التالي',
+        style: TextStyle(
+          fontSize: 16.sp,
+          fontFamily: 'Cairo',
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
     );
   }

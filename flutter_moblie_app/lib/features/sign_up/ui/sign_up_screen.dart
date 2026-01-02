@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/core/helpers/spacing.dart';
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/core/theming/colors.dart';
 import 'package:thotha_mobile_app/core/theming/styles.dart';
 import 'package:thotha_mobile_app/core/widgets/app_text_button.dart';
-import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/sign_up/logic/sign_up_cubit.dart';
 
 class SignUpScreen extends StatefulWidget {
