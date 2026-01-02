@@ -3,287 +3,228 @@ import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
-class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
+/// =====================
+/// Auth Result Model
+/// =====================
+class AuthResult {
+  final bool success;
+  final String? message;
+  final String? token;
+  final int? statusCode;
+  final dynamic data;
+
+  AuthResult({
+    required this.success,
+    this.message,
+    this.token,
+    this.statusCode,
+    this.data,
+  });
+}
+
+/// =====================
+/// User Model
+/// =====================
+class UserModel {
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String phone;
+  final String faculty;
+  final String year;
+  final String governorate;
+
+  UserModel({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.phone,
+    required this.faculty,
+    required this.year,
+    required this.governorate,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] ?? json;
+
+    return UserModel(
+      firstName: user['first_name'] ?? '',
+      lastName: user['last_name'] ?? '',
+      email: user['email'] ?? '',
+      phone: user['phone']?.toString() ?? '',
+      faculty: user['faculty'] ?? '',
+      year: user['year']?.toString() ?? '',
+      governorate: user['governorate'] ?? '',
+    );
+  }
+}
+
+/// =====================
+/// Auth Service
+/// =====================
+class AuthService {
+  static const String _baseUrl = 'http://13.49.221.187:5000';
   final Dio _dio = DioFactory.getDio();
 
-  Future<Map<String, dynamic>> login({
+  /* ================= LOGIN ================= */
+
+  Future<AuthResult> login({
     required String email,
     required String password,
   }) async {
-    try {
-      // Validate input
-      if (email.isEmpty || password.isEmpty) {
-        return {
-          'success': false,
-          'error': 'البريد الإلكتروني وكلمة المرور مطلوبان',
-          'statusCode': 400,
-        };
-      }
+    if (email.isEmpty || password.isEmpty) {
+      return AuthResult(
+        success: false,
+        message: 'البريد الإلكتروني وكلمة المرور مطلوبان',
+        statusCode: 400,
+      );
+    }
 
-      // Make the API request
+    try {
       final response = await _dio.post(
         '$_baseUrl/login',
         data: {
           'email': email.trim(),
           'password': password,
         },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          validateStatus: (status) =>
-              status! < 500, // Handle 4xx errors manually
-        ),
+        options: Options(validateStatus: (status) => status! < 500),
       );
 
-      // Handle successful response
       if (response.statusCode == 200) {
-        // Assuming the API returns a token in the response
         final token = response.data['token'];
+        final user = UserModel.fromJson(response.data);
+
         if (token != null && token is String && token.isNotEmpty) {
-          // Save token securely and set header for subsequent requests
-          await SharedPrefHelper.setSecuredString(
-              SharedPrefKeys.userToken, token);
-          DioFactory.setTokenIntoHeaderAfterLogin(token);
+          await _persistLogin(token, user);
         }
 
-        // Always save the email used for login to support fallback
-        await SharedPrefHelper.setData('email', email);
-
-        // Try to persist user's name/email from the login response if available
-        try {
-          final data = response.data;
-          String? f;
-          String? l;
-          String? e;
-          String? p;
-          String? y;
-          String? g;
-          String? fa;
-
-          if (data is Map) {
-            // Common shapes: top-level or nested under 'user'
-            if (data['user'] is Map) {
-              final user = data['user'] as Map;
-              f = (user['first_name'] ?? user['firstName']) as String?;
-              l = (user['last_name'] ?? user['lastName']) as String?;
-              e = (user['email']??user['email']) as String?;
-              p = (user['phone']??user['phone'])?.toString();
-              y = (user['year']??user['year']) as String?;
-              g = (user['governorate']??user['governorate']) as String?;
-              fa = (user['faculty']??user['faculty']) as String?;
-            }
-
-            f = f ?? (data['first_name'] ?? data['firstName']) as String?;
-            l = l ?? (data['last_name'] ?? data['lastName']) as String?;
-            e = e ?? (data['email']??data['email']) as String?;
-            p = p ?? (data['phone']??data['phone'])?.toString();
-            y = y ?? (data['year']??data['year']) as String?;
-            g = g ?? (data['governorate']??data['governorate']) as String?;
-            fa = fa ?? (data['faculty']??data['faculty']) as String?;
-          }
-
-          if (f != null && f.isNotEmpty) {
-            await SharedPrefHelper.setData('first_name', f);
-            await SharedPrefHelper.setData('last_name', l ?? '');
-            if (e != null && e.isNotEmpty) {
-              await SharedPrefHelper.setData('email', e);
-              await SharedPrefHelper.setData('phone', p ?? '');
-              await SharedPrefHelper.setData('year', y ?? '');
-              await SharedPrefHelper.setData('governorate', g ?? '');
-              await SharedPrefHelper.setData('faculty', fa ?? '');
-            }
-
-            // Save additional profile fields
-            final phone = data['phone']?.toString();
-            final faculty = data['faculty']?.toString();
-            final year = data['year']?.toString();
-            final governorate = data['governorate']?.toString();
-
-            if (phone != null) await SharedPrefHelper.setData('phone', phone);
-            if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
-            if (year != null) await SharedPrefHelper.setData('year', year);
-            if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
-          }
-        } catch (_) {
-          // ignore persistence failures; UI can fallback to /me
-        }
-
-        return {
-          'success': true,
-          'data': response.data,
-          'token': token,
-        };
+        return AuthResult(
+          success: true,
+          token: token,
+          data: response.data,
+        );
       }
 
-      // Handle error responses
-      return {
-        'success': false,
-        'error': _getErrorMessage(response.statusCode, response.data),
-        'statusCode': response.statusCode,
-      };
+      return AuthResult(
+        success: false,
+        message: _mapError(response.statusCode, response.data),
+        statusCode: response.statusCode,
+      );
     } on DioException catch (e) {
-      // Handle Dio errors (network errors, etc.)
-      return {
-        'success': false,
-        'error': _handleDioError(e),
-        'statusCode': e.response?.statusCode ?? 500,
-      };
-    } catch (e) {
-      // Handle any other errors
-      return {
-        'success': false,
-        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
-        'statusCode': 500,
-      };
+      return AuthResult(
+        success: false,
+        message: _handleDioError(e),
+        statusCode: e.response?.statusCode,
+      );
+    } catch (_) {
+      return AuthResult(
+        success: false,
+        message: 'حدث خطأ غير متوقع',
+        statusCode: 500,
+      );
     }
   }
 
-  String _getErrorMessage(int? statusCode, dynamic responseData) {
-    switch (statusCode) {
+  /* ================= REGISTER ================= */
+
+  Future<AuthResult> register({
+    required UserModel user,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    if (password.length < 6) {
+      return AuthResult(
+        success: false,
+        message: 'كلمة المرور يجب ألا تقل عن 6 أحرف',
+        statusCode: 400,
+      );
+    }
+
+    try {
+      final response = await _dio.post(
+        '$_baseUrl/register',
+        data: {
+          'email': user.email,
+          'password': password,
+          'confirm_password': confirmPassword,
+          'first_name': user.firstName,
+          'last_name': user.lastName,
+          'phone': user.phone,
+          'faculty': user.faculty,
+          'year': user.year,
+          'governorate': user.governorate,
+        },
+        options: Options(validateStatus: (status) => status! < 500),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await _saveUser(user);
+
+        return AuthResult(
+          success: true,
+          message: 'تم إنشاء الحساب بنجاح',
+          data: response.data,
+        );
+      }
+
+      return AuthResult(
+        success: false,
+        message: _mapError(response.statusCode, response.data),
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      return AuthResult(
+        success: false,
+        message: _handleDioError(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  /* ================= HELPERS ================= */
+
+  Future<void> _persistLogin(String token, UserModel user) async {
+    await SharedPrefHelper.setSecuredString(
+      SharedPrefKeys.userToken,
+      token,
+    );
+    DioFactory.setTokenIntoHeaderAfterLogin(token);
+    await _saveUser(user);
+  }
+
+  Future<void> _saveUser(UserModel user) async {
+    await SharedPrefHelper.setData('first_name', user.firstName);
+    await SharedPrefHelper.setData('last_name', user.lastName);
+    await SharedPrefHelper.setData('email', user.email);
+    await SharedPrefHelper.setData('phone', user.phone);
+    await SharedPrefHelper.setData('faculty', user.faculty);
+    await SharedPrefHelper.setData('year', user.year);
+    await SharedPrefHelper.setData('governorate', user.governorate);
+  }
+
+  String _mapError(int? status, dynamic data) {
+    switch (status) {
       case 400:
-        return 'بيانات الدخول غير صحيحة';
+        return 'بيانات غير صحيحة';
       case 401:
         return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-      case 403:
-        return 'غير مصرح لك بالدخول';
       case 404:
         return 'الحساب غير موجود';
-      case 422:
-        // Handle validation errors from the server
-        if (responseData is Map && responseData['errors'] != null) {
-          return responseData['errors'].values.first[0] ?? 'بيانات غير صالحة';
-        }
-        return 'بيانات غير صالحة';
+      case 409:
+        return 'هذا البريد الإلكتروني مسجل مسبقًا';
       default:
-        return 'حدث خطأ في الخادم. الرجاء المحاولة مرة أخرى';
+        return 'حدث خطأ غير متوقع';
     }
   }
 
   String _handleDioError(DioException e) {
-    print('Dio Error: ${e.message}');
-    print('Error Type: ${e.type}');
-    if (e.response != null) {
-      print('Response Status: ${e.response?.statusCode}');
-      print('Response Data: ${e.response?.data}');
-    }
-
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return 'انتهت مهلة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';
-    } else if (e.type == DioExceptionType.connectionError) {
-      return 'تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';
-    } else if (e.response != null) {
-      return _getErrorMessage(e.response?.statusCode, e.response?.data);
-    } else {
-      return 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى';
+      return 'انتهت مهلة الاتصال بالخادم';
     }
-  }
-
-  Future<Map<String, dynamic>> register({
-    required String email,
-    required String password,
-    required String confirm,
-    required String first_name,
-    required String last_name,
-    required String phone,
-    required String faculty,
-    required String year,
-    required String governorate,
-  }) async {
-    try {
-      if (email.isEmpty ||
-          password.isEmpty ||
-          first_name.isEmpty ||
-          last_name.isEmpty ||
-          phone.isEmpty ||
-          faculty.isEmpty ||
-          year.isEmpty ||
-          governorate.isEmpty ||
-          confirm.isEmpty) {
-        return {
-          'success': false,
-          'error': 'البريد الإلكتروني وكلمة المرور مطلوبان',
-          'statusCode': 400,
-        };
-      }
-
-      if (password.length <= 6) {
-        return {
-          'success': false,
-          'error': 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
-          'statusCode': 400,
-        };
-      }
-
-      final response = await _dio.post(
-        '$_baseUrl/register',
-        data: {
-          'email': email.trim(),
-          'password': password,
-          'faculty': faculty,
-          'first_name': first_name,
-          'last_name': last_name,
-          'governorate': governorate,
-          'year': year,
-          'phone': phone,
-          'confirm_password': confirm,
-        },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          validateStatus: (status) => status! < 500,
-        ),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Persist provided user info so UI can greet correctly after signup
-        try {
-          if (first_name.isNotEmpty) {
-            await SharedPrefHelper.setData('first_name', first_name);
-            await SharedPrefHelper.setData('last_name', last_name);
-            await SharedPrefHelper.setData('email', email.trim());
-            await SharedPrefHelper.setData('phone', phone);
-            await SharedPrefHelper.setData('faculty', faculty);
-            await SharedPrefHelper.setData('year', year);
-            await SharedPrefHelper.setData('governorate', governorate);
-          }
-        } catch (_) {}
-
-        return {
-          'success': true,
-          'data': response.data,
-          'message': 'تم إنشاء الحساب بنجاح',
-        };
-      } else {
-        // Handle different error status codes
-        String errorMessage = 'حدث خطأ في التسجيل';
-        if (response.statusCode == 400) {
-          errorMessage = response.data?['message'] ?? 'بيانات غير صالحة';
-        } else if (response.statusCode == 409) {
-          errorMessage = 'هذا البريد الإلكتروني مسجل مسبقاً';
-        }
-
-        return {
-          'success': false,
-          'error': errorMessage,
-          'statusCode': response.statusCode,
-        };
-      }
-    } on DioException catch (e) {
-      return {
-        'success': false,
-        'error': e.response?.data?['message'] ??
-            'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى',
-        'statusCode': e.response?.statusCode,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'حدث خطأ غير متوقع: ${e.toString()}',
-      };
+    if (e.type == DioExceptionType.connectionError) {
+      return 'تعذر الاتصال بالخادم';
     }
+    return 'حدث خطأ غير متوقع';
   }
 }

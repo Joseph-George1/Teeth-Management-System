@@ -29,12 +29,6 @@ class SignUpCubit extends Cubit<SignUpState> {
         emit(SignUpError('البريد الإلكتروني وكلمة المرور مطلوبان'));
         return;
       }
-
-      /* if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
-        emit(SignUpError('الرجاء إدخال بريد إلكتروني صالح'));
-        return;
-      }*/
-
       if (password.length < 6) {
         emit(SignUpError('يجب أن تكون كلمة المرور 6 أحرف على الأقل'));
         return;

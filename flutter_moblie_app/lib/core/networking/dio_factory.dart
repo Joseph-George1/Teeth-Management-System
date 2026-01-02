@@ -20,7 +20,6 @@ class DioFactory {
         ..options.receiveTimeout = timeOut
         ..options.sendTimeout = timeOut
         ..options.baseUrl = 'http://13.49.221.187:5000';
-      addDioHeaders();
       addDioInterceptor();
       return dio!;
     } else {
@@ -29,7 +28,8 @@ class DioFactory {
   }
 
   static void addDioHeaders() async {
-    final token = await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
+    final token =
+        await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
     final headers = <String, dynamic>{
       'Accept': 'application/json',
     };
@@ -58,5 +58,27 @@ class DioFactory {
         responseHeader: true,
       ),
     );
+    dio?.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // Get token from secure storage
+          final token =
+              await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
+          print('DEBUG: Interceptor running. Token found: ${token != null}');
+          if (token != null && token is String && token.isNotEmpty) {
+            print(
+                'DEBUG: Injecting token into header: Bearer ${token.substring(0, 5)}...');
+            options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            print('DEBUG: No token found or token is empty');
+          }
+          return handler.next(options);
+        },
+      ),
+    );
   }
 }
+
+
+
+
