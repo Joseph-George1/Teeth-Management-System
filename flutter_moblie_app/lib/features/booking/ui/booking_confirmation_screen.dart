@@ -1,3 +1,5 @@
+import 'package:thotha_mobile_app/features/booking/ui/otp_verification_dialog.dart';
+import 'package:thotha_mobile_app/features/appointments/data/appointments_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,12 +37,44 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => OtpVerificationDialog(
+          contactInfo: _phoneController.text,
+          onVerified: (code) {
+            _completeBooking();
+          },
+        ),
+      );
+    }
+  }
+
+  void _completeBooking() {
       setState(() {
         _isLoading = true;
       });
 
       // Simulate API call
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () async {
+        // Build the appointment object
+        // Note: Formatting date/time or keeping as string depends on how AppointmentsScreen consumes it.
+        // AppointmentsScreen mock data uses DateTime object for date.
+        // We will store it as string ISO or just the string we have, and fix AppointmentsScreen to handle it.
+        // For now let's store what we have.
+
+        final appointment = {
+          'doctorName': widget.doctorName,
+          'specialty': 'طب الأسنان', // Default value as it is not passed
+          'date': widget.date,
+          'time': widget.time,
+          'status': 'مؤكد',
+        };
+
+        await AppointmentsService().addAppointment(appointment);
+
+        if (!mounted) return;
+
         setState(() {
           _isLoading = false;
         });
@@ -71,7 +105,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   width: 72.w,
                   height: 72.w,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0B8FAC).withOpacity(0.1),
+                    color: const Color(0xFF0B8FAC).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.check_rounded, color: const Color(0xFF0B8FAC), size: 42.w),
@@ -116,7 +150,6 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         );
       });
     }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +173,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     center: const Alignment(-0.7, -0.7),
                     radius: 1.5,
                     colors: [
-                      const Color(0xFF84E5F3).withOpacity(0.4),
-                      const Color(0xFF84E5F3).withOpacity(0.1),
+                      const Color(0xFF84E5F3).withValues(alpha: 0.4),
+                      const Color(0xFF84E5F3).withValues(alpha: 0.1),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.3, 0.8],
@@ -157,8 +190,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     center: const Alignment(0.7, 0.7),
                     radius: 1.5,
                     colors: [
-                      const Color(0xFF8DECB4).withOpacity(0.4),
-                      const Color(0xFF8DECB4).withOpacity(0.1),
+                      const Color(0xFF8DECB4).withValues(alpha: 0.4),
+                      const Color(0xFF8DECB4).withValues(alpha: 0.1),
                       Colors.transparent,
                     ],
                     stops: const [0.1, 0.3, 0.8],
@@ -176,7 +209,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       borderRadius: BorderRadius.circular(16.0),
                       boxShadow: [
                         BoxShadow(
-                          color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
+                          color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -355,7 +388,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: 14.sp,
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
           ),
         ),
         SizedBox(width: 8.w),

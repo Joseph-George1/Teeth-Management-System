@@ -52,14 +52,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Future<void> _loadFromCache() async {
     try {
-      final f = await SharedPrefHelper.getString('first_name');
-      final l = await SharedPrefHelper.getString('last_name');
-      final e = await SharedPrefHelper.getString('email');
-      final p = await SharedPrefHelper.getString('phone');
-      final fac = await SharedPrefHelper.getString('faculty');
-      final y = await SharedPrefHelper.getString('year');
-      final g = await SharedPrefHelper.getString('governorate');
-      final img = await SharedPrefHelper.getString('profile_image');
+      final f = await SharedPrefHelper.getString('first_name') ?? '';
+      final l = await SharedPrefHelper.getString('last_name') ?? '';
+      final e = await SharedPrefHelper.getString('email') ?? '';
+      final p = await SharedPrefHelper.getString('phone') ?? '';
+      final fac = await SharedPrefHelper.getString('faculty') ?? '';
+      final y = await SharedPrefHelper.getString('year') ?? '';
+      final g = await SharedPrefHelper.getString('governorate') ?? '';
+      final img = await SharedPrefHelper.getString('profile_image') ?? '';
 
       if (!mounted) return;
 
@@ -73,16 +73,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         if (g.isNotEmpty) _governorate = g;
         if (img.isNotEmpty) _profileImage = img;
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error loading from cache: $e');
+    }
   }
 
   Future<void> _fetchRemoteProfile() async {
     try {
       final dio = DioFactory.getDio();
       // Get the email from SharedPreferences
-      final email = await SharedPrefHelper.getString('email');
+      final email = await SharedPrefHelper.getString('email') ?? '';
       
-      if (email == null || email.isEmpty) {
+      if (email.isEmpty) {
         if (mounted) {
           setState(() => _error = 'No user email found. Please log in again.');
         }
@@ -90,8 +92,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
       }
 
       // Get the token for authorization
-      final token = await SharedPrefHelper.getSecuredString('user_token');
-      if (token == null || token.isEmpty) {
+      final token = await SharedPrefHelper.getSecuredString('user_token') ?? '';
+      if (token.isEmpty) {
+        if (mounted) {
+          setState(() => _error = 'Authentication token not found. Please log in again.');
+        }
         return;
       }
 
@@ -175,20 +180,51 @@ class _DoctorProfileState extends State<DoctorProfile> {
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80, // Reduce image quality to save space
+        maxWidth: 1024,   // Limit image dimensions
+        maxHeight: 1024,
+      );
+      
       if (image != null) {
-        final bytes = await File(image.path).readAsBytes();
-        final base64Image = base64Encode(bytes);
+        // Show loading indicator
+        if (mounted) {
+          setState(() => _isLoading = true);
+        }
+        
+        try {
+          final bytes = await File(image.path).readAsBytes();
+          // Check image size (e.g., max 5MB)
+          if (bytes.length > 5 * 1024 * 1024) {
+            throw Exception('Image size should be less than 5MB');
+          }
+          
+          final base64Image = base64Encode(bytes);
 
-        setState(() {
-          _profileImage = base64Image;
-        });
+          if (mounted) {
+            setState(() {
+              _profileImage = base64Image;
+              _error = null; // Clear any previous errors
+            });
+          }
 
-        // Optimistic update
-        await SharedPrefHelper.setData('profile_image', base64Image);
-        DoctorDrawer.profileImageNotifier.value = base64Image;
+          // Optimistic update
+          await SharedPrefHelper.setData('profile_image', base64Image);
+          DoctorDrawer.profileImageNotifier.value = base64Image;
 
-        await _uploadImage(base64Image);
+          await _uploadImage(base64Image);
+        } catch (e) {
+          debugPrint('Error processing image: $e');
+          if (mounted) {
+            setState(() => _error = 'Failed to process image. ${e.toString()}');
+          }
+          rethrow;
+        } finally {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -199,13 +235,38 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Future<void> _uploadImage(String base64Image) async {
     try {
+      final token = await SharedPrefHelper.getSecuredString('user_token') ?? '';
+      if (token.isEmpty) {
+        throw Exception('Authentication required');
+      }
+      
       final dio = DioFactory.getDio();
-      await dio.post(
+      final response = await dio.post(
         '/update_profile',
         data: {'profile_image': base64Image},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
       );
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to upload image: ${response.statusCode}');
+      }
+      
+      // Verify the image was saved
+      if (response.data is Map && response.data['status'] != 'success') {
+        throw Exception('Failed to save image: ${response.data['message'] ?? 'Unknown error'}');
+      }
+      
     } catch (e) {
       debugPrint('Error uploading image: $e');
+      if (mounted) {
+        setState(() => _error = 'Failed to upload image. Please try again.');
+      }
+      rethrow;
     }
   }
 

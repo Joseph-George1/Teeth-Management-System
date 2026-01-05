@@ -12,4 +12,5 @@ class ColorsManager {
   static const Color fontColor = Color(0xFF155778);
   static const Color layerBlur1 = Color(0xFF53CAF7);
   static const Color layerBlur2 = Color(0xFF96F8C9);
+  static const Color offWhite = Color(0xFFFDFDFF);
 }

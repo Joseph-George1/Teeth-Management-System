@@ -35,13 +35,13 @@ class _SplashScreenState extends State<SplashScreen> {
       'assets/images/1-onboarding.jpg',
       'assets/images/2-inboarding.jpg',
       'assets/images/3-onboarding.jpg',
+      'assets/images/splash-logo.png',
     ];
 
     try {
       await Future.wait(
         images.map((image) => precacheImage(
-              // Must match the cacheWidth used in DoctorImageAndText
-              ResizeImage(AssetImage(image), width: 1500),
+              AssetImage(image),
               context,
             )),
       );

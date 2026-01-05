@@ -66,6 +66,7 @@ dependencies:
   # easy way to add shimmer effect
   shimmer: ^3.0.0
   speech_to_text: ^7.3.0
+  otp_phone_verify: ^1.0.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -77,6 +78,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
+  build_runner: ^2.10.5
 
 flutter_icons:
   android: true
