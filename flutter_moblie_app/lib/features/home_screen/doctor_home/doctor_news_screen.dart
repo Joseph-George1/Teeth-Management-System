@@ -80,7 +80,8 @@ class _DoctorNewsScreenState extends State<DoctorNewsScreen> {
                   NotificationHelper.hasUnreadNotifications = false;
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen()),
                   ).then((_) {
                     // This will refresh the notification badge when returning to the screen
                     if (mounted) setState(() {});
@@ -88,28 +89,30 @@ class _DoctorNewsScreenState extends State<DoctorNewsScreen> {
                 },
               ),
               if (NotificationHelper.getUnreadCount() > 0)
-              Positioned(
-                right: 8,
-                top: 10,
-                child: Container(
-                  width: 16.w,
-                  height: 16.w,
-                  decoration: BoxDecoration(
-                    color: colorScheme.error,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      NotificationHelper.getUnreadCount() > 9 ? '9+' : '${NotificationHelper.getUnreadCount()}',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onError,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
+                Positioned(
+                  right: 8,
+                  top: 10,
+                  child: Container(
+                    width: 16.w,
+                    height: 16.w,
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        NotificationHelper.getUnreadCount() > 9
+                            ? '9+'
+                            : '${NotificationHelper.getUnreadCount()}',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onError,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           SizedBox(width: 8.w),
