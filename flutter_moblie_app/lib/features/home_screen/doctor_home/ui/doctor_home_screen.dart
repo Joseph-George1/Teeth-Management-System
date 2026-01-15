@@ -6,8 +6,8 @@ import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 import 'package:dio/dio.dart';
 
-import '../../../../core/theming/styles.dart';
 import '../../../../core/theming/colors.dart';
+import '../../../../core/theming/styles.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({super.key});
@@ -250,127 +250,300 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             ),
           ),
           SizedBox(height: 24.h),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  'المواعيد اليوم',
-                  '12',
-                  Icons.today_rounded,
-                  const Color(0xFFE3F2FD),
-                  ColorsManager.mainBlue,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: _buildStatCard(
-                  'المرضى الجدد',
-                  '5',
-                  Icons.person_add_rounded,
-                  const Color(0xFFE8F5E9),
-                  const Color(0xFF4CAF50),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 24.h),
-          Text(
-            'نظرة عامة على المواعيد',
-            style: TextStyles.font18DarkBlueBold,
-          ),
-          SizedBox(height: 16.h),
-          Container(
-            height: 200.h,
-            padding: EdgeInsets.all(16.r),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                         const style = TextStyle(
-                          color: Color(0xFF68737d),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        );
-                        String text;
-                        switch (value.toInt()) {
-                          case 0:
-                            text = 'السبت';
-                            break;
-                          case 2:
-                            text = 'الاثنين';
-                            break;
-                          case 4:
-                            text = 'الاربعاء';
-                            break;
-                          case 6:
-                            text = 'الجمعة';
-                            break;
-                          default:
-                            return Container();
-                        }
-                        return SideTitleWidget(
-                          meta: meta,
-                          space: 4,
-                          child: Text(text, style: style),
-                        );
-                      },
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'إجمالي الحالات',
+                      '120',
+                      Icons.people_alt_rounded,
+                      const Color(0xFFE3F2FD),
+                      ColorsManager.mainBlue,
                     ),
                   ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      const FlSpot(0, 3),
-                      const FlSpot(1, 1),
-                      const FlSpot(2, 4),
-                      const FlSpot(3, 2),
-                      const FlSpot(4, 5),
-                      const FlSpot(5, 3),
-                      const FlSpot(6, 4),
-                    ],
-                    isCurved: true,
-                    color: ColorsManager.mainBlue,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: ColorsManager.mainBlue.withOpacity(0.1),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: _buildStatCard(
+                      'حالات تعافت',
+                      '85',
+                      Icons.check_circle_rounded,
+                      const Color(0xFFE8F5E9),
+                      const Color(0xFF4CAF50),
                     ),
                   ),
                 ],
               ),
-            ),
+              SizedBox(height: 16.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'زيارات اليوم',
+                      '12',
+                      Icons.today_rounded,
+                      const Color(0xFFFFF3E0),
+                      const Color(0xFFFF9800),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: _buildStatCard(
+                      'عمليات',
+                      '3',
+                      Icons.medical_services_rounded,
+                      const Color(0xFFFFEBEE),
+                      const Color(0xFFF44336),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+
+          SizedBox(height: 24.h),
+
+          // Chart
+           Container(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                 Text(
+                    'نظرة عامة على المواعيد',
+                    style: TextStyles.font18DarkBlueBold,
+                  ),
+                  SizedBox(height: 16.h),
+                  Container(
+                    height: 200.h,
+                    padding: EdgeInsets.all(16.r),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                 const style = TextStyle(
+                                  color: Color(0xFF68737d),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                );
+                                String text;
+                                switch (value.toInt()) {
+                                  case 0:
+                                    text = 'السبت';
+                                    break;
+                                  case 2:
+                                    text = 'الاثنين';
+                                    break;
+                                  case 4:
+                                    text = 'الاربعاء';
+                                    break;
+                                  case 6:
+                                    text = 'الجمعة';
+                                    break;
+                                  default:
+                                    return Container();
+                                }
+                                return SideTitleWidget(
+                                  meta: meta,
+                                  space: 4,
+                                  child: Text(text, style: style),
+                                );
+                              },
+                            ),
+                          ),
+                          rightTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: [
+                              const FlSpot(0, 3),
+                              const FlSpot(1, 1),
+                              const FlSpot(2, 4),
+                              const FlSpot(3, 2),
+                              const FlSpot(4, 5),
+                              const FlSpot(5, 3),
+                              const FlSpot(6, 4),
+                            ],
+                            isCurved: true,
+                            color: ColorsManager.mainBlue,
+                            barWidth: 3,
+                            isStrokeCapRound: true,
+                            dotData: FlDotData(show: false),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: ColorsManager.mainBlue.withOpacity(0.1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+           ),
+
+          SizedBox(height: 24.h),
+
+          _buildUpcomingReservations(),
       ],
     );
   }
-  
+
+  Widget _buildUpcomingReservations() {
+    return Container(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'حجوزاتي القادمه',
+            style: TextStyles.font18DarkBlueBold,
+          ),
+          SizedBox(height: 16.h),
+          Container(
+             width: double.infinity,
+             padding: EdgeInsets.all(16.r),
+             decoration: BoxDecoration(
+               color: Colors.white,
+               borderRadius: BorderRadius.circular(12.r),
+               boxShadow: [
+                 BoxShadow(
+                   color: Colors.black.withOpacity(0.05),
+                   blurRadius: 10,
+                   offset: const Offset(0, 2),
+                 ),
+               ],
+             ),
+             child: Column(
+               children: [
+                 Row(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Container(
+                       width: 60.w,
+                       height: 60.h,
+                       decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(8.r),
+                         image: const DecorationImage(
+                           image: AssetImage('assets/images/doctor.png'),
+                           fit: BoxFit.cover,
+                         ),
+                       ),
+                     ),
+                     SizedBox(width: 12.w),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(
+                             'زياد جمال',
+                             style: TextStyles.font16WhiteSemiBold.copyWith(color: Colors.black),
+                           ),
+                           Text(
+                             'تدريب زراعة اسنان',
+                             style: TextStyles.font12GrayRegular,
+                           ),
+                           SizedBox(height: 8.h),
+                           Row(
+                             children: [
+                               Icon(Icons.access_time, size: 14.sp, color: Colors.grey),
+                               SizedBox(width: 4.w),
+                               Text('11:30 صباحا', style: TextStyles.font12GrayRegular),
+                               SizedBox(width: 16.w),
+                               Icon(Icons.calendar_month, size: 14.sp, color: Colors.grey),
+                               SizedBox(width: 4.w),
+                               Text('2025-11-29', style: TextStyles.font12GrayRegular),
+                             ],
+                           ),
+                         ],
+                       ),
+                     ),
+                   ],
+                 ),
+                 SizedBox(height: 16.h),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: ElevatedButton(
+                         onPressed: () {},
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: const Color(0xFFEFF6FF),
+                           elevation: 0,
+                           shape: RoundedRectangleBorder(
+                             borderRadius: BorderRadius.circular(6.r),
+                             side: const BorderSide(color: Color(0xFF155DFC)),
+                           ),
+                           padding: EdgeInsets.symmetric(vertical: 8.h),
+                         ),
+                         child: Text(
+                           'تعديل',
+                           style: TextStyle(
+                             fontFamily: 'Cairo',
+                             fontSize: 14.sp,
+                             color: const Color(0xFF155DFC),
+                           ),
+                         ),
+                       ),
+                     ),
+                     SizedBox(width: 12.w),
+                     Expanded(
+                       child: ElevatedButton(
+                         onPressed: () {},
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: const Color(0xFFFEF2F2),
+                           elevation: 0,
+                           shape: RoundedRectangleBorder(
+                             borderRadius: BorderRadius.circular(6.r),
+                             side: const BorderSide(color: Color(0xFFE7000B)),
+                           ),
+                            padding: EdgeInsets.symmetric(vertical: 8.h),
+                         ),
+                         child: Text(
+                           'إلغاء',
+                           style: TextStyle(
+                             fontFamily: 'Cairo',
+                             fontSize: 14.sp,
+                             color: const Color(0xFFE7000B),
+                           ),
+                         ),
+                       ),
+                     ),
+                   ],
+                 ),
+               ],
+             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
    Widget _buildStatCard(String title, String value, IconData icon,
       Color backgroundColor, Color iconColor) {
     return Container(

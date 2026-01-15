@@ -63,7 +63,7 @@ class UserModel {
 /// Auth Service
 /// =====================
 class AuthService {
-  static const String _baseUrl = 'http://13.49.221.187:5000';
+  static const String _baseUrl = 'http://13.53.131.167:5000';
   final Dio _dio = DioFactory.getDio();
 
   /* ================= LOGIN ================= */
