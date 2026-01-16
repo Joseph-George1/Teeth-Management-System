@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,8 +20,7 @@ import 'package:thotha_mobile_app/features/help_and_support/ui/help_and_support_
 class DoctorDrawer extends StatefulWidget {
   const DoctorDrawer({super.key});
 
-  static final ValueNotifier<String?> profileImageNotifier =
-      ValueNotifier(null);
+  static final ValueNotifier<String?> profileImageNotifier = ValueNotifier(null);
 
   @override
   State<DoctorDrawer> createState() => _DoctorDrawerState();
@@ -72,8 +70,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
             title: Text(
               'تأكيد تسجيل الخروج',
               textAlign: TextAlign.right,
-              style:
-                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             content: Text(
               'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
@@ -122,19 +119,21 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
   }
 
   Widget _menuItem(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    Color? iconColor,
-    Color? textColor,
-    bool isSelected = false,
-    VoidCallback? onTap,
-  }) {
+      BuildContext context, {
+        required String title,
+        required IconData icon,
+        Color? iconColor,
+        Color? textColor,
+        bool isSelected = false,
+        VoidCallback? onTap,
+      }) {
     final textTheme = Theme.of(context).textTheme;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: isSelected ? _cCyan.withAlpha(26) : null,
+        color: isSelected 
+            ? _cCyan.withAlpha(26)
+            : null,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: InkWell(
@@ -148,9 +147,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
               children: [
                 Icon(
                   icon,
-                  color: isSelected
-                      ? _cCyan
-                      : (iconColor ?? Theme.of(context).iconTheme.color),
+                  color: isSelected ? _cCyan : (iconColor ?? Theme.of(context).iconTheme.color),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
@@ -158,12 +155,10 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                     title,
                     textAlign: TextAlign.right,
                     style: textTheme.bodyLarge?.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected
-                          ? _cCyan
-                          : textColor ??
-                              Theme.of(context).colorScheme.onSurface,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected 
+                          ? _cCyan 
+                          : textColor ?? Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -200,9 +195,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
           _firstName = cachedFirstName;
           _lastName = cachedLastName;
           _email = cachedEmail;
-          _profileImage = (cachedImage?.isNotEmpty ?? false)
-              ? cachedImage
-              : _profileImage;
+          _profileImage = (cachedImage?.isNotEmpty ?? false) ? cachedImage : _profileImage;
         });
         return;
       }
@@ -244,8 +237,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
           await SharedPrefHelper.setData('first_name', f);
           await SharedPrefHelper.setData('last_name', l ?? '');
           if (e != null) await SharedPrefHelper.setData('email', e);
-          if (img != null)
-            await SharedPrefHelper.setData('profile_image', img);
+          if (img != null) await SharedPrefHelper.setData('profile_image', img);
         }
       }
     } catch (e) {
@@ -266,22 +258,14 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
   }
 
   int _getCurrentIndex() {
-    final currentRoute =
-        ModalRoute.of(context)?.settings.name?.toLowerCase() ?? '';
-    if (currentRoute.contains('doctor-home') ||
-        currentRoute.contains('home')) return 0;
-    if (currentRoute.contains('doctor-profile') ||
-        currentRoute.contains('profile')) return 1;
-    if (currentRoute.contains('upcoming-bookings') ||
-        currentRoute.contains('booking')) return 2;
-    if (currentRoute.contains('booking-records') ||
-        currentRoute.contains('records')) return 3;
-    if (currentRoute.contains('patients') ||
-        currentRoute.contains('patient')) return 4;
-    if (currentRoute.contains('settings') ||
-        currentRoute.contains('setting')) return 5;
-    if (currentRoute.contains('news') || currentRoute.contains('chat'))
-      return 6;
+    final currentRoute = ModalRoute.of(context)?.settings.name?.toLowerCase() ?? '';
+    if (currentRoute.contains('doctor-home') || currentRoute.contains('home')) return 0;
+    if (currentRoute.contains('doctor-profile') || currentRoute.contains('profile')) return 1;
+    if (currentRoute.contains('upcoming-bookings') || currentRoute.contains('booking')) return 2;
+    if (currentRoute.contains('booking-records') || currentRoute.contains('records')) return 3;
+    if (currentRoute.contains('patients') || currentRoute.contains('patient')) return 4;
+    if (currentRoute.contains('settings') || currentRoute.contains('setting')) return 5;
+    if (currentRoute.contains('news') || currentRoute.contains('chat')) return 6;
     return 0;
   }
 
@@ -353,8 +337,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                         child: Row(
                           children: [
                             Container(
-                              margin:
-                                  EdgeInsets.only(left: 12.w, right: 12.w),
+                              margin: EdgeInsets.only(left: 12.w, right: 12.w),
                               width: 40.w,
                               height: 40.h,
                               decoration: BoxDecoration(
@@ -362,8 +345,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                                 shape: BoxShape.circle,
                                 image: _profileImage != null
                                     ? DecorationImage(
-                                        image: MemoryImage(
-                                            base64Decode(_profileImage!)),
+                                        image: MemoryImage(base64Decode(_profileImage!)),
                                         fit: BoxFit.cover,
                                       )
                                     : null,
@@ -458,8 +440,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.pop(context);
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          settings:
-                              const RouteSettings(name: 'doctor-profile'),
+                          settings: const RouteSettings(name: 'doctor-profile'),
                           builder: (context) => const DoctorProfile(),
                         ),
                       );
@@ -474,8 +455,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.pop(context);
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          settings:
-                              const RouteSettings(name: 'upcoming-bookings'),
+                          settings: const RouteSettings(name: 'upcoming-bookings'),
                           builder: (context) => DoctorNextBookingScreen(),
                         ),
                       );
@@ -490,10 +470,8 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.pop(context);
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          settings:
-                              const RouteSettings(name: 'booking-records'),
-                          builder: (context) =>
-                              DoctorBookingRecordsScreen(),
+                          settings: const RouteSettings(name: 'booking-records'),
+                          builder: (context) => DoctorBookingRecordsScreen(),
                         ),
                       );
                     },
@@ -508,7 +486,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                           settings: const RouteSettings(name: 'patients'),
-                          builder: (context) => PatientScreen(),
+                          builder: (context) =>  PatientScreen(),
                         ),
                       );
                     },
@@ -539,7 +517,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                           settings: const RouteSettings(name: 'news'),
-                          builder: (context) => DoctorNewsScreen(),
+                          builder: (context) =>  DoctorNewsScreen(),
                         ),
                       );
                     },
@@ -553,8 +531,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const TermsAndConditionsScreen(),
+                          builder: (context) => const TermsAndConditionsScreen(),
                         ),
                       );
                     },
@@ -568,8 +545,7 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const HelpAndSupportScreen(),
+                          builder: (context) => const HelpAndSupportScreen(),
                         ),
                       );
                     },
