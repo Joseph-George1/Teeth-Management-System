@@ -387,35 +387,28 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             _scaffoldKey.currentState?.openDrawer();
           },
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-
+              Text(
+                'مرحباً, أهلاً بعودتك',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15.sp,
+                  height: 1.0,
+                  letterSpacing: -0.02,
+                  color: Colors.grey,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'مرحباً, أهلاً بعودتك',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15.sp,
-                      height: 1.0,
-                      letterSpacing: -0.02,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    'عبدالحليم رمضان',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17.sp,
-                      height: 1.2,
-                      letterSpacing: -0.02,
-                    ),
-                  ),
-                ],
+              Text(
+                'عبدالحليم رمضان',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17.sp,
+                  height: 1.2,
+                  letterSpacing: -0.02,
+                ),
               ),
             ],
           ),
