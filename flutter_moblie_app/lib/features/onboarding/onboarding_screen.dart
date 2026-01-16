@@ -1,6 +1,4 @@
 import 'package:thotha_mobile_app/features/onboarding/widgets/doctor_image_and_text.dart';
-import 'package:thotha_mobile_app/features/onboarding/widgets/get_started_button.dart';
-import 'package:thotha_mobile_app/features/onboarding/widgets/page_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -76,8 +74,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 center: Alignment(-0.7, -0.7), // Top-left quadrant
                 radius: 1.5,
                 colors: [
-                  ColorsManager.layerBlur1.withOpacity(0.4),
-                  ColorsManager.layerBlur1.withOpacity(0.1),
+                  ColorsManager.layerBlur1.withValues(alpha: 0.4),
+                  ColorsManager.layerBlur1.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
                 stops: const [0.1, 0.5, 0.8],
@@ -93,8 +91,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 center: Alignment(0.7, 0.7), // Bottom-right quadrant
                 radius: 1.5,
                 colors: [
-                  ColorsManager.layerBlur2.withOpacity(0.4),
-                  ColorsManager.layerBlur2.withOpacity(0.1),
+                  ColorsManager.layerBlur2.withValues(alpha: 0.4),
+                  ColorsManager.layerBlur2.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
                 stops: const [0.1, 0.5, 0.8],
@@ -188,3 +186,75 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
+
+class PageIndicator extends StatelessWidget {
+  final int currentPage;
+  final int pageCount;
+
+  const PageIndicator({
+    super.key,
+    required this.currentPage,
+    required this.pageCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        pageCount,
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          width: currentPage == index ? 20.w : 8.w,
+          height: 8.h,
+          decoration: BoxDecoration(
+            color: currentPage == index
+                ? ColorsManager.mainBlue
+                : Colors.grey.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(4.r),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GetStartedButton extends StatelessWidget {
+  final bool isLastPage;
+  final VoidCallback onPressed;
+
+  const GetStartedButton({
+    super.key,
+    required this.isLastPage,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52.h,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ColorsManager.mainBlue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          isLastPage ? 'ابدأ الآن' : 'التالي',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16.sp,
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+

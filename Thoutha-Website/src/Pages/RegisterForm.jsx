@@ -47,7 +47,7 @@ export default function RegisterForm() {
 
           <div className="input-group">
             <input type="email" placeholder="User@gmail.com" value={email} onChange={(e) => {setEmail(e.target.value); error && setError('');}} required  className="input-field-2"/>
-            <input type="tel-2" placeholder="رقم التليفون" value={phone} onChange={(e) => {setPhone(e.target.value); error && setError('');}} required  className="input-field-2"/>
+            <input type="tel" placeholder="رقم التليفون" value={phone} onChange={(e) => {setPhone(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
 
           <div className="input-group">

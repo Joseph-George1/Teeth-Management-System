@@ -33,6 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadSavedCredentials();
   }
 
+
+
   // Load saved credentials if they exist
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
@@ -91,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: passwordController.text,
         );
 
-        if (result['success'] == true) {
+        if (result.success == true) {
           if (mounted) {
             // Navigate to doctor main layout with fade transition and white background
             Navigator.of(context).pushReplacement(
@@ -112,12 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           // Show error message if login fails
           String errorMsg =
-              result['error'] ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
+              result.message ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
 
           // More specific error messages based on status code
-          if (result['statusCode'] == 401) {
+          if (result.statusCode == 401) {
             errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-          } else if (result['statusCode'] == 404) {
+          } else if (result.statusCode == 404) {
             errorMsg =
                 'لا يوجد حساب مسجل بهذا البريد الإلكتروني. الرجاء إنشاء حساب أولاً';
           }
@@ -142,12 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    @override
-    void dispose() {
-      emailController.dispose();
-      passwordController.dispose();
-      super.dispose();
-    }
 
     return Scaffold(
       body: SizedBox(
@@ -164,8 +160,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   center: Alignment(-0.7, -0.7), // Top-left quadrant
                   radius: 1.5,
                   colors: [
-                    ColorsManager.layerBlur1.withOpacity(0.4),
-                    ColorsManager.layerBlur1.withOpacity(0.1),
+                    ColorsManager.layerBlur1.withValues(alpha: 0.4),
+                    ColorsManager.layerBlur1.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.3, 0.8],
@@ -182,8 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   center: Alignment(0.7, 0.7), // Bottom-right quadrant
                   radius: 1.5,
                   colors: [
-                    ColorsManager.layerBlur2.withOpacity(0.4),
-                    ColorsManager.layerBlur2.withOpacity(0.1),
+                    ColorsManager.layerBlur2.withValues(alpha: 0.4),
+                    ColorsManager.layerBlur2.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                   stops: const [0.1, 0.3, 0.8],
@@ -202,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(16.0),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -450,7 +446,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),
