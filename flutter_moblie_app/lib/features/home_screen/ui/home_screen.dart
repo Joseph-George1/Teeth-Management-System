@@ -3,9 +3,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:thotha_mobile_app/core/theming/app_theme.dart';
+import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
+import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
 import 'drawer/browse_services/ui/browse_services_screen.dart';
 
@@ -32,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.pop(context),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(color: Colors.black.withOpacity(0.4)),
+              child: Container(color: Colors.black.withOpacity(0.2)),
             ),
           ),
           DraggableScrollableSheet(
@@ -75,81 +77,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Resolve file and label from inputs or fallbacks
     final fileName =
-        index <= svgFiles.length ? svgFiles[index - 1] : 'placeholder.svg';
+    index <= svgFiles.length ? svgFiles[index - 1] : 'placeholder.svg';
     final resolvedAssetPath =
-        assetPath.isNotEmpty ? assetPath : 'assets/svg/$fileName';
+    assetPath.isNotEmpty ? assetPath : 'assets/svg/$fileName';
     final resolvedCategoryName = categoryName.isNotEmpty
         ? categoryName
         : (index <= categoryNames.length ? categoryNames[index - 1] : '');
 
-    return GestureDetector(
-      onTap: () {
-        if (resolvedCategoryName.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CategoryDoctorsScreen(
-                categoryName: resolvedCategoryName,
-              ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 72.w,
+          height: 72.h,
+          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
             ),
-          );
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72.w,
-            height: 72.h,
-            margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                blurRadius: 2.r,
+                offset: const Offset(0, 0.5),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 2.r,
-                  offset: const Offset(0, 0.5),
-                ),
-              ],
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                resolvedAssetPath,
+            ],
+          ),
+          child: Center(
+            child: SvgPicture.asset(
+              resolvedAssetPath,
+              width: 36.w,
+              height: 36.h,
+              fit: BoxFit.contain,
+              placeholderBuilder: (BuildContext context) => Container(
                 width: 36.w,
                 height: 36.h,
-                fit: BoxFit.contain,
-                placeholderBuilder: (BuildContext context) => Container(
-                  width: 36.w,
-                  height: 36.h,
-                  color: isDark ? Colors.grey[800] : Colors.grey[200],
-                  child: Icon(Icons.image, size: 18.r, color: Colors.grey),
-                ),
+                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                child: Icon(Icons.image, size: 18.r, color: Colors.grey),
               ),
             ),
           ),
-          SizedBox(height: 8.h),
-          SizedBox(
-            width: 72.w,
-            child: Text(
-              resolvedCategoryName,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 10.sp,
-                    height: 1.0,
-                    letterSpacing: 0.1,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: 8.h),
+        SizedBox(
+          width: 72.w,
+          child: Text(
+            resolvedCategoryName,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: 10.sp,
+              height: 1.0,
+              letterSpacing: 0.1,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -212,26 +200,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'د/ كريستيانو رونالدو',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                            letterSpacing: 0,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           'تدريب تقويم أسنان',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                    color: Colors.grey,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                            letterSpacing: 0,
+                            color: Colors.grey,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -248,15 +234,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             SizedBox(width: 4.w),
                             Text(
                               '4.9',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                  ),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.5,
+                                letterSpacing: 0,
+                              ),
                             ),
                             SizedBox(width: 4.w),
                             Text(
@@ -303,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // Right Section (Availability)
             SizedBox(width: 6.w),
-            SizedBox(
+            Container(
               width: 54.w,
               height: 84.h,
               child: Column(
@@ -340,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     alignment: Alignment.centerLeft,
                     child: Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
                         color: isDark
                             ? Colors.green.withOpacity(0.2)
@@ -400,33 +383,39 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
+        title: GestureDetector(
+          onTap: () {
             _scaffoldKey.currentState?.openDrawer();
           },
-        ),
-        centerTitle: true,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
           child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // لوجو ثوثه PNG
-              Image.asset(
-                'assets/images/splash-logo.png',
-                height: 44.h,
-                width: 44.w,
+              Container(
+
               ),
-              SizedBox(width: 4.w),
-              Text(
-                'ثوثه',
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22.sp,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'مرحباً, أهلاً بعودتك',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.sp,
+                      height: 1.0,
+                      letterSpacing: -0.02,
+                      color: Colors.grey,
                     ),
+                  ),
+                  Text(
+                    'عبدالحليم رمضان',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17.sp,
+                      height: 1.2,
+                      letterSpacing: -0.02,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -456,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Padding(
                         padding: EdgeInsets.only(right: 12.0.w, left: 8.0.w),
                         child:
-                            Icon(Icons.search, color: Colors.grey, size: 22.r),
+                        Icon(Icons.search, color: Colors.grey, size: 22.r),
                       ),
                       // Search Text
                       Expanded(
@@ -474,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             border: InputBorder.none,
                             contentPadding:
-                                EdgeInsets.symmetric(vertical: 14.h),
+                            EdgeInsets.symmetric(vertical: 14.h),
                           ),
                         ),
                       ),
@@ -496,8 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   width: double.infinity,
                   height: 136.h,
-                  margin:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.r),
                     gradient: const LinearGradient(
@@ -579,8 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   width: double.infinity,
                   height: 32.h,
-                  margin:
-                      EdgeInsets.symmetric(horizontal: 13.w, vertical: 12.h),
+                  margin: EdgeInsets.symmetric(horizontal: 13.w, vertical: 12.h),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -596,23 +583,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: GestureDetector(
                           onTap: () {
                             Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BrowseServicesScreen(),
-                              ),
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>  BrowseServicesScreen(),
+                                ),
                             );
                           },
                           child: Text(
                             'المزيد',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14.sp,
-                                  height: 1.0,
-                                  letterSpacing: -0.02,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
+                              height: 1.0,
+                              letterSpacing: -0.02,
+                            ),
                             textAlign: TextAlign.right,
                           ),
                         ),
@@ -620,11 +604,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         'الخدمات المتوفرة',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17.sp,
-                              height: 1.2,
-                              letterSpacing: -0.02,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17.sp,
+                          height: 1.2,
+                          letterSpacing: -0.02,
+                        ),
                       ),
                     ],
                   ),
@@ -640,9 +624,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildCircularIcon(
                           'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
                       _buildCircularIcon(
-                          'assets/svg/حشو اسنان.svg', 2, 'حشو العصب'),
+                          'assets/svg/حشو اسنان.svg', 2, 'حشو أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/زراعه اسنان.svg', 3, 'زراعه الأسنان'),
+                          'assets/svg/زراعه اسنان.svg', 3, 'زراعة أسنان'),
                       _buildCircularIcon(
                           'assets/svg/خلع اسنان.svg', 4, 'خلع أسنان'),
                       _buildCircularIcon(
@@ -650,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildCircularIcon(
                           'assets/svg/تقويم اسنان.svg', 6, 'تقويم أسنان'),
                       _buildCircularIcon(
-                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات الأسنان'),
+                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات أسنان'),
                     ],
                   ),
                 ),
@@ -665,153 +649,131 @@ class _HomeScreenState extends State<HomeScreen> {
                       // First container - المدن
                       Expanded(
                           child: Container(
-                        height: 44.h,
-                        padding: const EdgeInsets.only(
-                          top: 0,
-                          right: 0,
-                          bottom: 1.1,
-                          left: 0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.grey[700]!
-                                : const Color(0xFFD1D5DC),
-                            width: 1.1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.3),
-                              blurRadius: 4.r,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: 35.w),
-                              child: Center(
-                                child: Text(
-                                  'المدن',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w700,
-                                        height: 2.33,
-                                        letterSpacing: 0.1,
-                                      ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 8.w,
-                              top: 0,
-                              bottom: 0,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 22.r,
-                                    color: Theme.of(context).iconTheme.color,
-                                  ),
-                                  Container(
-                                    height: 44.h,
-                                    width: 1.w,
-                                    margin:
-                                        EdgeInsets.symmetric(horizontal: 4.w),
-                                    color: isDark
-                                        ? Colors.grey[700]
-                                        : const Color(0xFFD1D5DC),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                      SizedBox(width: 16.w),
-                      // Second container - المناطق
-                      Expanded(
-                          child: Container(
                             height: 44.h,
                             padding: const EdgeInsets.only(
                               top: 0,
                               right: 0,
                               bottom: 1.1,
                               left: 0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.grey[700]!
-                                : const Color(0xFFD1D5DC),
-                            width: 1.1,
-                          ),
-
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.3),
-                              blurRadius: 4.r,
-                              offset: const Offset(0, 1),
                             ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: 35.w),
-                              child: Center(
-                                child: Text(
-                                  'المناطق',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: isDark ? Colors.grey[700]! : const Color(0xFFD1D5DC),
+                                width: 1.1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 4.r,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 35.w),
+                                  child: Center(
+                                    child: Text(
+                                      'المدن',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.w700,
                                         height: 2.33,
                                         letterSpacing: 0.1,
                                       ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 8.w,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 22.r,
-                                    color: Theme.of(context).iconTheme.color,
-                                  ),
-                                  Container(
-                                    height: 44.h,
-                                    width: 1.w,
-                                    margin:
+                                Positioned(
+                                  left: 8.w,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        size: 22.r,
+                                        color: Theme.of(context).iconTheme.color,
+                                      ),
+                                      Container(
+                                        height: 44.h,
+                                        width: 1.w,
+                                        margin:
                                         EdgeInsets.symmetric(horizontal: 4.w),
-                                    color: isDark
-                                        ? Colors.grey[700]
-                                        : const Color(0xFFD1D5DC),
+                                        color: isDark ? Colors.grey[700] : const Color(0xFFD1D5DC),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      )),
+                          )),
+                      SizedBox(width: 16.w),
+                      // Second container - المناطق
+                      Expanded(
+                          child: Container(
+                            height: 47.81.h,
+                            padding: const EdgeInsets.only(
+                              top: 0,
+                              right: 0,
+                              bottom: 1.1,
+                              left: 0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: isDark ? Colors.grey[700]! : const Color(0xFFD1D5DC),
+                                width: 1.1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 4.r,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 35.w),
+                                  child: Center(
+                                    child: Text(
+                                      'المناطق',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w700,
+                                        height: 2.33,
+                                        letterSpacing: 0.1,),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 8.w,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        size: 22.r,
+                                        color: Theme.of(context).iconTheme.color,
+                                      ),
+                                      Container(
+                                        height: 44.h,
+                                        width: 1.w,
+                                        margin:
+                                        EdgeInsets.symmetric(horizontal: 4.w),
+                                        color: isDark ? Colors.grey[700] : const Color(0xFFD1D5DC),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
                     ],
                   ),
                 ),
@@ -820,19 +782,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Doctors Section Header
                 Container(
                   height: 28.h,
-                  margin:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         'الاطباء الاقرب لك',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17.sp,
-                              height: 1.2,
-                              letterSpacing: -0.02,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17.sp,
+                          height: 1.2,
+                          letterSpacing: -0.02,
+                        ),
                       ),
                     ],
                   ),
@@ -848,3 +809,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+

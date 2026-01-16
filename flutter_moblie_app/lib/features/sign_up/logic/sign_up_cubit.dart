@@ -7,7 +7,7 @@ part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'http://13.53.131.167:5000';
+  static const String _baseUrl = 'http://13.49.221.187:5000';
 
   SignUpCubit() : super(SignUpInitial());
 
@@ -29,6 +29,12 @@ class SignUpCubit extends Cubit<SignUpState> {
         emit(SignUpError('البريد الإلكتروني وكلمة المرور مطلوبان'));
         return;
       }
+
+      /* if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(email)) {
+        emit(SignUpError('الرجاء إدخال بريد إلكتروني صالح'));
+        return;
+      }*/
+
       if (password.length < 6) {
         emit(SignUpError('يجب أن تكون كلمة المرور 6 أحرف على الأقل'));
         return;

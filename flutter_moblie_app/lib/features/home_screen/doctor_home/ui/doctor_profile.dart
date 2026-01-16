@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 
 class DoctorProfile extends StatefulWidget {
   const DoctorProfile({Key? key}) : super(key: key);
@@ -12,6 +16,7 @@ class DoctorProfile extends StatefulWidget {
 }
 
 class _DoctorProfileState extends State<DoctorProfile> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _loading = false;
   String? _error;
 
@@ -22,6 +27,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   String? _faculty;
   String? _year;
   String? _governorate;
+  String? _profileImage;
 
   @override
   void initState() {
@@ -35,6 +41,12 @@ class _DoctorProfileState extends State<DoctorProfile> {
       final cachedFirst = await SharedPrefHelper.getString('first_name');
       final cachedLast = await SharedPrefHelper.getString('last_name');
       final cachedEmail = await SharedPrefHelper.getString('email');
+      final cachedPhone = await SharedPrefHelper.getString('phone');
+      final cachedFaculty = await SharedPrefHelper.getString('faculty');
+      final cachedYear = await SharedPrefHelper.getString('year');
+      final cachedGovernorate = await SharedPrefHelper.getString('governorate');
+      final cachedImage = await SharedPrefHelper.getString('profile_image');
+
       if (mounted) {
         setState(() {
           _firstName =
@@ -42,6 +54,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _lastName =
               (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
           _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
+          if (cachedPhone?.isNotEmpty ?? false) {
+            if (!cachedPhone!.contains('@')) {
+              _phone = cachedPhone;
+            }
+          }
+          _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
+          _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
+          _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
+          _profileImage = (cachedImage?.isNotEmpty ?? false) ? cachedImage : _profileImage;
+
+          // Fallback if name is missing but email exists
+          if ((_firstName == null || _firstName!.isEmpty) &&
+              (_email != null && _email!.isNotEmpty)) {
+            _firstName = _email!.split('@').first;
+          }
         });
       }
       await _fetchProfile();
@@ -53,6 +80,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
   Future<void> _fetchProfile() async {
     setState(() {
       _error = null;
+      _loading = true;
     });
     try {
       final dio = DioFactory.getDio();
@@ -76,6 +104,18 @@ class _DoctorProfileState extends State<DoctorProfile> {
         }
       }
 
+      // Fallback: Try POST /update_profile with empty body if GET endpoints failed
+      if (response == null) {
+        try {
+          final res = await dio.post('/update_profile', data: {});
+          if (res.statusCode == 200) {
+            response = res;
+          }
+        } catch (_) {
+          // Ignore errors from fallback attempt
+        }
+      }
+
       if (response != null && response.statusCode == 200) {
         final data = response.data;
         Map<String, dynamic>? userMap;
@@ -85,29 +125,118 @@ class _DoctorProfileState extends State<DoctorProfile> {
             userMap = Map<String, dynamic>.from(userMap['user']);
           }
         }
+        
+        // Debug log the complete response
+        print('API Response: $data');
+        print('User Map: $userMap');
+
+        // Print all keys in the response for debugging
+        if (data is Map) {
+          print('Top-level response keys: ${data.keys.toList()}');
+          // Print all key-value pairs for top level
+          data.forEach((key, value) {
+            print('$key: $value (${value.runtimeType})');
+          });
+          
+          if (data['user'] is Map) {
+            final userData = data['user'] as Map;
+            print('User object keys: ${userData.keys.toList()}');
+            // Print all key-value pairs for user object
+            userData.forEach((key, value) {
+              print('user.$key: $value (${value.runtimeType})');
+            });
+          }
+        }
 
         String? getVal(String a, String b) {
           if (userMap == null) return null;
-          return (userMap![a] ?? userMap![b])?.toString();
+          return (userMap[a] ?? userMap[b])?.toString();
         }
 
         final firstName = getVal('first_name', 'firstName');
         final lastName = getVal('last_name', 'lastName');
         final email = userMap?['email']?.toString();
-        final phone = userMap?['phone']?.toString();
+        // Try multiple keys for phone
+        // Try to get phone from multiple possible locations
+        String? phone;
+        
+        // Debug: Print all keys that might contain phone info
+        print('Searching for phone number in response...');
+        
+        // Try direct access first
+        phone = userMap?['phone']?.toString();
+        print('After checking userMap[\'phone\']: $phone');
+        
+        // Try common alternative keys
+        final possiblePhoneKeys = ['tel', 'telephone', 'phone_number', 'mobile', 'phoneNumber', 'phone'];
+
+        for (var key in possiblePhoneKeys) {
+          if ((phone == null || phone.isEmpty) && userMap?[key] != null) {
+            phone = userMap?[key]?.toString();
+            print('Found phone in userMap[\'$key\']: $phone');
+          }
+        }
+        
+        // If still not found, try to get from the root of the response
+        if ((phone == null || phone.isEmpty) && data is Map) {
+          for (var key in possiblePhoneKeys) {
+            if (data[key] != null) {
+              phone = data[key]?.toString();
+              print('Found phone in root[\'$key\']: $phone');
+              if (phone != null && phone.isNotEmpty) break;
+            }
+          }
+        }
+
+        // Try to find any key that might contain phone number
+        if ((phone == null || phone.isEmpty) && userMap != null) {
+          final phoneKeys = userMap.keys.where((key) => 
+            key.toString().toLowerCase().contains('phone') || 
+            key.toString().toLowerCase().contains('tel')
+          ).toList();
+          
+          for (final key in phoneKeys) {
+            final value = userMap[key]?.toString();
+            if (value != null && value.isNotEmpty && !value.contains('@')) {
+              phone = value;
+              break;
+            }
+          }
+        }
+
+        // Ensure phone is not an email
+        if (phone != null && phone.contains('@')) {
+          phone = null;
+        }
+
+
+
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
-        final governorate = userMap?['governorate']?.toString();
+        final governorate = (userMap?['governorate'] ?? userMap?['governorate_id'])?.toString();
+        final profileImage = userMap?['profile_image']?.toString();
+
+        // Debug log the extracted values
+        print('Extracted phone: $phone');
+        print('All userMap keys: ${userMap?.keys.toList()}');
 
         if (mounted) {
           setState(() {
-            _firstName = firstName ?? _firstName;
-            _lastName = lastName ?? _lastName;
-            _email = email ?? _email;
-            _phone = phone ?? _phone;
-            _faculty = faculty ?? _faculty;
-            _year = year ?? _year;
-            _governorate = governorate ?? _governorate;
+            // Update state with fetched data, falling back to existing state if null
+            if (firstName != null && firstName.isNotEmpty) _firstName = firstName;
+            if (lastName != null && lastName.isNotEmpty) _lastName = lastName;
+            if (email != null && email.isNotEmpty) _email = email;
+            if (phone != null && phone.isNotEmpty) _phone = phone;
+            if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
+            if (year != null && year.isNotEmpty) _year = year;
+            if (governorate != null && governorate.isNotEmpty) _governorate = governorate;
+            if (profileImage != null && profileImage.isNotEmpty) _profileImage = profileImage;
+
+            // Fallback if name is missing but email exists
+            if ((_firstName == null || _firstName!.isEmpty) &&
+                (_email != null && _email!.isNotEmpty)) {
+              _firstName = _email!.split('@').first;
+            }
           });
         }
 
@@ -116,6 +245,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
           await SharedPrefHelper.setData('last_name', lastName ?? '');
           if ((email?.isNotEmpty ?? false)) {
             await SharedPrefHelper.setData('email', email);
+          }
+          if (phone != null) await SharedPrefHelper.setData('phone', phone);
+          if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
+          if (year != null) await SharedPrefHelper.setData('year', year);
+          if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
+          if (profileImage != null) {
+            await SharedPrefHelper.setData('profile_image', profileImage);
+            DoctorDrawer.profileImageNotifier.value = profileImage;
           }
         }
       } else {
@@ -128,6 +265,55 @@ class _DoctorProfileState extends State<DoctorProfile> {
       setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
     } catch (_) {
       setState(() => _error = 'حدث خطأ غير متوقع');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final bytes = await File(image.path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() {
+          _profileImage = base64Image;
+        });
+
+        await _uploadImage(base64Image);
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء اختيار الصورة')),
+      );
+    }
+  }
+
+  Future<void> _uploadImage(String base64Image) async {
+    try {
+      final dio = DioFactory.getDio();
+      final response = await dio.post(
+        '/update_profile',
+        data: {'profile_image': base64Image},
+      );
+
+      if (response.statusCode == 200) {
+        await SharedPrefHelper.setData('profile_image', base64Image);
+        DoctorDrawer.profileImageNotifier.value = base64Image;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تحديث الصورة الشخصية بنجاح')),
+        );
+      } else {
+        throw Exception('Failed to upload image');
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء تحديث الصورة')),
+      );
     }
   }
 
@@ -138,10 +324,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const DoctorDrawer(),
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
+        toolbarHeight: 75.6,
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, size: 24.w),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -204,8 +401,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             offset: const Offset(0, 1),
             blurRadius: 3,
           ),
@@ -214,12 +411,41 @@ class _DoctorProfileState extends State<DoctorProfile> {
       padding: EdgeInsets.all(16.r),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28.r,
-            backgroundColor: theme.brightness == Brightness.dark
-                ? Colors.grey[800]
-                : Colors.grey[200],
-            child: Icon(Icons.person_outline, color: theme.iconTheme.color),
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 28.r,
+                backgroundColor: theme.brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[200],
+                backgroundImage: _profileImage != null
+                    ? MemoryImage(base64Decode(_profileImage!))
+                    : null,
+                child: _profileImage == null
+                    ? Icon(Icons.person_outline, color: theme.iconTheme.color)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: InkWell(
+                  onTap: _pickImage,
+                  child: Container(
+                    padding: EdgeInsets.all(4.r),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: theme.cardTheme.color ?? Colors.white, width: 1.5),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 12.sp,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -242,7 +468,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     : Text(
                         _email ?? '-',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.7),
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.right,
                         maxLines: 1,
@@ -265,11 +491,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
       _InfoItem(
           icon: Icons.perm_identity, label: 'اسم العائلة', value: _lastName),
       _InfoItem(
-          icon: Icons.email_outlined,
-          label: 'البريد الإلكتروني',
-          value: _email),
-      _InfoItem(icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
-      _InfoItem(icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
+          icon: Icons.email_outlined, label: 'البريد الإلكتروني', value: _email),
+      _InfoItem(
+          icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
+      _InfoItem(
+          icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
       _InfoItem(
           icon: Icons.event_note_outlined,
           label: 'السنة الدراسية',
@@ -289,8 +515,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             offset: const Offset(0, 1),
             blurRadius: 3,
           ),
@@ -317,39 +543,51 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
       ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
-      child: Row(
-        children: [
-          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  item.label,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12.sp,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-                SizedBox(height: 2.h),
-                _loading
-                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
-                    : Text(
-                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14.sp,
-                        ),
-                        textAlign: TextAlign.right,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // Open the drawer when any menu item is tapped
+          if (context.mounted) {
+            context.findAncestorStateOfType<ScaffoldState>()?.openDrawer();
+          }
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+          child: Row(
+            children: [
+              Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      item.label,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 12.sp,
                       ),
-              ],
-            ),
+                      textAlign: TextAlign.right,
+                    ),
+                    SizedBox(height: 2.h),
+                    _loading
+                        ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                        : Text(
+                            (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.sp,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -361,7 +599,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: colorScheme.error.withOpacity(0.3)),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
