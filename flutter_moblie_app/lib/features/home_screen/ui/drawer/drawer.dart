@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/browse_services/ui/browse_services_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/home_settings_screen.dart' show HomeSettingsScreen;
 
@@ -121,6 +122,20 @@ class HomeDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+
+                _menuItem(
+                  context,
+                  title: 'الصفحة الرئيسية',
+                  icon: Icons.home_outlined,
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      Routes.categoriesScreen,
+                      (route) => false,
+                    );
+                  },
+                ),
                 _menuItem(
                   context,
                   title: 'تصفح الخدمات',

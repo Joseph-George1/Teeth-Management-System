@@ -3,9 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:thotha_mobile_app/core/theming/app_theme.dart';
-import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/doctor_info/ui/doctor_info_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/drawer.dart';
 import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
 
@@ -34,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.pop(context),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(color: Colors.black.withOpacity(0.2)),
+              child: Container(color: Colors.black.withValues(alpha: 0.2)),
             ),
           ),
           DraggableScrollableSheet(
@@ -67,10 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // List of category names in the same order as svgFiles
     final categoryNames = [
       'فحص شامل',
-      'حشو العصب',
-      'زراعه الأسنان',
-      ' خلع الأسنان',
-      'تبيض الأسنان',
+      'حشو أسنان',
+      'زراعة أسنان',
+      'خلع الأسنان',
+      'تبييض الأسنان',
       'تقويم الأسنان',
       'تركيبات الأسنان',
     ];
@@ -84,60 +83,72 @@ class _HomeScreenState extends State<HomeScreen> {
         ? categoryName
         : (index <= categoryNames.length ? categoryNames[index - 1] : '');
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 72.w,
-          height: 72.h,
-          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryDoctorsScreen(
+              categoryName: resolvedCategoryName,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                blurRadius: 2.r,
-                offset: const Offset(0, 0.5),
-              ),
-            ],
           ),
-          child: Center(
-            child: SvgPicture.asset(
-              resolvedAssetPath,
-              width: 36.w,
-              height: 36.h,
-              fit: BoxFit.contain,
-              placeholderBuilder: (BuildContext context) => Container(
+        );
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72.w,
+            height: 72.h,
+            margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 2.r,
+                  offset: const Offset(0, 0.5),
+                ),
+              ],
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                resolvedAssetPath,
                 width: 36.w,
                 height: 36.h,
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
-                child: Icon(Icons.image, size: 18.r, color: Colors.grey),
+                fit: BoxFit.contain,
+                placeholderBuilder: (BuildContext context) => Container(
+                  width: 36.w,
+                  height: 36.h,
+                  color: isDark ? Colors.grey[800] : Colors.grey[200],
+                  child: Icon(Icons.image, size: 18.r, color: Colors.grey),
+                ),
               ),
             ),
           ),
-        ),
-        SizedBox(height: 8.h),
-        SizedBox(
-          width: 72.w,
-          child: Text(
-            resolvedCategoryName,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w400,
-              fontSize: 10.sp,
-              height: 1.0,
-              letterSpacing: 0.1,
+          SizedBox(height: 8.h),
+          SizedBox(
+            width: 72.w,
+            child: Text(
+              resolvedCategoryName,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 10.sp,
+                height: 1.0,
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -162,8 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
           boxShadow: [
             BoxShadow(
               color: isDark
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.1),
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 4.r,
               offset: const Offset(0, 2),
@@ -326,12 +337,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.green.withOpacity(0.2)
+                            ? Colors.green.withValues(alpha: 0.2)
                             : const Color(0xFFE8F5E9),
                         borderRadius: BorderRadius.circular(4.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(0.2),
+                            color: Colors.green.withValues(alpha: 0.2),
                             blurRadius: 4.r,
                             offset: const Offset(0, 2),
                           ),
@@ -383,43 +394,35 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: GestureDetector(
-          onTap: () {
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.menu,
+            size: 24.w,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          onPressed: () {
             _scaffoldKey.currentState?.openDrawer();
           },
-          child: Row(
-            children: [
-              Container(
-
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'مرحباً, أهلاً بعودتك',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15.sp,
-                      height: 1.0,
-                      letterSpacing: -0.02,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    'عبدالحليم رمضان',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17.sp,
-                      height: 1.2,
-                      letterSpacing: -0.02,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+            },
+            icon: Icon(
+              Icons.notifications_none_outlined,
+              size: 28.sp,
+              color: Theme.of(context).iconTheme.color,
+            ),
+          ),
+        ],
       ),
       drawer: const HomeDrawer(),
       body: SafeArea(
@@ -435,8 +438,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   margin: EdgeInsets.only(top: 10.h, left: 16.w, right: 16.w),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.grey[800]?.withOpacity(0.5)
-                        : const Color(0xFFD9D9D9).withOpacity(0.3),
+                        ? Colors.grey[800]?.withValues(alpha: 0.5)
+                        : const Color(0xFFD9D9D9).withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Row(
@@ -665,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                                   blurRadius: 4.r,
                                   offset: const Offset(0, 1),
                                 ),
@@ -731,7 +734,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                                   blurRadius: 4.r,
                                   offset: const Offset(0, 1),
                                 ),

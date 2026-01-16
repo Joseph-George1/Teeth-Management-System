@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: passwordController.text,
         );
 
-        if (result.success == true) {
+        if (result['success'] == true) {
           if (mounted) {
             // Navigate to doctor main layout with fade transition and white background
             Navigator.of(context).pushReplacement(
@@ -114,12 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           // Show error message if login fails
           String errorMsg =
-              result.message ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
+              result['error'] ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
 
           // More specific error messages based on status code
-          if (result.statusCode == 401) {
+          if (result['statusCode'] == 401) {
             errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-          } else if (result.statusCode == 404) {
+          } else if (result['statusCode'] == 404) {
             errorMsg =
                 'لا يوجد حساب مسجل بهذا البريد الإلكتروني. الرجاء إنشاء حساب أولاً';
           }

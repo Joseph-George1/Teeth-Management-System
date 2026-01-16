@@ -28,7 +28,7 @@ class CategoryDoctorsScreen extends StatelessWidget {
         'image': 'assets/images/دكتوره.png',
       },
     ],
-    'حشو العصب': [
+    'حشو أسنان': [
       {
         'name': 'د/ محمد سامي',
         'title': 'أخصائي علاج الجذور',
@@ -38,13 +38,13 @@ class CategoryDoctorsScreen extends StatelessWidget {
       },
       {
         'name': 'د/ سارة عبد الله',
-        'title': 'أخصائية حشو العصب',
+        'title': 'أخصائية حشو الأسنان',
         'distance': '4.5 كم',
         'rating': '4.6',
         'image': 'assets/images/دكتوره.png',
       },
     ],
-    'زراعه الأسنان': [
+    'زراعة الأسنان': [
       {
         'name': 'د/ كريم حسن',
         'title': 'استشاري زراعة الأسنان',
