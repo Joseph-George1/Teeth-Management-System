@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../../core/helpers/spacing.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theming/colors.dart';
@@ -111,231 +112,188 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Stack(children: [
-      // Top-left gradient overlay
-      Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(-0.7, -0.7),
-            radius: 1.5,
-            colors: [
-              ColorsManager.layerBlur1.withOpacity(0.4),
-              ColorsManager.layerBlur1.withOpacity(0.1),
-              Colors.transparent,
-            ],
-            stops: const [0.0, 0.3, 0.8],
-          ),
-        ),
-      ),
-      // Bottom-right gradient overlay
-      Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            radius: 1.5,
-            colors: [
-              ColorsManager.layerBlur2.withOpacity(0.4),
-              ColorsManager.layerBlur2.withOpacity(0.1),
-              Colors.transparent,
-            ],
-            stops: const [0.0, 0.3, 0.8],
-          ),
-        ),
-      ),
-      Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(24.0.w),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(24.0.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
+      body: Stack(
+        children: [
+          // Top-left gradient overlay
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(-0.7, -0.7),
+                radius: 1.5,
+                colors: [
+                  ColorsManager.layerBlur1.withOpacity(0.4),
+                  ColorsManager.layerBlur1.withOpacity(0.1),
+                  Colors.transparent,
                 ],
-              ),
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          'assets/images/splash-logo.png',
-                          width: 80.w,
-                          height: 80.h,
-                        ),
-                      ),
-                      verticalSpace(16),
-                      Center(
-                        child: Text(
-                          'إعادة تعيين كلمة المرور',
-                          style: TextStyles.font24BlueBold,
-                        ),
-                      ),
-                      verticalSpace(8),
-                      Center(
-                        child: Text(
-                          'قم بإنشاء كلمة مرور جديدة لحسابك',
-                          style: TextStyles.font14GrayRegular,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      verticalSpace(24),
-
-                      // New Password Field
-                      Text(
-                        'كلمة المرور الجديدة',
-                        style: TextStyles.font14DarkBlueMedium,
-                      ),
-                      verticalSpace(8),
-                      TextFormField(
-                        controller: _newPasswordController,
-                        obscureText: _obscureNewPassword,
-                        decoration: InputDecoration(
-                          hintText: 'أدخل كلمة المرور الجديدة',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureNewPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureNewPassword = !_obscureNewPassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء إدخال كلمة المرور الجديدة';
-                          }
-                          if (value.length < 6) {
-                            return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
-                          }
-                          return null;
-                        },
-                      ),
-                      verticalSpace(16),
-
-                      // Confirm Password Field
-                      Text(
-                        'تأكيد كلمة المرور',
-                        style: TextStyles.font14DarkBlueMedium,
-                      ),
-                      verticalSpace(8),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirmPassword,
-                        decoration: InputDecoration(
-                          hintText: 'أعد إدخال كلمة المرور الجديدة',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'الرجاء تأكيد كلمة المرور';
-                          }
-                          if (value != _newPasswordController.text) {
-                            return 'كلمة المرور غير متطابقة';
-                          }
-                          return null;
-                        },
-                      ),
-                      verticalSpace(32),
-
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: AppTextButton(
-                          buttonText: 'تغيير كلمة المرور',
-                          textStyle: TextStyles.font16WhiteSemiBold,
-                          onPressed: _submit,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                stops: const [0.0, 0.3, 0.8],
               ),
             ),
           ),
-        ),
-      ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    Routes.categoriesScreen,
-                        (route) => true,
-                  );
-                },
+          // Bottom-right gradient overlay
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.5,
+                colors: [
+                  ColorsManager.layerBlur2.withOpacity(0.4),
+                  ColorsManager.layerBlur2.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.3, 0.8],
+              ),
+            ),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(24.0.w),
                 child: Container(
                   width: double.infinity,
-                  height: 48.h,
+                  padding: EdgeInsets.all(24.0.w),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        ColorsManager.layerBlur1,
-                        ColorsManager.layerBlur2,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.0),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Text(
-                      'الرجوع للصفحة الرئيسية',
-                      style: TextStyles.font14GrayRegular.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                  child: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Image.asset(
+                              'assets/images/splash-logo.png',
+                              width: 80.w,
+                              height: 80.h,
+                            ),
+                          ),
+                          verticalSpace(16),
+                          Center(
+                            child: Text(
+                              'إعادة تعيين كلمة المرور',
+                              style: TextStyles.font24BlueBold,
+                            ),
+                          ),
+                          verticalSpace(8),
+                          Center(
+                            child: Text(
+                              'قم بإنشاء كلمة مرور جديدة لحسابك',
+                              style: TextStyles.font14GrayRegular,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          verticalSpace(24),
+                          
+                          // New Password Field
+                          Text(
+                            'كلمة المرور الجديدة',
+                            style: TextStyles.font14DarkBlueMedium,
+                          ),
+                          verticalSpace(8),
+                          TextFormField(
+                            controller: _newPasswordController,
+                            obscureText: _obscureNewPassword,
+                            decoration: InputDecoration(
+                              hintText: 'أدخل كلمة المرور الجديدة',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureNewPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureNewPassword = !_obscureNewPassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'الرجاء إدخال كلمة المرور الجديدة';
+                              }
+                              if (value.length < 6) {
+                                return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+                              }
+                              return null;
+                            },
+                          ),
+                          verticalSpace(16),
+                          
+                          // Confirm Password Field
+                          Text(
+                            'تأكيد كلمة المرور',
+                            style: TextStyles.font14DarkBlueMedium,
+                          ),
+                          verticalSpace(8),
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
+                            decoration: InputDecoration(
+                              hintText: 'أعد إدخال كلمة المرور الجديدة',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'الرجاء تأكيد كلمة المرور';
+                              }
+                              if (value != _newPasswordController.text) {
+                                return 'كلمة المرور غير متطابقة';
+                              }
+                              return null;
+                            },
+                          ),
+                          verticalSpace(32),
+                          
+                          // Submit Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: AppTextButton(
+                              buttonText: 'تغيير كلمة المرور',
+                              textStyle: TextStyles.font16WhiteSemiBold,
+                              onPressed: _submit,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-    ]));
+
+      ),
+    ]
+      ));
   }
 }

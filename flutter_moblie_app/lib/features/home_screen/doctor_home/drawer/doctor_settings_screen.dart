@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
-import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/core/theming/theme_provider.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
-
-import '../../../help_and_support/ui/help_and_support_screen.dart';
-import '../ui/doctor_profile.dart';
 
 class DoctorSettingsScreen extends StatefulWidget {
   const DoctorSettingsScreen({super.key});
@@ -214,13 +211,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                       icon: Icons.person_outline,
                       title: 'الملف الشخصي',
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const DoctorProfile(),
-                          ),
-                        );
+                        // Navigate to profile
                       },
                     ),
                     _buildSettingsItem(
@@ -229,9 +220,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                       title: 'تغيير كلمة المرور',
                       onTap: () {
                         Navigator.pushNamed(
-                          context,
-                          Routes.resetPasswordScreen,
-                        );
+                            context, Routes.resetPasswordScreen);
                       },
                     ),
                   ],
@@ -299,13 +288,7 @@ class _DoctorSettingsScreenState extends State<DoctorSettingsScreen> {
                       icon: Icons.help_outline,
                       title: 'المساعدة والدعم',
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                            const HelpAndSupportScreen(),
-                          ),
-                        );
+                        // Navigate to help
                       },
                     ),
                     _buildSettingsItem(

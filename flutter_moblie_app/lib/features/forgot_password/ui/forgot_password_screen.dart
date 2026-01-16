@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:thotha_mobile_app/features/booking/ui/otp_verification_dialog.dart';
 
 import '../../../core/helpers/spacing.dart';
 import '../../../core/theming/colors.dart';
@@ -37,24 +36,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       
       if (response['success'] == true) {
         if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => OtpVerificationDialog(
-              contactInfo: _emailController.text.trim(),
-              isEmail: true,
-              onVerified: (code) {
-                // Navigate to Reset Password Screen with email and code
-                 Navigator.pushNamed(
-                  context,
-                  Routes.resetPasswordScreen,
-                  arguments: {
-                    'email': _emailController.text.trim(),
-                    'code': code,
-                  },
-                );
-              },
-            ),
+          Navigator.pushNamed(
+            context,
+            Routes.otpVerificationScreen,
+            arguments: {
+              'email': _emailController.text.trim(),
+            },
           );
         }
       } else {
@@ -86,29 +73,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Top-left gradient overlay
           Container(
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 center: const Alignment(-0.7, -0.7),
                 radius: 1.5,
                 colors: [
-                  ColorsManager.layerBlur1.withValues(alpha: 0.5),
-                  ColorsManager.layerBlur1.withValues(alpha: 0.1),
+                  ColorsManager.layerBlur1.withOpacity(0.4),
+                  ColorsManager.layerBlur1.withOpacity(0.1),
                   Colors.transparent,
                 ],
+                stops: const [0.0, 0.3, 0.8],
               ),
             ),
           ),
+          // Bottom-right gradient overlay
           Container(
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                center: const Alignment(0.7, 0.7),
                 radius: 1.5,
                 colors: [
-                  ColorsManager.layerBlur2.withValues(alpha: 0.4),
-                  ColorsManager.layerBlur2.withValues(alpha: 0.1),
+                  ColorsManager.layerBlur2.withOpacity(0.4),
+                  ColorsManager.layerBlur2.withOpacity(0.1),
                   Colors.transparent,
                 ],
+                stops: const [0.0, 0.3, 0.8],
               ),
             ),
           ),
@@ -124,7 +118,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     borderRadius: BorderRadius.circular(16.0),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),

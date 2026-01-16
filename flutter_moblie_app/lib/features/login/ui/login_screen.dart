@@ -69,8 +69,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     // Handle login form submission
     Future<void> _login() async {
-      if (!_formKey.currentState!.validate()) return;
+      if (!_formKey.currentState!.validate()) {
+        return; // Stop if form validation fails
+      }
 
+      // Save credentials if remember me is checked
       if (rememberMe) {
         await _handleRememberMe(true);
       }
@@ -81,47 +84,63 @@ class _LoginScreenState extends State<LoginScreen> {
         passwordError = null;
       });
 
-      final AuthResult result = await AuthService().login(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-
-      if (result.success) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const DoctorHomeScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 300),
-          ),
+      try {
+        // Call the login API
+        final result = await AuthService().login(
+          email: emailController.text.trim(),
+          password: passwordController.text,
         );
-      } else {
-        String errorMsg =
-            result.message ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى';
 
-        if (result.statusCode == 401) {
-          errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-        } else if (result.statusCode == 404) {
-          errorMsg =
-          'لا يوجد حساب مسجل بهذا البريد الإلكتروني. الرجاء إنشاء حساب أولاً';
+        if (result['success'] == true) {
+          if (mounted) {
+            // Navigate to doctor main layout with fade transition and white background
+            Navigator.of(context).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const DoctorHomeScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 300),
+              ),
+            );
+          }
+        } else {
+          // Show error message if login fails
+          String errorMsg =
+              result['error'] ?? 'فشل تسجيل الدخول. الرجاء المحاولة مرة أخرى.';
+
+          // More specific error messages based on status code
+          if (result['statusCode'] == 401) {
+            errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+          } else if (result['statusCode'] == 404) {
+            errorMsg =
+                'لا يوجد حساب مسجل بهذا البريد الإلكتروني. الرجاء إنشاء حساب أولاً';
+          }
+
+          setState(() {
+            errorMessage = errorMsg;
+          });
         }
-
-        setState(() {
-          errorMessage = errorMsg;
-        });
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            errorMessage = 'Login failed. Please try again.';
+            // You can add more specific error handling here
+          });
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
       }
     }
-
 
     @override
     void dispose() {

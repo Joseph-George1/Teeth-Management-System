@@ -3,7 +3,7 @@ import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
 class ForgotPasswordService {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'http://13.53.131.167:5000';
+  static const String _baseUrl = 'http://13.49.221.187:5000';
 
   // Send OTP to email for password reset
   Future<Map<String, dynamic>> sendOtp(String email) async {
