@@ -1,27 +1,20 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 
 class DoctorProfile extends StatefulWidget {
-  const DoctorProfile({super.key});
+  const DoctorProfile({Key? key}) : super(key: key);
 
   @override
   State<DoctorProfile> createState() => _DoctorProfileState();
 }
 
 class _DoctorProfileState extends State<DoctorProfile> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  bool _isLoading = false;
+  bool _loading = false;
   String? _error;
 
-  // Profile Data
   String? _firstName;
   String? _lastName;
   String? _email;
@@ -29,281 +22,167 @@ class _DoctorProfileState extends State<DoctorProfile> {
   String? _faculty;
   String? _year;
   String? _governorate;
-  String? _profileImage;
 
   @override
   void initState() {
     super.initState();
-    _loadProfileData();
+    _bootstrap();
   }
 
-  /// Loads data from Cache first, then API (Stale-While-Revalidate)
-  Future<void> _loadProfileData() async {
-    setState(() => _isLoading = true);
-
-    // 1. Load from SharedPrefs immediately
-    await _loadFromCache();
-
-    // 2. Refresh from API in background
-    await _fetchRemoteProfile();
-
-    if (mounted) setState(() => _isLoading = false);
-  }
-
-  Future<void> _loadFromCache() async {
+  Future<void> _bootstrap() async {
+    setState(() => _loading = true);
     try {
-      final f = await SharedPrefHelper.getString('first_name') ?? '';
-      final l = await SharedPrefHelper.getString('last_name') ?? '';
-      final e = await SharedPrefHelper.getString('email') ?? '';
-      final p = await SharedPrefHelper.getString('phone') ?? '';
-      final fac = await SharedPrefHelper.getString('faculty') ?? '';
-      final y = await SharedPrefHelper.getString('year') ?? '';
-      final g = await SharedPrefHelper.getString('governorate') ?? '';
-      final img = await SharedPrefHelper.getString('profile_image') ?? '';
-
-      if (!mounted) return;
-
-      setState(() {
-        if (f.isNotEmpty) _firstName = f;
-        if (l.isNotEmpty) _lastName = l;
-        if (e.isNotEmpty) _email = e;
-        if (p.isNotEmpty) _phone = p;
-        if (fac.isNotEmpty) _faculty = fac;
-        if (y.isNotEmpty) _year = y;
-        if (g.isNotEmpty) _governorate = g;
-        if (img.isNotEmpty) _profileImage = img;
-      });
-    } catch (e) {
-      debugPrint('Error loading from cache: $e');
-    }
-  }
-
-  Future<void> _fetchRemoteProfile() async {
-    try {
-      final dio = DioFactory.getDio();
-      // Get the email from SharedPreferences
-      final email = await SharedPrefHelper.getString('email') ?? '';
-      
-      if (email.isEmpty) {
-        if (mounted) {
-          setState(() => _error = 'No user email found. Please log in again.');
-        }
-        return;
-      }
-
-      // Get the token for authorization
-      final token = await SharedPrefHelper.getSecuredString('user_token') ?? '';
-      if (token.isEmpty) {
-        if (mounted) {
-          setState(() => _error = 'Authentication token not found. Please log in again.');
-        }
-        return;
-      }
-
-      // Since the backend doesn't have a direct profile endpoint,
-      // we'll use the update_profile endpoint with an empty update to get the current profile
-      final response = await dio.post(
-        '/update_profile',
-        data: {}, // Empty update to just get the current profile
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        print('DEBUG: Profile data: $data');
-        
-        if (data is Map && data['status'] == 'success' && data['user'] != null) {
-          final user = data['user'];
-
-          final f =
-              user['first_name']?.toString() ?? user['firstName']?.toString();
-          final l =
-              user['last_name']?.toString() ?? user['lastName']?.toString();
-          final e = user['email']?.toString();
-          final p = user['phone']?.toString();
-          final fac = user['faculty']?.toString();
-          final y = user['year']?.toString();
-          final g = user['governorate']?.toString();
-          final img = user['profile_image']?.toString();
-
-          if (mounted) {
-            setState(() {
-              if (f != null) _firstName = f;
-              if (l != null) _lastName = l;
-              if (e != null) _email = e;
-              if (p != null) _phone = p;
-              if (fac != null) _faculty = fac;
-              if (y != null) _year = y;
-              if (g != null) _governorate = g;
-              if (img != null) _profileImage = img;
-            });
-          }
-
-          // Update Cache
-          if (f != null) await SharedPrefHelper.setData('first_name', f);
-          if (l != null) await SharedPrefHelper.setData('last_name', l);
-          if (e != null) await SharedPrefHelper.setData('email', e);
-          if (p != null) await SharedPrefHelper.setData('phone', p);
-          if (fac != null) await SharedPrefHelper.setData('faculty', fac);
-          if (y != null) await SharedPrefHelper.setData('year', y);
-          if (g != null) await SharedPrefHelper.setData('governorate', g);
-          if (img != null) {
-            await SharedPrefHelper.setData('profile_image', img);
-            // Notify drawer to update image
-            DoctorDrawer.profileImageNotifier.value = img;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching profile: $e');
-      if (e is DioException) {
-        print('DEBUG: DioError Response: ${e.response?.data}');
-        print('DEBUG: DioError Status: ${e.response?.statusCode}');
-        print('DEBUG: DioError Headers: ${e.requestOptions.headers}');
-      }
-
-      // Only show error if we have NO data at all
-      if ((_firstName == null || _firstName!.isEmpty) &&
-          (_email == null || _email!.isEmpty)) {
-        setState(() => _error = 'تعذر تحميل البيانات: $e');
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    try {
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80, // Reduce image quality to save space
-        maxWidth: 1024,   // Limit image dimensions
-        maxHeight: 1024,
-      );
-      
-      if (image != null) {
-        // Show loading indicator
-        if (mounted) {
-          setState(() => _isLoading = true);
-        }
-        
-        try {
-          final bytes = await File(image.path).readAsBytes();
-          // Check image size (e.g., max 5MB)
-          if (bytes.length > 5 * 1024 * 1024) {
-            throw Exception('Image size should be less than 5MB');
-          }
-          
-          final base64Image = base64Encode(bytes);
-
-          if (mounted) {
-            setState(() {
-              _profileImage = base64Image;
-              _error = null; // Clear any previous errors
-            });
-          }
-
-          // Optimistic update
-          await SharedPrefHelper.setData('profile_image', base64Image);
-          DoctorDrawer.profileImageNotifier.value = base64Image;
-
-          await _uploadImage(base64Image);
-        } catch (e) {
-          debugPrint('Error processing image: $e');
-          if (mounted) {
-            setState(() => _error = 'Failed to process image. ${e.toString()}');
-          }
-          rethrow;
-        } finally {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء اختيار الصورة')),
-      );
-    }
-  }
-
-  Future<void> _uploadImage(String base64Image) async {
-    try {
-      final token = await SharedPrefHelper.getSecuredString('user_token') ?? '';
-      if (token.isEmpty) {
-        throw Exception('Authentication required');
-      }
-      
-      final dio = DioFactory.getDio();
-      final response = await dio.post(
-        '/update_profile',
-        data: {'profile_image': base64Image},
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
-      
-      if (response.statusCode != 200) {
-        throw Exception('Failed to upload image: ${response.statusCode}');
-      }
-      
-      // Verify the image was saved
-      if (response.data is Map && response.data['status'] != 'success') {
-        throw Exception('Failed to save image: ${response.data['message'] ?? 'Unknown error'}');
-      }
-      
-    } catch (e) {
-      debugPrint('Error uploading image: $e');
+      final cachedFirst = await SharedPrefHelper.getString('first_name');
+      final cachedLast = await SharedPrefHelper.getString('last_name');
+      final cachedEmail = await SharedPrefHelper.getString('email');
       if (mounted) {
-        setState(() => _error = 'Failed to upload image. Please try again.');
+        setState(() {
+          _firstName =
+              (cachedFirst?.isNotEmpty ?? false) ? cachedFirst : _firstName;
+          _lastName =
+              (cachedLast?.isNotEmpty ?? false) ? cachedLast : _lastName;
+          _email = (cachedEmail?.isNotEmpty ?? false) ? cachedEmail : _email;
+        });
       }
-      rethrow;
+      await _fetchProfile();
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _fetchProfile() async {
+    setState(() {
+      _error = null;
+    });
+    try {
+      final dio = DioFactory.getDio();
+      Response? response;
+      // Try common profile endpoints
+      final candidates = ['/me', '/profile', '/users/me', '/auth/me'];
+      for (final path in candidates) {
+        try {
+          final res = await dio.get(path);
+          if (res.statusCode == 200) {
+            response = res;
+            break;
+          }
+        } on DioException catch (e) {
+          // Ignore 404s and try next candidate
+          if (e.response?.statusCode == 404) {
+            continue;
+          }
+          // Network/timeouts bubble up
+          rethrow;
+        }
+      }
+
+      if (response != null && response.statusCode == 200) {
+        final data = response.data;
+        Map<String, dynamic>? userMap;
+        if (data is Map<String, dynamic>) {
+          userMap = Map<String, dynamic>.from(data);
+          if (userMap['user'] is Map) {
+            userMap = Map<String, dynamic>.from(userMap['user']);
+          }
+        }
+
+        String? getVal(String a, String b) {
+          if (userMap == null) return null;
+          return (userMap![a] ?? userMap![b])?.toString();
+        }
+
+        final firstName = getVal('first_name', 'firstName');
+        final lastName = getVal('last_name', 'lastName');
+        final email = userMap?['email']?.toString();
+        final phone = userMap?['phone']?.toString();
+        final faculty = userMap?['faculty']?.toString();
+        final year = userMap?['year']?.toString();
+        final governorate = userMap?['governorate']?.toString();
+
+        if (mounted) {
+          setState(() {
+            _firstName = firstName ?? _firstName;
+            _lastName = lastName ?? _lastName;
+            _email = email ?? _email;
+            _phone = phone ?? _phone;
+            _faculty = faculty ?? _faculty;
+            _year = year ?? _year;
+            _governorate = governorate ?? _governorate;
+          });
+        }
+
+        if ((firstName?.isNotEmpty ?? false)) {
+          await SharedPrefHelper.setData('first_name', firstName);
+          await SharedPrefHelper.setData('last_name', lastName ?? '');
+          if ((email?.isNotEmpty ?? false)) {
+            await SharedPrefHelper.setData('email', email);
+          }
+        }
+      } else {
+        // No known endpoint found. Do not show scary banner; keep cached data.
+        return;
+      }
+    } on DioException catch (e) {
+      // For 404 specifically, suppress the error and keep cached values
+      if (e.response?.statusCode == 404) return;
+      setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
+    } catch (_) {
+      setState(() => _error = 'حدث خطأ غير متوقع');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: const DoctorDrawer(),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('الملف الشخصي'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Text(
+              'الملف الشخصي',
+              style:
+                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: theme.brightness == Brightness.dark
+                ? Colors.grey[700]
+                : const Color(0xFFE5E7EB),
+          ),
         ),
       ),
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: RefreshIndicator(
-          onRefresh: _loadProfileData,
+          onRefresh: _fetchProfile,
+          color: colorScheme.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-            child: Column(
-              children: [
-                _buildHeaderCard(),
-                SizedBox(height: 16.h),
-                if (_error != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 16.h),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(color: Colors.orange, fontSize: 14.sp),
-                    ),
-                  ),
-                _buildInfoCard(),
-              ],
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _headerCard(theme, textTheme, colorScheme),
+                  SizedBox(height: 12.h),
+                  _infoCard(theme, textTheme, colorScheme),
+                  if (_error != null) ...[
+                    SizedBox(height: 12.h),
+                    _errorBanner(textTheme, colorScheme, _error!),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
@@ -311,74 +190,64 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildHeaderCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _headerCard(
+      ThemeData theme, TextTheme textTheme, ColorScheme colorScheme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
           ),
         ],
-        border: Border.all(
-          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-        ),
       ),
+      padding: EdgeInsets.all(16.r),
       child: Row(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 35.r,
-                backgroundColor: Colors.grey[200],
-                backgroundImage: _profileImage != null
-                    ? MemoryImage(base64Decode(_profileImage!))
-                    : null,
-                child: _profileImage == null
-                    ? Icon(Icons.person, size: 35.sp, color: Colors.grey)
-                    : null,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: InkWell(
-                  onTap: _pickImage,
-                  child: Container(
-                    padding: EdgeInsets.all(4.r),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF84E5F3), // Cyan from drawer
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.camera_alt,
-                        size: 14.sp, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
+          CircleAvatar(
+            radius: 28.r,
+            backgroundColor: theme.brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[200],
+            child: Icon(Icons.person_outline, color: theme.iconTheme.color),
           ),
-          SizedBox(width: 16.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${_firstName ?? ''} ${_lastName ?? ''}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                _loading
+                    ? _shimmerLine(width: 120.w, height: 18.h, theme: theme)
+                    : Text(
+                        _composeName(_firstName, _lastName) ?? 'دكتور',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18.sp,
+                        ),
+                        textAlign: TextAlign.right,
                       ),
-                ),
                 SizedBox(height: 4.h),
-                Text(
-                  _email ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey,
+                _loading
+                    ? _shimmerLine(width: 180.w, height: 14.h, theme: theme)
+                    : Text(
+                        _email ?? '-',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                ),
               ],
             ),
           ),
@@ -387,67 +256,96 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _infoCard(
+      ThemeData theme, TextTheme textTheme, ColorScheme colorScheme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final items = <_InfoItem>[
+      _InfoItem(
+          icon: Icons.badge_outlined, label: 'الاسم الأول', value: _firstName),
+      _InfoItem(
+          icon: Icons.perm_identity, label: 'اسم العائلة', value: _lastName),
+      _InfoItem(
+          icon: Icons.email_outlined,
+          label: 'البريد الإلكتروني',
+          value: _email),
+      _InfoItem(icon: Icons.phone_outlined, label: 'رقم الهاتف', value: _phone),
+      _InfoItem(icon: Icons.school_outlined, label: 'الكلية', value: _faculty),
+      _InfoItem(
+          icon: Icons.event_note_outlined,
+          label: 'السنة الدراسية',
+          value: _year),
+      _InfoItem(
+          icon: Icons.place_outlined, label: 'المحافظة', value: _governorate),
+    ];
+
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.1),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
           ),
         ],
       ),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       child: Column(
         children: [
-          _buildInfoItem(Icons.person_outline, 'الاسم الأول', _firstName),
-          _buildDivider(),
-          _buildInfoItem(Icons.person_outline, 'اسم العائلة', _lastName),
-          _buildDivider(),
-          _buildInfoItem(Icons.email_outlined, 'البريد الإلكتروني', _email),
-          _buildDivider(),
-          _buildInfoItem(Icons.phone_outlined, 'رقم الهاتف', _phone),
-          _buildDivider(),
-          _buildInfoItem(Icons.school_outlined, 'الكلية', _faculty),
-          _buildDivider(),
-          _buildInfoItem(
-              Icons.calendar_today_outlined, 'السنة الدراسية', _year),
-          _buildDivider(),
-          _buildInfoItem(Icons.location_on_outlined, 'المحافظة', _governorate),
+          for (int i = 0; i < items.length; i++) ...[
+            _infoRow(items[i], theme, textTheme, colorScheme),
+            if (i != items.length - 1)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.brightness == Brightness.dark
+                    ? Colors.grey[700]
+                    : const Color(0xFFE5E7EB),
+              ),
+          ]
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String? value) {
+  Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
+      ColorScheme colorScheme) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF84E5F3), size: 22.sp),
-          SizedBox(width: 16.w),
+          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  label,
-                  style: TextStyle(
+                  item.label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 12.sp,
-                    color: Colors.grey,
                   ),
+                  textAlign: TextAlign.right,
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  (value == null || value.isEmpty) ? '-' : value,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                SizedBox(height: 2.h),
+                _loading
+                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                    : Text(
+                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
               ],
             ),
           ),
@@ -456,12 +354,59 @@ class _DoctorProfileState extends State<DoctorProfile> {
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: Colors.grey[200],
-      indent: 54.w,
+  Widget _errorBanner(
+      TextTheme textTheme, ColorScheme colorScheme, String message) {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: colorScheme.error.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: colorScheme.error),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.onErrorContainer),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
     );
   }
+
+  String? _composeName(String? f, String? l) {
+    if ((f == null || f.isEmpty) && (l == null || l.isEmpty)) return null;
+    if (f != null && f.isNotEmpty && l != null && l.isNotEmpty) return '$f $l';
+    return f?.isNotEmpty == true ? f : l;
+  }
+
+  Widget _shimmerLine(
+      {required double width,
+      required double height,
+      required ThemeData theme}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? Colors.grey[800]
+            : Colors.grey[200],
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+    );
+  }
+}
+
+class _InfoItem {
+  final IconData icon;
+  final String label;
+  final String? value;
+
+  _InfoItem({required this.icon, required this.label, required this.value});
 }
