@@ -1,0 +1,92 @@
+{
+  "Q0": {
+    "id": "Q0",
+    "text_en": "Choose your language",
+    "text_ar": "اختر اللغة",
+    "options": [
+      { "id": "EN", "text_en": "English", "text_ar": "الإنجليزية" },
+      { "id": "AR", "text_en": "Arabic", "text_ar": "العربية" }
+    ]
+  },
+  "Q1": {
+    "id": "Q1",
+    "text_en": "What is the problem?",
+    "text_ar": "ما هي المشكلة؟",
+    "options": [
+      { "id": "A", "text_en": "I want whiter teeth", "text_ar": "أريد أسنان بيضاء" },
+      { "id": "B", "text_en": "My tooth hurts", "text_ar": "أسناني تؤلمني" },
+      { "id": "C", "text_en": "My teeth are crooked", "text_ar": "أسناني معوجة" },
+      { "id": "D", "text_en": "I'm missing a tooth", "text_ar": "لدي سن مفقود" },
+      { "id": "E", "text_en": "Just a regular check-up", "text_ar": "فحص عادي فقط" },
+      { "id": "F", "text_en": "My tooth is broken", "text_ar": "سني مكسور" },
+      { "id": "G", "text_en": "Something else", "text_ar": "شيء آخر" }
+    ]
+  },
+  "Q2A": {
+    "id": "Q2A",
+    "text_en": "Is it just stains from coffee/tea, or something else?",
+    "text_ar": "هل هي بقع من القهوة/الشاي فقط، أم شيء آخر؟",
+    "options": [
+      { "id": "A1", "text_en": "Just stains (coffee, tea, smoking)", "text_ar": "بقع فقط (قهوة، شاي، تدخين)" },
+      { "id": "A2", "text_en": "Something else (old filling showing, etc.)", "text_ar": "شيء آخر (حشوة قديمة ظاهرة، إلخ)" }
+    ]
+  },
+  "Q2B": {
+    "id": "Q2B",
+    "text_en": "How bad is the pain?",
+    "text_ar": "ما مدى سوء الألم؟",
+    "options": [
+      { "id": "B1", "text_en": "A little sensitive (not too bad)", "text_ar": "حساسية خفيفة (ليست سيئة جدًا)" },
+      { "id": "B2", "text_en": "Really hurts (maybe swollen too)", "text_ar": "يؤلم كثيرًا (ربما منتفخ أيضًا)" }
+    ]
+  },
+  "Q3B": {
+    "id": "Q3B",
+    "text_en": "Can you see a hole or dark spot on your tooth?",
+    "text_ar": "هل ترى ثقب أو بقعة سوداء على سنك؟",
+    "options": [
+      { "id": "B1a", "text_en": "Yes, I can see it", "text_ar": "نعم، أراه" },
+      { "id": "B1b", "text_en": "No, nothing visible", "text_ar": "لا، لا شيء مرئي" }
+    ]
+  },
+  "Q2C": {
+    "id": "Q2C",
+    "text_en": "Is this for an adult or a child?",
+    "text_ar": "هل هذا لشخص بالغ أم طفل؟",
+    "options": [
+      { "id": "C1", "text_en": "Adult", "text_ar": "بالغ" },
+      { "id": "C2", "text_en": "Child", "text_ar": "طفل" }
+    ]
+  },
+  "Q2D": {
+    "id": "Q2D",
+    "text_en": "How many teeth are missing? Do you want something permanent?",
+    "text_ar": "كم سن مفقود؟ هل تريد شيئًا دائمًا؟",
+    "options": [
+      { "id": "D1", "text_en": "Just one tooth, want something permanent", "text_ar": "سن واحد فقط، أريد شيئًا دائمًا" },
+      { "id": "D2", "text_en": "Multiple teeth, or prefer removable", "text_ar": "عدة أسنان، أو أفضل شيئًا قابلًا للإزالة" }
+    ]
+  },
+  "Q2F": {
+    "id": "Q2F",
+    "text_en": "How bad is the damage?",
+    "text_ar": "ما مدى سوء الضرر؟",
+    "options": [
+      { "id": "F1", "text_en": "Can probably be fixed with a cap", "text_ar": "يمكن إصلاحه بتاج على الأرجح" },
+      { "id": "F2", "text_en": "Just a small hole", "text_ar": "ثقب صغير فقط" },
+      { "id": "F3", "text_en": "Really bad (might not be fixable)", "text_ar": "سيء جدًا (قد لا يمكن إصلاحه)" }
+    ]
+  },
+  "Q2G": {
+    "id": "Q2G",
+    "text_en": "Pick the closest option:",
+    "text_ar": "اختر الخيار الأقرب:",
+    "options": [
+      { "id": "G1", "text_en": "Whitening", "text_ar": "تبييض" },
+      { "id": "G2", "text_en": "Pain / need to remove tooth", "text_ar": "ألم / أحتاج خلع سن" },
+      { "id": "G3", "text_en": "Straighten teeth", "text_ar": "تقويم أسنان" },
+      { "id": "G4", "text_en": "Replace missing tooth", "text_ar": "استبدال سن مفقود" },
+      { "id": "G5", "text_en": "Just a check-up", "text_ar": "فحص فقط" }
+    ]
+  }
+}
