@@ -30,36 +30,12 @@ AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Ai-chatbot folder 
 REQ_FILE="$AI_DIR/requirements.txt"                         # Path to Python requirements file
 # Primary `astart` location is now next to the installer (project root).
 ASTART="$SCRIPT_DIR/astart"
-VENV_DIR="$AI_DIR/venv"                                     # Virtual environment folder
 oracle_url="https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm"
-# -----------------------------
-# Function: Create Python virtual environment
-# -----------------------------
-create_venv() {
-    # If venv already exists, skip creation
-    if [[ -d "$VENV_DIR" && -f "$VENV_DIR/bin/activate" ]]; then
-        ok "Virtual environment already exists at: $VENV_DIR"
-        return 0
-    fi
-
-    # If python3 is missing, warn and exit gracefully
-    if ! command -v python3 >/dev/null 2>&1; then
-        warn "python3 not found; cannot create virtual environment now. It will be created after python3 is available."
-        return 1
-    fi
-
-    # Try to create the virtual environment
-    msg "Creating virtual environment at: $VENV_DIR"
-    if python3 -m venv "$VENV_DIR"; then
-        ok "Virtual environment created at: $VENV_DIR"
-    else
-        warn "Failed to create virtual environment at: $VENV_DIR"
-        return 1
-    fi
-}
-
-# Try to create venv right away, but don't stop if it fails (|| true)
-create_venv || true
+server_dir="/var/www/html"
+webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
+# Note: virtualenv creation/activation removed — installer will
+# install requirements system-wide (with an optional retry using
+# --break-system-packages if pip complains about system packages).
 
 # -----------------------------
 # Function: Detect available package manager
@@ -158,39 +134,53 @@ install_requirements() {
 
     msg "Installing Python requirements from $REQ_FILE ..."
 
-    # If a virtualenv exists in $VENV_DIR, activate it and install there
-    if [[ -f "$VENV_DIR/bin/activate" ]]; then
-        msg "Activating virtualenv at: $VENV_DIR"
-        # shellcheck disable=SC1090
-        source "$VENV_DIR/bin/activate"
-        pip install --no-cache-dir -r "$REQ_FILE"
-        ok "requirements installed into virtualenv: $VENV_DIR"
+    # Try system-wide install first. If pip fails with a message
+    # suggesting `--break-system-packages`, retry with that flag.
+    set +e
+    if [[ $EUID -eq 0 ]]; then
+        output=$(python3 -m pip install --no-cache-dir -r "$REQ_FILE" 2>&1)
+        rc=$?
+    else
+        output=$(sudo python3 -m pip install --no-cache-dir -r "$REQ_FILE" 2>&1)
+        rc=$?
+    fi
+    set -e
+
+    if [[ $rc -eq 0 ]]; then
+        ok "requirements installed system-wide."
         return
     fi
 
-    # If venv did not exist, try to create it and then install into it
-    msg "No virtualenv detected at $VENV_DIR — attempting to create one for development"
-    if create_venv; then
-        if [[ -f "$VENV_DIR/bin/activate" ]]; then
-            msg "Activating newly-created virtualenv at: $VENV_DIR"
-            # shellcheck disable=SC1090
-            source "$VENV_DIR/bin/activate"
-            pip install --no-cache-dir -r "$REQ_FILE"
-            ok "requirements installed into virtualenv: $VENV_DIR"
-            return
+    # If pip suggests using --break-system-packages, retry with that option
+    if echo "$output" | grep -qi "break-system-packages"; then
+        warn "pip reported system package protection; retrying with --break-system-packages..."
+        set +e
+        if [[ $EUID -eq 0 ]]; then
+            output2=$(python3 -m pip install --break-system-packages --no-cache-dir -r "$REQ_FILE" 2>&1)
+            rc2=$?
+        else
+            output2=$(sudo python3 -m pip install --break-system-packages --no-cache-dir -r "$REQ_FILE" 2>&1)
+            rc2=$?
         fi
-    else
-        warn "Virtualenv creation failed or skipped; falling back to system install."
+        set -e
+
+        if [[ $rc2 -eq 0 ]]; then
+            ok "requirements installed with --break-system-packages."
+            return
+        else
+            warn "Retry with --break-system-packages also failed."
+            err "Failed to install requirements. pip output:\n$output2"
+        fi
     fi
 
-    # Fallback: install system-wide (use sudo if not root)
-    if [[ $EUID -eq 0 ]]; then
-        python3 -m pip install --no-cache-dir -r "$REQ_FILE"
-    else
-        sudo python3 -m pip install --no-cache-dir -r "$REQ_FILE"
-    fi
-    ok "requirements installed system-wide (virtualenv not used)."
+    # Generic failure: surface pip output for debugging
+    err "Failed to install requirements. pip output:\n$output"
 }
+
+
+
+
+
 
 # -----------------------------
 # Function: Install 'astart' launcher script
@@ -429,30 +419,94 @@ ensure_oracle_prereqs() {
     ok "Oracle prerequisites check and fix complete."
 } 
 
+#---------------------------------------------------------------------
+#Function to fetch the latest code from the repository and update the 
+#Production server 
+#---------------------------------------------------------------------
+
+update_production_server() {
+    echo -e "${GREEN}Updating production server...${NC}"
+
+    # Validate target directory (safety check)
+    if [ ! -d "$server_dir" ] || [ -z "$server_dir" ] || [ "$server_dir" = "/" ]; then
+        echo -e "${RED}ERROR: Invalid or dangerous server_dir: '$server_dir'${NC}"
+        exit 1
+    fi
+
+    # Move to the web UI directory
+    cd "$webui_path" || { 
+        echo -e "${RED}Failed to change directory to $webui_path${NC}"
+        exit 1
+    }
+
+    # Pull latest changes
+    git pull origin main || { 
+        echo -e "${RED}Git pull failed. Please check your network or repo status.${NC}"
+        exit 1
+    }
+    echo -e "${GREEN}Production server updated from Git successfully.${NC}"
+
+    # Build project
+    npm run build || { 
+        echo -e "${RED}Build failed. Check the build logs for details.${NC}"
+        exit 1
+    }
+
+    # Remove old production files except .htaccess
+    echo -e "${GREEN}Cleaning old production files...${NC}"
+    sudo find "$server_dir" -mindepth 1 ! -name ".htaccess" -exec rm -rf {} + || { 
+        echo -e "${RED}Failed to remove old files from $server_dir${NC}"
+        exit 1
+    }
+    echo -e "${GREEN}Old files removed from $server_dir successfully.${NC}"
+
+    # Copy new build
+    sudo cp -r dist/* "$server_dir"/ || { 
+        echo -e "${RED}Failed to copy files to $server_dir${NC}"
+        exit 1
+    }
+    echo -e "${GREEN}Files copied to $server_dir successfully.${NC}"
+
+    echo -e "${GREEN}Deployment completed successfully!${NC}"
+}
+
+
+
 # -----------------------------
 # Main installer function
 # -----------------------------
 main() {
     echo
-    msg "Starting Ai-chatbot installer"
-
-    # Run Oracle checks first
-    ensure_oracle_prereqs
-
+    msg "Starting installation protocol... "
+    echo
+    msg "Detected package manager: ${PKG_MGR:-None}"
+    fi
     # Ensure Python and pip are available
     ensure_python_pip
-
-    # Create Python virtual environment
-    create_venv
 
     # Install Python requirements
     install_requirements
 
     # Install Node.js system-wide (if apt system)
     install_node_system_wide
+    #install production server update prompt
+    echo
+    msg "Do you want to update the production server? (y/n) [default: n, auto-skip after 30s]"
+    if ! read -t 30 -r update_choice; then
+        update_choice="n"
+        msg "No response received within 30 seconds; skipping production server update."
+    fi
+    if [[ "$update_choice" = "y" ]]; then
+        update_production_server
+    else
+        msg "Skipping production server update."
+    fi
 
     # Copy 'astart' launcher
     install_astart
+
+    # Run Oracle checks first
+    ensure_oracle_prereqs
 
     echo
     ok "Installation complete."
