@@ -26,7 +26,6 @@ NC="\033[0m"
 
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
-Source_path="venv/bin/activate"
 webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
 backend_path="$HOME/Teeth-Management-System/BackEnd"
 LOG_DIR="$HOME/Teeth-Management-System/logs"
@@ -371,7 +370,7 @@ stop_all() {
 
 AI_chatbot_with_web(){
     # Run Streamlit web UI in foreground with logging
-    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && streamlit run app.py"
+    cmd="cd \"$core_path\" && streamlit run app.py"
     # keep Streamlit in foreground so the developer can see live UI logs
     start_fg "ai_chatbot_web" "-c" "$cmd"
 }
@@ -383,7 +382,7 @@ AI_chatbot_with_web(){
 AI_chatbot_api_only(){
     # Run API in foreground with logging
     # Run API in background; output goes to process log only
-    cmd="cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    cmd="cd \"$core_path\" && python3 api.py"
     start_bg "ai_chatbot_api" "-a" "$cmd"
 }
 
@@ -425,7 +424,7 @@ Run_whole_system() {
     # Start backend, login script, and API in background and the web UI in foreground
     start_bg "backend" "-b" "cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
     start_bg "loginreg" "-x" "cd \"$backend_path\" && python3 loginapi.py"
-    start_bg "ai_api" "-a" "cd \"$core_path\" && if [[ -f \"$Source_path\" ]]; then source \"$Source_path\"; fi && python3 api.py"
+    start_bg "ai_api" "-a" "cd \"$core_path\" && python3 api.py"
     # Start web UI in foreground so user sees its output
     start_fg "web_ui" "-w" "cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
     # wait for any background waiters (they log stops independently)
