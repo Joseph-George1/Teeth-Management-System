@@ -27,7 +27,31 @@ class _DoctorProfileState extends State<DoctorProfile> {
   String? _faculty;
   String? _year;
   String? _governorate;
+  String? _category;
   String? _profileImage;
+
+  final List<String> _governorates = [
+    'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'الشرقية', 'الغربية',
+    'المنوفية', 'البحيرة', 'القليوبية', 'دمياط', 'كفر الشيخ', 'بورسعيد',
+    'الإسماعيلية', 'السويس', 'المنيا', 'أسيوط', 'سوهاج', 'قنا', 'الأقصر',
+    'أسوان', 'البحر الأحمر', 'مطروح', 'شمال سيناء', 'جنوب سيناء', 'الفيوم',
+    'بني سويف', 'الوادي الجديد',
+  ];
+
+  final List<String> _categories = [
+    'جراحة الوجه والفكين', 'تقويم الأسنان', 'علاج الجذور', 'طب أسنان الأطفال',
+    'تركيبات الأسنان', 'علاج اللثة', 'طب الأسنان التجميلي', 'زراعة الأسنان',
+  ];
+
+  final List<String> _colleges = [
+    'كلية طب الأسنان - القاهرة', 'كلية طب الأسنان - عين شمس',
+    'كلية طب الأسنان - الإسكندرية', 'كلية طب الأسنان - المنصورة', 'أخرى',
+  ];
+
+  final List<String> _studyYears = [
+    'الفرقة الأولى', 'الفرقة الثانية', 'الفرقة الثالثة',
+    'الفرقة الرابعة', 'الفرقة الخامسة', 'امتياز',
+  ];
 
   @override
   void initState() {
@@ -45,6 +69,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
       final cachedFaculty = await SharedPrefHelper.getString('faculty');
       final cachedYear = await SharedPrefHelper.getString('year');
       final cachedGovernorate = await SharedPrefHelper.getString('governorate');
+      final cachedCategory = await SharedPrefHelper.getString('category');
       final cachedImage = await SharedPrefHelper.getString('profile_image');
 
       if (mounted) {
@@ -62,6 +87,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
           _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
           _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
+          _category = (cachedCategory?.isNotEmpty ?? false) ? cachedCategory : _category;
           _profileImage = (cachedImage?.isNotEmpty ?? false) ? cachedImage : _profileImage;
 
           // Fallback if name is missing but email exists
@@ -317,6 +343,142 @@ class _DoctorProfileState extends State<DoctorProfile> {
     }
   }
 
+  Future<void> _updateProfileData(Map<String, dynamic> data) async {
+    setState(() => _loading = true);
+    try {
+      final dio = DioFactory.getDio();
+      final response = await dio.post('/update_profile', data: data);
+      if (response.statusCode == 200) {
+        await _fetchProfile();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم تحديث البيانات بنجاح'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw Exception('Failed to update');
+      }
+    } catch (e) {
+      print('Error updating profile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حدث خطأ أثناء التحديث'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _showEditProfileDialog() {
+    final firstNameCtrl = TextEditingController(text: _firstName);
+    final lastNameCtrl = TextEditingController(text: _lastName);
+    final phoneCtrl = TextEditingController(text: _phone);
+
+    String? selectedCategory = _category;
+    String? selectedYear = _year;
+    String? selectedGovernorate = _governorate;
+    String? selectedCollege = _faculty;
+
+    // Ensure initial values are in the lists or null
+    if (selectedCategory != null && !_categories.contains(selectedCategory)) selectedCategory = null;
+    if (selectedYear != null && !_studyYears.contains(selectedYear)) selectedYear = null;
+    if (selectedGovernorate != null && !_governorates.contains(selectedGovernorate)) selectedGovernorate = null;
+    if (selectedCollege != null && !_colleges.contains(selectedCollege)) selectedCollege = null;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: const Text('تعديل البيانات', textAlign: TextAlign.center),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: firstNameCtrl,
+                        decoration: const InputDecoration(labelText: 'الاسم الأول'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: lastNameCtrl,
+                        decoration: const InputDecoration(labelText: 'اسم العائلة'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: phoneCtrl,
+                        decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedCollege,
+                        decoration: const InputDecoration(labelText: 'الكلية'),
+                        isExpanded: true,
+                        items: _colleges.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedCollege = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedYear,
+                        decoration: const InputDecoration(labelText: 'السنة الدراسية'),
+                        isExpanded: true,
+                        items: _studyYears.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedYear = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedGovernorate,
+                        decoration: const InputDecoration(labelText: 'المحافظة'),
+                        isExpanded: true,
+                        items: _governorates.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedGovernorate = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedCategory, // Use the variable
+                        decoration: const InputDecoration(labelText: 'التخصص'),
+                        isExpanded: true,
+                        items: _categories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedCategory = v), // Update variable
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _updateProfileData({
+                      'first_name': firstNameCtrl.text,
+                      'last_name': lastNameCtrl.text,
+                      'phone': phoneCtrl.text,
+                      'category': selectedCategory,
+                      'year': selectedYear,
+                      'governorate': selectedGovernorate,
+                      'faculty': selectedCollege,
+                    });
+                  },
+                  child: const Text('حفظ'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -349,6 +511,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'تعديل البيانات',
+            onPressed: _showEditProfileDialog,
+          ),
+          SizedBox(width: 8.w),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -501,6 +671,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
           label: 'السنة الدراسية',
           value: _year),
       _InfoItem(
+          icon: Icons.work_outline, label: 'التخصص', value: _category), // Added Category
+      _InfoItem(
           icon: Icons.place_outlined, label: 'المحافظة', value: _governorate),
     ];
 
@@ -543,51 +715,39 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
       ColorScheme colorScheme) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Open the drawer when any menu item is tapped
-          if (context.mounted) {
-            context.findAncestorStateOfType<ScaffoldState>()?.openDrawer();
-          }
-        },
-        borderRadius: BorderRadius.circular(8.r),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
-          child: Row(
-            children: [
-              Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      item.label,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 12.sp,
-                      ),
-                      textAlign: TextAlign.right,
-                    ),
-                    SizedBox(height: 2.h),
-                    _loading
-                        ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
-                        : Text(
-                            (item.value?.isNotEmpty ?? false) ? item.value! : '-',
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14.sp,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                  ],
+    return Container( // Changed Material/Inkwell to basic Container to remove tap effect
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+      child: Row(
+        children: [
+          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  item.label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 12.sp,
+                  ),
+                  textAlign: TextAlign.right,
                 ),
-              ),
-            ],
+                SizedBox(height: 2.h),
+                _loading
+                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                    : Text(
+                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -20,6 +20,7 @@ class SignUpCubit extends Cubit<SignUpState> {
     String? college,
     String? studyYear,
     String? governorate,
+    String? category, // Add this
   }) async {
     try {
       emit(SignUpLoading());
@@ -54,6 +55,7 @@ class SignUpCubit extends Cubit<SignUpState> {
         if (college != null && college.isNotEmpty) 'faculty': college,
         if (studyYear != null && studyYear.isNotEmpty) 'year': studyYear,
         if (governorate != null && governorate.isNotEmpty) 'governorate': governorate,
+        if (category != null && category.isNotEmpty) 'category': category, // Add this
       };
 
       print('Request data: $requestData');
@@ -120,3 +122,4 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(SignUpError('حدث خطأ غير متوقع'));
     }
   }}
+

@@ -117,6 +117,7 @@ def login():
         year = None
         governorate = None
         phone = None
+        category = None
         if isinstance(entry, dict):
             first_name = entry.get('first_name')
             last_name = entry.get('last_name')
@@ -124,6 +125,7 @@ def login():
             year = entry.get('year')
             governorate = entry.get('governorate')
             phone = entry.get('phone')
+            category = entry.get('category')
 
         resp = {'status': 'success', 'message': 'Login successful'}
         # Include names when present (keeps response compact otherwise)
@@ -134,6 +136,7 @@ def login():
             resp['year'] = year
             resp['governorate'] = governorate
             resp['phone'] = phone
+            resp['category'] = category
 
         return jsonify(resp), 200
     else:
@@ -165,7 +168,7 @@ def update_profile():
 
     if isinstance(entry, dict):
         # Update allowed fields
-        allowed_fields = ['first_name', 'last_name', 'phone', 'faculty', 'year', 'governorate', 'profile_image']
+        allowed_fields = ['first_name', 'last_name', 'phone', 'faculty', 'year', 'governorate', 'category', 'profile_image']
         for field in allowed_fields:
             if field in data:
                 entry[field] = data[field]
@@ -211,6 +214,7 @@ def register():
     faculty = data.get('faculty')
     year = data.get('year')
     governorate = data.get('governorate') or data.get('governorate_id')
+    category = data.get('category')
     password = data.get('password')
     confirm = data.get('confirm_password') or data.get('confirmPassword') or data.get('password_confirm')
 
@@ -234,7 +238,8 @@ def register():
         'phone': phone,
         'faculty': faculty,
         'year': str(year),
-        'governorate': governorate
+        'governorate': governorate,
+        'category': category
     }
     save_users(users)
     return jsonify({'status': 'success', 'message': 'User registered'}), 201

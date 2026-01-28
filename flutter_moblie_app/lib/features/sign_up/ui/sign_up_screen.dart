@@ -27,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _selectedCollege;
   String? _selectedStudyYear;
   String? _selectedGovernorate;
+  String? _selectedCategory;
 
   final List<String> _colleges = [
     'كلية طب الأسنان - القاهرة',
@@ -73,6 +74,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'الفيوم',
     'بني سويف',
     'الوادي الجديد',
+  ];
+
+  final List<String> _categories = [
+    'جراحة الوجه والفكين',
+    'تقويم الأسنان',
+    'علاج الجذور',
+    'طب أسنان الأطفال',
+    'تركيبات الأسنان',
+    'علاج اللثة',
+    'طب الأسنان التجميلي',
+    'زراعة الأسنان',
   ];
 
   String? selectedCountryCode = '+20';
@@ -301,6 +313,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                        onChanged: (v) => setState(() => _selectedGovernorate = v),
                                      ),
                                      verticalSpace(16),
+                                     // Category Dropdown
+                                     DropdownButtonFormField<String>(
+                                       value: _selectedCategory,
+                                       decoration: InputDecoration(
+                                         labelText: 'اختر التخصص', // Choose Category/Specialty
+                                         border: OutlineInputBorder(
+                                           borderRadius: BorderRadius.circular(8),
+                                         ),
+                                       ),
+                                       items: _categories
+                                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                           .toList(),
+                                       onChanged: (v) => setState(() => _selectedCategory = v),
+                                     ),
+                                     verticalSpace(16),
                                      // Password Field
                                      TextFormField(
                                        controller: passwordController,
@@ -427,6 +454,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                                  college: _selectedCollege,
                                                  studyYear: _selectedStudyYear,
                                                  governorate: _selectedGovernorate,
+                                                 category: _selectedCategory, // Add this
                                                );
                                              },
                                            ),
