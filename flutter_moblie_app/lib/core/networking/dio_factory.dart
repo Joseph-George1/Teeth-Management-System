@@ -19,7 +19,7 @@ class DioFactory {
         ..options.connectTimeout = timeOut
         ..options.receiveTimeout = timeOut
         ..options.sendTimeout = timeOut
-        ..options.baseUrl = 'http://13.49.221.187:5000';
+        ..options.baseUrl = 'http://13.53.131.167:5000';
       addDioHeaders();
       addDioInterceptor();
       return dio!;
@@ -28,7 +28,7 @@ class DioFactory {
     }
   }
 
-  static void addDioHeaders() async {
+  static Future<void> addDioHeaders() async {
     final token = await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
     final headers = <String, dynamic>{
       'Accept': 'application/json',

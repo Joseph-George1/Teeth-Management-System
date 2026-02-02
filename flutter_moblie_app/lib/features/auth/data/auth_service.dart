@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
-class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
+class AuthService {static const String _baseUrl = 'http://13.53.131.167:5000';
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({
@@ -39,14 +40,17 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
 
       // Handle successful response
       if (response.statusCode == 200) {
-        // Assuming the API returns a token in the response
-        final token = response.data['token'];
-        if (token != null && token is String && token.isNotEmpty) {
-          // Save token securely and set header for subsequent requests
-          await SharedPrefHelper.setSecuredString(
-              SharedPrefKeys.userToken, token);
-          DioFactory.setTokenIntoHeaderAfterLogin(token);
+        // Prefer token from API when available, otherwise generate
+        // one compatible with the Flask backend (base64(email)).
+        String? token = response.data['token'];
+        if (token == null || token.isEmpty) {
+          token = base64Encode(utf8.encode(email.trim()));
         }
+
+        // Save token securely and set header for subsequent requests
+        await SharedPrefHelper.setSecuredString(
+            SharedPrefKeys.userToken, token);
+        DioFactory.setTokenIntoHeaderAfterLogin(token);
 
         // Always save the email used for login to support fallback
         await SharedPrefHelper.setData('email', email);
@@ -61,6 +65,7 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
           String? y;
           String? g;
           String? fa;
+          String? c;
 
           if (data is Map) {
             // Common shapes: top-level or nested under 'user'
@@ -73,6 +78,7 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
               y = (user['year']??user['year']) as String?;
               g = (user['governorate']??user['governorate']) as String?;
               fa = (user['faculty']??user['faculty']) as String?;
+              c = (user['category']??user['category'])?.toString();
             }
 
             f = f ?? (data['first_name'] ?? data['firstName']) as String?;
@@ -82,6 +88,7 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
             y = y ?? (data['year']??data['year']) as String?;
             g = g ?? (data['governorate']??data['governorate']) as String?;
             fa = fa ?? (data['faculty']??data['faculty']) as String?;
+            c = c ?? data['category']?.toString();
           }
 
           if (f != null && f.isNotEmpty) {
@@ -93,6 +100,9 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
               await SharedPrefHelper.setData('year', y ?? '');
               await SharedPrefHelper.setData('governorate', g ?? '');
               await SharedPrefHelper.setData('faculty', fa ?? '');
+              if (c != null && c.isNotEmpty) {
+                await SharedPrefHelper.setData('category', c);
+              }
             }
 
             // Save additional profile fields
@@ -100,11 +110,13 @@ class AuthService {static const String _baseUrl = 'http://13.49.221.187:5000';
             final faculty = data['faculty']?.toString();
             final year = data['year']?.toString();
             final governorate = data['governorate']?.toString();
+            final category = data['category']?.toString();
 
             if (phone != null) await SharedPrefHelper.setData('phone', phone);
             if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
             if (year != null) await SharedPrefHelper.setData('year', year);
             if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
+            if (category != null) await SharedPrefHelper.setData('category', category);
           }
         } catch (_) {
           // ignore persistence failures; UI can fallback to /me

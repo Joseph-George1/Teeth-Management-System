@@ -68,7 +68,8 @@ def create_demo_user(path=USERS_FILE):
             'phone': '0000000000',
             'faculty': 'dentistry',
             'year': '1',
-            'governorate': 'cairo'
+            'governorate': 'cairo',
+            'category': 'جراحة الوجه والفكين'
         }
         save_users(users, path)
         print(f'Created demo user: {demo_email} / {demo_password}')
@@ -141,6 +142,35 @@ def login():
         return jsonify(resp), 200
     else:
         return jsonify({'status': 'error', 'message': 'Email/password incorrect'}), 401
+
+
+@app.route('/me', methods=['GET'])
+def me():
+    """Get current user profile."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'status': 'error', 'message': 'Missing or invalid token'}), 401
+
+    token = auth_header.split(' ')[1]
+    try:
+        email = base64.b64decode(token.encode('utf-8')).decode('utf-8')
+    except Exception:
+        return jsonify({'status': 'error', 'message': 'Invalid token'}), 401
+
+    users = load_users()
+    entry = users.get(email)
+
+    if not entry:
+        return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+    if isinstance(entry, dict):
+        profile = {
+            'email': email,
+        }
+        profile.update({k: v for k, v in entry.items() if k != 'password'})
+        return jsonify({'status': 'success', 'user': profile}), 200
+    else:
+        return jsonify({'status': 'error', 'message': 'Legacy user format not supported'}), 400
 
 
 @app.route('/update_profile', methods=['POST'])

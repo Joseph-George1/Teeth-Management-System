@@ -7,7 +7,7 @@ part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'http://13.49.221.187:5000';
+  static const String _baseUrl = 'http://13.53.131.167:5000';
 
   SignUpCubit() : super(SignUpInitial());
 
