@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SizedBox(width: 6.w),
+            /*SizedBox(width: 6.w),
             // Middle Section with Doctor Info
             Expanded(
               child: SizedBox(
@@ -294,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
+            ),*/
             // Right Section (Availability)
             SizedBox(width: 6.w),
             Container(
@@ -371,6 +371,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSquareCategory(String assetPath, String categoryName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryDoctorsScreen(
+              categoryName: categoryName,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+              blurRadius: 4.r,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              assetPath,
+               width: 48.w,
+               height: 48.h,
+              placeholderBuilder: (BuildContext context) => Container(
+                width: 48.w,
+                height: 48.h,
+                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                child: Icon(Icons.image, size: 24.r, color: Colors.grey),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              categoryName,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13.sp,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -617,33 +679,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Circular Categories Row
-                SizedBox(
-                  height: 110.h,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                // Categories Grid
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12.h,
+                    crossAxisSpacing: 12.w,
+                    childAspectRatio: 1.1,
                     children: [
-                      _buildCircularIcon(
-                          'assets/svg/فحص شامل.svg', 1, 'فحص شامل'),
-                      _buildCircularIcon(
-                          'assets/svg/حشو اسنان.svg', 2, 'حشو أسنان'),
-                      _buildCircularIcon(
-                          'assets/svg/زراعه اسنان.svg', 3, 'زراعة أسنان'),
-                      _buildCircularIcon(
-                          'assets/svg/خلع اسنان.svg', 4, 'خلع أسنان'),
-                      _buildCircularIcon(
-                          'assets/svg/تبيض اسنان.svg', 5, 'تبييض أسنان'),
-                      _buildCircularIcon(
-                          'assets/svg/تقويم اسنان.svg', 6, 'تقويم أسنان'),
-                      _buildCircularIcon(
-                          'assets/svg/تركيبات اسنان.svg', 7, 'تركيبات أسنان'),
+                      _buildSquareCategory('assets/svg/فحص شامل.svg', 'فحص شامل'),
+                      _buildSquareCategory('assets/svg/حشو اسنان.svg', 'حشو أسنان'),
+                      _buildSquareCategory('assets/svg/زراعه اسنان.svg', 'زراعة أسنان'),
+                      _buildSquareCategory('assets/svg/خلع اسنان.svg', 'خلع الأسنان'),
+                      _buildSquareCategory('assets/svg/تبيض اسنان.svg', 'تبييض الأسنان'),
+                      _buildSquareCategory('assets/svg/تقويم اسنان.svg', 'تقويم أسنان'),
+                      _buildSquareCategory('assets/svg/تركيبات اسنان.svg', 'تركيبات أسنان'),
                     ],
                   ),
                 ),
 
                 // City and Area Dropdowns
-                Container(
+               /* Container(
                   width: double.infinity,
                   margin: EdgeInsets.only(top: 16.h, left: 22.w, right: 22.w),
                   child: Row(
@@ -713,8 +772,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                          )),
-                      SizedBox(width: 16.w),
+                          )),*/
+                     /* SizedBox(width: 16.w),
                       // Second container - المناطق
                       Expanded(
                           child: Container(
@@ -776,11 +835,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                          )),
+                          )),*/
                     ],
                   ),
                 ),
-                SizedBox(height: 15.h),
+               /* SizedBox(height: 15.h),
 
                 // Doctors Section Header
                 Container(
@@ -800,15 +859,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                ),
+                ),*/
 
                 // Doctor Cards
-                for (var i = 0; i < 5; i++) _buildDoctorCard(),
-              ],
+                /*for (var i = 0; i < 5; i++) _buildDoctorCard(),
+              ],*/
             ),
           ),
-        ),
-      ),
+
+
     );
   }
 }
