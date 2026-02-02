@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,6 +20,37 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final List<Map<String, String>> _allCategories = [
+    {'name': 'فحص شامل', 'asset': 'assets/svg/فحص شامل.svg'},
+    {'name': 'حشو أسنان', 'asset': 'assets/svg/حشو اسنان.svg'},
+    {'name': 'زراعة أسنان', 'asset': 'assets/svg/زراعه اسنان.svg'},
+    {'name': 'خلع الأسنان', 'asset': 'assets/svg/خلع اسنان.svg'},
+    {'name': 'تبييض الأسنان', 'asset': 'assets/svg/تبيض اسنان.svg'},
+    {'name': 'تقويم الأسنان', 'asset': 'assets/svg/تقويم اسنان.svg'},
+    {'name': 'تركيبات الأسنان', 'asset': 'assets/svg/تركيبات اسنان.svg'},
+  ];
+  late List<Map<String, String>> _filteredCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredCategories = List.from(_allCategories);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      if (_searchController.text.isEmpty) {
+        _filteredCategories = List.from(_allCategories);
+      } else {
+        _filteredCategories = _allCategories
+            .where((category) => category['name']!
+                .contains(_searchController.text))
+            .toList();
+      }
+    });
+  }
 
   void _showDoctorDetails(BuildContext context) {
     showModalBottomSheet(
@@ -442,6 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -682,22 +713,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Categories Grid
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: GridView.count(
+                  child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12.h,
-                    crossAxisSpacing: 12.w,
-                    childAspectRatio: 1.1,
-                    children: [
-                      _buildSquareCategory('assets/svg/فحص شامل.svg', 'فحص شامل'),
-                      _buildSquareCategory('assets/svg/حشو اسنان.svg', 'حشو أسنان'),
-                      _buildSquareCategory('assets/svg/زراعه اسنان.svg', 'زراعة أسنان'),
-                      _buildSquareCategory('assets/svg/خلع اسنان.svg', 'خلع الأسنان'),
-                      _buildSquareCategory('assets/svg/تبيض اسنان.svg', 'تبييض الأسنان'),
-                      _buildSquareCategory('assets/svg/تقويم اسنان.svg', 'تقويم أسنان'),
-                      _buildSquareCategory('assets/svg/تركيبات اسنان.svg', 'تركيبات أسنان'),
-                    ],
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12.h,
+                      crossAxisSpacing: 12.w,
+                      childAspectRatio: 1.1,
+                    ),
+                    itemCount: _filteredCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = _filteredCategories[index];
+                      return _buildSquareCategory(
+                          category['asset']!, category['name']!);
+                    },
                   ),
                 ),
 
