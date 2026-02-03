@@ -1,5 +1,5 @@
-streamlit
 google-generativeai
 python-dotenv
 flask
 textblob
+flask_cors
