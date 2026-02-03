@@ -44,12 +44,11 @@ html, body {
   justify-content: center;
 }
 
-.footer-links a {
+.footer-container a {
   text-decoration: none;
-  color: var(--text-color-4);
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  background-color: #111827;
   padding: 8px 12px;
+  color: var(--text-color-1);
   border-radius: var(--border-radius-1);
 }
 
