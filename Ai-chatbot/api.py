@@ -245,15 +245,6 @@ def evaluate_answers(answers):
     # no decisive category found
     return (None, current_q, " -> ".join(path))
 
-def get_doctor_recommendation(symptom_text: str):
-    """Delegate to the shared ai_client.get_doctor_recommendation helper."""
-    try:
-        if ai_client:
-            return ai_client.get_doctor_recommendation(symptom_text)
-    except Exception:
-        pass
-    return None
-
 def make_json_response(obj, status=200):
     """Return a Flask Response with JSON encoded with ensure_ascii=False."""
     return Response(json.dumps(obj, ensure_ascii=False), status=status, mimetype='application/json')
@@ -491,33 +482,36 @@ def chat():
     history.append({"role": "user", "content": message})
 
     try:
-        # Hybrid dental relevance check
-        is_dental = ai.is_query_dental(message)
-        if not is_dental:
-            if user_lang == 'ar':
-                refusal = "عذراً، يمكنني فقط الإجابة على الأسئلة المتعلقة بصحة الأسنان والفم."
-            else:
-                refusal = "I can only answer questions about dental and oral health."
-            history.append({"role": "assistant", "content": refusal})
-            return make_json_response({"session_id": session_id, "reply": refusal})
-
         # Build conversation for API
+        
         if user_lang == 'ar':
+            categories_list = [CATEGORY_TRANSLATIONS.get(c, {}).get('ar', c) for c in CATEGORIES]
+            categories_str = ", ".join(categories_list)
             system_prompt = (
-                "أنت 'ثوثة'، مساعد ذكاء اصطناعي متخصص في طب الأسنان. دورك هو مناقشة الأعراض وطرح أسئلة توضيحية. "
-                "يجب أن ترفض بأدب الإجابة على أي أسئلة غير متعلقة بالأسنان. لا تقدم تشخيصًا طبيًا نهائيًا أبدًا. "
-                "هدفك هو تشجيع المستخدم على استشارة طبيب أسنان بشري."
+                "أنت 'ثوثة'، مساعد ذكاء اصطناعي دكتور سنان. اتكلم باللهجة المصرية العامية. "
+                "دورك انك تتناقش مع المستخدم في الأعراض وتسأل أسئلة عشان تشخص الحالة. "
+                "أول حاجة، قيم لو سؤال المستخدم ليه علاقة بصحة الأسنان أو الفم. "
+                "لو ملوش علاقة، رد بكلمة واحدة بس: 'REFUSAL_NON_DENTAL'. "
+                "لو ليه علاقة، كمل واسأل عن الأعراض. "
+                "هدفك انك تفهم المشكلة وتوجه المستخدم لواحد من التصنيفات دي: "
+                f"[{categories_str}]. "
+                "اسأل أسئلة قصيرة ومباشرة عشان تجمع معلومات. لما تكون متأكد من التصنيف، قوله بوضوح في إجابتك."
             )
         else:
+            categories_str = ", ".join(CATEGORIES)
             system_prompt = (
-                "You are 'Thoutha', a specialized dental AI assistant. Your role is to discuss symptoms and ask clarifying questions. "
-                "You must politely refuse to answer any non-dental questions. Never provide a definitive medical diagnosis. "
-                "Your goal is to encourage the user to consult a human dentist."
+                "You are 'Thoutha', a specialized dental AI assistant. Your role is to discuss symptoms and ask clarifying questions to triage the user. "
+                "First, evaluate if the user's query is related to dental or oral health. "
+                "If it is NOT related, reply with exactly: 'REFUSAL_NON_DENTAL'. "
+                "If it IS related, proceed to discuss symptoms and triage the user. "
+                "Your goal is to understand the user's issue and guide them towards one of the following categories: "
+                f"[{categories_str}]. "
+                "Ask short, direct questions to gather information. When you are confident in a category, mention it clearly in your response."
             )
 
         conversation_for_api = [
             {'role': 'user', 'parts': [system_prompt]},
-            {'role': 'model', 'parts': ["Understood. I am Thoutha, ready to assist with dental inquiries."]}
+            {'role': 'model', 'parts': ["Understood. I am Thoutha, ready to assist with dental inquiries and triage."]}
         ]
         
         for msg in history:
@@ -526,30 +520,29 @@ def chat():
 
         diagnosis_text = ai.generate_response(conversation_for_api)
 
+        # Check for refusal flag from AI
+        # Normalize text to handle variations like REFUSALNONDENTAL or Refusal_Non_Dental
+        # We check if the flag exists (ignoring case/underscores) AND the response is short
+        clean_text = diagnosis_text.upper().replace("_", "").replace(" ", "").replace(".", "").strip()
+        
+        if "REFUSALNONDENTAL" in clean_text and len(diagnosis_text) < 60:
+            if user_lang == 'ar':
+                refusal = "معلش، أنا بس بجاوب على الأسئلة اللي ليها علاقة بالأسنان وصحة الفم."
+            else:
+                refusal = "I can only answer questions about dental and oral health."
+            history.append({"role": "assistant", "content": refusal})
+            return make_json_response({"session_id": session_id, "reply": refusal})
+
         # Decode unicode escapes
         try:
             reply = ai_client.decode_unicode_escapes(diagnosis_text)
         except Exception:
             reply = diagnosis_text
 
-        # Get doctor recommendation
-        doctor = get_doctor_recommendation(message + ' ' + diagnosis_text)
-        if doctor:
-            try:
-                doctor['name'] = ai_client.decode_unicode_escapes(doctor.get('name', ''))
-                doctor['specialty'] = ai_client.decode_unicode_escapes(doctor.get('specialty', ''))
-                doctor['services'] = ai_client.decode_unicode_escapes(doctor.get('services', ''))
-            except Exception:
-                pass
-
         # Append assistant message to history
         history.append({"role": "assistant", "content": reply})
 
-        response_data = {"session_id": session_id, "reply": reply}
-        if doctor:
-            response_data["doctor"] = doctor
-
-        return make_json_response(response_data)
+        return make_json_response({"session_id": session_id, "reply": reply})
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -561,7 +554,7 @@ def chat():
         
         # Return user-friendly error message
         if user_lang == 'ar':
-            error_message = "عذراً، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى."
+            error_message = "معلش، حصلت مشكلة وأنا بجهز الرد. جرب تاني لو سمحت."
         else:
             error_message = "Sorry, an error occurred while processing your request. Please try again."
         

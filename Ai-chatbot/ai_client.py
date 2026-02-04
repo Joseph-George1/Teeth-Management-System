@@ -305,7 +305,7 @@ class Thoutha:
                     raise e
 
     # --- HYBRID DENTAL DETECTION ---
-    def is_query_dental(self, user_query: str) -> bool:
+    def is_query_dental(self, user_query: str, context: str = None) -> bool:
         """Hybrid check: keyword-based detection + Gemini LLM fallback."""
         user_query = autocorrect_text(user_query)
 
@@ -320,6 +320,14 @@ class Thoutha:
             "bleeding gums", "wisdom tooth", "braces", "crown", "root canal", "fillings"
         ]
 
+        # Greetings to allow through
+        #greetings = [
+            # Arabic
+        #    "مرحبا", "اهلا", "السلام عليكم", "هلا", "صباح الخير", "مساء الخير", "هاي",
+        #    # English
+        #    "hello", "hi", "hey", "good morning", "good evening", "greetings"
+        #]
+
         normalized_query = user_query.lower().strip()
 
         # ✅ Quick keyword match
@@ -328,12 +336,24 @@ class Thoutha:
                 return True
 
         # --- Step 2: Gemini fallback if no keyword match ---
-        prompt = f"""
-        Is the following user query about dental health, dentistry, teeth, gums, or oral hygiene?
-        Answer only with "YES" or "NO".
+        if context:
+            prompt = f"""
+            The AI assistant previously asked: "{context}"
+            The user replied: "{user_query}"
 
-        Query: "{user_query}"
-        """
+            Is the user's reply relevant to the dental consultation context? 
+            If the user is answering the question or asking about teeth/health, answer YES.
+            If the user is asking about unrelated topics (e.g. cooking, sports, coding), answer NO.
+            Answer only with "YES" or "NO".
+            """
+        else:
+            prompt = f"""
+            Is the following user query about dental health, dentistry, teeth, gums, or oral hygiene?
+            Answer only with "YES" or "NO".
+
+            Query: "{user_query}"
+            """
+
         try:
             generation_config = genai.types.GenerationConfig(candidate_count=1, temperature=0.0)
             response = self._safe_generate(self.classifier_model, prompt, generation_config)
