@@ -18,5 +18,6 @@ If you are developing a production application, we recommend using TypeScript wi
 The commands you need to type in the terminal to run the project :
 - npm install
 - npm install react-router-dom
+- npm install react-router-dom@7.12.0
 - npm install react-helmet-async
 - npm run dev
