@@ -1,0 +1,118 @@
+
+
+.support-container {
+  font-family: "Cairo", sans-serif;
+  width: 100%;
+  max-width: 1100px;
+  padding: 48px 32px;
+  direction: rtl;
+  color: #101828;
+  line-height: 1.9;
+
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.support-title {
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.support-section {
+  margin-bottom: 36px;
+}
+
+.support-section h2 {
+  font-size: 21px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: #101828;
+}
+
+.support-section p {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.support-section ul {
+  padding-right: 22px;
+}
+
+.support-section li {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.support-email {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 500px;
+}
+
+.support-form input,
+.support-form textarea {
+  font-family: "Cairo", sans-serif;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  outline: none;
+}
+
+.support-form input:focus,
+.support-form textarea:focus {
+  border-color: #101828;
+}
+
+.support-form button {
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #101828;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.support-form button:hover {
+  opacity: 0.9;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 768px) {
+  .support-container {
+    padding: 32px 20px;
+  }
+
+  .support-title {
+    font-size: 24px;
+  }
+
+  .support-section h2 {
+    font-size: 19px;
+  }
+
+  .support-form {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .support-container {
+    padding: 24px 16px;
+  }
+
+  .support-title {
+    font-size: 22px;
+  }
+}
