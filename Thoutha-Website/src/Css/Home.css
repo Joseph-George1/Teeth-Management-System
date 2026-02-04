@@ -17,7 +17,7 @@
     height: 546px;
     border-bottom-left-radius: 40px;
     border-bottom-right-radius: 40px;
-    margin-bottom: 40px;
+    margin-bottom: 80px;
 }
 .hero-container{
     margin: auto;
@@ -74,10 +74,14 @@
 /* category section */
 .category-section{
     width: 100%;
-    height: 175.5px;
+    height: auto;
     padding: 0px 80px;
     margin: auto;
     margin-bottom: 40px;
+}
+.category-section a{
+    text-decoration: none;
+    color: #101828;
 }
 .category-container{
     display: flex;
@@ -89,35 +93,47 @@
     font-size: 24px;
     line-height: 36px;
     letter-spacing: -0.36px;
-    color: #101828;
+}
+.category-icons{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    gap: 20px;
 }
 .category-icon{
     display: flex;
-    justify-content: space-between;
-    text-align: center;
+    /* justify-content: center; */
+    gap: 20px;
 }
 .circle-icon{
-    width: 81px;
-    height: 81px;
+    width: 600px;
+    height: 130px;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     border: 2px solid #25B4E5;
-    border-radius: 50%;
+    border-radius: 12px;
+    padding: 25px;
 }
 .icon-1-title{
     font-weight: 400;
-    font-size: 13px;
+    font-size: 19px;
     line-height: 19.5px;
 }
 .category-icon-1{
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    width: 100%;
     gap: 5px;
 }
 .category-icon-1 img{
-    width: 45px;
-    height: 50px;
+    width: 100px;
+    height: 100px;
+}
+.center{
+    display: flex;
+    justify-content: center;
 }
 
 /* Tablet Screens (768px to 1024px) */
@@ -215,21 +231,37 @@
         padding: 0px 20px;
     }
 
-    .category-icon{
-        justify-content: flex-start;
-        gap: 16px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        flex-wrap: nowrap;
-        padding-bottom: 8px;
+    .category-section a{
+        width: 100%;
+        display: block;
     }
 
-    /* hide scrollbar for WebKit while keeping native scroll available */
-    .category-icon::-webkit-scrollbar{
-        display: none;
+    .category-icons{
+        gap: 20px;
     }
+
     .category-icon{
-        scrollbar-width: none; /* Firefox */
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .category-icon-1{
+        width: 100%;
+    }
+
+    .circle-icon{
+        width: 100%;
+        height: auto;
+        min-height: 120px;
+        gap: 15px;
+    }
+
+    .category-icon-1 img{
+        width: 80px;
+        height: 80px;
     }
 }
 
@@ -272,11 +304,26 @@
 
     /* tighten category padding and ensure scroll works well on very small screens */
     .category-section{
-        padding: 0px 12px;
+        padding: 0px 15px;
+    }
+
+    .category-section a{
+        width: 100%;
+        display: block;
     }
 
     .category-icon{
-        gap: 12px;
+        gap: 15px;
+    }
+
+    .circle-icon{
+        padding: 20px;
+        min-height: 110px;
+    }
+
+    .category-icon-1 img{
+        width: 70px;
+        height: 70px;
     }
 }
 

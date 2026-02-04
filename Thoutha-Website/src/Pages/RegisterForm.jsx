@@ -8,18 +8,18 @@ export default function RegisterForm() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [college, setCollege] = useState('');
+  const [faculty, setFaculty] = useState('');
   const [year, setYear] = useState('');
-  const [governorate, setGovernorate] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [category, setCategory] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
-    if (!firstName || !lastName || !email || !phone || !college || !year || !governorate || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !phone || !faculty || !year || !password || !confirmPassword || !category) {
       setError('يرجى ملء جميع الحقول');
       return;
     }
@@ -46,12 +46,12 @@ export default function RegisterForm() {
           </div>
 
           <div className="input-group">
-            <input type="email" placeholder="User@gmail.com" value={email} onChange={(e) => {setEmail(e.target.value); error && setError('');}} required  className="input-field-2"/>
+            <input type="email" placeholder="ادخل ايميل الجامعة" value={email} onChange={(e) => {setEmail(e.target.value); error && setError('');}} required  className="input-field-2"/>
             <input type="tel" placeholder="رقم التليفون" value={phone} onChange={(e) => {setPhone(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
 
           <div className="input-group">
-            <select value={college} onChange={(e) => {setCollege(e.target.value); error && setError('');}} required className="input-field-2">
+            <select value={faculty} onChange={(e) => {setFaculty(e.target.value); error && setError('');}} required className="input-field-2">
               <option value="">اختر الكلية</option>
               <option value="dentistry">طب الاسنان</option>
               <option value="medicine">الطب البشري</option>
@@ -67,11 +67,12 @@ export default function RegisterForm() {
               <option value="5">الخامسة</option>
             </select>
 
-            <select value={governorate} onChange={(e) => {setGovernorate(e.target.value); error && setError('');}} required className="input-field-2">
-              <option value="">اختر المحافظة</option>
-              <option value="cairo">القاهرة</option>
-              <option value="alex">الإسكندرية</option>
-              <option value="giza">الجيزة</option>
+            <select value={category} onChange={(e) => {setCategory(e.target.value); error && setError('');}} required className="input-field-2">
+              <option value="">اختر الخدمة</option>
+              <option value="حشو اسنان">حشو اسنان</option>
+              <option value="زراعة اسنان">زرااعة اسنان</option>
+              <option value="خلع اسنان">خلع اسنان</option>
+              <option value="فحص شامل">فحص شامل</option>
             </select>
           </div>
 

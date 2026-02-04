@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -5,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
+import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
+
+const String _profileBaseUrl = 'http://13.53.131.167:5000';
 
 class DoctorProfile extends StatefulWidget {
   const DoctorProfile({Key? key}) : super(key: key);
@@ -27,7 +31,31 @@ class _DoctorProfileState extends State<DoctorProfile> {
   String? _faculty;
   String? _year;
   String? _governorate;
+  String? _category;
   String? _profileImage;
+
+  final List<String> _governorates = [
+    'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'الشرقية', 'الغربية',
+    'المنوفية', 'البحيرة', 'القليوبية', 'دمياط', 'كفر الشيخ', 'بورسعيد',
+    'الإسماعيلية', 'السويس', 'المنيا', 'أسيوط', 'سوهاج', 'قنا', 'الأقصر',
+    'أسوان', 'البحر الأحمر', 'مطروح', 'شمال سيناء', 'جنوب سيناء', 'الفيوم',
+    'بني سويف', 'الوادي الجديد',
+  ];
+
+  final List<String> _categories = [
+    'جراحة الوجه والفكين', 'تقويم الأسنان', 'علاج الجذور', 'طب أسنان الأطفال',
+    'تركيبات الأسنان', 'علاج اللثة', 'طب الأسنان التجميلي', 'زراعة الأسنان',
+  ];
+
+  final List<String> _colleges = [
+    'كلية طب الأسنان - القاهرة', 'كلية طب الأسنان - عين شمس',
+    'كلية طب الأسنان - الإسكندرية', 'كلية طب الأسنان - المنصورة', 'أخرى',
+  ];
+
+  final List<String> _studyYears = [
+    'الفرقة الأولى', 'الفرقة الثانية', 'الفرقة الثالثة',
+    'الفرقة الرابعة', 'الفرقة الخامسة', 'امتياز',
+  ];
 
   @override
   void initState() {
@@ -45,7 +73,10 @@ class _DoctorProfileState extends State<DoctorProfile> {
       final cachedFaculty = await SharedPrefHelper.getString('faculty');
       final cachedYear = await SharedPrefHelper.getString('year');
       final cachedGovernorate = await SharedPrefHelper.getString('governorate');
+      final cachedCategory = await SharedPrefHelper.getString('category');
       final cachedImage = await SharedPrefHelper.getString('profile_image');
+
+      print('Cached category before setState: $cachedCategory');
 
       if (mounted) {
         setState(() {
@@ -62,6 +93,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
           _faculty = (cachedFaculty?.isNotEmpty ?? false) ? cachedFaculty : _faculty;
           _year = (cachedYear?.isNotEmpty ?? false) ? cachedYear : _year;
           _governorate = (cachedGovernorate?.isNotEmpty ?? false) ? cachedGovernorate : _governorate;
+          _category = (cachedCategory?.isNotEmpty ?? false) ? cachedCategory : _category;
           _profileImage = (cachedImage?.isNotEmpty ?? false) ? cachedImage : _profileImage;
 
           // Fallback if name is missing but email exists
@@ -71,43 +103,41 @@ class _DoctorProfileState extends State<DoctorProfile> {
           }
         });
       }
-      await _fetchProfile();
+      // Fetch latest profile data in the background without blocking
+      // the initial screen render or showing a long loading state.
+      unawaited(_fetchProfile(silent: true));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _fetchProfile() async {
-    setState(() {
-      _error = null;
-      _loading = true;
-    });
+  Future<void> _fetchProfile({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _error = null;
+        _loading = true;
+      });
+    }
     try {
       final dio = DioFactory.getDio();
       Response? response;
-      // Try common profile endpoints
-      final candidates = ['/me', '/profile', '/users/me', '/auth/me'];
-      for (final path in candidates) {
+
+      // Try the dedicated '/profile' endpoint first, then '/me' (Flask backend)
+      try {
+        response = await dio.get('$_profileBaseUrl/profile');
+      } catch (_) {
+        // If /profile fails, try /me
         try {
-          final res = await dio.get(path);
-          if (res.statusCode == 200) {
-            response = res;
-            break;
-          }
-        } on DioException catch (e) {
-          // Ignore 404s and try next candidate
-          if (e.response?.statusCode == 404) {
-            continue;
-          }
-          // Network/timeouts bubble up
-          rethrow;
+          response = await dio.get('$_profileBaseUrl/me');
+        } catch (_) {
+          // If /me fails (e.g. 404 on old server), simply proceed to fallback.
         }
       }
 
       // Fallback: Try POST /update_profile with empty body if GET endpoints failed
       if (response == null) {
         try {
-          final res = await dio.post('/update_profile', data: {});
+          final res = await dio.post('$_profileBaseUrl/update_profile', data: {});
           if (res.statusCode == 200) {
             response = res;
           }
@@ -214,10 +244,13 @@ class _DoctorProfileState extends State<DoctorProfile> {
         final faculty = userMap?['faculty']?.toString();
         final year = userMap?['year']?.toString();
         final governorate = (userMap?['governorate'] ?? userMap?['governorate_id'])?.toString();
+        // Try multiple keys for category/specialty
+        final category = (userMap?['category'] ?? userMap?['specialty'] ?? userMap?['specialization'])?.toString();
         final profileImage = userMap?['profile_image']?.toString();
 
         // Debug log the extracted values
         print('Extracted phone: $phone');
+        print('Extracted category from API: $category');
         print('All userMap keys: ${userMap?.keys.toList()}');
 
         if (mounted) {
@@ -230,6 +263,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
             if (faculty != null && faculty.isNotEmpty) _faculty = faculty;
             if (year != null && year.isNotEmpty) _year = year;
             if (governorate != null && governorate.isNotEmpty) _governorate = governorate;
+            if (category != null && category.isNotEmpty) _category = category;
             if (profileImage != null && profileImage.isNotEmpty) _profileImage = profileImage;
 
             // Fallback if name is missing but email exists
@@ -250,6 +284,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
           if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
           if (year != null) await SharedPrefHelper.setData('year', year);
           if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
+          if (category != null) await SharedPrefHelper.setData('category', category);
           if (profileImage != null) {
             await SharedPrefHelper.setData('profile_image', profileImage);
             DoctorDrawer.profileImageNotifier.value = profileImage;
@@ -262,11 +297,15 @@ class _DoctorProfileState extends State<DoctorProfile> {
     } on DioException catch (e) {
       // For 404 specifically, suppress the error and keep cached values
       if (e.response?.statusCode == 404) return;
-      setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
+      if (!silent && mounted) {
+        setState(() => _error = e.message ?? 'تعذر الاتصال بالخادم');
+      }
     } catch (_) {
-      setState(() => _error = 'حدث خطأ غير متوقع');
+      if (!silent && mounted) {
+        setState(() => _error = 'حدث خطأ غير متوقع');
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
   }
 
@@ -296,7 +335,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
     try {
       final dio = DioFactory.getDio();
       final response = await dio.post(
-        '/update_profile',
+        '$_profileBaseUrl/update_profile',
         data: {'profile_image': base64Image},
       );
 
@@ -315,6 +354,229 @@ class _DoctorProfileState extends State<DoctorProfile> {
         const SnackBar(content: Text('حدث خطأ أثناء تحديث الصورة')),
       );
     }
+  }
+
+  Future<void> _updateProfileData(Map<String, dynamic> data) async {
+    setState(() => _loading = true);
+    try {
+      // Get token first
+      final token = await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
+      if (token == null || token.isEmpty) {
+        throw Exception('Token غير موجود. يرجى تسجيل الدخول مرة أخرى');
+      }
+      
+      print('Updating profile with token: exists');
+      print('Update data: $data');
+      print('Update URL: $_profileBaseUrl/update_profile');
+      
+      // Create a new Dio instance for this specific request to avoid baseUrl conflicts
+      final dio = Dio(BaseOptions(
+        baseUrl: _profileBaseUrl,
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ));
+      
+      final response = await dio.post(
+        '/update_profile',
+        data: data,
+      );
+      
+      print('Update response status: ${response.statusCode}');
+      print('Update response data: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        // Check if response indicates success
+        final responseData = response.data;
+        if (responseData is Map && responseData['status'] == 'success') {
+          // Optimistic local update to ensure UI reflects changes even if server doesn't return them
+          setState(() {
+             if (data.containsKey('category')) _category = data['category'];
+             if (data.containsKey('first_name')) _firstName = data['first_name'];
+             if (data.containsKey('last_name')) _lastName = data['last_name'];
+             if (data.containsKey('phone')) _phone = data['phone'];
+             if (data.containsKey('faculty')) _faculty = data['faculty'];
+             if (data.containsKey('year')) _year = data['year'];
+             if (data.containsKey('governorate')) _governorate = data['governorate'];
+          });
+
+          // Persist to local storage
+          if (_category != null) await SharedPrefHelper.setData('category', _category!);
+          if (_firstName != null) await SharedPrefHelper.setData('first_name', _firstName!);
+          if (_lastName != null) await SharedPrefHelper.setData('last_name', _lastName!);
+          if (_phone != null) await SharedPrefHelper.setData('phone', _phone!);
+          if (_faculty != null) await SharedPrefHelper.setData('faculty', _faculty!);
+          if (_year != null) await SharedPrefHelper.setData('year', _year!);
+          if (_governorate != null) await SharedPrefHelper.setData('governorate', _governorate!);
+
+          // Refresh profile data from server
+          await _fetchProfile(silent: true);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تحديث البيانات بنجاح'), backgroundColor: Colors.green),
+            );
+          }
+        } else {
+          throw Exception('Server returned error: ${responseData['message'] ?? 'Unknown error'}');
+        }
+      } else {
+        // Log details to diagnose why update failed
+        print('update_profile failed: status=${response.statusCode}, data=${response.data}');
+        throw Exception('Failed to update: status ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('DioException updating profile: ${e.message}');
+      print('Response: ${e.response?.data}');
+      print('Status code: ${e.response?.statusCode}');
+      
+      String errorMessage = 'حدث خطأ أثناء التحديث';
+      if (e.response != null) {
+        final errorData = e.response?.data;
+        if (errorData is Map && errorData['message'] != null) {
+          errorMessage = errorData['message'].toString();
+        } else if (e.response?.statusCode == 401) {
+          errorMessage = 'غير مصرح لك. يرجى تسجيل الدخول مرة أخرى';
+        } else if (e.response?.statusCode == 404) {
+          errorMessage = 'المستخدم غير موجود';
+        } else if (e.response?.statusCode == 400) {
+          errorMessage = 'بيانات غير صالحة';
+        }
+      } else if (e.type == DioExceptionType.connectionTimeout || 
+                 e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'تعذر الاتصال بالخادم. يرجى التحقق من الاتصال بالإنترنت';
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      print('Error updating profile: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء التحديث: ${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _showEditProfileDialog() {
+    final firstNameCtrl = TextEditingController(text: _firstName);
+    final lastNameCtrl = TextEditingController(text: _lastName);
+    final phoneCtrl = TextEditingController(text: _phone);
+
+    String? selectedCategory = _category;
+    String? selectedYear = _year;
+    String? selectedGovernorate = _governorate;
+    String? selectedCollege = _faculty;
+
+    // Ensure initial values are in the lists or null
+    if (selectedCategory != null && !_categories.contains(selectedCategory)) selectedCategory = null;
+    if (selectedYear != null && !_studyYears.contains(selectedYear)) selectedYear = null;
+    if (selectedGovernorate != null && !_governorates.contains(selectedGovernorate)) selectedGovernorate = null;
+    if (selectedCollege != null && !_colleges.contains(selectedCollege)) selectedCollege = null;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: const Text('تعديل البيانات', textAlign: TextAlign.center),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: firstNameCtrl,
+                        decoration: const InputDecoration(labelText: 'الاسم الأول'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: lastNameCtrl,
+                        decoration: const InputDecoration(labelText: 'اسم العائلة'),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: phoneCtrl,
+                        decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedCollege,
+                        decoration: const InputDecoration(labelText: 'الكلية'),
+                        isExpanded: true,
+                        items: _colleges.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedCollege = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedYear,
+                        decoration: const InputDecoration(labelText: 'السنة الدراسية'),
+                        isExpanded: true,
+                        items: _studyYears.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedYear = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedGovernorate,
+                        decoration: const InputDecoration(labelText: 'المحافظة'),
+                        isExpanded: true,
+                        items: _governorates.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedGovernorate = v),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedCategory, // Use the variable
+                        decoration: const InputDecoration(labelText: 'التخصص'),
+                        isExpanded: true,
+                        items: _categories.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setStateDialog(() => selectedCategory = v), // Update variable
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _updateProfileData({
+                      'first_name': firstNameCtrl.text,
+                      'last_name': lastNameCtrl.text,
+                      'phone': phoneCtrl.text,
+                      'category': selectedCategory,
+                      'year': selectedYear,
+                      'governorate': selectedGovernorate,
+                      'faculty': selectedCollege,
+                    });
+                  },
+                  child: const Text('حفظ'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -349,6 +611,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'تعديل البيانات',
+            onPressed: _showEditProfileDialog,
+          ),
+          SizedBox(width: 8.w),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -501,6 +771,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
           label: 'السنة الدراسية',
           value: _year),
       _InfoItem(
+          icon: Icons.work_outline, label: 'التخصص', value: _category), // Added Category
+      _InfoItem(
           icon: Icons.place_outlined, label: 'المحافظة', value: _governorate),
     ];
 
@@ -543,51 +815,39 @@ class _DoctorProfileState extends State<DoctorProfile> {
 
   Widget _infoRow(_InfoItem item, ThemeData theme, TextTheme textTheme,
       ColorScheme colorScheme) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Open the drawer when any menu item is tapped
-          if (context.mounted) {
-            context.findAncestorStateOfType<ScaffoldState>()?.openDrawer();
-          }
-        },
-        borderRadius: BorderRadius.circular(8.r),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
-          child: Row(
-            children: [
-              Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      item.label,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 12.sp,
-                      ),
-                      textAlign: TextAlign.right,
-                    ),
-                    SizedBox(height: 2.h),
-                    _loading
-                        ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
-                        : Text(
-                            (item.value?.isNotEmpty ?? false) ? item.value! : '-',
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14.sp,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                  ],
+    return Container( // Changed Material/Inkwell to basic Container to remove tap effect
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 6.w),
+      child: Row(
+        children: [
+          Icon(item.icon, color: theme.iconTheme.color, size: 22.sp),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  item.label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 12.sp,
+                  ),
+                  textAlign: TextAlign.right,
                 ),
-              ),
-            ],
+                SizedBox(height: 2.h),
+                _loading
+                    ? _shimmerLine(width: 160.w, height: 16.h, theme: theme)
+                    : Text(
+                        (item.value?.isNotEmpty ?? false) ? item.value! : '-',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

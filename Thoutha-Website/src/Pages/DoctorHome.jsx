@@ -6,6 +6,7 @@ export default function DoctorHome(){
     const {  user } = useContext(AuthContext);
     return(
         <>
+        
         <div className="doctorhome">
             <div className="doctor-title">
                 <p className="doctor-name2">مرحباً, د. {user?.first_name} {user?.last_name}</p>
