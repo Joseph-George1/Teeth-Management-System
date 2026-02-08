@@ -1,6 +1,7 @@
 import os
 import asyncio
 from pathlib import Path
+from aiohttp import web, ClientSession
 
 import discord
 from discord.ext import commands
@@ -211,12 +212,45 @@ async def help_cmd(ctx: commands.Context):
 	await ctx.send(embed=embed)
 
 
+async def health_check(request):
+	"""Health check endpoint that proxies to the AI chatbot API health endpoint."""
+	try:
+		async with ClientSession() as session:
+			async with session.get('http://127.0.0.1:5000/health', timeout=5) as response:
+				data = await response.json()
+				return web.json_response(data)
+	except Exception as e:
+		return web.json_response({
+			'status': 'error',
+			'ai_initialized': False,
+			'questions_loaded': False,
+			'error': str(e)
+		}, status=503)
+
+
+async def start_health_server():
+	"""Start the health check HTTP server."""
+	app = web.Application()
+	app.router.add_get('/health', health_check)
+	
+	runner = web.AppRunner(app)
+	await runner.setup()
+	site = web.TCPSite(runner, '127.0.0.1', 5010)
+	await site.start()
+	print(f'Health check server started on http://127.0.0.1:5010/health')
+
+
 if __name__ == '__main__':
 	# Prefer environment variable, fall back to embedded BOT_TOKEN constant
 	token = os.environ.get('DISCORD_TOKEN') or BOT_TOKEN
 	if not token:
 		print('Please set DISCORD_TOKEN in the environment or edit BOT_TOKEN in the script.')
 		raise SystemExit(1)
+	
+	# Start health check server in background
+	loop = asyncio.get_event_loop()
+	loop.create_task(start_health_server())
+	
 	try:
 		bot.run(token)
 	except Exception as exc:
