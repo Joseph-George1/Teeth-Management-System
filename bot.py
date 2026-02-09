@@ -87,47 +87,25 @@ async def run_astart_flag(flag: str, timeout: int = 120):
 	return proc.returncode, (out.decode() if out else ''), (err.decode() if err else '')
 
 
-# Health check globals
-health_server_runner = None
-
-
-async def health_check(request):
-	"""Health check endpoint that proxies to the AI chatbot API health endpoint."""
+async def get_health_status():
+	"""Fetch health status from AI chatbot API."""
 	try:
 		async with ClientSession() as session:
-			async with session.get('http://127.0.0.1:5000/health', timeout=5) as response:
+			async with session.get('http://127.0.0.1:5010/health', timeout=5) as response:
 				data = await response.json()
-				return web.json_response(data)
+				return data
 	except Exception as e:
-		return web.json_response({
+		return {
 			'status': 'error',
 			'ai_initialized': False,
 			'questions_loaded': False,
 			'error': str(e)
-		}, status=503)
-
-
-async def start_health_server():
-	"""Start the health check HTTP server."""
-	global health_server_runner
-	try:
-		app = web.Application()
-		app.router.add_get('/health', health_check)
-		
-		health_server_runner = web.AppRunner(app)
-		await health_server_runner.setup()
-		site = web.TCPSite(health_server_runner, '127.0.0.1', 5010)
-		await site.start()
-		print(f'Health check server started on http://127.0.0.1:5010/health')
-	except Exception as e:
-		print(f'Failed to start health check server: {e}')
+		}
 
 
 @bot.event
 async def on_ready():
 	print(f'Bot connected as {bot.user} (ASTART={ASTART_SCRIPT})')
-	# Start health check server after bot is ready
-	await start_health_server()
 
 
 @bot.command(name='run')
@@ -154,8 +132,10 @@ async def status_cmd(ctx: commands.Context):
 	if not authorized(ctx.author.id):
 		await ctx.reply('You are not authorized to run this command.')
 		return
-	lines = []
-
+	
+	# Get health status from AI chatbot API
+	health = await get_health_status()
+	
 	# Build a concise list of running process NAMES (from pid files)
 	running = []
 	missing = []
@@ -176,25 +156,55 @@ async def status_cmd(ctx: commands.Context):
 					missing.append(f'{name} (pid={pid})')
 			else:
 				missing.append(f'{name} (no-pid)')
+	
+	# Determine embed color based on status
+	if health.get('status') == 'ok' and len(running) > 0:
+		color = 0x2ecc71  # Green - everything is good
+	elif health.get('status') == 'ok' or len(running) > 0:
+		color = 0xf39c12  # Orange - partially working
 	else:
-		lines.append(f'PID_DIR not found: {PID_DIR}')
-
+		color = 0xe74c3c  # Red - problems detected
+	
+	# Create colorful embed
+	embed = discord.Embed(
+		title="🔍 System Status",
+		color=color,
+		description="Current status of all services and components"
+	)
+	
+	# Add AI Chatbot Health
+	status_emoji = "✅" if health.get('status') == 'ok' else "❌"
+	ai_emoji = "✅" if health.get('ai_initialized') else "❌"
+	questions_emoji = "✅" if health.get('questions_loaded') else "❌"
+	
+	health_text = f"{status_emoji} **Status:** {health.get('status', 'unknown')}\n"
+	health_text += f"{ai_emoji} **AI Initialized:** {health.get('ai_initialized', False)}\n"
+	health_text += f"{questions_emoji} **Questions Loaded:** {health.get('questions_loaded', False)}"
+	
+	if 'error' in health:
+		health_text += f"\n⚠️ **Error:** {health['error']}"
+	
+	embed.add_field(name="🤖 AI Chatbot API", value=health_text, inline=False)
+	
+	# Add Running Processes
 	if running:
-		lines.append('Running processes:')
-		for r in running:
-			lines.append(f'- {r}')
+		running_text = '\n'.join([f'🟢 {r}' for r in running])
+		if len(running_text) > 1024:
+			running_text = running_text[:1020] + '\n...'
+		embed.add_field(name="⚙️ Running Processes", value=running_text, inline=False)
 	else:
-		lines.append('No running processes detected.')
-
+		embed.add_field(name="⚙️ Running Processes", value="⚪ No running processes detected", inline=False)
+	
+	# Add Missing/Stopped Processes
 	if missing:
-		lines.append('Known but not running:')
-		for m in missing:
-			lines.append(f'- {m}')
-
-	msg = '\n'.join(lines)
-	if len(msg) > 1900:
-		msg = msg[:1900] + '\n... (truncated)'
-	await ctx.send(f'```\n{msg}\n```')
+		missing_text = '\n'.join([f'🔴 {m}' for m in missing])
+		if len(missing_text) > 1024:
+			missing_text = missing_text[:1020] + '\n...'
+		embed.add_field(name="⏸️ Stopped Processes", value=missing_text, inline=False)
+	
+	embed.set_footer(text=f"PID Dir: {PID_DIR} | Logs: {LOG_DIR}")
+	
+	await ctx.send(embed=embed)
 
 
 @bot.command(name='help')
