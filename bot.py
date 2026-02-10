@@ -292,7 +292,7 @@ async def help_cmd(ctx: commands.Context):
 	)
 	
 	embed.set_footer(text=f"📂 Astart: {ASTART_SCRIPT.name} | 📋 Logs: {LOG_DIR}")
-	embed.set_thumbnail(url="https://cdn-icons-png.flaticon.com/512/2991/2991148.png")  # Robot/bot icon
+	embed.set_thumbnail(url="https://thoutha.page/%D8%AB%D9%88%D8%AB%D8%A9.png")  # Robot/bot icon
 
 	await ctx.send(embed=embed)
 

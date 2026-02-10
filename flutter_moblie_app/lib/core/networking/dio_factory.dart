@@ -11,7 +11,7 @@ class DioFactory {
   static Dio? dio;
 
   static Dio getDio() {
-    Duration timeOut = const Duration(seconds: 60);
+    Duration timeOut = const Duration(seconds: 120);
 
     if (dio == null) {
       dio = Dio();
@@ -29,7 +29,8 @@ class DioFactory {
   }
 
   static Future<void> addDioHeaders() async {
-    final token = await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
+    final token =
+        await SharedPrefHelper.getSecuredString(SharedPrefKeys.userToken);
     final headers = <String, dynamic>{
       'Accept': 'application/json',
     };
