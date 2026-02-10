@@ -33,7 +33,7 @@ export default function Home(){
           <div className="category-icons">
             <div className="category-icon">
             <div className="category-icon-1">
-              <Link to="/teeth-whitenting">
+              <Link to="/teeth-whitening">
               <div className="circle-icon">
                 <img src="./تبيض اسنان.svg" alt="" />
               <p className="icon-1-title">تبيض اسنان</p>

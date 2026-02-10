@@ -88,7 +88,80 @@
     font-size: clamp(0.85rem, 1.8vw, 0.95rem);
 }
 
-.chat-body .bot-message .message-text{
+.flow-block{
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.quick-replies{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: center;
+    justify-items: stretch;
+    padding: 0 10px;
+    font-family: 'Cairo', sans-serif;
+}
+
+.quick-reply-button{
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background-color: var(--color-3);
+    color: #083b52;
+    font-weight: 600;
+    font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.quick-reply-button:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(42, 102, 125, 0.4);
+}
+
+.quick-reply-button:disabled{
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.quick-reply-button.full{
+    grid-column: 1 / -1;
+    max-width: 260px;
+    justify-self: center;
+}
+
+.quick-reply-button.result-button{
+    max-width: 450px;
+    padding: 14px 22px;
+}
+
+
+
+.result-message {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 14px;
+    background-color: var(--color-3);
+    border-radius: 13px 13px 13px 3px;
+    max-width: 80%;
+}
+
+.result-message .message-text {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    max-width: 100%;
+    margin: 0;
+}
+
+.chat-body .bot-message .message-text {
     background-color: var(--color-3);
     border-radius: 13px 13px 13px 3px;
 }
@@ -132,6 +205,7 @@
     height: 47px;
     padding: 0 17px;
     font-size: 0.95rem;
+    width: 100%;
 }
 
 .chat-form button{
@@ -188,6 +262,16 @@
         max-width: 85%;
     }
 
+    .quick-replies{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 6px;
+    }
+
+    .quick-reply-button{
+        padding: 9px 14px;
+    }
+
     .chat-body .bot-message svg {
         height: 30px;
         width: 30px;
@@ -232,6 +316,16 @@
     }
 
     .chat-form button {
-        padding: 0 15px;
+        padding: 0 6px;
+    }
+
+    .quick-replies{
+        grid-template-columns: 1fr;
+    }
+
+    .quick-reply-button.full{
+        max-width: none;
     }
 }
+
+
