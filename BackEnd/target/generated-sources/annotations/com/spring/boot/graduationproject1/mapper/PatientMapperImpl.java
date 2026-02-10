@@ -1,53 +1,81 @@
 package com.spring.boot.graduationproject1.mapper;
 
 import com.spring.boot.graduationproject1.dto.PatientDto;
-import com.spring.boot.graduationproject1.model.Patient;
+import com.spring.boot.graduationproject1.model.Patients;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.processing.Generated;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-12-20T15:39:21+0200",
-    comments = "version: 1.5.2.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
+    date = "2026-02-06T20:36:33+0200",
+    comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
 )
 @Component
 public class PatientMapperImpl implements PatientMapper {
 
-    @Autowired
-    private RoleMapper roleMapper;
-
     @Override
-    public PatientDto toDto(Patient patient) {
+    public PatientDto toDto(Patients patient) {
         if ( patient == null ) {
             return null;
         }
 
         PatientDto patientDto = new PatientDto();
 
-        patientDto.setCity( patient.getCity() );
         patientDto.setId( patient.getId() );
-        patientDto.setName( patient.getName() );
+        patientDto.setFirstName( patient.getFirstName() );
+        patientDto.setLastName( patient.getLastName() );
+        patientDto.setSurName( patient.getSurName() );
         patientDto.setPhoneNumber( patient.getPhoneNumber() );
-        patientDto.setRole( roleMapper.toDto( patient.getRole() ) );
+        patientDto.setCityName( patient.getCityName() );
 
         return patientDto;
     }
 
     @Override
-    public Patient toEntity(PatientDto patientDto) {
+    public Patients toEntity(PatientDto patientDto) {
         if ( patientDto == null ) {
             return null;
         }
 
-        Patient patient = new Patient();
+        Patients patients = new Patients();
 
-        patient.setCity( patientDto.getCity() );
-        patient.setId( patientDto.getId() );
-        patient.setName( patientDto.getName() );
-        patient.setPhoneNumber( patientDto.getPhoneNumber() );
-        patient.setRole( roleMapper.toEntity( patientDto.getRole() ) );
+        patients.setId( patientDto.getId() );
+        patients.setFirstName( patientDto.getFirstName() );
+        patients.setLastName( patientDto.getLastName() );
+        patients.setSurName( patientDto.getSurName() );
+        patients.setPhoneNumber( patientDto.getPhoneNumber() );
+        patients.setCityName( patientDto.getCityName() );
 
-        return patient;
+        return patients;
+    }
+
+    @Override
+    public List<PatientDto> toListDto(List<Patients> patients) {
+        if ( patients == null ) {
+            return null;
+        }
+
+        List<PatientDto> list = new ArrayList<PatientDto>( patients.size() );
+        for ( Patients patients1 : patients ) {
+            list.add( toDto( patients1 ) );
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<Patients> toListEntity(List<PatientDto> patientDtos) {
+        if ( patientDtos == null ) {
+            return null;
+        }
+
+        List<Patients> list = new ArrayList<Patients>( patientDtos.size() );
+        for ( PatientDto patientDto : patientDtos ) {
+            list.add( toEntity( patientDto ) );
+        }
+
+        return list;
     }
 }
