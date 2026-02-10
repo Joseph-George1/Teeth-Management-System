@@ -557,7 +557,6 @@ while getopts ":cauwbxsvh" option; do
             verbose_log "  - Log directory: $LOG_DIR"
             ;;
         c)
-        c)
             echo -e "${GREEN}Starting Web Interface...${NC}"
             verbose_log "Executing: start_web_ui"
             start_web_ui

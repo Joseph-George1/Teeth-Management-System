@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
+import 'package:thotha_mobile_app/features/help_and_support/ui/help_and_support_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/browse_services/ui/browse_services_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/home_settings_screen.dart' show HomeSettingsScreen;
+import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
 
 import '../../../../core/theming/colors.dart';
 
@@ -155,14 +157,41 @@ class HomeDrawer extends StatelessWidget {
                   title: 'الإعدادات',
                   icon: Icons.settings_outlined,
                   onTap: () {
-                    Navigator.pop(context); // Close drawer
+                    Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const HomeSettingsScreen()),
                     );
                   },
                 ),
-                _menuItem(context, title: 'المساعدة والدعم', icon: Icons.help_outline),
+                _menuItem(
+                  context,
+                  title: 'الشروط والأحكام',
+                  icon: Icons.description_outlined,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TermsAndConditionsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _menuItem(
+                  context,
+                  title: 'المساعدة والدعم',
+                  icon: Icons.help_outline,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HelpAndSupportScreen(),
+                      ),
+                    );
+                  },
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Divider(height: 24.h),

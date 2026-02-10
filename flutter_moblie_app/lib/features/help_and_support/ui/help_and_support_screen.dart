@@ -1,22 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class HelpAndSupportScreen extends StatelessWidget {
+class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});
 
   @override
+  State<HelpAndSupportScreen> createState() => _HelpAndSupportScreenState();
+}
+
+class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _messageController = TextEditingController();
+  bool _isSending = false;
+
+  static const String _supportEmail = 'haleezmo0@gmail.com';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSending = true);
+
+    // Simulate send delay; in production you could call an API or use url_launcher
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+    setState(() => _isSending = false);
+
+    _nameController.clear();
+    _emailController.clear();
+    _messageController.clear();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('تم إرسال رسالتك بنجاح. سنتواصل معك في أقرب وقت.'),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'المساعدة والدعم',
+          'الدعم الفني – تطبيق ثوثة',
           style: TextStyle(
             fontFamily: 'Cairo',
             fontWeight: FontWeight.bold,
-            fontSize: 20.sp,
+            fontSize: 18.sp,
           ),
         ),
         centerTitle: true,
@@ -30,183 +74,216 @@ class HelpAndSupportScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Intro
             Text(
-              'كيف يمكننا مساعدتك؟',
+              'لو واجهتك أي مشكلة تقنية أثناء استخدام تطبيق ثوثة، أو عندك استفسار بخصوص التسجيل أو الحساب، فريق الدعم الفني جاهز يساعدك.',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontFamily: 'Cairo',
-                fontSize: 22.sp,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+                fontSize: 15.sp,
+                height: 1.6,
+                color: theme.textTheme.bodyMedium?.color,
               ),
             ),
-            SizedBox(height: 20.h),
-            _buildFaqItem(
-              context,
-              'كيف يمكنني حجز موعد؟',
-              'يمكنك حجز موعد عن طريق الذهاب إلى الصفحة الرئيسية، اختيار التخصص المطلوب، ثم اختيار الطبيب والموعد المناسب لك.',
-            ),
-            _buildFaqItem(
-              context,
-              'كيف يمكنني إلغاء الحجز؟',
-              'يمكنك إلغاء الحجز من خلال صفحة "حجوزاتي"، اختيار الحجز المراد إلغاؤه، والضغط على زر "إلغاء".',
-            ),
-            _buildFaqItem(
-              context,
-              'هل يمكنني تغيير كلمة المرور؟',
-              'نعم، يمكنك تغيير كلمة المرور من خلال صفحة الإعدادات واختيار "تغيير كلمة المرور".',
-            ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 24.h),
+
+            // ملاحظات مهمة
             Text(
-              'تواصل معنا',
+              'ملاحظات مهمة',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
-                color: theme.textTheme.bodyLarge?.color,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            _buildBullet(theme, 'الدعم الفني يقتصر فقط على المشاكل التقنية المتعلقة باستخدام التطبيق.'),
+            _buildBullet(theme, 'لا يتدخل فريق الدعم في أي نزاعات أو اتفاقات بين الطلاب والمرضى.'),
+            _buildBullet(theme, 'التطبيق دوره يقتصر على الربط فقط بين الطرفين.'),
+            SizedBox(height: 24.h),
+
+            // وسائل التواصل
+            Text(
+              'وسائل التواصل',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'يمكنك التواصل معنا عبر البريد الإلكتروني:',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14.sp,
+                color: theme.textTheme.bodyMedium?.color,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            InkWell(
+              onTap: () {
+                // Optionally: launch mailto
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    _supportEmail,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Icon(Icons.email_outlined, size: 22.sp, color: theme.colorScheme.primary),
+                ],
+              ),
+            ),
+            SizedBox(height: 32.h),
+
+            // نموذج التواصل
+            Text(
+              'نموذج التواصل',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
               ),
             ),
             SizedBox(height: 16.h),
-            _buildContactItem(
-              context,
-              Icons.email_outlined,
-              'البريد الإلكتروني',
-              'joseph@thotha.com',
-            ),
-            _buildContactItem(
-              context,
-              Icons.phone_outlined,
-              'رقم الهاتف',
-              '+20 12 26191421',
-            ),
-            SizedBox(height: 20.h),
-            SizedBox(
-              width: double.infinity,
-              height: 50.h,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Implement contact action
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    textAlign: TextAlign.right,
+                    decoration: InputDecoration(
+                      labelText: 'الاسم',
+                      hintText: 'الاسم',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                      filled: true,
+                      fillColor: theme.cardColor,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'يرجى إدخال الاسم';
+                      return null;
+                    },
                   ),
-                ),
-                child: Text(
-                  'تحدث مع الدعم المباشر',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  SizedBox(height: 16.h),
+                  TextFormField(
+                    controller: _emailController,
+                    textAlign: TextAlign.right,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'البريد الإلكتروني',
+                      hintText: 'البريد الإلكتروني',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                      filled: true,
+                      fillColor: theme.cardColor,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد الإلكتروني';
+                      return null;
+                    },
                   ),
-                ),
+                  SizedBox(height: 16.h),
+                  TextFormField(
+                    controller: _messageController,
+                    textAlign: TextAlign.right,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: 'اكتب رسالتك هنا',
+                      hintText: 'اكتب رسالتك هنا',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
+                      filled: true,
+                      fillColor: theme.cardColor,
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'يرجى كتابة رسالتك';
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 24.h),
+                  SizedBox(
+                    height: 52.h,
+                    child: ElevatedButton(
+                      onPressed: _isSending ? null : _sendMessage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: _isSending
+                          ? SizedBox(
+                              height: 24.h,
+                              width: 24.w,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'إرسال',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
+            SizedBox(height: 24.h),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFaqItem(BuildContext context, String question, String answer) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-        ),
-      ),
-      child: ExpansionTile(
-        title: Text(
-          question,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+  Widget _buildBullet(ThemeData theme, String text) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+          Text(
+            '• ',
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 14.sp,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          Expanded(
             child: Text(
-              answer,
+              text,
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: 14.sp,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.color
-                    ?.withValues(alpha: 0.8),
                 height: 1.5,
+                color: theme.textTheme.bodyMedium?.color,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactItem(
-      BuildContext context, IconData icon, String title, String value) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 14.sp,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(width: 16.w),
-          Container(
-            padding: EdgeInsets.all(10.r),
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24.sp,
             ),
           ),
         ],
