@@ -22,13 +22,6 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
 
   bool get _isBookingEnabled => _selectedDay != null && _selectedTime != null;
 
-  void _showBookingForm(BuildContext context) {
-    // Format the date and time for display
-    final formattedDate = _selectedDay != null ? '${_selectedDay}' : 'غير محدد';
-
-    final formattedTime =
-        _selectedTime != null ? _selectedTime!.format(context) : 'غير محدد';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -508,7 +501,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                           onTap: _isBookingEnabled
                                               ? () {
                                                   final String doctorName =
-                                                      'ZEZO';
+                                                      '${widget.doctor.firstName} ${widget.doctor.lastName}';
                                                   final String date =
                                                       _selectedDay ?? '';
                                                   final String time =
@@ -521,6 +514,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                                       builder: (context) =>
                                                           BookingConfirmationScreen(
                                                         doctorName: doctorName,
+                                                        specialty: widget.doctor.categoryName,
                                                         date: date,
                                                         time: time,
                                                       ),

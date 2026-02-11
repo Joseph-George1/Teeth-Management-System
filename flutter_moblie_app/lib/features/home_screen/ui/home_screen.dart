@@ -47,38 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Search listener will be added later if needed for Cubit filtering
   }
 
-  void _showDoctorDetails(BuildContext context, DoctorModel doctor) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Stack(children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(color: Colors.black.withOpacity(0.2)),
-            ),
-          ),
-          DraggableScrollableSheet(
-            initialChildSize: 0.45,
-            maxChildSize: 0.9,
-            minChildSize: 0.3,
-            builder: (context, controller) {
-              return DoctorInfoContent(
-                controller: controller,
-                doctor: doctor,
-              );
-            },
-          )
-        ]);
-      },
-    );
-  }
 
-  Widget _buildCircularIcon(String assetPath, int index, String categoryName,
-      {int? categoryId}) {
+  Widget _buildSquareCategory(String assetPath, int index, String categoryName,
+      {int? categoryId, String? cityName}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // List of SVG file names in order
@@ -119,291 +90,57 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => CategoryDoctorsScreen(
               categoryName: resolvedCategoryName,
               categoryId: categoryId,
+              cityId: _selectedCityId,
+              cityName: cityName,
             ),
           ),
         );
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72.w,
-            height: 72.h,
-            margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 2.r,
-                  offset: const Offset(0, 0.5),
-                ),
-              ],
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                resolvedAssetPath,
-                width: 36.w,
-                height: 36.h,
-                fit: BoxFit.contain,
-                placeholderBuilder: (BuildContext context) => Container(
-                  width: 36.w,
-                  height: 36.h,
-                  color: isDark ? Colors.grey[800] : Colors.grey[200],
-                  child: Icon(Icons.image, size: 18.r, color: Colors.grey),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          SizedBox(
-            width: 72.w,
-            child: Text(
-              resolvedCategoryName,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 10.sp,
-                    height: 1.0,
-                    letterSpacing: 0.1,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDoctorCard(DoctorModel doctor) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: () => _showDoctorDetails(context, doctor),
       child: Container(
-        width: double.infinity,
-        height: 120.h,
-        margin:
-            EdgeInsets.only(top: 14.h, left: 16.w, right: 16.w, bottom: 14.h),
-        padding: EdgeInsets.only(top: 14.h, right: 16.w, left: 6.w),
+        margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 5.h),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(8.r),
+          color: Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
-            width: 1.1,
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.1),
               blurRadius: 4.r,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Doctor Image Container (Right side)
-            Container(
-              width: 84.w,
-              height: 84.h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8.r),
+            SvgPicture.asset(
+              resolvedAssetPath,
+              width: 48.w,
+              height: 48.h, // Increased size for square card
+              fit: BoxFit.contain,
+              placeholderBuilder: (BuildContext context) => Container(
+                width: 48.w,
+                height: 48.h,
                 color: isDark ? Colors.grey[800] : Colors.grey[200],
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/dr.cr7.jpg'),
-                  fit: BoxFit.cover,
-                ),
+                child: Icon(Icons.image, size: 24.r, color: Colors.grey),
               ),
             ),
-            SizedBox(width: 6.w),
-            // Middle Section with Doctor Info
-            Expanded(
-              child: SizedBox(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Doctor Name and Title
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'د/ كريستيانو رونالدو',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                  ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'تدريب تقويم أسنان',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                    color: Colors.grey,
-                                  ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+            SizedBox(height: 12.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: Text(
+                resolvedCategoryName,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600, // Bolder text
+                      fontSize: 14.sp, // Larger text
+                      height: 1.2,
                     ),
-                    SizedBox(height: 6.h),
-                    // Rating and Location
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.star, size: 11.r, color: Colors.amber),
-                            SizedBox(width: 4.w),
-                            Text(
-                              '4.9',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 0,
-                                  ),
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              '(128)',
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w400,
-                                height: 1.5,
-                                letterSpacing: 0,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 4.h),
-                        Row(
-                          children: [
-                            Icon(Icons.location_on,
-                                size: 11.r, color: Colors.grey),
-                            SizedBox(width: 4.w),
-                            Expanded(
-                              child: Text(
-                                '2.5 كم',
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.5,
-                                  letterSpacing: 0,
-                                  color: Colors.grey,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Right Section (Availability)
-            SizedBox(width: 6.w),
-            SizedBox(
-              width: 54.w,
-              height: 84.h,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Location and Area
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 11.r, color: Colors.grey),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'المعادي',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w400,
-                              height: 1.5,
-                              letterSpacing: 0,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  // Availability Badge
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.green.withOpacity(0.2)
-                            : const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(4.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.2),
-                            blurRadius: 4.r,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.access_time,
-                              size: 11.r, color: Colors.green),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'متاح غداً',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 11.sp,
-                              height: 1.0,
-                              letterSpacing: 0,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -411,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 
   @override
   void dispose() {
@@ -471,7 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
               } else if (state is DoctorSuccess) {
                 final categories = state.categories;
                 final cities = state.cities;
-                final doctors = state.doctors;
 
                 // Filter categories locally based on search text
                 final filteredCategories = (_searchController.text.isEmpty || categories.isEmpty)
@@ -740,10 +477,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
+                                crossAxisCount: 2,
                                 mainAxisSpacing: 12.h,
                                 crossAxisSpacing: 12.w,
-                                childAspectRatio: 0.8,
+                                childAspectRatio: 1.0,
                               ),
                               itemCount: filteredCategories.length,
                               itemBuilder: (context, index) {
@@ -752,56 +489,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                 final asset = _categoryAssets[category.name] ??
                                     'assets/svg/فحص شامل.svg';
 
-                                return _buildCircularIcon(
+                                String? selectedCityName;
+                                if (_selectedCityId != null) {
+                                  try {
+                                    selectedCityName = cities
+                                        .firstWhere((c) => c.id == _selectedCityId)
+                                        .name;
+                                  } catch (_) {}
+                                }
+
+                                return _buildSquareCategory(
                                     asset, index, category.name,
-                                    categoryId: category.id);
+                                    categoryId: category.id,
+                                    cityName: selectedCityName);
                               },
                             ),
                           ),
 
-                        SizedBox(height: 15.h),
-
-                        // Doctors Section Header
-                        if (doctors.isNotEmpty)
-                          Container(
-                            height: 28.h,
-                            margin: EdgeInsets.symmetric(
-                                horizontal: 16.w, vertical: 12.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'الاطباء المتاحين',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17.sp,
-                                        height: 1.2,
-                                        letterSpacing: -0.02,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // Doctor Cards
-                        if (doctors.isEmpty && _selectedCityId != null)
-                          Padding(
-                            padding: EdgeInsets.all(20.h),
-                            child: Center(
-                                child: Text('لا يوجد اطباء في هذه المدينة')),
-                          ),
-
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: doctors.length,
-                          itemBuilder: (context, index) {
-                            return _buildDoctorCard(doctors[index]);
-                          },
-                        ),
 
                         SizedBox(height: 20.h),
                       ],

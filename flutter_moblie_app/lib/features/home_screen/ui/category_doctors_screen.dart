@@ -11,11 +11,15 @@ import 'dart:ui'; // For ImageFilter
 class CategoryDoctorsScreen extends StatelessWidget {
   final String categoryName;
   final int? categoryId;
+  final int? cityId;
+  final String? cityName;
 
   const CategoryDoctorsScreen({
     super.key,
     required this.categoryName,
     this.categoryId,
+    this.cityId,
+    this.cityName,
   });
 
   @override
@@ -24,9 +28,17 @@ class CategoryDoctorsScreen extends StatelessWidget {
       create: (context) {
         final cubit = getIt<DoctorCubit>();
         if (categoryId != null) {
-          cubit.filterByCategory(categoryId!);
+          if (cityName != null && cityName!.isNotEmpty) {
+            cubit.filterByCategoryAndCity(categoryId!, cityName!);
+          } else {
+            cubit.filterByCategory(categoryId!);
+          }
         } else {
-          cubit.filterByCategoryName(categoryName);
+          if (cityName != null && cityName!.isNotEmpty) {
+            cubit.filterByCategoryNameAndCity(categoryName, cityName!);
+          } else {
+            cubit.filterByCategoryName(categoryName);
+          }
         }
         return cubit;
       },

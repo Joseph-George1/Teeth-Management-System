@@ -104,4 +104,52 @@ class DoctorCubit extends Cubit<DoctorState> {
       emit(DoctorError('حدث خطأ: ${e.toString()}'));
     }
   }
+
+  Future<void> filterByCategoryAndCity(int categoryId, String cityName) async {
+    emit(DoctorLoading());
+    try {
+      final allDoctors = await _repository.getDoctorsByCategory(categoryId);
+      final filteredDoctors = allDoctors
+          .where((doctor) => doctor.cityName.trim() == cityName.trim())
+          .toList();
+
+      emit(DoctorSuccess(
+        doctors: filteredDoctors,
+        categories: _categories,
+        cities: _cities,
+      ));
+    } catch (e) {
+      print('=== DoctorCubit Error ===');
+      print('Error type: ${e.runtimeType}');
+      print('Error message: ${e.toString()}');
+      print('Stack trace: ${StackTrace.current}');
+      emit(DoctorError('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
+  Future<void> filterByCategoryNameAndCity(String categoryName, String cityName) async {
+    emit(DoctorLoading());
+    try {
+      if (_categories.isEmpty) {
+        _categories = await _repository.getCategories();
+      }
+      final category = _categories.firstWhere(
+        (c) => c.name.trim() == categoryName.trim(),
+        orElse: () => CategoryModel(id: -1, name: ''),
+      );
+
+      if (category.id != -1) {
+        await filterByCategoryAndCity(category.id, cityName);
+      } else {
+        emit(DoctorError('عفواً، هذا التخصص غير متوفر حالياً'));
+      }
+    } catch (e) {
+       print('=== DoctorCubit Error ===');
+       print('Error type: ${e.runtimeType}');
+       print('Error message: ${e.toString()}');
+       print('Stack trace: ${StackTrace.current}');
+       emit(DoctorError('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
 }
