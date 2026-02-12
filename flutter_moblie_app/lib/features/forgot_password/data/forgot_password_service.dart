@@ -1,15 +1,15 @@
 import 'package:dio/dio.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
 class ForgotPasswordService {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'http://13.53.131.167:5000';
 
   // Send OTP to email for password reset
   Future<Map<String, dynamic>> sendOtp(String email) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/api/auth/send-otp',
+        '${ApiConstants.baseUrl}${ApiConstants.sendOtp}',
         data: {'email': email},
         options: Options(
           headers: {'Content-Type': 'application/json'},
@@ -49,7 +49,7 @@ class ForgotPasswordService {
   }) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/api/auth/verify-otp',
+        '${ApiConstants.baseUrl}${ApiConstants.verifyOtp}',
         data: {
           'email': email,
           'otp': otp,
@@ -64,7 +64,7 @@ class ForgotPasswordService {
         return {
           'success': true,
           'message': 'تم التحقق من الرمز بنجاح',
-          'resetToken': response.data['resetToken'],
+          'resetToken': response.data['resetToken'], // Assuming backend returns a token for reset
         };
       } else {
         String msg = 'رمز التحقق غير صالح';
@@ -102,7 +102,7 @@ class ForgotPasswordService {
       }
 
       final response = await _dio.post(
-        '$_baseUrl/api/auth/reset-password',
+        '${ApiConstants.baseUrl}${ApiConstants.resetPassword}',
         data: {
           'email': email,
           'otp': otp,

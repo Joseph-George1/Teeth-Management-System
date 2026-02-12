@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/helpers/spacing.dart';
+import '../../../core/routing/routes.dart';
 import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
+import '../../forgot_password/data/forgot_password_service.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -43,32 +45,57 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     super.dispose();
   }
 
-  void _verifyOtp() {
+  void _verifyOtp() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      // TODO: Implement OTP verification with your backend
       final otp = _otpControllers.map((controller) => controller.text).join('');
-      print('Verifying OTP: $otp for email: ${widget.email}');
       
-      // Simulate API call
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        // Navigate to reset password screen on success
-        Navigator.pushReplacementNamed(
-          context,
-          '/reset-password',
-          arguments: {
-            'email': widget.email,
-            'otp': otp,
-          },
+      try {
+        final response = await ForgotPasswordService().verifyOtp(
+          email: widget.email,
+          otp: otp,
         );
-      });
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+
+          if (response['success'] == true) {
+            // Navigate to reset password screen
+            Navigator.pushReplacementNamed(
+              context,
+              Routes.resetPasswordScreen,
+              arguments: {
+                'email': widget.email,
+                'otp': otp, 
+              },
+            );
+          } else {
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(response['message'] ?? 'رمز التحقق غير صالح'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+           setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('حدث خطأ غير متوقع'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -82,8 +109,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تأكيد الرمز'),
+        title: const Text(
+          'تأكيد الرمز',
+          style: TextStyle(color: ColorsManager.darkBlue, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: ColorsManager.darkBlue,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Container(
         width: double.infinity,
