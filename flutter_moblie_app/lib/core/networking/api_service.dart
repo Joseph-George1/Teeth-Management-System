@@ -4,6 +4,7 @@ import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
+import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_model.dart';
 
 class ApiService {
   final Dio _dio = DioFactory.getDio();
@@ -170,7 +171,86 @@ class ApiService {
     };
   }
 
+
+
+  /// Fetch case requests by category.
+  Future<Map<String, dynamic>> getCaseRequestsByCategory(int categoryId) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConstants.baseUrl}${ApiConstants.getCaseRequestsByCategory}',
+        queryParameters: {'categoryId': categoryId},
+      );
+
+      if (response.statusCode == 200) {
+        final List<CaseRequestModel> requests = (response.data as List)
+            .map((json) => CaseRequestModel.fromJson(json))
+            .toList();
+        return {'success': true, 'data': requests};
+      }
+
+      return {
+        'success': false,
+        'error': 'فشل في تحميل الطلبات',
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
+      };
+    }
+  }
+
+  /// Create a new case request.
+  /// Needs auth (handled by interceptor).
+  Future<Map<String, dynamic>> createCaseRequest(Map<String, dynamic> body) async {
+    try {
+      final response = await _dio.post(
+        '${ApiConstants.baseUrl}${ApiConstants.createCaseRequest}',
+        data: body,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': 'تم إنشاء الطلب بنجاح',
+          'data': response.data,
+        };
+      }
+
+      return {
+        'success': false,
+        'error': 'فشل في إنشاء الطلب',
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
+      };
+    }
+  }
+
   String _handleDioError(DioException e) {
+
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return 'انتهت مهلة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';

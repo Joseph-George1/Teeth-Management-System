@@ -7,7 +7,8 @@ import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/utils/notification_helper.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/drawer/doctor_drawer_screen.dart';
 import 'package:thotha_mobile_app/features/notifications/ui/notifications_screen.dart';
-// Add this import at the top of the file
+import 'package:thotha_mobile_app/core/theming/colors.dart';
+import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/add_case_request_screen.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({Key? key}) : super(key: key);
@@ -247,6 +248,18 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddCaseRequestScreen(),
+            ),
+          );
+        },
+        backgroundColor: ColorsManager.mainBlue,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: _buildMainContent(),
     );

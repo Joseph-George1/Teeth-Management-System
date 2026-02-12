@@ -2,6 +2,7 @@ import 'package:thotha_mobile_app/core/networking/api_service.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
+import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_model.dart';
 
 class DoctorRepository {
   final ApiService _apiService;
@@ -57,6 +58,41 @@ class DoctorRepository {
         // Loose matching for mock data
         return d.categoryName.contains(categoryName) || categoryName.contains(d.categoryName);
       }).toList();
+    }
+  }
+
+  Future<List<CaseRequestModel>> getCaseRequestsByCategory(int categoryId) async {
+    try {
+      final result = await _apiService.getCaseRequestsByCategory(categoryId);
+      if (result['success'] == true) {
+        return result['data'] as List<CaseRequestModel>;
+      } else {
+        throw Exception(result['error'] ?? 'Failed to load case requests');
+      }
+    } catch (e) {
+      print('API Error in getCaseRequestsByCategory, using mock data: $e');
+      
+      // Return mock requests
+      return [
+        CaseRequestModel(
+          id: 101,
+          description: 'مطلوب حالة زراعة ضرس عاجلة',
+          date: '2024-05-20',
+          time: '14:00',
+          location: 'العيادة - المعادي',
+          specialization: 'زراعة أسنان',
+          doctor: _getMockDoctors()[1], // Dr. Sara
+        ),
+         CaseRequestModel(
+          id: 102,
+          description: 'حالة تقويم بسيطة للتدريب',
+          date: '2024-05-22',
+          time: '10:00',
+          location: 'العيادة - الدقي',
+          specialization: 'تقويم الأسنان',
+          doctor: _getMockDoctors()[0], // Dr. Ahmed
+        ),
+      ];
     }
   }
 

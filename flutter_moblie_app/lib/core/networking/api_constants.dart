@@ -4,6 +4,9 @@ class ApiConstants {
   // Doctor endpoints (public) - Try different variations
   static const String getDoctorsByCity = '/api/doctor/getDoctorsByCity';
   static const String getDoctorsByCategory = '/api/doctor/getDoctorsByCategory';
+  static const String getCaseRequestsByCategory = '/api/case/getByCategory'; // Assumed endpoint
+  static const String createCaseRequest = '/api/case/create'; // Assumed endpoint
+
 
   // Reference data endpoints (public) - Try simpler endpoints first
   static const String getCategories = '/categories';  // Simpler version
