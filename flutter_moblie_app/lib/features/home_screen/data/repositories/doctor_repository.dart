@@ -185,7 +185,11 @@ class DoctorRepository {
     try {
       final result = await _apiService.getCities();
       if (result['success'] == true) {
-        return result['data'] as List<CityModel>;
+        final cities = result['data'] as List<CityModel>;
+        if (cities.isEmpty) {
+          throw Exception('Empty cities list');
+        }
+        return cities;
       } else {
         throw Exception(result['error'] ?? 'Failed to load cities');
       }

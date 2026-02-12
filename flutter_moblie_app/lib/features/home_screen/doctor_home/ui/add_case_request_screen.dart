@@ -25,7 +25,7 @@ class AddCaseRequestScreen extends StatefulWidget {
 class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedCategory;
-  CityModel? _selectedCity;
+  int? _selectedCityId;
   List<CityModel> _cities = [];
   bool _isLoadingCities = false;
 
@@ -79,7 +79,6 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   void dispose() {
     _dateController.dispose();
     _timeController.dispose();
-    // _locationController.dispose();
     super.dispose();
   }
 
@@ -139,11 +138,16 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
           );
         }
 
+        final selectedCityName = _cities
+            .firstWhere((c) => c.id == _selectedCityId,
+                orElse: () => CityModel(id: -1, name: ''))
+            .name;
+
         final body = CaseRequestBody(
           specialization: _selectedCategory!,
           date: _dateController.text,
           time: _timeController.text,
-          location: _selectedCity?.name ?? '',
+          location: selectedCityName,
           description: 'No details', // Description is not in UI, defaulting
         );
 
@@ -312,19 +316,19 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                   verticalSpace(8),
                   _isLoadingCities
                       ? const Center(child: CircularProgressIndicator())
-                      : DropdownButtonFormField<CityModel>(
-                          value: _selectedCity,
+                      : DropdownButtonFormField<int>(
+                          value: _selectedCityId,
                           decoration: _buildInputDecoration(
                             hint: 'اختر المدينة',
                             prefixIcon: Icons.location_on_outlined,
                           ),
                           items: _cities
                               .map((c) => DropdownMenuItem(
-                                    value: c,
+                                    value: c.id,
                                     child: Text(c.name),
                                   ))
                               .toList(),
-                          onChanged: (v) => setState(() => _selectedCity = v),
+                          onChanged: (v) => setState(() => _selectedCityId = v),
                           validator: (value) =>
                               value == null ? 'يرجى اختيار المدينة' : null,
                           icon: const Icon(Icons.keyboard_arrow_down,
