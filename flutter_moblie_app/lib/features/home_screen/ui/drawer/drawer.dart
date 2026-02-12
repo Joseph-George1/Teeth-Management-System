@@ -3,11 +3,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/help_and_support/ui/help_and_support_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/drawer/browse_services/ui/browse_services_screen.dart';
-import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/home_settings_screen.dart' show HomeSettingsScreen;
+import 'package:thotha_mobile_app/features/home_screen/ui/drawer/settings/ui/home_settings_screen.dart'
+    show HomeSettingsScreen;
 import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
 
-import '../../../../core/theming/colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:thotha_mobile_app/features/chat/ui/chat_screen.dart';
 
+import '../../../../core/theming/colors.dart';
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
@@ -15,7 +18,8 @@ class HomeDrawer extends StatelessWidget {
   Widget _menuItem(
     BuildContext context, {
     required String title,
-    required IconData icon,
+    IconData? icon,
+    Widget? customIcon,
     Color? iconColor,
     Color? textColor,
     VoidCallback? onTap,
@@ -28,7 +32,9 @@ class HomeDrawer extends StatelessWidget {
           textDirection: TextDirection.rtl,
           child: Row(
             children: [
-              Icon(icon, color: iconColor ?? Theme.of(context).iconTheme.color),
+              customIcon ??
+                  Icon(icon,
+                      color: iconColor ?? Theme.of(context).iconTheme.color),
               SizedBox(width: 12.w),
               Expanded(
                 child: Text(
@@ -38,8 +44,8 @@ class HomeDrawer extends StatelessWidget {
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
                         fontSize: 16.sp,
-                        color:
-                            textColor ?? Theme.of(context).colorScheme.onSurface,
+                        color: textColor ??
+                            Theme.of(context).colorScheme.onSurface,
                       ),
                 ),
               ),
@@ -62,7 +68,6 @@ class HomeDrawer extends StatelessWidget {
           Container(
             height: topPad + 180.h,
             padding: EdgeInsets.only(top: topPad),
-
             child: Column(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -74,17 +79,21 @@ class HomeDrawer extends StatelessWidget {
                         child: Text(
                           'القائمة',
                           style: theme.textTheme.titleMedium?.copyWith(
-                                fontFamily: 'Cairo',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20.sp,
-                                color: colorScheme.onPrimary,
-                              ),
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20.sp,
+                            color: colorScheme.onPrimary,
+                          ),
                         ),
                       ),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
-                          icon: Icon(Icons.close, color: Colors.black,size: 30,),
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 30,
+                          ),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -124,7 +133,6 @@ class HomeDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-
                 _menuItem(
                   context,
                   title: 'الصفحة الرئيسية',
@@ -147,7 +155,25 @@ class HomeDrawer extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>  BrowseServicesScreen(),
+                        builder: (context) => BrowseServicesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _menuItem(
+                  context,
+                  title: 'ثوثه المساعد',
+                  customIcon: SvgPicture.asset(
+                    'assets/svg/ثوثه الدكتور 1.svg',
+                    width: 24.w,
+                    height: 24.w,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChatScreen(),
                       ),
                     );
                   },
@@ -160,7 +186,8 @@ class HomeDrawer extends StatelessWidget {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const HomeSettingsScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const HomeSettingsScreen()),
                     );
                   },
                 ),
@@ -192,6 +219,19 @@ class HomeDrawer extends StatelessWidget {
                     );
                   },
                 ),
+                _menuItem(
+                  context,
+                  title: 'تسجيل الدخول',
+                  icon: Icons.person,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      Routes.loginScreen,
+                      (route) => false,
+                    );
+                  },
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Divider(height: 24.h),
@@ -205,11 +245,11 @@ class HomeDrawer extends StatelessWidget {
               child: Text(
                 'الإصدار 1.0.0',
                 style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.sp,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),

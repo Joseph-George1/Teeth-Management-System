@@ -1,12 +1,13 @@
 package com.spring.boot.graduationproject1.dto;
+
 import lombok.*;
+
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class RoleDto {
-    private Long id;
+    private long id;
     private String name;
 }
-

@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../features/chat/ui/chat_screen.dart';
 import '../../home_screen/ui/home_screen.dart';
-import '../../appointments/ui/appointments_screen.dart';
 
 class MainLayoutScreen extends StatefulWidget {
   final int initialIndex;
@@ -29,7 +28,6 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     _screens = [
       const HomeScreen(),
       const ChatScreen(),
-      const AppointmentsScreen(), // Appointments screen (index 2)
       //const Placeholder(child: Center(child: Text('صفحة الملف الشخصي'))),
       // For profile screen (index 3)
     ];
@@ -42,8 +40,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   }
 
   void _onItemTapped(int index) {
-    if (index == 3) {
-      // Profile button index is 3
+    if (index == 2) {
+      // Profile button index is 2
       // Navigate to login screen and remove all previous routes
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -79,14 +77,14 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(isDark ? 0.4 : 0.12),
+              color: colorScheme.shadow.withValues(alpha: isDark ? 0.4 : 0.12),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Flexible(
               child: _buildNavItem(
@@ -105,22 +103,16 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 onTap: () => _onItemTapped(1),
               ),
             ),
-            Flexible(
-              child: _buildNavItem(
-                icon: Icons.calendar_month_outlined,
-                activeIcon: Icons.calendar_today,
-                label: 'المواعيد',
-                isActive: _currentIndex == 2,
-                onTap: () => _onItemTapped(2),
-              ),
+            SizedBox(
+             width: 10.w,
             ),
             Flexible(
               child: _buildNavItem(
                 icon : Icons.person,
                 activeIcon: Icons.person,
                 label: 'الملف',
-                isActive: _currentIndex == 3,
-                onTap: () => _onItemTapped(3),
+                isActive: _currentIndex == 2,
+                onTap: () => _onItemTapped(2),
               ),
             ),
           ],
@@ -144,11 +136,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         splashColor: Theme.of(context)
             .colorScheme
             .onSurface
-            .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.12),
+            .withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.12),
         highlightColor: Theme.of(context)
             .colorScheme
             .onSurface
-            .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.1),
+            .withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.15 : 0.1),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
