@@ -35,7 +35,6 @@ export default function App() {
       <Route path="/profile" element={<Profile/>}></Route>
       <Route path="/chatbot" element={<ChatBot/>}/>
       <Route path="/terms&conditions" element={<TermsConditions/>}></Route>
-      <Route path="404" element={<NotFoundPage/>}/>
       <Route path="/doctor-home" element={<DoctorHome/>}></Route>
       <Route path="/booking" element={<Booking/>}></Route>
       <Route path="/patients" element={<Patient/>}></Route>
@@ -49,6 +48,7 @@ export default function App() {
       <Route path="/crowns&bridges" element={<CrownsBridges/>}></Route>
       <Route path="/braces" element={<Braces/>}></Route>
       <Route path="/support" element={<Support/>}></Route>
+      <Route path="*" element={<NotFoundPage/>}/>
     </Routes>
     <Footer/>
     </>
