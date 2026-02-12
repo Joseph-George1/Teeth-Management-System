@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -325,18 +326,53 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: const BoxDecoration(
         color: _color2,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          SvgPicture.asset('assets/svg/ثوثه الدكتور 1.svg',
-              width: 32.r, height: 32.r),
-          SizedBox(width: 8.w),
-          Text(
-            'ثوثة الطبيب الذكي',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset('assets/svg/ثوثه الدكتور 1.svg',
+                  width: 32.r, height: 32.r),
+              SizedBox(width: 8.w),
+              Text(
+                'ثوثة الطبيب الذكي',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            right: 0,
+            child: InkWell(
+              onTap: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Routes
+                        .categoriesScreen, // Or mainLayoutScreen if that's the home
+                    (route) => false,
+                  );
+                }
+              },
+              child: Padding(
+                padding: EdgeInsets.all(8.r),
+                child: Icon(
+                  Icons
+                      .arrow_forward_ios, // RTL back arrow is usually forward arrow icon or auto-mirrored arrow_back
+                  // User asked for "arrow on the right returns me to home".
+                  // In RTL, "back" is physically leading (right).
+                  // I'll use arrow_forward_ios which points to the right, which looks like "go that way" but if placed on the right it might look like "next".
+                  // Let's use arrow_forward to point right.
+                  color: Colors.white,
+                  size: 24.r,
+                ),
+              ),
             ),
           ),
         ],

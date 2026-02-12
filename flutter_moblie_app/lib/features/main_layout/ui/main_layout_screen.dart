@@ -84,7 +84,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Flexible(
               child: _buildNavItem(
@@ -102,6 +102,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                 isActive: _currentIndex == 1,
                 onTap: () => _onItemTapped(1),
               ),
+            ),
+            SizedBox(
+             width: 10.w,
             ),
             Flexible(
               child: _buildNavItem(
