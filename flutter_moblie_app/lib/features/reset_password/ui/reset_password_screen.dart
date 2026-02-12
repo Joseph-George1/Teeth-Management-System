@@ -7,7 +7,6 @@ import '../../../core/routing/routes.dart';
 import '../../../core/theming/colors.dart';
 import '../../../core/theming/styles.dart';
 import '../../../core/widgets/app_text_button.dart';
-import '../../forgot_password/data/forgot_password_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -47,128 +46,67 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
-  bool _isLoading = false;
-  String? _email;
-  String? _otp;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      _email = args['email'];
-      _otp = args['otp'];
-    }
-  }
-
-  void _submit() async {
+  void _submit() {
     if (_formKey.currentState!.validate()) {
-       if (_email == null || _otp == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('بيانات الجلسة غير صالحة، يرجى إعادة المحاولة'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      setState(() => _isLoading = true);
-
-      try {
-        final response = await ForgotPasswordService().resetPassword(
-          email: _email!,
-          otp: _otp!,
-          newPassword: _newPasswordController.text,
-          confirmPassword: _confirmPasswordController.text,
-        );
-
-        if (mounted) {
-          setState(() => _isLoading = false);
-
-          if (response['success'] == true) {
-            _showSuccessDialog();
-          } else {
-             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(response['message'] ?? 'فشل تغيير كلمة المرور'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-           setState(() => _isLoading = false);
-           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('حدث خطأ غير متوقع'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(24.0.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
+      // Show success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: Dialog(
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.0),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 80.0,
-                  ),
-                  verticalSpace(16),
-                  Text(
-                    'تم تغيير كلمة المرور بنجاح',
-                    style: TextStyles.font24BlackBold,
-                    textAlign: TextAlign.center,
-                  ),
-                  verticalSpace(8),
-                  Text(
-                    'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.',
-                    style: TextStyles.font14GrayRegular,
-                    textAlign: TextAlign.center,
-                  ),
-                  verticalSpace(24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppTextButton(
-                      buttonText: 'تسجيل الدخول',
-                      textStyle: TextStyles.font16WhiteSemiBold,
-                      onPressed: () {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          Routes.loginScreen,
-                          (route) => false,
-                        );
-                      },
+              child: Container(
+                padding: EdgeInsets.all(24.0.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 80.0,
                     ),
-                  ),
-                ],
+                    verticalSpace(16),
+                    Text(
+                      'تم تغيير كلمة المرور بنجاح',
+                      style: TextStyles.font24BlackBold,
+                      textAlign: TextAlign.center,
+                    ),
+                    verticalSpace(8),
+                    Text(
+                      'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.',
+                      style: TextStyles.font14GrayRegular,
+                      textAlign: TextAlign.center,
+                    ),
+                    verticalSpace(24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppTextButton(
+                        buttonText: 'تسجيل الدخول',
+                        textStyle: TextStyles.font16WhiteSemiBold,
+                        onPressed: () {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            Routes.loginScreen,
+                            (route) => false,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
 
   @override
@@ -340,13 +278,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           // Submit Button
                           SizedBox(
                             width: double.infinity,
-                            child: _isLoading
-                                ? const Center(child: CircularProgressIndicator())
-                                : AppTextButton(
-                                    buttonText: 'تغيير كلمة المرور',
-                                    textStyle: TextStyles.font16WhiteSemiBold,
-                                    onPressed: _submit,
-                                  ),
+                            child: AppTextButton(
+                              buttonText: 'تغيير كلمة المرور',
+                              textStyle: TextStyles.font16WhiteSemiBold,
+                              onPressed: _submit,
+                            ),
                           ),
                         ],
                       ),

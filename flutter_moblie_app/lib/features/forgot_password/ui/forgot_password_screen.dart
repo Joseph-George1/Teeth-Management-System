@@ -91,33 +91,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
           // Bottom-right gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  radius: 1.5,
-                  colors: [
-                    ColorsManager.layerBlur2.withOpacity(0.4),
-                    ColorsManager.layerBlur2.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.3, 0.8],
-                ),
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.5,
+                colors: [
+                  ColorsManager.layerBlur2.withOpacity(0.4),
+                  ColorsManager.layerBlur2.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.3, 0.8],
               ),
             ),
-            // Back Button
-            Positioned(
-              top: 50.h,
-              right: 20.w,
-              child: IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  color: ColorsManager.darkBlue,
-                ),
-              ),
-            ),
+          ),
           Center(
             child: SingleChildScrollView(
               child: Padding(

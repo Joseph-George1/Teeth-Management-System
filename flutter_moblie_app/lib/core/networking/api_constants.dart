@@ -16,11 +16,6 @@ class ApiConstants {
   static const String getCategoriesAlt = '/api/categories';
   static const String getCitiesAlt = '/api/cities';
   
-  // Auth endpoints
-  static const String sendOtp = '/api/auth/send-otp';
-  static const String verifyOtp = '/api/auth/verify-otp';
-  static const String resetPassword = '/api/auth/reset-password';
-
   // Fallback endpoints
   static const String getCategoriesFallback = '/api/category/getCategories';
   static const String getCitiesFallback = '/api/cities/getAllCities';

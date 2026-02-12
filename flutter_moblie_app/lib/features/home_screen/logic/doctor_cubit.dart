@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
-import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/repositories/doctor_repository.dart';
 import 'package:thotha_mobile_app/features/home_screen/logic/doctor_state.dart';
 
@@ -64,17 +63,9 @@ class DoctorCubit extends Cubit<DoctorState> {
   Future<void> filterByCategory(int categoryId) async {
     emit(DoctorLoading());
     try {
-      final results = await Future.wait([
-        _repository.getDoctorsByCategory(categoryId),
-        _repository.getCaseRequestsByCategory(categoryId),
-      ]);
-      
-      final doctors = results[0] as List<DoctorModel>;
-      final caseRequests = results[1] as List<CaseRequestModel>;
-      
+      final doctors = await _repository.getDoctorsByCategory(categoryId);
       emit(DoctorSuccess(
         doctors: doctors,
-        caseRequests: caseRequests,
         categories: _categories,
         cities: _cities,
       ));
@@ -117,26 +108,13 @@ class DoctorCubit extends Cubit<DoctorState> {
   Future<void> filterByCategoryAndCity(int categoryId, String cityName) async {
     emit(DoctorLoading());
     try {
-      final results = await Future.wait([
-        _repository.getDoctorsByCategory(categoryId),
-        _repository.getCaseRequestsByCategory(categoryId),
-      ]);
-
-      final allDoctors = results[0] as List<DoctorModel>;
-      final allRequests = results[1] as List<CaseRequestModel>; // We might want to filter requests by city too, but model has location string not cityId
-
+      final allDoctors = await _repository.getDoctorsByCategory(categoryId);
       final filteredDoctors = allDoctors
           .where((doctor) => doctor.cityName.trim() == cityName.trim())
           .toList();
 
-      // Filter requests by city name (client-side since API doesn't support it yet)
-      final filteredRequests = allRequests
-          .where((request) => request.location.contains(cityName.trim()) || request.doctor.cityName == cityName.trim())
-          .toList();
-
       emit(DoctorSuccess(
         doctors: filteredDoctors,
-        caseRequests: filteredRequests,
         categories: _categories,
         cities: _cities,
       ));

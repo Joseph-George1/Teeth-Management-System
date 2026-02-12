@@ -12,7 +12,6 @@ import 'package:thotha_mobile_app/core/widgets/app_text_button.dart';
 import 'package:thotha_mobile_app/core/di/dependency_injection.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_body.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/repositories/case_request_repo.dart';
-import 'package:thotha_mobile_app/features/home_screen/data/repositories/doctor_repository.dart';
 
 class AddCaseRequestScreen extends StatefulWidget {
   const AddCaseRequestScreen({super.key});
@@ -27,42 +26,23 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
 
-  List<String> _categories = [];
-  bool _isLoadingCategories = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCategories();
-  }
-
-  Future<void> _fetchCategories() async {
-    setState(() => _isLoadingCategories = true);
-    try {
-      final repo = getIt<DoctorRepository>();
-      final categories = await repo.getCategories();
-      if (mounted) {
-        setState(() {
-          _categories = categories.map((c) => c.name).toList();
-          _isLoadingCategories = false;
-        });
-      }
-    } catch (e) {
-      print('Error fetching categories: $e');
-      if (mounted) {
-        setState(() => _isLoadingCategories = false);
-      }
-    }
-  }
+  final List<String> _categories = [
+    'جراحة الوجه والفكين',
+    'تقويم الأسنان',
+    'علاج الجذور',
+    'طب أسنان الأطفال',
+    'تركيبات الأسنان',
+    'علاج اللثة',
+    'طب الأسنان التجميلي',
+    'زراعة الأسنان',
+  ];
 
   @override
   void dispose() {
     _dateController.dispose();
     _timeController.dispose();
     _locationController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -73,18 +53,6 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
       locale: const Locale('ar', 'EG'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: ColorsManager.mainBlue,
-              onPrimary: Colors.white,
-              onSurface: ColorsManager.darkBlue,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -98,19 +66,10 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: ColorsManager.mainBlue,
-              onPrimary: Colors.white,
-              onSurface: ColorsManager.darkBlue,
-            ),
-          ),
-          child: Localizations.override(
-            context: context,
-            locale: const Locale('ar', 'EG'),
-            child: child,
-          ),
+        return Localizations.override(
+          context: context,
+          locale: const Locale('ar', 'EG'),
+          child: child,
         );
       },
     );
@@ -148,7 +107,7 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
           date: _dateController.text,
           time: _timeController.text,
           location: _locationController.text,
-          description: _descriptionController.text,
+          description: 'No details', // Description is not in UI, defaulting
         );
 
         final repo = getIt<CaseRequestRepo>();
@@ -263,25 +222,20 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                   // Specialization
                   _buildLabel('التخصص'),
                   verticalSpace(8),
-                  _isLoadingCategories
-                      ? const Center(child: CircularProgressIndicator())
-                      : DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          decoration: _buildInputDecoration(
-                            hint: 'اختر التخصص',
-                            prefixIcon: Icons.medical_services_outlined,
-                          ),
-                          items: _categories
-                              .map((c) =>
-                                  DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedCategory = v),
-                          validator: (value) =>
-                              value == null ? 'يرجى اختيار التخصص' : null,
-                          icon: const Icon(Icons.keyboard_arrow_down,
-                              color: ColorsManager.gray),
-                        ),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    decoration: _buildInputDecoration(
+                      hint: 'اختر التخصص',
+                      prefixIcon: Icons.medical_services_outlined,
+                    ),
+                    items: _categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCategory = v),
+                    validator: (value) =>
+                        value == null ? 'يرجى اختيار التخصص' : null,
+                    icon: const Icon(Icons.keyboard_arrow_down, color: ColorsManager.gray),
+                  ),
                   verticalSpace(16),
 
                   // Date
@@ -327,21 +281,6 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                     ),
                     validator: (value) =>
                         value!.isEmpty ? 'يرجى إدخال المكان' : null,
-                  ),
-                  verticalSpace(16),
-
-                  // Description
-                  _buildLabel('تفاصيل الطلب'),
-                  verticalSpace(8),
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 4,
-                    decoration: _buildInputDecoration(
-                      hint: 'اكتب تفاصيل الحالة المطلوبة...',
-                      prefixIcon: Icons.description_outlined,
-                    ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'يرجى كتابة تفاصيل الطلب' : null,
                   ),
                   verticalSpace(40),
 
