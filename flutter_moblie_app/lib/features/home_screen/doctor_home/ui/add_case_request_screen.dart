@@ -12,6 +12,8 @@ import 'package:thotha_mobile_app/core/widgets/app_text_button.dart';
 import 'package:thotha_mobile_app/core/di/dependency_injection.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_body.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/repositories/case_request_repo.dart';
+import 'package:thotha_mobile_app/features/home_screen/data/repositories/doctor_repository.dart';
+import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 
 class AddCaseRequestScreen extends StatefulWidget {
   const AddCaseRequestScreen({super.key});
@@ -23,9 +25,13 @@ class AddCaseRequestScreen extends StatefulWidget {
 class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedCategory;
+  CityModel? _selectedCity;
+  List<CityModel> _cities = [];
+  bool _isLoadingCities = false;
+
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
+  // _locationController is no longer needed
 
   final List<String> _categories = [
     'جراحة الوجه والفكين',
@@ -39,10 +45,41 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchCities();
+  }
+
+  Future<void> _fetchCities() async {
+    setState(() {
+      _isLoadingCities = true;
+    });
+    try {
+      final repo = getIt<DoctorRepository>();
+      final cities = await repo.getCities();
+      if (mounted) {
+        setState(() {
+          _cities = cities;
+          _isLoadingCities = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCities = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('فشل في تحميل قائمة المدن')),
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _dateController.dispose();
     _timeController.dispose();
-    _locationController.dispose();
+    // _locationController.dispose();
     super.dispose();
   }
 
@@ -106,7 +143,7 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
           specialization: _selectedCategory!,
           date: _dateController.text,
           time: _timeController.text,
-          location: _locationController.text,
+          location: _selectedCity?.name ?? '',
           description: 'No details', // Description is not in UI, defaulting
         );
 
@@ -270,18 +307,29 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                   ),
                   verticalSpace(16),
 
-                  // Location
-                  _buildLabel('المكان / العيادة'),
+                  // Location / City
+                  _buildLabel('المكان / المدينة'),
                   verticalSpace(8),
-                  TextFormField(
-                    controller: _locationController,
-                    decoration: _buildInputDecoration(
-                      hint: 'عنوان العيادة بالتفصيل',
-                      prefixIcon: Icons.location_on_outlined,
-                    ),
-                    validator: (value) =>
-                        value!.isEmpty ? 'يرجى إدخال المكان' : null,
-                  ),
+                  _isLoadingCities
+                      ? const Center(child: CircularProgressIndicator())
+                      : DropdownButtonFormField<CityModel>(
+                          value: _selectedCity,
+                          decoration: _buildInputDecoration(
+                            hint: 'اختر المدينة',
+                            prefixIcon: Icons.location_on_outlined,
+                          ),
+                          items: _cities
+                              .map((c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c.name),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => _selectedCity = v),
+                          validator: (value) =>
+                              value == null ? 'يرجى اختيار المدينة' : null,
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              color: ColorsManager.gray),
+                        ),
                   verticalSpace(40),
 
                   // Publish Button
