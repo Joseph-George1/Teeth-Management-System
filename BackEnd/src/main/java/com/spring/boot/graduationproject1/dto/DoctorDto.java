@@ -1,19 +1,24 @@
 package com.spring.boot.graduationproject1.dto;
 
-import jakarta.persistence.Column;
 import lombok.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class DoctorDto {
     private Long id;
-    private String name;
-    private String uniName;
-    private String studyYear;
-    private String city;
+    private String categoryName;
+    private String universityName;
+    private String firstName;
+    private String lastName;
     private String email;
+    private String studyYear;
     private String password;
+    private String phoneNumber;
+    private String cityName;
     private RoleDto role;
+    private long universityId;
+    private long roleId;
+    private long categoryId;
 }

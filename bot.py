@@ -211,51 +211,88 @@ async def status_cmd(ctx: commands.Context):
 async def help_cmd(ctx: commands.Context):
 	# Build a rich embed help message for Discord
 	embed = discord.Embed(
-		title="Astart Control Bot — Help",
-		description="Run and monitor the `astart` launcher from Discord.",
-		color=0x2ecc71,
+		title="📚 Astart Control Bot — Help Guide",
+		description="Welcome! Use this bot to run and monitor the `astart` launcher directly from Discord. Here's everything you need to know:",
+		color=0x3498db,  # Blue color for help/info
 	)
+	
+	# Available Commands Section
 	embed.add_field(
-		name="Commands",
+		name="🎮 Available Commands",
 		value=(
-			"`!run <flag>` — Run `astart` with a flag (examples below)\n"
-			"`!status` — Show pid files and recent activity log\n"
-			"`!help` — Show this message"
+			"**`!run <flag>`** — Execute astart with a specific flag\n"
+			"**`!status`** — View system status and running services\n"
+			"**`!help`** — Show this helpful guide"
 		),
 		inline=False,
 	)
+	
+	# System Control Flags Section
 	embed.add_field(
-		name="Common flags",
+		name="🚀 Start Services",
 		value=(
-			"`-c` start Web Interface\n"
-			"`-a` start AI Chatbot API only\n"
-			"`-w` run whole system (backend + web UI + API)\n"
-			"`-b` start backend only\n"
-			"`-x` start login/registration script\n"
-			"`-s` stop all services\n"
-			"`-u` update production server"
+			"🌐 **`-c`** — Start Web Interface\n"
+			"🤖 **`-a`** — Start AI Chatbot API only\n"
+			"🔧 **`-b`** — Start Backend only\n"
+			"👥 **`-x`** — Start Login/Registration script\n"
+			"⚡ **`-w`** — Run **WHOLE SYSTEM** (Backend + Web + AI)"
+		),
+		inline=True,
+	)
+	
+	# Management Flags Section
+	embed.add_field(
+		name="⚙️ Management",
+		value=(
+			"🛑 **`-s`** — Stop ALL services\n"
+			"🔄 **`-u`** — Update production server\n"
+			"📊 **`!status`** — Check what's running"
+		),
+		inline=True,
+	)
+	
+	# Clear Usage Examples
+	embed.add_field(
+		name="💡 Quick Examples",
+		value=(
+			"```\n"
+			"!run -w      → Start entire system\n"
+			"!run -c      → Start web interface\n"
+			"!run -s      → Stop all services\n"
+			"!status      → Check system status\n"
+			"```"
 		),
 		inline=False,
 	)
+	
+	# Common Workflows
 	embed.add_field(
-		name="Usage examples",
+		name="🔄 Common Workflows",
 		value=(
-			"`!run -c` — start the web interface\n"
-			"`!run -s` — stop all services\n"
-			"`!status` — show recent activity and running pids"
+			"**Full Restart:**\n"
+			"1️⃣ `!run -s` (stop all)\n"
+			"2️⃣ `!run -w` (start all)\n"
+			"3️⃣ `!status` (verify)\n\n"
+			"**Just AI Chatbot:**\n"
+			"• `!run -a` then `!status`"
 		),
 		inline=False,
 	)
+	
+	# Important Notes
 	embed.add_field(
-		name="Notes",
+		name="⚠️ Important Info",
 		value=(
-			"• Ensure `DISCORD_TOKEN` env var is set to your bot token.\n"
-			"• If using message commands, enable the Message Content Intent in the Developer Portal.\n"
-			"• Optional env vars: `ALLOWED_USER_IDS` (comma list), `ASTART_PATH` (path to `astart`)."
+			"🔐 Authorization may be required (check `ALLOWED_USER_IDS`)\n"
+			"📝 Logs are stored in configured log directory\n"
+			"⏱️ Commands may take a few seconds to complete\n"
+			"🔍 Use `!status` to verify services started successfully"
 		),
 		inline=False,
 	)
-	embed.set_footer(text=f"astart: {ASTART_SCRIPT} | logs: {LOG_DIR}")
+	
+	embed.set_footer(text=f"📂 Astart: {ASTART_SCRIPT.name} | 📋 Logs: {LOG_DIR}")
+	embed.set_thumbnail(url="https://thoutha.page/%D8%AB%D9%88%D8%AB%D8%A9.png")  # Robot/bot icon
 
 	await ctx.send(embed=embed)
 

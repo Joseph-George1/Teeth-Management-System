@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:thotha_mobile_app/features/booking/ui/booking_confirmation_screen.dart';
+import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
 
 class DoctorInfoContent extends StatefulWidget {
   final ScrollController controller;
+  final DoctorModel doctor;
 
-  const DoctorInfoContent({super.key, required this.controller});
+  const DoctorInfoContent({
+    super.key,
+    required this.controller,
+    required this.doctor,
+  });
 
   @override
   State<DoctorInfoContent> createState() => _DoctorInfoContentState();
@@ -16,31 +22,14 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
 
   bool get _isBookingEnabled => _selectedDay != null && _selectedTime != null;
 
-  void _showBookingForm(BuildContext context) {
-    // Format the date and time for display
-    final formattedDate = _selectedDay != null ? '${_selectedDay}' : 'غير محدد';
-
-    final formattedTime =
-        _selectedTime != null ? _selectedTime!.format(context) : 'غير محدد';
-
-    // Navigate to the booking confirmation screen
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => BookingConfirmationScreen(
-    //       doctorName: 'د. زياد', // Using the actual doctor's name from the UI
-    //       date: formattedDate,
-    //       time: formattedTime,
-    //     ),
-    //   ),
-    // );
-  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final doctor = widget.doctor;
+
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
@@ -64,7 +53,11 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                 padding: const EdgeInsets.symmetric(horizontal: 23.99),
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB), width: 1.1),
+                    bottom: BorderSide(
+                        color: isDark
+                            ? Colors.grey[700]!
+                            : const Color(0xFFE5E7EB),
+                        width: 1.1),
                   ),
                 ),
                 child: Row(
@@ -76,7 +69,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                           size: 24, color: theme.iconTheme.color),
                     ),
                     Text(
-                      'تفاصيل الطالب',
+                      'تفاصيل الطبيب',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -94,21 +87,38 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                       child: Column(
                         children: [
                           Container(
-                            width: 149.9924,
-                            height: 149.9924,
+                            width: 149.99,
+                            height: 149.99,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              image: const DecorationImage(
-                                image: AssetImage('assets/images/test.jpg'),
-                                fit: BoxFit.cover,
-                              ),
+                              color: theme.colorScheme.surfaceVariant,
                             ),
+                            child: doctor.photo != null &&
+                                    doctor.photo!.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      doctor.photo!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Icon(Icons.person,
+                                            size: 64,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant);
+                                      },
+                                    ),
+                                  )
+                                : Icon(Icons.person,
+                                    size: 64,
+                                    color: theme.colorScheme.onSurfaceVariant),
                           ),
                           Container(
                             width: double.infinity,
-                            margin: const EdgeInsets.only(top: 7.9876),
+                            margin: const EdgeInsets.only(top: 8),
                             decoration: BoxDecoration(
-                              color: theme.cardTheme.color ?? colorScheme.surface,
+                              color:
+                                  theme.cardTheme.color ?? colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Container(
@@ -118,25 +128,24 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'ZEZO',
+                                    doctor.fullName,
                                     style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 28,
                                       height: 1.5,
-                                      letterSpacing: 0,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'تدريب جراحة وتجميل الأسنان',
-                                    textAlign: TextAlign.end,
+                                    doctor.categoryName,
+                                    textAlign: TextAlign.center,
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontWeight: FontWeight.w400,
                                       fontSize: 18,
                                       height: 1.5,
-                                      letterSpacing: 0,
-                                      color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
+                                      color: theme.textTheme.bodyLarge?.color
+                                          ?.withOpacity(0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -151,7 +160,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                       children: [
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          children: const [
+                                          children: [
                                             Icon(
                                               Icons.location_on_outlined,
                                               size: 16,
@@ -159,7 +168,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                             ),
                                             SizedBox(width: 4),
                                             Text(
-                                              '2.5 كم',
+                                              doctor.cityName,
                                               style: TextStyle(
                                                 fontFamily: 'Cairo',
                                                 fontWeight: FontWeight.w400,
@@ -181,7 +190,7 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                             ),
                                             const SizedBox(width: 4),
                                             RichText(
-                                              text: const TextSpan(
+                                              text: TextSpan(
                                                 style: TextStyle(
                                                   fontFamily: 'Cairo',
                                                   fontWeight: FontWeight.w400,
@@ -191,9 +200,12 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                                   color: Colors.black,
                                                 ),
                                                 children: [
-                                                  TextSpan(text: '4.8 '),
                                                   TextSpan(
-                                                    text: '(124 تقييم)',
+                                                      text:
+                                                          '4.8 '), // Placeholder rating
+                                                  TextSpan(
+                                                    text:
+                                                        '(124 تقييم)', // Placeholder reviews
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
@@ -208,14 +220,24 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5E9),
-                                      borderRadius: BorderRadius.circular(20),
+                                  if (doctor.price != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'سعر الكشف: ${doctor.price} جنيه',
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF2E7D32),
+                                        ),
+                                      ),
                                     ),
-                                  ),
                                   const SizedBox(height: 16),
                                   Container(
                                     width: double.infinity,
@@ -236,14 +258,14 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.end,
-                                      children: const [
+                                      children: [
                                         SizedBox(
                                           width: 86,
                                           height: 30,
                                           child: Align(
                                             alignment: Alignment.centerRight,
                                             child: Text(
-                                              'عن الطالب',
+                                              'عن الطبيب',
                                               style: TextStyle(
                                                 fontFamily: 'Cairo',
                                                 fontWeight: FontWeight.bold,
@@ -257,7 +279,8 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                         ),
                                         SizedBox(height: 4),
                                         Text(
-                                          'طالب بالسنة الخامسة متخصص في جراحة وتجميل الأسنان. أقوم بالتدريب العملي تحت إشراف أساتذة الكلية. لدي خبرة جيدة في الحشوات التجميلية وخلع الأسنان البسيط.',
+                                          doctor.description ??
+                                              'طبيب أسنان متخصص ذو خبرة عالية في مجال طب الأسنان.',
                                           style: TextStyle(
                                             fontFamily: 'Cairo',
                                             fontWeight: FontWeight.w400,
@@ -280,33 +303,31 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.end,
-                                      children: const [
+                                      children: [
                                         _InfoTile(
                                           icon: Icons.school_outlined,
-                                          title: 'الكلية والجامعة الدراسية',
-                                          subtitle:
-                                              'كلية طب الأسنان - جامعة القاهرة',
+                                          title: 'الجامعة',
+                                          subtitle: doctor.universityName,
                                         ),
                                         SizedBox(height: 10),
                                         _InfoTile(
                                           icon: Icons.location_on_outlined,
                                           title: 'العنوان',
-                                          subtitle:
-                                              'كلية طب الأسنان، جامعة القاهرة، المنيل',
+                                          subtitle: doctor.cityName,
                                         ),
                                         SizedBox(height: 10),
                                         _InfoTile(
                                           icon: Icons.phone_outlined,
                                           title: 'رقم الهاتف',
-                                          subtitle: '01012345678',
+                                          subtitle: doctor.phoneNumber,
                                         ),
                                         SizedBox(height: 10),
-                                        _InfoTile(
-                                          icon: Icons.mail_outline,
-                                          title: 'البريد الإلكتروني',
-                                          subtitle:
-                                              'ahmed.mahmoud@dentistry.cu.edu.eg',
-                                        ),
+                                        if (doctor.email != null)
+                                          _InfoTile(
+                                            icon: Icons.mail_outline,
+                                            title: 'البريد الإلكتروني',
+                                            subtitle: doctor.email!,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -479,14 +500,21 @@ class _DoctorInfoContentState extends State<DoctorInfoContent> {
                                         child: GestureDetector(
                                           onTap: _isBookingEnabled
                                               ? () {
-                                                  final String doctorName = 'ZEZO';
-                                                  final String date = _selectedDay ?? '';
-                                                  final String time = _selectedTime?.format(context) ?? '';
+                                                  final String doctorName =
+                                                      '${widget.doctor.firstName} ${widget.doctor.lastName}';
+                                                  final String date =
+                                                      _selectedDay ?? '';
+                                                  final String time =
+                                                      _selectedTime?.format(
+                                                              context) ??
+                                                          '';
                                                   Navigator.push(
                                                     context,
                                                     MaterialPageRoute(
-                                                      builder: (context) => BookingConfirmationScreen(
+                                                      builder: (context) =>
+                                                          BookingConfirmationScreen(
                                                         doctorName: doctorName,
+                                                        specialty: widget.doctor.categoryName,
                                                         date: date,
                                                         time: time,
                                                       ),

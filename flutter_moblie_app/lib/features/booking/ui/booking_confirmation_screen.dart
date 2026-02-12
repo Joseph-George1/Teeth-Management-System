@@ -8,12 +8,14 @@ class BookingConfirmationScreen extends StatefulWidget {
   final String doctorName;
   final String date;
   final String time;
+  final String specialty;
 
   const BookingConfirmationScreen({
     Key? key,
     required this.doctorName,
     required this.date,
     required this.time,
+    this.specialty = 'طب الأسنان',
   }) : super(key: key);
 
   @override
@@ -65,7 +67,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
         final appointment = {
           'doctorName': widget.doctorName,
-          'specialty': 'طب الأسنان', // Default value as it is not passed
+          'specialty': widget.specialty,
           'date': widget.date,
           'time': widget.time,
           'status': 'مؤكد',
@@ -254,6 +256,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                     ),
                                     SizedBox(height: 12.h),
                                     _buildInfoRow('الطبيب:', widget.doctorName),
+                                    SizedBox(height: 8.h),
+                                    _buildInfoRow('التخصص:', widget.specialty),
                                     SizedBox(height: 8.h),
                                     _buildInfoRow('التاريخ:', widget.date),
                                     SizedBox(height: 8.h),

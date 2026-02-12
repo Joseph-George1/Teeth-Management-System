@@ -13,7 +13,6 @@ import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_next_booking_screen.dart';
 
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_news_screen.dart';
 import 'package:thotha_mobile_app/features/terms_and_conditions/ui/terms_and_conditions_screen.dart';
 import 'package:thotha_mobile_app/features/help_and_support/ui/help_and_support_screen.dart';
 
@@ -503,21 +502,6 @@ class _DoctorDrawerState extends State<DoctorDrawer> {
                         MaterialPageRoute(
                           settings: const RouteSettings(name: 'settings'),
                           builder: (context) => const DoctorSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _menuItem(
-                    context,
-                    title: 'اخباري',
-                    icon: Icons.messenger_rounded,
-                    isSelected: currentIndex == 6,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          settings: const RouteSettings(name: 'news'),
-                          builder: (context) =>  DoctorNewsScreen(),
                         ),
                       );
                     },
