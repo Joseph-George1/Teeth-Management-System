@@ -528,7 +528,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _userMessage(String text) {
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: Alignment.centerRight,
       child: Container(
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
