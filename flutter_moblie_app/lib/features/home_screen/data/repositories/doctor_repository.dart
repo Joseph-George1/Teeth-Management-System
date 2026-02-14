@@ -159,50 +159,26 @@ class DoctorRepository {
   }
 
   Future<List<CategoryModel>> getCategories() async {
-    try {
-      final result = await _apiService.getCategories();
-      if (result['success'] == true) {
-        return result['data'] as List<CategoryModel>;
-      } else {
-        throw Exception(result['error'] ?? 'Failed to load categories');
-      }
-    } catch (e) {
-      print('API Error, using mock data: $e');
-      // Return mock data if API fails
-      return [
-        CategoryModel(id: 1, name: 'فحص شامل'),
-        CategoryModel(id: 2, name: 'حشو أسنان'),
-        CategoryModel(id: 3, name: 'زراعة أسنان'),
-        CategoryModel(id: 4, name: 'خلع الأسنان'),
-        CategoryModel(id: 5, name: 'تبييض الأسنان'),
-        CategoryModel(id: 6, name: 'تقويم الأسنان'),
-        CategoryModel(id: 7, name: 'تركيبات الأسنان'),
-      ];
-    }
+    // Return local data immediately for instant loading
+    return [
+      CategoryModel(id: 1, name: 'فحص شامل'),
+      CategoryModel(id: 2, name: 'حشو أسنان'),
+      CategoryModel(id: 3, name: 'زراعة أسنان'),
+      CategoryModel(id: 4, name: 'خلع الأسنان'),
+      CategoryModel(id: 5, name: 'تبييض الأسنان'),
+      CategoryModel(id: 6, name: 'تقويم الأسنان'),
+      CategoryModel(id: 7, name: 'تركيبات الأسنان'),
+    ];
   }
 
   Future<List<CityModel>> getCities() async {
-    try {
-      final result = await _apiService.getCities();
-      if (result['success'] == true) {
-        final cities = result['data'] as List<CityModel>;
-        if (cities.isEmpty) {
-          throw Exception('Empty cities list');
-        }
-        return cities;
-      } else {
-        throw Exception(result['error'] ?? 'Failed to load cities');
-      }
-    } catch (e) {
-      print('API Error, using mock data: $e');
-      // Return mock data if API fails
-      return [
-        CityModel(id: 1, name: 'القاهرة'),
-        CityModel(id: 2, name: 'الإسكندرية'),
-        CityModel(id: 3, name: 'الجيزة'),
-        CityModel(id: 4, name: 'الأقصر'),
-        CityModel(id: 5, name: 'أسوان'),
-      ];
-    }
+    // Return local data immediately for instant loading
+    return [
+      CityModel(id: 1, name: 'القاهرة'),
+      CityModel(id: 2, name: 'الإسكندرية'),
+      CityModel(id: 3, name: 'الجيزة'),
+      CityModel(id: 4, name: 'الأقصر'),
+      CityModel(id: 5, name: 'أسوان'),
+    ];
   }
 }
