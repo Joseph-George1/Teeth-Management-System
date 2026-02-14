@@ -46,7 +46,8 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
   Future<String> _loadSvg(String path) async {
     try {
       // This will throw an exception if the file doesn't exist
-      await DefaultAssetBundle.of(_scaffoldKey.currentContext!).loadString(path);
+      await DefaultAssetBundle.of(_scaffoldKey.currentContext!)
+          .loadString(path);
       return path;
     } catch (e) {
       print('Failed to load SVG at path: $path');
@@ -207,6 +208,7 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
                           MaterialPageRoute(
                             builder: (_) => CategoryDoctorsScreen(
                               categoryName: categoryNames[index],
+                              categoryId: null,
                             ),
                           ),
                         );
@@ -221,154 +223,169 @@ class _BrowseServicesScreenState extends State<BrowseServicesScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             width: 1.1,
-                            color: isDark ? Colors.grey[700]! : const Color(0xFFE5E7EB),
+                            color: isDark
+                                ? Colors.grey[700]!
+                                : const Color(0xFFE5E7EB),
                           ),
                         ),
                         child: Row(
-                            textDirection: TextDirection.rtl,
-                            children: [
-                              // SVG icon container
-                              Container(
-                                width: 88.99,
-                                height: 88.99,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [Color(0xFF84E5F3), Color(0xFF8DECB4)],
-                                    stops: [0.0, 1.0],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
+                          textDirection: TextDirection.rtl,
+                          children: [
+                            // SVG icon container
+                            Container(
+                              width: 88.99,
+                              height: 88.99,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0xFF84E5F3),
+                                    Color(0xFF8DECB4)
                                   ],
+                                  stops: [0.0, 1.0],
                                 ),
-                                child: FutureBuilder<String>(
-                                  future: _loadSvg('assets/svg/${svgFiles[index]}'),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return Icon(
-                                        Icons.medical_services,
-                                        color: Colors.blue[400],
-                                        size: 40,  // Increased from 40
-                                      );
-                                    } else {
-                                      return SvgPicture.asset(
-                                        'assets/svg/${svgFiles[index]}',  // Use the filename from svgFiles list
-                                        width: 56.99,
-                                        height: 56.99,
-                                        fit: BoxFit.contain,
-                                      );
-                                    }
-                                  },
-                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 16),
-                              // Main content area
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Category name container
-                                    Container(
-                                      width: 120,
-                                      height: 27,
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        categoryNames[index],
-                                        style: theme.textTheme.titleMedium?.copyWith(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 18,
-                                          height: 1.5, // 27px line height / 18px font size
-                                          letterSpacing: 0,
-                                        ),
-                                        textAlign: TextAlign.right,
+                              child: FutureBuilder<String>(
+                                future:
+                                    _loadSvg('assets/svg/${svgFiles[index]}'),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.blue),
+                                    );
+                                  } else if (snapshot.hasError) {
+                                    return Icon(
+                                      Icons.medical_services,
+                                      color: Colors.blue[400],
+                                      size: 40, // Increased from 40
+                                    );
+                                  } else {
+                                    return SvgPicture.asset(
+                                      'assets/svg/${svgFiles[index]}', // Use the filename from svgFiles list
+                                      width: 56.99,
+                                      height: 56.99,
+                                      fit: BoxFit.contain,
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Main content area
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Category name container
+                                  Container(
+                                    width: 120,
+                                    height: 27,
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      categoryNames[index],
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontFamily: 'Cairo',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 18,
+                                        height:
+                                            1.5, // 27px line height / 18px font size
+                                        letterSpacing: 0,
                                       ),
+                                      textAlign: TextAlign.right,
                                     ),
-                                    const SizedBox(height: 8),
-                                    // Service description
-                                    Container(
-                                      width: 200, // Increased from 128
-                                      height: 21,
-                                      padding: const EdgeInsets.only(right: 8, left: 8),
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        serviceDescriptions[categoryNames[index]] ?? '',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
-                                          height: 1.5, // 21px line height / 14px font size
-                                          letterSpacing: 0,
-                                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                                        ),
-                                        textAlign: TextAlign.right,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Service description
+                                  Container(
+                                    width: 200, // Increased from 128
+                                    height: 21,
+                                    padding: const EdgeInsets.only(
+                                        right: 8, left: 8),
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      serviceDescriptions[
+                                              categoryNames[index]] ??
+                                          '',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        fontFamily: 'Cairo',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 14,
+                                        height:
+                                            1.5, // 21px line height / 14px font size
+                                        letterSpacing: 0,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withOpacity(0.7),
                                       ),
+                                      textAlign: TextAlign.right,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                  ),
 
-                                    // Available students container
-                                    Container(
-                                      height: 21,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const SizedBox(width: 8),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'طالب متاح ',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                  fontFamily: 'Cairo',
-                                                  fontSize: 12,
-                                                  color: theme
-                                                      .colorScheme.primary,
-                                                ),
-                                              ),
-                                              Text(
-                                                '${index + 5} ',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                  fontFamily: 'Cairo',
-                                                  fontSize: 12,
-                                                  color: theme
-                                                      .colorScheme.primary,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Icon(
-                                                Icons.person_outline,
+                                  // Available students container
+                                  Container(
+                                    height: 21,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(width: 8),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'طالب متاح ',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                fontFamily: 'Cairo',
+                                                fontSize: 12,
                                                 color:
                                                     theme.colorScheme.primary,
-                                                size: 16,
                                               ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                            ),
+                                            Text(
+                                              '${index + 5} ',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                fontFamily: 'Cairo',
+                                                fontSize: 12,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.person_outline,
+                                              color: theme.colorScheme.primary,
+                                              size: 16,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      );
+                      ),
+                    );
                   },
                 ),
               ),

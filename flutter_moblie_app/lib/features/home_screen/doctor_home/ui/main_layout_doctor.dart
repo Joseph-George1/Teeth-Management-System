@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_news_screen.dart';
+
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/doctor_next_booking_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/patient_screen.dart';
 import 'package:thotha_mobile_app/features/home_screen/doctor_home/ui/doctor_booking_records_screen.dart';
@@ -31,8 +31,6 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
       const DoctorHomeScreen(),
       DoctorNextBookingScreen(),
       DoctorBookingRecordsScreen(),
-      DoctorNewsScreen(),
-
     ];
   }
 
@@ -102,13 +100,6 @@ class _MainLayoutDoctorState extends State<MainLayoutDoctor> {
               label: 'الرئيسية',
               isActive: _currentIndex == 0,
               onTap: () => _onItemTapped(0),
-            ),
-            SizedBox(width: 24.w),
-            _buildNavItem(
-              icon: Icons.messenger_rounded,
-              label: 'اخباري',
-              isActive: _currentIndex == 3,
-              onTap: () => _onItemTapped(3),
             ),
           ],
         ),
