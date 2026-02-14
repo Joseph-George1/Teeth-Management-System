@@ -13,6 +13,7 @@ import 'package:thotha_mobile_app/core/di/dependency_injection.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_body.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/repositories/case_request_repo.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/repositories/doctor_repository.dart';
+import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 
 class AddCaseRequestScreen extends StatefulWidget {
@@ -27,49 +28,45 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
   String? _selectedCategory;
   int? _selectedCityId;
   List<CityModel> _cities = [];
-  bool _isLoadingCities = false;
+  List<CategoryModel> _categoriesList = [];
+  bool _isLoadingData = false;
 
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-  // _locationController is no longer needed
 
-  final List<String> _categories = [
-    'جراحة الوجه والفكين',
-    'تقويم الأسنان',
-    'علاج الجذور',
-    'طب أسنان الأطفال',
-    'تركيبات الأسنان',
-    'علاج اللثة',
-    'طب الأسنان التجميلي',
-    'زراعة الأسنان',
-  ];
+  // Removed hardcoded _categories list
 
   @override
   void initState() {
     super.initState();
-    _fetchCities();
+    _fetchInitialData();
   }
 
-  Future<void> _fetchCities() async {
+  Future<void> _fetchInitialData() async {
     setState(() {
-      _isLoadingCities = true;
+      _isLoadingData = true;
     });
     try {
       final repo = getIt<DoctorRepository>();
-      final cities = await repo.getCities();
+      final citiesFuture = repo.getCities();
+      final categoriesFuture = repo.getCategories();
+      
+      final results = await Future.wait([citiesFuture, categoriesFuture]);
+      
       if (mounted) {
         setState(() {
-          _cities = cities;
-          _isLoadingCities = false;
+          _cities = results[0] as List<CityModel>;
+          _categoriesList = results[1] as List<CategoryModel>;
+          _isLoadingData = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isLoadingCities = false;
+          _isLoadingData = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('فشل في تحميل قائمة المدن')),
+          const SnackBar(content: Text('فشل في تحميل البيانات')),
         );
       }
     }
@@ -263,20 +260,25 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                   // Specialization
                   _buildLabel('التخصص'),
                   verticalSpace(8),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    decoration: _buildInputDecoration(
-                      hint: 'اختر التخصص',
-                      prefixIcon: Icons.medical_services_outlined,
-                    ),
-                    items: _categories
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedCategory = v),
-                    validator: (value) =>
-                        value == null ? 'يرجى اختيار التخصص' : null,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: ColorsManager.gray),
-                  ),
+                  _isLoadingData
+                      ? const Center(child: CircularProgressIndicator())
+                      : DropdownButtonFormField<String>(
+                          value: _selectedCategory,
+                          decoration: _buildInputDecoration(
+                            hint: 'اختر التخصص',
+                            prefixIcon: Icons.medical_services_outlined,
+                          ),
+                          items: _categoriesList
+                              .map((c) => DropdownMenuItem(
+                                  value: c.name, child: Text(c.name)))
+                              .toList(),
+                          onChanged: (v) =>
+                              setState(() => _selectedCategory = v),
+                          validator: (value) =>
+                              value == null ? 'يرجى اختيار التخصص' : null,
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              color: ColorsManager.gray),
+                        ),
                   verticalSpace(16),
 
                   // Date
@@ -314,7 +316,7 @@ class _AddCaseRequestScreenState extends State<AddCaseRequestScreen> {
                   // Location / City
                   _buildLabel('المكان / المدينة'),
                   verticalSpace(8),
-                  _isLoadingCities
+                  _isLoadingData
                       ? const Center(child: CircularProgressIndicator())
                       : DropdownButtonFormField<int>(
                           value: _selectedCityId,
