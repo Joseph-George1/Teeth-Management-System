@@ -8,19 +8,20 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "role")
 @Getter
 @Setter
 public class Role {
     @Id
-    private Long id;
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
     private String name; //Role_Doctor or Role_Patient
 
     @OneToMany(mappedBy = "role")
     private List<Doctor> doctors;
 
     @OneToMany(mappedBy = "role")
-    private List<Patient> patients;
+    private List<Patients> patients;
 
+    @OneToMany(mappedBy = "role")
+    private List<Admin> admins;
 }

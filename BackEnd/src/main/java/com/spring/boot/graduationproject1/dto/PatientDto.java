@@ -1,14 +1,17 @@
 package com.spring.boot.graduationproject1.dto;
+
 import lombok.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class PatientDto {
-    private Long id;
-    private String name;
-    private String city;
+    private long id;
+    private String firstName;
+    private String lastName;
+    private String surName;
     private String phoneNumber;
-    private RoleDto role;
+    private String cityName;
+    private long roleId;
 }
