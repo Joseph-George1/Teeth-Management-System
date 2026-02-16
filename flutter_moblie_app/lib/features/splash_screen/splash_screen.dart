@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/routing/routes.dart';
 import '../../core/theming/colors.dart';
 
@@ -15,12 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Navigate to onboarding screen after a short delay
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
-      }
-    });
+    _checkLocationPermission();
   }
 
   @override
@@ -48,6 +44,111 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e) {
       // debugPrint('Failed to precache images: $e');
     }
+  }
+
+  Future<void> _checkLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        _showLocationDialog(
+          title: 'خدمات الموقع مطلوبة',
+          content: 'يرجى تفعيل خدمات الموقع للمتابعة.',
+          onPressed: () async {
+            Navigator.of(context).pop();
+            await Geolocator.openLocationSettings();
+            _checkLocationPermission();
+          },
+        );
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          _showLocationDialog(
+            title: 'إذن الموقع مطلوب',
+            content: 'يحتاج التطبيق إلى إذن الموقع ليعمل بشكل صحيح. يرجى منح الإذن.',
+            onPressed: () {
+              Navigator.of(context).pop();
+              _checkLocationPermission();
+            },
+          );
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        _showLocationDialog(
+          title: 'إذن الموقع مطلوب',
+          content: 'تم رفض إذن الموقع بشكل دائم. يرجى تفعيله من إعدادات التطبيق.',
+          onPressed: () async {
+            Navigator.of(context).pop();
+            await Geolocator.openAppSettings();
+            _checkLocationPermission();
+          },
+        );
+      }
+      return;
+    }
+
+    // Permission granted, navigate to next screen
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
+    }
+  }
+
+  void _showLocationDialog({
+    required String title,
+    required String content,
+    required VoidCallback onPressed,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(
+          title,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            fontSize: 18.sp,
+          ),
+          textAlign: TextAlign.right,
+          textDirection: TextDirection.rtl,
+        ),
+        content: Text(
+          content,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 14.sp,
+          ),
+          textAlign: TextAlign.right,
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: onPressed,
+            child: Text(
+              'موافق',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+                color: ColorsManager.mainBlue,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
