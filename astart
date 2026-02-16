@@ -619,3 +619,4 @@ done
 if [ $OPTIND -eq 1 ]; then
     echo -e "${RED}No options were passed. Use -h for help.${NC}"
 fi
+ 
