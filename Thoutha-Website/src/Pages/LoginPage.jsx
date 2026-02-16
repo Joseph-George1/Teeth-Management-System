@@ -21,7 +21,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch("https://thoutha.page/api/login", {
+      const response = await fetch("https://thoutha.page/api/auth/login/doctor", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

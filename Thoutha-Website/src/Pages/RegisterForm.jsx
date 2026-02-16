@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
@@ -8,29 +8,114 @@ export default function RegisterForm() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
   const [faculty, setFaculty] = useState('');
   const [year, setYear] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cities, setCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(true);
+  const [universities, setUniversities] = useState([]);
+  const [universitiesLoading, setUniversitiesLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await fetch('https://thoutha.page/api/cities/getAllCities');
+        const data = await response.json();
+        setCities(data || []);
+      } catch (err) {
+        console.error('خطأ في تحميل المحافظات:', err);
+        setCities([]);
+      } finally {
+        setCitiesLoading(false);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      try {
+        const response = await fetch('https://thoutha.page/api/university/getAllUniversity');
+        const data = await response.json();
+        setUniversities(data || []);
+      } catch (err) {
+        console.error('خطأ في تحميل الجامعات:', err);
+        setUniversities([]);
+      } finally {
+        setUniversitiesLoading(false);
+      }
+    };
+    fetchUniversities();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('https://thoutha.page/api/category/getCategories');
+        const data = await response.json();
+        setCategories(data || []);
+      } catch (err) {
+        console.error('خطأ في تحميل الخدمات:', err);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!firstName || !lastName || !email || !phone || !faculty || !year || !password || !confirmPassword || !category) {
+    if (!firstName || !lastName || !email || !phone || !city || !faculty || !year || !password || !confirmPassword || !category) {
       setError('يرجى ملء جميع الحقول');
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('كلمة المرور وتأكيد كلمة المرور غير متطابقين');
-      return;
-    }
 
-    // كل حاجة صحيحة، انتقل للـ OTP
-    navigate('/otp');
+    setLoading(true);
+
+    try {
+      const response = await fetch('https://thoutha.page/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+          phoneNumber: phone,
+          cityName: city,
+          studyYear: year,
+          categoryName: category,
+          universtyName: faculty,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'حدث خطأ في التسجيل');
+        setLoading(false);
+        return;
+      }
+
+      // التسجيل نجح، انتقل إلى صفحة OTP
+      navigate('/otp', { state: { email } });
+    } catch (err) {
+      setError(err.message || 'حدث خطأ في الاتصال بالخادم');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,11 +136,24 @@ export default function RegisterForm() {
           </div>
 
           <div className="input-group">
-            <select value={faculty} onChange={(e) => {setFaculty(e.target.value); error && setError('');}} required className="input-field-2">
-              <option value="">اختر الكلية</option>
-              <option value="dentistry">طب الاسنان</option>
-              <option value="medicine">الطب البشري</option>
-              <option value="pharmacy">الصيدلة</option>
+            <select value={city} onChange={(e) => {setCity(e.target.value); error && setError('');}} required className="input-field-2" disabled={citiesLoading}>
+              <option value="">{citiesLoading ? 'جاري تحميل المحافظات...' : 'اختر المحافظة'}</option>
+              {cities.map((cityItem) => (
+                <option key={cityItem.id || cityItem.name} value={cityItem.name}>
+                  {cityItem.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="input-group">
+            <select value={faculty} onChange={(e) => {setFaculty(e.target.value); error && setError('');}} required className="input-field-2" disabled={universitiesLoading}>
+              <option value="">{universitiesLoading ? 'جاري تحميل الجامعات...' : 'اختر الجامعة'}</option>
+              {universities.map((universityItem) => (
+                <option key={universityItem.id || universityItem.name} value={universityItem.name}>
+                  {universityItem.name}
+                </option>
+              ))}
             </select>
 
             <select value={year} onChange={(e) => {setYear(e.target.value); error && setError('');}} required className="input-field-2">
@@ -67,20 +165,22 @@ export default function RegisterForm() {
               <option value="5">الخامسة</option>
             </select>
 
-            <select value={category} onChange={(e) => {setCategory(e.target.value); error && setError('');}} required className="input-field-2">
-              <option value="">اختر الخدمة</option>
-              <option value="حشو اسنان">حشو اسنان</option>
-              <option value="زراعة اسنان">زرااعة اسنان</option>
-              <option value="خلع اسنان">خلع اسنان</option>
-              <option value="فحص شامل">فحص شامل</option>
+            <select value={category} onChange={(e) => {setCategory(e.target.value); error && setError('');}} required className="input-field-2" disabled={categoriesLoading}>
+              <option value="">{categoriesLoading ? 'جاري تحميل الخدمات...' : 'اختر الخدمة'}</option>
+              {categories.map((categoryItem) => (
+                <option key={categoryItem.id || categoryItem.name} value={categoryItem.name}>
+                  {categoryItem.name}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="input-group">
             <input type="password" placeholder="كلمة المرور" value={password} onChange={(e) => {setPassword(e.target.value); error && setError('');}} required  className="input-field-2"/>
-            <input type="password" placeholder="تأكيد كلمة المرور" value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value); error && setError('');}} required  className="input-field-2"/>
           </div>
-          <button type="submit" className="signup-button">انشاء حساب</button>
+          <button type="submit" className="signup-button" disabled={loading}>
+            {loading ? 'جاري التسجيل...' : 'انشاء حساب'}
+          </button>
 
         </form>
 
