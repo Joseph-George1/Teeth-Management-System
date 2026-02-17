@@ -1,22 +1,28 @@
 class ApiConstants {
-  static const String baseUrl = 'http://13.53.131.167:5000';
+  static const String baseUrl = 'https://thoutha.page';
+
+  // Authentication endpoints
+  static const String doctorLogin = '/api/auth/login/doctor';
+  static const String signup = '/api/auth/signup';
+  
+  // OTP endpoints
+  static const String sendOtp = '/api/otp/send';
+  static const String verifyOtp = '/api/otp/verify';
 
   // Doctor endpoints (public) - Try different variations
-  static const String getDoctorsByCity = '/api/doctor/getDoctorsByCity';
-  static const String getDoctorsByCategory = '/api/doctor/getDoctorsByCategory';
-  static const String getCaseRequestsByCategory = '/api/case/getByCategory'; // Assumed endpoint
+  static const String getDoctorsByCities = '/api/doctor/getDoctorsByCities';
+  static const String getDoctorsByCategories = '/api/doctor/getDoctorsByCategories';
+  static const String getCaseRequestsByCategories = '/api/case/getByCategories'; // Assumed endpoint
   static const String createCaseRequest = '/api/case/create'; // Assumed endpoint
 
-
-  // Reference data endpoints (public) - Try simpler endpoints first
-  static const String getCategories = '/categories';  // Simpler version
-  static const String getCities = '/cities';          // Simpler version
+  // Reference data endpoints
+  static const String getUniversities = '/api/university/getAllUniversities';
+  static const String getCategories = '/api/category/getCategories';
+  static const String getCities = '/api/cities/getAllCities';  // Updated to new endpoint
   
-  // Alternative endpoints if above don't work
+  // Alternative/fallback endpoints
   static const String getCategoriesAlt = '/api/categories';
-  static const String getCitiesAlt = '/api/cities';
-  
-  // Fallback endpoints
   static const String getCategoriesFallback = '/api/category/getCategories';
-  static const String getCitiesFallback = '/api/cities/getAllCities';
+  static const String getCitiesAlt = '/cities';
+  static const String getCitiesFallback = '/api/cities';
 }
