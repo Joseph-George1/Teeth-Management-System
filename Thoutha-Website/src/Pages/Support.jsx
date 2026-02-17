@@ -32,9 +32,9 @@ export default function Support(){
         <p>
           يمكنك التواصل معنا عبر البريد الإلكتروني:
         </p>
-        <p className="support-email">
+        {/* <p className="support-email">
           menna128492@gmail.com
-        </p>
+        </p> */}
       </section>
 
       <section className="support-section">

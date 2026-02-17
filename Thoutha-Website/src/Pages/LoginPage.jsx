@@ -1,4 +1,4 @@
-
+import { Helmet } from "react-helmet-async";
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/LoginPage.css';
@@ -51,7 +51,13 @@ export default function LoginPage() {
     }
   };
 
-  return (
+  return ( <> 
+         <Helmet>
+            <meta
+              name="description"
+              content="منصة ثوثة بتربط مرضى الأسنان بطلاب كليات طب الأسنان لعلاج الحالات مجانًا تحت الإشراف المباشر لأعضاء هيئة التدريس بالكلية، مع فرصة تعليمية عملية للطلاب"
+            />
+          </Helmet>
     <div className="login-page">
       <div className="login-container">
         {/* Logo */}
@@ -139,5 +145,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

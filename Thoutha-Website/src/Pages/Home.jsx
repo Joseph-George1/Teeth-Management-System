@@ -17,13 +17,13 @@ export default function Home(){
     <div className="hero-section">
       <div className="hero-container">
         <div className="hero-title-flex">
-          <p className="hero-title-1">احجز وسجل</p>
+          <p className="hero-title-1">احجز وسجل </p>
           <p className="hero-title-2">مع افضل الاطباء فى نطاقك</p>
           <p onClick={() => aboutRef.current.scrollIntoView({ behavior: "smooth" })} className="hero-button"><span>احجز الان</span></p> 
         </div>
-        <div className="hero-img">
-          <img src="./hero-section.png" alt="img" />
-        </div>
+        <p className="hero-img">
+          <img src="./home-img.png" alt="img" />
+        </p>
       </div> 
     </div>
       {/* category section */}
