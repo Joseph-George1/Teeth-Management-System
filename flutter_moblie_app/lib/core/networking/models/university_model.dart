@@ -13,10 +13,10 @@ class UniversityModel {
 
   factory UniversityModel.fromJson(Map<String, dynamic> json) {
     return UniversityModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      city: json['city'] as String,
-      location: json['location'] as String,
+      id: json['id'] as int? ?? json['university_id'] as int? ?? 0,
+      name: json['name'] as String? ?? json['university_name'] as String? ?? '',
+      city: json['city'] as String? ?? json['university_city'] as String? ?? '',
+      location: json['location'] as String? ?? json['university_location'] as String? ?? '',
     );
   }
 

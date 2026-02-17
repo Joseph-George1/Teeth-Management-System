@@ -25,7 +25,7 @@ class ApiService {
   Future<Map<String, dynamic>> getDoctorsByCity(int cityId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCity}',
+        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCities}',
         queryParameters: {'cityId': cityId},
       );
 
@@ -60,7 +60,7 @@ class ApiService {
   Future<Map<String, dynamic>> getDoctorsByCategory(int categoryId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCategory}',
+        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCategories}',
         queryParameters: {'categoryId': categoryId},
       );
 
@@ -94,17 +94,26 @@ class ApiService {
   /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getCategories() async {
       if (_cachedCategories != null && _cachedCategories!.isNotEmpty) {
+        print('✅ Returning cached categories: ${_cachedCategories!.length} items');
         return {'success': true, 'data': _cachedCategories};
       }
       try {
         final url = '${ApiConstants.baseUrl}${ApiConstants.getCategories}';
+        print('=== getCategories API Call ===');
+        print('URL: $url');
+        
         final response = await _dio.get(url);
+        
+        print('Response Status: ${response.statusCode}');
+        print('Response Data Type: ${response.data.runtimeType}');
+        print('Response Data: ${response.data}');
 
         if (response.statusCode == 200) {
           final List<CategoryModel> categories = (response.data as List)
               .map((json) => CategoryModel.fromJson(json))
               .toList();
           _cachedCategories = categories; // Cache the result
+          print('✅ Categories parsed successfully: ${categories.length} items');
           return {'success': true, 'data': categories};
         }
         
@@ -115,12 +124,15 @@ class ApiService {
         };
 
       } on DioException catch (e) {
+        print('❌ DioException in getCategories: ${e.message}');
+        print('Response: ${e.response?.data}');
         return {
         'success': false,
         'error': _handleDioError(e),
         'statusCode': e.response?.statusCode ?? 500,
       };
       } catch (e) {
+        print('❌ Exception in getCategories: $e');
         return {
         'success': false,
         'error': 'حدث خطأ غير متوقع',
@@ -182,7 +194,7 @@ class ApiService {
         return {'success': true, 'data': _cachedUniversities};
       }
       try {
-        final url = '${ApiConstants.baseUrl}${ApiConstants.getAllUniversity}';
+        final url = '${ApiConstants.baseUrl}${ApiConstants.getAllUniversities}';
         final response = await _dio.get(url);
 
         if (response.statusCode == 200) {
@@ -217,7 +229,7 @@ class ApiService {
   Future<Map<String, dynamic>> getCaseRequestsByCategory(int categoryId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getCaseRequestsByCategory}',
+        '${ApiConstants.baseUrl}${ApiConstants.getCaseRequestsByCategories}',
         queryParameters: {'categoryId': categoryId},
       );
 

@@ -3,12 +3,12 @@ class ApiConstants {
   static const String loginDoctor = '/api/auth/login/doctor';
   static const String signupDoctor = '/api/auth/signup';
   static const String getAllCities = '/api/cities/getAllCities';
-  static const String getAllUniversity = '/api/university/getAllUniversity';
+  static const String getAllUniversities = '/api/university/getAllUniversities';
 
   // Doctor endpoints (public) - Try different variations
-  static const String getDoctorsByCity = '/api/doctor/getDoctorByCity';
-  static const String getDoctorsByCategory = '/api/doctor/getDoctorByCategory';
-  static const String getCaseRequestsByCategory = '/api/case/getByCategory'; // Assumed endpoint
+  static const String getDoctorsByCities = '/api/doctor/getDoctorsByCities';
+  static const String getDoctorsByCategories = '/api/doctor/getDoctorsByCategories';
+  static const String getCaseRequestsByCategories = '/api/case/getByCategories'; // Assumed endpoint
   static const String createCaseRequest = '/api/case/create'; // Assumed endpoint
 
 
