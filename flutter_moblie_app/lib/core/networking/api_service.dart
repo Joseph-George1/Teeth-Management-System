@@ -3,6 +3,7 @@ import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_model.dart';
 
@@ -14,7 +15,7 @@ class ApiService {
   Future<Map<String, dynamic>> getDoctorsByCity(int cityId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCity}',
+        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCities}',
         queryParameters: {'cityId': cityId},
       );
 
@@ -49,7 +50,7 @@ class ApiService {
   Future<Map<String, dynamic>> getDoctorsByCategory(int categoryId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCategory}',
+        '${ApiConstants.baseUrl}${ApiConstants.getDoctorsByCategories}',
         queryParameters: {'categoryId': categoryId},
       );
 
@@ -128,17 +129,17 @@ class ApiService {
   /// Fetch all cities.
   /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getCities() async {
-    // Try different endpoint variations
+    // Try different endpoint variations, starting with the new one
     final endpoints = [
-      ApiConstants.getCities,
-      ApiConstants.getCitiesAlt,
-      ApiConstants.getCitiesFallback,
+      ApiConstants.getCities,      // Primary: /api/cities/getAllCities
+      ApiConstants.getCitiesAlt,   // Fallback: /cities
+      ApiConstants.getCitiesFallback, // Fallback: /api/cities
     ];
     
     for (String endpoint in endpoints) {
       try {
         final url = '${ApiConstants.baseUrl}$endpoint';
-        print('=== API Call ===');
+        print('=== Cities API Call ===');
         print('Trying URL: $url');
         
         final response = await _dio.get(url);
@@ -171,13 +172,54 @@ class ApiService {
     };
   }
 
+  /// Fetch all universities.
+  /// Public endpoint — no auth required.
+  Future<Map<String, dynamic>> getUniversities() async {
+    try {
+      final url = '${ApiConstants.baseUrl}${ApiConstants.getUniversities}';
+      print('=== Universities API Call ===');
+      print('Trying URL: $url');
+      
+      final response = await _dio.get(url);
+      
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('Response Type: ${response.data.runtimeType}');
+
+      if (response.statusCode == 200) {
+        final List<UniversityModel> universities = (response.data as List)
+            .map((json) => UniversityModel.fromJson(json))
+            .toList();
+        print('✅ Success fetching universities');
+        return {'success': true, 'data': universities};
+      }
+
+      return {
+        'success': false,
+        'error': 'فشل في تحميل الجامعات',
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
+      };
+    }
+  }
+
 
 
   /// Fetch case requests by category.
   Future<Map<String, dynamic>> getCaseRequestsByCategory(int categoryId) async {
     try {
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}${ApiConstants.getCaseRequestsByCategory}',
+        '${ApiConstants.baseUrl}${ApiConstants.getCaseRequestsByCategories}',
         queryParameters: {'categoryId': categoryId},
       );
 
