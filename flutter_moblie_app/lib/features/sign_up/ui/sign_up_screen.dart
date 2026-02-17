@@ -62,6 +62,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final apiService = ApiService();
       
+      print('=== SignUp: Starting data load ===');
+      
       // Fetch cities, universities, and categories in parallel
       final results = await Future.wait([
         apiService.getCities(),
@@ -73,25 +75,61 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final universitiesResult = results[1];
       final categoriesResult = results[2];
       
+      print('Cities result: $citiesResult');
+      print('Universities result: $universitiesResult');
+      print('Categories result: $categoriesResult');
+      
       if (mounted) {
         setState(() {
           if (citiesResult['success'] == true) {
             _cities = citiesResult['data'] as List<CityModel>;
+            print('✅ Loaded ${_cities.length} cities');
+          } else {
+            print('❌ Cities failed: ${citiesResult['error']}');
           }
           if (universitiesResult['success'] == true) {
             _universities = universitiesResult['data'] as List<UniversityModel>;
+            print('✅ Loaded ${_universities.length} universities');
+          } else {
+            print('❌ Universities failed: ${universitiesResult['error']}');
           }
            if (categoriesResult['success'] == true) {
             _categories = categoriesResult['data'] as List<CategoryModel>;
+            print('✅ Loaded ${_categories.length} categories');
+          } else {
+            print('❌ Categories failed: ${categoriesResult['error']}');
           }
           _isDataLoading = false;
         });
+        
+        // Show detailed error if any data failed
+        if (citiesResult['success'] != true || 
+            universitiesResult['success'] != true || 
+            categoriesResult['success'] != true) {
+          final errors = <String>[];
+          if (citiesResult['success'] != true) errors.add('المحافظات');
+          if (universitiesResult['success'] != true) errors.add('الجامعات');
+          if (categoriesResult['success'] != true) errors.add('التخصصات');
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('فشل في تحميل: ${errors.join(', ')}'),
+              duration: Duration(seconds: 5),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     } catch (e) {
+      print('❌ Exception in _loadData: $e');
       if (mounted) {
         setState(() => _isDataLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل في تحميل البيانات: $e')),
+          SnackBar(
+            content: Text('فشل في تحميل البيانات: $e'),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
