@@ -3,11 +3,22 @@ import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/doctor_model.dart';
 import 'package:thotha_mobile_app/features/home_screen/data/models/case_request_model.dart';
 
 class ApiService {
   final Dio _dio = DioFactory.getDio();
+
+  // Singleton pattern
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
+
+  // In-memory cache
+  List<CategoryModel>? _cachedCategories;
+  List<CityModel>? _cachedCities;
+  List<UniversityModel>? _cachedUniversities;
 
   /// Fetch doctors filtered by city ID.
   /// Public endpoint — no auth required.
@@ -82,62 +93,49 @@ class ApiService {
   /// Fetch all dental categories.
   /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getCategories() async {
-    // Try different endpoint variations
-    final endpoints = [
-      ApiConstants.getCategories,
-      ApiConstants.getCategoriesAlt,
-      ApiConstants.getCategoriesFallback,
-    ];
-    
-    for (String endpoint in endpoints) {
+      if (_cachedCategories != null && _cachedCategories!.isNotEmpty) {
+        return {'success': true, 'data': _cachedCategories};
+      }
       try {
-        final url = '${ApiConstants.baseUrl}$endpoint';
-        print('=== API Call ===');
-        print('Trying URL: $url');
-        
+        final url = '${ApiConstants.baseUrl}${ApiConstants.getCategories}';
         final response = await _dio.get(url);
-        
-        print('Response Status: ${response.statusCode}');
-        print('Response Data: ${response.data}');
-        print('Response Type: ${response.data.runtimeType}');
 
         if (response.statusCode == 200) {
           final List<CategoryModel> categories = (response.data as List)
               .map((json) => CategoryModel.fromJson(json))
               .toList();
-          print('✅ Success with endpoint: $endpoint');
+          _cachedCategories = categories; // Cache the result
           return {'success': true, 'data': categories};
         }
+        
+        return {
+          'success': false,
+          'error': 'فشل في تحميل التخصصات',
+          'statusCode': response.statusCode,
+        };
+
       } on DioException catch (e) {
-        print('❌ Failed with endpoint $endpoint: ${e.response?.statusCode}');
-        continue; // Try next endpoint
+        return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
       } catch (e) {
-        print('❌ Exception with endpoint $endpoint: $e');
-        continue; // Try next endpoint
+        return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع',
+      };
       }
-    }
-    
-    // All endpoints failed
-    print('❌ All endpoints failed');
-    return {
-      'success': false,
-      'error': 'فشل في تحميل التخصصات - جميع الـ endpoints فشلت',
-    };
   }
 
   /// Fetch all cities.
   /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getCities() async {
-    // Try different endpoint variations
-    final endpoints = [
-      ApiConstants.getCities,
-      ApiConstants.getCitiesAlt,
-      ApiConstants.getCitiesFallback,
-    ];
-    
-    for (String endpoint in endpoints) {
+      if (_cachedCities != null && _cachedCities!.isNotEmpty) {
+        return {'success': true, 'data': _cachedCities};
+      }
       try {
-        final url = '${ApiConstants.baseUrl}$endpoint';
+        final url = '${ApiConstants.baseUrl}${ApiConstants.getAllCities}';
         print('=== API Call ===');
         print('Trying URL: $url');
         
@@ -151,27 +149,69 @@ class ApiService {
           final List<CityModel> cities = (response.data as List)
               .map((json) => CityModel.fromJson(json))
               .toList();
-          print('✅ Success with endpoint: $endpoint');
+          _cachedCities = cities; // Cache the result
+          print('✅ Success with endpoint: ${ApiConstants.getAllCities}');
           return {'success': true, 'data': cities};
         }
+        
+        return {
+          'success': false,
+          'error': 'فشل في تحميل المدن',
+          'statusCode': response.statusCode,
+        };
+
       } on DioException catch (e) {
-        print('❌ Failed with endpoint $endpoint: ${e.response?.statusCode}');
-        continue; // Try next endpoint
+        print('❌ Failed with endpoint ${ApiConstants.getAllCities}: ${e.response?.statusCode}');
+        return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
       } catch (e) {
-        print('❌ Exception with endpoint $endpoint: $e');
-        continue; // Try next endpoint
+        print('❌ Exception with endpoint ${ApiConstants.getAllCities}: $e');
+        return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
+      };
       }
-    }
-    
-    // All endpoints failed
-    print('❌ All endpoints failed');
-    return {
-      'success': false,
-      'error': 'فشل في تحميل المدن - جميع الـ endpoints فشلت',
-    };
   }
 
+  /// Fetch all universities.
+  Future<Map<String, dynamic>> getUniversities() async {
+      if (_cachedUniversities != null && _cachedUniversities!.isNotEmpty) {
+        return {'success': true, 'data': _cachedUniversities};
+      }
+      try {
+        final url = '${ApiConstants.baseUrl}${ApiConstants.getAllUniversity}';
+        final response = await _dio.get(url);
 
+        if (response.statusCode == 200) {
+          final List<UniversityModel> universities = (response.data as List)
+              .map((json) => UniversityModel.fromJson(json))
+              .toList();
+          _cachedUniversities = universities; // Cache result
+          return {'success': true, 'data': universities};
+        }
+        
+        return {
+          'success': false,
+          'error': 'فشل في تحميل الجامعات',
+          'statusCode': response.statusCode,
+        };
+
+      } on DioException catch (e) {
+        return {
+        'success': false,
+        'error': _handleDioError(e),
+        'statusCode': e.response?.statusCode ?? 500,
+      };
+      } catch (e) {
+        return {
+        'success': false,
+        'error': 'حدث خطأ غير متوقع',
+      };
+      }
+  }
 
   /// Fetch case requests by category.
   Future<Map<String, dynamic>> getCaseRequestsByCategory(int categoryId) async {

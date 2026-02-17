@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -16,7 +17,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   // Same API used by the frontend chatbot
-  static const String _apiBase = 'https://thoutha.page/api';
+  static const String _apiBase = '${ApiConstants.baseUrl}/api';
   static const Map<String, String> _apiHeaders = {
     'Content-Type': 'application/json'
   };

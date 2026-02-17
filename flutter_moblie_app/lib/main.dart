@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/di/dependency_injection.dart';
 import 'core/routing/app_router.dart';
+import 'core/networking/api_service.dart';
 import 'doc_app.dart';
 
 void main() async {
@@ -26,4 +27,17 @@ void main() async {
   runApp(DocApp(
     appRouter: AppRouter(),
   ));
+  
+  // Background prefetch to warm up the cache
+  // We don't await this so the app starts immediately.
+  final apiService = getIt<ApiService>();
+  Future.wait([
+    apiService.getCities(),
+    apiService.getCategories(),
+    apiService.getUniversities(),
+  ]).then((_) {
+    debugPrint('Background prefetch completed');
+  }).catchError((e) {
+    debugPrint('Background prefetch failed: $e');
+  });
 }

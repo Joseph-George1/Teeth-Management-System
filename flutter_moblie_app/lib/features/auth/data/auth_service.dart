@@ -3,8 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 
-class AuthService {static const String _baseUrl = 'http://16.16.218.59:5000';
+class AuthService {
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({
@@ -23,7 +24,7 @@ class AuthService {static const String _baseUrl = 'http://16.16.218.59:5000';
 
       // Make the API request
       final response = await _dio.post(
-        '$_baseUrl/login',
+        '${ApiConstants.baseUrl}${ApiConstants.loginDoctor}',
         data: {
           'email': email.trim(),
           'password': password,
@@ -230,17 +231,16 @@ class AuthService {static const String _baseUrl = 'http://16.16.218.59:5000';
       }
 
       final response = await _dio.post(
-        '$_baseUrl/register',
+        '${ApiConstants.baseUrl}${ApiConstants.signupDoctor}',
         data: {
           'email': email.trim(),
           'password': password,
-          'faculty': faculty,
-          'first_name': first_name,
-          'last_name': last_name,
-          'governorate': governorate,
-          'year': year,
-          'phone': phone,
-          'confirm_password': confirm,
+          'universtyName': faculty,
+          'firstName': first_name,
+          'lastName': last_name,
+          'cityName': governorate,
+          'studyYear': year,
+          'phoneNumber': phone,
         },
         options: Options(
           headers: {

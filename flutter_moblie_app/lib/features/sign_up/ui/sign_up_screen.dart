@@ -7,6 +7,10 @@ import 'package:thotha_mobile_app/core/theming/styles.dart';
 import 'package:thotha_mobile_app/core/widgets/app_text_button.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/sign_up/logic/sign_up_cubit.dart';
+import 'package:thotha_mobile_app/core/networking/api_service.dart';
+import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -29,13 +33,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _selectedGovernorate;
   String? _selectedCategory;
 
-  final List<String> _colleges = [
-    'كلية طب الأسنان - القاهرة',
-    'كلية طب الأسنان - عين شمس',
-    'كلية طب الأسنان - الإسكندرية',
-    'كلية طب الأسنان - المنصورة',
-    'أخرى',
-  ];
+  bool _isDataLoading = true;
+  List<CityModel> _cities = [];
+  List<UniversityModel> _universities = [];
+  List<CategoryModel> _categories = [];
 
   final List<String> _studyYears = [
     'الفرقة الأولى',
@@ -46,54 +47,54 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'امتياز',
   ];
 
-  final List<String> _governorates = [
-    'القاهرة',
-    'الجيزة',
-    'الإسكندرية',
-    'الدقهلية',
-    'الشرقية',
-    'الغربية',
-    'المنوفية',
-    'البحيرة',
-    'القليوبية',
-    'دمياط',
-    'كفر الشيخ',
-    'بورسعيد',
-    'الإسماعيلية',
-    'السويس',
-    'المنيا',
-    'أسيوط',
-    'سوهاج',
-    'قنا',
-    'الأقصر',
-    'أسوان',
-    'البحر الأحمر',
-    'مطروح',
-    'شمال سيناء',
-    'جنوب سيناء',
-    'الفيوم',
-    'بني سويف',
-    'الوادي الجديد',
-  ];
-
-  final List<String> _categories = [
-    'جراحة الوجه والفكين',
-    'تقويم الأسنان',
-    'علاج الجذور',
-    'طب أسنان الأطفال',
-    'تركيبات الأسنان',
-    'علاج اللثة',
-    'طب الأسنان التجميلي',
-    'زراعة الأسنان',
-  ];
-
   String? selectedCountryCode = '+20';
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Controllers are now initialized with their declarations
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isDataLoading = true);
+    
+    try {
+      final apiService = ApiService();
+      
+      // Fetch cities, universities, and categories in parallel
+      final results = await Future.wait([
+        apiService.getCities(),
+        apiService.getUniversities(),
+        apiService.getCategories(),
+      ]);
+      
+      final citiesResult = results[0];
+      final universitiesResult = results[1];
+      final categoriesResult = results[2];
+      
+      if (mounted) {
+        setState(() {
+          if (citiesResult['success'] == true) {
+            _cities = citiesResult['data'] as List<CityModel>;
+          }
+          if (universitiesResult['success'] == true) {
+            _universities = universitiesResult['data'] as List<UniversityModel>;
+          }
+           if (categoriesResult['success'] == true) {
+            _categories = categoriesResult['data'] as List<CategoryModel>;
+          }
+          _isDataLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDataLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل في تحميل البيانات: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -269,19 +270,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                      ),
                                      verticalSpace(16),
                                      // College Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedCollege,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر الكلية',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _colleges
-                                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedCollege = v),
-                                     ),
+                                     _isDataLoading
+                                         ? const Center(child: CircularProgressIndicator())
+                                         : DropdownButtonFormField<String>(
+                                             value: _selectedCollege,
+                                             decoration: InputDecoration(
+                                               labelText: 'اختر الكلية',
+                                               border: OutlineInputBorder(
+                                                 borderRadius: BorderRadius.circular(8),
+                                               ),
+                                             ),
+                                             items: _universities.map((u) {
+                                               return DropdownMenuItem(
+                                                 value: u.name, // Use name as value
+                                                 child: Text(u.name),
+                                               );
+                                             }).toList(),
+                                             onChanged: (v) => setState(() => _selectedCollege = v),
+                                             validator: (value) =>
+                                                 value == null ? 'الرجاء اختيار الكلية' : null,
+                                           ),
                                      verticalSpace(16),
                                      // Study Year Dropdown
                                      DropdownButtonFormField<String>(
@@ -298,35 +306,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                        onChanged: (v) => setState(() => _selectedStudyYear = v),
                                      ),
                                      verticalSpace(16),
-                                     // Governorate Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedGovernorate,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر المحافظة',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _governorates
-                                           .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedGovernorate = v),
-                                     ),
+                                     // Governorate Dropdown (City)
+                                     _isDataLoading
+                                         ? const Center(child: CircularProgressIndicator())
+                                         : DropdownButtonFormField<String>(
+                                             value: _selectedGovernorate,
+                                             decoration: InputDecoration(
+                                               labelText: 'اختر المحافظة',
+                                               border: OutlineInputBorder(
+                                                 borderRadius: BorderRadius.circular(8),
+                                               ),
+                                             ),
+                                             items: _cities.map((c) {
+                                               return DropdownMenuItem(
+                                                 value: c.name, // Use name as value
+                                                 child: Text(c.name),
+                                               );
+                                             }).toList(),
+                                             onChanged: (v) => setState(() => _selectedGovernorate = v),
+                                             validator: (value) =>
+                                                 value == null ? 'الرجاء اختيار المحافظة' : null,
+                                           ),
                                      verticalSpace(16),
                                      // Category Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedCategory,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر التخصص', // Choose Category/Specialty
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _categories
-                                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedCategory = v),
-                                     ),
+                                     _isDataLoading
+                                         ? const Center(child: CircularProgressIndicator())
+                                         : DropdownButtonFormField<String>(
+                                             value: _selectedCategory,
+                                             decoration: InputDecoration(
+                                               labelText: 'اختر التخصص',
+                                               border: OutlineInputBorder(
+                                                 borderRadius: BorderRadius.circular(8),
+                                               ),
+                                             ),
+                                             items: _categories.map((c) {
+                                               return DropdownMenuItem(
+                                                 value: c.name, // Use name as value
+                                                 child: Text(c.name),
+                                               );
+                                             }).toList(),
+                                             onChanged: (v) => setState(() => _selectedCategory = v),
+                                             validator: (value) =>
+                                                 value == null ? 'الرجاء اختيار التخصص' : null,
+                                           ),
                                      verticalSpace(16),
                                      // Password Field
                                      TextFormField(

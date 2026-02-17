@@ -2,12 +2,14 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 
 part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'http://13.53.131.167:5000';
+
+
 
   SignUpCubit() : super(SignUpInitial());
 
@@ -48,20 +50,19 @@ class SignUpCubit extends Cubit<SignUpState> {
       final requestData = {
         'email': email.trim().toLowerCase(),
         'password': password,
-        'confirm_password': password,
-        if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
-        if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
-        if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (college != null && college.isNotEmpty) 'faculty': college,
-        if (studyYear != null && studyYear.isNotEmpty) 'year': studyYear,
-        if (governorate != null && governorate.isNotEmpty) 'governorate': governorate,
-        if (category != null && category.isNotEmpty) 'category': category, // Add this
+        if (firstName != null && firstName.isNotEmpty) 'firstName': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+        if (phone != null && phone.isNotEmpty) 'phoneNumber': phone,
+        if (college != null && college.isNotEmpty) 'universtyName': college,
+        if (studyYear != null && studyYear.isNotEmpty) 'studyYear': studyYear,
+        if (governorate != null && governorate.isNotEmpty) 'cityName': governorate,
+        if (category != null && category.isNotEmpty) 'categoryName': category,
       };
 
       print('Request data: $requestData');
 
       final response = await _dio.post(
-        '$_baseUrl/register',
+        '${ApiConstants.baseUrl}${ApiConstants.signupDoctor}',
         data: requestData,
         options: Options(
           headers: {

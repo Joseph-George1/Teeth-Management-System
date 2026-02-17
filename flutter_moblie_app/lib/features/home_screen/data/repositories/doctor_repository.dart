@@ -10,35 +10,12 @@ class DoctorRepository {
   DoctorRepository(this._apiService);
 
   Future<List<DoctorModel>> getDoctorsByCity(int cityId) async {
-    try {
-      final result = await _apiService.getDoctorsByCity(cityId);
-      if (result['success'] == true) {
-        return result['data'] as List<DoctorModel>;
-      } else {
-        throw Exception(result['error'] ?? 'Failed to load doctors');
-      }
-    } catch (e) {
-      print('API Error in getDoctorsByCity, using mock data: $e');
-      // Return mock data filtered by cityId (for now just return all mock data)
-      return _getMockDoctors().where((d) {
-        // In a real app we'd filter by ID, but for mock data we'll just return a subset or all
-        // depending on how strict we want to be. Let's return all for better UX in demo.
-        return true; 
-      }).toList();
-    }
+    // Return mock data filtered by cityId
+    // In a real app we'd filter by ID, but for mock data we'll just return all for better UX in demo.
+    return _getMockDoctors(); 
   }
 
   Future<List<DoctorModel>> getDoctorsByCategory(int categoryId) async {
-    try {
-      final result = await _apiService.getDoctorsByCategory(categoryId);
-      if (result['success'] == true) {
-        return result['data'] as List<DoctorModel>;
-      } else {
-        throw Exception(result['error'] ?? 'Failed to load doctors');
-      }
-    } catch (e) {
-      print('API Error in getDoctorsByCategory, using mock data: $e');
-
       // Mock category mapping
       final mockCategories = {
         1: 'فحص شامل',
@@ -58,7 +35,6 @@ class DoctorRepository {
         // Loose matching for mock data
         return d.categoryName.contains(categoryName) || categoryName.contains(d.categoryName);
       }).toList();
-    }
   }
 
   Future<List<CaseRequestModel>> getCaseRequestsByCategory(int categoryId) async {
@@ -70,9 +46,8 @@ class DoctorRepository {
         throw Exception(result['error'] ?? 'Failed to load case requests');
       }
     } catch (e) {
+      // Keep mock for Case Requests as API is not confirmed yet
       print('API Error in getCaseRequestsByCategory, using mock data: $e');
-      
-      // Return mock requests
       return [
         CaseRequestModel(
           id: 101,
@@ -81,7 +56,16 @@ class DoctorRepository {
           time: '14:00',
           location: 'العيادة - المعادي',
           specialization: 'زراعة أسنان',
-          doctor: _getMockDoctors()[1], // Dr. Sara
+          doctor: DoctorModel(
+            id: 1, 
+            firstName: 'سارة', 
+            lastName: 'علي', 
+            studyYear: '2015', 
+            phoneNumber: '0100000000', 
+            universityName: 'Cairo', 
+            cityName: 'Cairo', 
+            categoryName: 'Implant'
+          ), 
         ),
          CaseRequestModel(
           id: 102,
@@ -90,9 +74,44 @@ class DoctorRepository {
           time: '10:00',
           location: 'العيادة - الدقي',
           specialization: 'تقويم الأسنان',
-          doctor: _getMockDoctors()[0], // Dr. Ahmed
+          doctor: DoctorModel(
+            id: 1, 
+            firstName: 'سارة', 
+            lastName: 'علي', 
+            studyYear: '2015', 
+            phoneNumber: '0100000000', 
+            universityName: 'Cairo', 
+            cityName: 'Cairo', 
+            categoryName: 'Implant'
+          ), 
         ),
       ];
+    }
+  }
+
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      final result = await _apiService.getCategories();
+      if (result['success'] == true) {
+        return result['data'] as List<CategoryModel>;
+      } else {
+        throw Exception(result['error'] ?? 'Failed to load categories');
+      }
+    } catch (e) {
+      throw Exception('Failed to load categories: $e');
+    }
+  }
+
+  Future<List<CityModel>> getCities() async {
+    try {
+      final result = await _apiService.getCities();
+      if (result['success'] == true) {
+        return result['data'] as List<CityModel>;
+      } else {
+        throw Exception(result['error'] ?? 'Failed to load cities');
+      }
+    } catch (e) {
+      throw Exception('Failed to load cities: $e');
     }
   }
 
@@ -155,30 +174,6 @@ class DoctorRepository {
         description: 'أفضل طبيب تجميل أسنان في العالم',
         price: 700.0,
       ),
-    ];
-  }
-
-  Future<List<CategoryModel>> getCategories() async {
-    // Return local data immediately for instant loading
-    return [
-      CategoryModel(id: 1, name: 'فحص شامل'),
-      CategoryModel(id: 2, name: 'حشو أسنان'),
-      CategoryModel(id: 3, name: 'زراعة أسنان'),
-      CategoryModel(id: 4, name: 'خلع الأسنان'),
-      CategoryModel(id: 5, name: 'تبييض الأسنان'),
-      CategoryModel(id: 6, name: 'تقويم الأسنان'),
-      CategoryModel(id: 7, name: 'تركيبات الأسنان'),
-    ];
-  }
-
-  Future<List<CityModel>> getCities() async {
-    // Return local data immediately for instant loading
-    return [
-      CityModel(id: 1, name: 'القاهرة'),
-      CityModel(id: 2, name: 'الإسكندرية'),
-      CityModel(id: 3, name: 'الجيزة'),
-      CityModel(id: 4, name: 'الأقصر'),
-      CityModel(id: 5, name: 'أسوان'),
     ];
   }
 }
