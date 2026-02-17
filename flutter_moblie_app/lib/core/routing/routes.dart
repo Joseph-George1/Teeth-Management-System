@@ -8,6 +8,7 @@ class Routes {
   static const String otpVerificationScreen = '/otp-verification';
   static const String resetPasswordScreen = '/resetPassword';
   static const String signUpSuccessScreen = '/signUpSuccess';
+  static const String signupOtpVerificationScreen = '/signup-otp-verification';
   static const String categoriesScreen = '/home_screen';
   static const String doctorInfoScreen = '/doctor-info';
   static const String bookingConfirmationScreen = '/booking-confirmation';

@@ -7,6 +7,10 @@ import 'package:thotha_mobile_app/core/theming/styles.dart';
 import 'package:thotha_mobile_app/core/widgets/app_text_button.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
 import 'package:thotha_mobile_app/features/sign_up/logic/sign_up_cubit.dart';
+import 'package:thotha_mobile_app/core/networking/api_service.dart';
+import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
+import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -29,14 +33,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _selectedGovernorate;
   String? _selectedCategory;
 
-  final List<String> _colleges = [
-    'كلية طب الأسنان - القاهرة',
-    'كلية طب الأسنان - عين شمس',
-    'كلية طب الأسنان - الإسكندرية',
-    'كلية طب الأسنان - المنصورة',
-    'أخرى',
-  ];
+  // Dynamic data from API
+  final ApiService _apiService = ApiService();
+  List<CityModel> _cities = [];
+  List<UniversityModel> _universities = [];
+  List<CategoryModel> _categories = [];
 
+  // Loading states
+  bool _isLoadingCities = false;
+  bool _isLoadingUniversities = false;
+  bool _isLoadingCategories = false;
+
+  // Keep study years static (unlikely to change)
   final List<String> _studyYears = [
     'الفرقة الأولى',
     'الفرقة الثانية',
@@ -46,54 +54,75 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'امتياز',
   ];
 
-  final List<String> _governorates = [
-    'القاهرة',
-    'الجيزة',
-    'الإسكندرية',
-    'الدقهلية',
-    'الشرقية',
-    'الغربية',
-    'المنوفية',
-    'البحيرة',
-    'القليوبية',
-    'دمياط',
-    'كفر الشيخ',
-    'بورسعيد',
-    'الإسماعيلية',
-    'السويس',
-    'المنيا',
-    'أسيوط',
-    'سوهاج',
-    'قنا',
-    'الأقصر',
-    'أسوان',
-    'البحر الأحمر',
-    'مطروح',
-    'شمال سيناء',
-    'جنوب سيناء',
-    'الفيوم',
-    'بني سويف',
-    'الوادي الجديد',
-  ];
-
-  final List<String> _categories = [
-    'جراحة الوجه والفكين',
-    'تقويم الأسنان',
-    'علاج الجذور',
-    'طب أسنان الأطفال',
-    'تركيبات الأسنان',
-    'علاج اللثة',
-    'طب الأسنان التجميلي',
-    'زراعة الأسنان',
-  ];
-
   String? selectedCountryCode = '+20';
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Controllers are now initialized with their declarations
+    // Fetch reference data from APIs
+    _fetchReferenceData();
+  }
+
+  Future<void> _fetchReferenceData() async {
+    // Fetch all data in parallel for better performance
+    await Future.wait([
+      _fetchCities(),
+      _fetchUniversities(),
+      _fetchCategories(),
+    ]);
+  }
+
+  Future<void> _fetchCities() async {
+    setState(() {
+      _isLoadingCities = true;
+    });
+
+    final result = await _apiService.getCities();
+
+    setState(() {
+      _isLoadingCities = false;
+      if (result['success']) {
+        _cities = result['data'] as List<CityModel>;
+      } else {
+        // Show error but don't block UI
+        print('Failed to load cities: ${result['error']}');
+      }
+    });
+  }
+
+  Future<void> _fetchUniversities() async {
+    setState(() {
+      _isLoadingUniversities = true;
+    });
+
+    final result = await _apiService.getUniversities();
+
+    setState(() {
+      _isLoadingUniversities = false;
+      if (result['success']) {
+        _universities = result['data'] as List<UniversityModel>;
+      } else {
+        print('Failed to load universities: ${result['error']}');
+      }
+    });
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() {
+      _isLoadingCategories = true;
+    });
+
+    final result = await _apiService.getCategories();
+
+    setState(() {
+      _isLoadingCategories = false;
+      if (result['success']) {
+        _categories = result['data'] as List<CategoryModel>;
+      } else {
+        print('Failed to load categories: ${result['error']}');
+      }
+    });
   }
 
   @override
@@ -126,6 +155,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Future.delayed(const Duration(seconds: 3), () {
                   Navigator.pushReplacementNamed(context, Routes.loginScreen);
                 });
+              } else if (state is SignUpOtpSent) {
+                // Navigate to OTP verification screen
+                Navigator.pushNamed(
+                  context,
+                  Routes.signupOtpVerificationScreen,
+                  arguments: {
+                    'phoneNumber': state.phoneNumber,
+                    'email': state.email,
+                  },
+                );
+                // Optionally show a snackbar
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.blue,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               } else if (state is SignUpError) {
                 // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -268,20 +315,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                        ),
                                      ),
                                      verticalSpace(16),
-                                     // College Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedCollege,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر الكلية',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _colleges
-                                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedCollege = v),
-                                     ),
+                                      // University/College Dropdown
+                                      _isLoadingUniversities
+                                          ? const Center(child: CircularProgressIndicator())
+                                          : DropdownButtonFormField<String>(
+                                              value: _selectedCollege,
+                                              decoration: InputDecoration(
+                                                labelText: 'اختر الكلية',
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              items: _universities
+                                                  .map((u) => DropdownMenuItem(
+                                                      value: u.name,
+                                                      child: Text(u.name)))
+                                                  .toList(),
+                                              onChanged: (v) => setState(() => _selectedCollege = v),
+                                            ),
                                      verticalSpace(16),
                                      // Study Year Dropdown
                                      DropdownButtonFormField<String>(
@@ -298,35 +349,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                        onChanged: (v) => setState(() => _selectedStudyYear = v),
                                      ),
                                      verticalSpace(16),
-                                     // Governorate Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedGovernorate,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر المحافظة',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _governorates
-                                           .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedGovernorate = v),
-                                     ),
+                                      // City/Governorate Dropdown
+                                      _isLoadingCities
+                                          ? const Center(child: CircularProgressIndicator())
+                                          : DropdownButtonFormField<String>(
+                                              value: _selectedGovernorate,
+                                              decoration: InputDecoration(
+                                                labelText: 'اختر المحافظة',
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              items: _cities
+                                                  .map((city) => DropdownMenuItem(
+                                                      value: city.name,
+                                                      child: Text(city.name)))
+                                                  .toList(),
+                                              onChanged: (v) => setState(() => _selectedGovernorate = v),
+                                            ),
                                      verticalSpace(16),
-                                     // Category Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedCategory,
-                                       decoration: InputDecoration(
-                                         labelText: 'اختر التخصص', // Choose Category/Specialty
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _categories
-                                           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedCategory = v),
-                                     ),
+                                      // Category/Specialty Dropdown  
+                                      _isLoadingCategories
+                                          ? const Center(child: CircularProgressIndicator())
+                                          : DropdownButtonFormField<String>(
+                                              value: _selectedCategory,
+                                              decoration: InputDecoration(
+                                                labelText: 'اختر التخصص',
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              items: _categories
+                                                  .map((cat) => DropdownMenuItem(
+                                                      value: cat.name,
+                                                      child: Text(cat.name)))
+                                                  .toList(),
+                                              onChanged: (v) => setState(() => _selectedCategory = v),
+                                            ),
                                      verticalSpace(16),
                                      // Password Field
                                      TextFormField(
