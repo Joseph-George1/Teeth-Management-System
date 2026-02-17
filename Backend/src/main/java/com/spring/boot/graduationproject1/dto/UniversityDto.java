@@ -11,4 +11,8 @@ public class UniversityDto {
     private String name;
     private String city;
     private String location;
+    private String longitude;
+    private String latitude;
+
+
 }

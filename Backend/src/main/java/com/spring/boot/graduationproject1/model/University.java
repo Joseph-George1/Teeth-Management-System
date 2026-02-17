@@ -20,6 +20,10 @@ public class University {
     private String city;
     @Column(nullable = false)
     private String location;
+    @Column(nullable = false)
+    private String longitude;
+    @Column(nullable = false)
+    private String latitude;
     @OneToMany(mappedBy = "university")
     private List<Doctor> doctors;
 }
