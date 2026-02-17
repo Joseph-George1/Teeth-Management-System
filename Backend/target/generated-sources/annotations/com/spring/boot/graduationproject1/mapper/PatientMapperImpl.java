@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-02-06T20:36:33+0200",
-    comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
+    date = "2026-02-18T10:17:15+0200",
+    comments = "version: 1.5.2.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260128-0750, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class PatientMapperImpl implements PatientMapper {
@@ -23,12 +23,12 @@ public class PatientMapperImpl implements PatientMapper {
 
         PatientDto patientDto = new PatientDto();
 
-        patientDto.setId( patient.getId() );
-        patientDto.setFirstName( patient.getFirstName() );
-        patientDto.setLastName( patient.getLastName() );
-        patientDto.setSurName( patient.getSurName() );
-        patientDto.setPhoneNumber( patient.getPhoneNumber() );
         patientDto.setCityName( patient.getCityName() );
+        patientDto.setFirstName( patient.getFirstName() );
+        patientDto.setId( patient.getId() );
+        patientDto.setLastName( patient.getLastName() );
+        patientDto.setPhoneNumber( patient.getPhoneNumber() );
+        patientDto.setSurName( patient.getSurName() );
 
         return patientDto;
     }
@@ -41,12 +41,12 @@ public class PatientMapperImpl implements PatientMapper {
 
         Patients patients = new Patients();
 
-        patients.setId( patientDto.getId() );
-        patients.setFirstName( patientDto.getFirstName() );
-        patients.setLastName( patientDto.getLastName() );
-        patients.setSurName( patientDto.getSurName() );
-        patients.setPhoneNumber( patientDto.getPhoneNumber() );
         patients.setCityName( patientDto.getCityName() );
+        patients.setFirstName( patientDto.getFirstName() );
+        patients.setId( patientDto.getId() );
+        patients.setLastName( patientDto.getLastName() );
+        patients.setPhoneNumber( patientDto.getPhoneNumber() );
+        patients.setSurName( patientDto.getSurName() );
 
         return patients;
     }

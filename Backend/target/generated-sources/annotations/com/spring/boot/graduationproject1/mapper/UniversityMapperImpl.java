@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-02-06T20:36:33+0200",
-    comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
+    date = "2026-02-18T10:17:15+0200",
+    comments = "version: 1.5.2.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260128-0750, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class UniversityMapperImpl implements UniversityMapper {
@@ -23,10 +23,12 @@ public class UniversityMapperImpl implements UniversityMapper {
 
         UniversityDto universityDto = new UniversityDto();
 
-        universityDto.setId( university.getId() );
-        universityDto.setName( university.getName() );
         universityDto.setCity( university.getCity() );
+        universityDto.setId( university.getId() );
+        universityDto.setLatitude( university.getLatitude() );
         universityDto.setLocation( university.getLocation() );
+        universityDto.setLongitude( university.getLongitude() );
+        universityDto.setName( university.getName() );
 
         return universityDto;
     }
@@ -39,10 +41,12 @@ public class UniversityMapperImpl implements UniversityMapper {
 
         University university = new University();
 
-        university.setId( universityDto.getId() );
-        university.setName( universityDto.getName() );
         university.setCity( universityDto.getCity() );
+        university.setId( universityDto.getId() );
+        university.setLatitude( universityDto.getLatitude() );
         university.setLocation( universityDto.getLocation() );
+        university.setLongitude( universityDto.getLongitude() );
+        university.setName( universityDto.getName() );
 
         return university;
     }

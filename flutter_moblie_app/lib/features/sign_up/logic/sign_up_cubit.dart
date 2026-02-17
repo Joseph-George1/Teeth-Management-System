@@ -8,6 +8,7 @@ part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
+  final OtpService _otpService = OtpService();
   static const String _baseUrl = 'https://thoutha.page';
 
   SignUpCubit() : super(SignUpInitial());
@@ -43,7 +44,8 @@ class SignUpCubit extends Cubit<SignUpState> {
       }
 
       // Call the registration API
-      print('Sending sign-up request with email: ${email.trim()} and password: $password');
+      print(
+          'Sending sign-up request with email: ${email.trim()} and password: $password');
 
       // Prepare the request data with new field names
       final requestData = {
@@ -54,7 +56,8 @@ class SignUpCubit extends Cubit<SignUpState> {
         if (phone != null && phone.isNotEmpty) 'phoneNumber': phone,
         if (college != null && college.isNotEmpty) 'universtyName': college,
         if (studyYear != null && studyYear.isNotEmpty) 'studyYear': studyYear,
-        if (governorate != null && governorate.isNotEmpty) 'cityName': governorate,
+        if (governorate != null && governorate.isNotEmpty)
+          'cityName': governorate,
         if (category != null && category.isNotEmpty) 'categoryName': category,
       };
 
@@ -81,16 +84,16 @@ class SignUpCubit extends Cubit<SignUpState> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Signup successful, now send OTP to phone number
         print('Signup successful, sending OTP to phone: $phone');
-        
+
         // Format phone number with country code
         String formattedPhone = phone ?? '';
         if (formattedPhone.isNotEmpty && !formattedPhone.startsWith('+')) {
           formattedPhone = '+20$formattedPhone'; // Assuming Egypt +20
         }
-        
+
         // Send OTP
         final otpResult = await _otpService.sendOtp(formattedPhone);
-        
+
         if (otpResult['success']) {
           // OTP sent successfully, navigate to OTP verification
           emit(SignUpOtpSent(
@@ -146,5 +149,5 @@ class SignUpCubit extends Cubit<SignUpState> {
     } catch (e) {
       emit(SignUpError('حدث خطأ غير متوقع'));
     }
-  }}
-
+  }
+}

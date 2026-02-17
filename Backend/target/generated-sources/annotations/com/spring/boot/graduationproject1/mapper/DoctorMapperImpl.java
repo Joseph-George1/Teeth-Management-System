@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-02-06T20:36:33+0200",
-    comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
+    date = "2026-02-18T10:17:15+0200",
+    comments = "version: 1.5.2.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260128-0750, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class DoctorMapperImpl implements DoctorMapper {
@@ -27,17 +27,17 @@ public class DoctorMapperImpl implements DoctorMapper {
 
         DoctorDto doctorDto = new DoctorDto();
 
-        doctorDto.setId( doctor.getId() );
         doctorDto.setCategoryName( doctor.getCategoryName() );
-        doctorDto.setUniversityName( doctor.getUniversityName() );
-        doctorDto.setFirstName( doctor.getFirstName() );
-        doctorDto.setLastName( doctor.getLastName() );
+        doctorDto.setCityName( doctor.getCityName() );
         doctorDto.setEmail( doctor.getEmail() );
-        doctorDto.setStudyYear( doctor.getStudyYear() );
+        doctorDto.setFirstName( doctor.getFirstName() );
+        doctorDto.setId( doctor.getId() );
+        doctorDto.setLastName( doctor.getLastName() );
         doctorDto.setPassword( doctor.getPassword() );
         doctorDto.setPhoneNumber( doctor.getPhoneNumber() );
-        doctorDto.setCityName( doctor.getCityName() );
         doctorDto.setRole( roleToRoleDto( doctor.getRole() ) );
+        doctorDto.setStudyYear( doctor.getStudyYear() );
+        doctorDto.setUniversityName( doctor.getUniversityName() );
 
         return doctorDto;
     }
@@ -50,17 +50,17 @@ public class DoctorMapperImpl implements DoctorMapper {
 
         Doctor doctor = new Doctor();
 
-        doctor.setId( doctorDto.getId() );
-        doctor.setFirstName( doctorDto.getFirstName() );
-        doctor.setLastName( doctorDto.getLastName() );
-        doctor.setEmail( doctorDto.getEmail() );
-        doctor.setPassword( doctorDto.getPassword() );
-        doctor.setStudyYear( doctorDto.getStudyYear() );
-        doctor.setPhoneNumber( doctorDto.getPhoneNumber() );
-        doctor.setCityName( doctorDto.getCityName() );
-        doctor.setUniversityName( doctorDto.getUniversityName() );
         doctor.setCategoryName( doctorDto.getCategoryName() );
+        doctor.setCityName( doctorDto.getCityName() );
+        doctor.setEmail( doctorDto.getEmail() );
+        doctor.setFirstName( doctorDto.getFirstName() );
+        doctor.setId( doctorDto.getId() );
+        doctor.setLastName( doctorDto.getLastName() );
+        doctor.setPassword( doctorDto.getPassword() );
+        doctor.setPhoneNumber( doctorDto.getPhoneNumber() );
         doctor.setRole( roleDtoToRole( doctorDto.getRole() ) );
+        doctor.setStudyYear( doctorDto.getStudyYear() );
+        doctor.setUniversityName( doctorDto.getUniversityName() );
 
         return doctor;
     }
@@ -101,13 +101,13 @@ public class DoctorMapperImpl implements DoctorMapper {
 
         DoctorSummaryDto doctorSummaryDto = new DoctorSummaryDto();
 
+        doctorSummaryDto.setCategoryName( doctor.getCategoryName() );
+        doctorSummaryDto.setCityName( doctor.getCityName() );
         doctorSummaryDto.setFirstName( doctor.getFirstName() );
         doctorSummaryDto.setLastName( doctor.getLastName() );
-        doctorSummaryDto.setStudyYear( doctor.getStudyYear() );
         doctorSummaryDto.setPhoneNumber( doctor.getPhoneNumber() );
+        doctorSummaryDto.setStudyYear( doctor.getStudyYear() );
         doctorSummaryDto.setUniversityName( doctor.getUniversityName() );
-        doctorSummaryDto.setCityName( doctor.getCityName() );
-        doctorSummaryDto.setCategoryName( doctor.getCategoryName() );
 
         return doctorSummaryDto;
     }
@@ -134,15 +134,15 @@ public class DoctorMapperImpl implements DoctorMapper {
 
         Doctor doctor = new Doctor();
 
+        doctor.setCategoryName( request.getCategoryName() );
+        doctor.setCityName( request.getCityName() );
+        doctor.setEmail( request.getEmail() );
         doctor.setFirstName( request.getFirstName() );
         doctor.setLastName( request.getLastName() );
-        doctor.setEmail( request.getEmail() );
         doctor.setPassword( request.getPassword() );
-        doctor.setStudyYear( request.getStudyYear() );
         doctor.setPhoneNumber( request.getPhoneNumber() );
-        doctor.setCityName( request.getCityName() );
+        doctor.setStudyYear( request.getStudyYear() );
         doctor.setUniversityName( request.getUniversityName() );
-        doctor.setCategoryName( request.getCategoryName() );
 
         return doctor;
     }
