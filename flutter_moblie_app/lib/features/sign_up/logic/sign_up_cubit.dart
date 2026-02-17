@@ -8,7 +8,6 @@ part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  final OtpService _otpService = OtpService();
   static const String _baseUrl = 'https://thoutha.page';
 
   SignUpCubit() : super(SignUpInitial());
