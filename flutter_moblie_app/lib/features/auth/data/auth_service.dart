@@ -4,7 +4,8 @@ import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
-class AuthService {static const String _baseUrl = 'http://16.16.218.59:5000';
+class AuthService {
+  static const String _baseUrl = 'https://thoutha.page';
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({
@@ -23,7 +24,7 @@ class AuthService {static const String _baseUrl = 'http://16.16.218.59:5000';
 
       // Make the API request
       final response = await _dio.post(
-        '$_baseUrl/login',
+        '$_baseUrl/api/auth/login/doctor',
         data: {
           'email': email.trim(),
           'password': password,
