@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+import 'package:thotha_mobile_app/core/networking/otp_service.dart';
 
 class OtpVerificationDialog extends StatefulWidget {
   final String contactInfo;
@@ -21,10 +22,17 @@ class OtpVerificationDialog extends StatefulWidget {
 class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
   final _otpController = TextEditingController();
   final _focusNode = FocusNode();
+  final OtpService _otpService = OtpService();
   bool _isLoading = false;
   String? _error;
   int _resendCountdown = 60;
   Timer? _timer;
+
+  String get _formattedPhone {
+    final raw = widget.contactInfo.trim();
+    if (raw.isEmpty) return raw;
+    return raw.startsWith('+') ? raw : '+$raw';
+  }
 
   @override
   void initState() {
@@ -58,37 +66,67 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
     });
   }
 
-  void _verifyOtp(String pin) {
+  Future<void> _verifyOtp(String pin) async {
+    if (widget.isEmail) {
+      setState(() {
+        _error = 'التحقق عبر البريد غير مدعوم هنا';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
-    // Simulate verification
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+    final result = await _otpService.verifyOtp(_formattedPhone, pin);
 
-        // Accept any 4 digit code for testing, or specific one
-        if (pin.length == 4) {
-             Navigator.pop(context);
-             widget.onVerified(pin);
-        } else {
-           setState(() {
-             _error = "رمز التحقق غير صحيح";
-           });
-        }
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result['success'] == true) {
+      Navigator.pop(context);
+      widget.onVerified(pin);
+    } else {
+      setState(() {
+        _error = result['error'] ?? 'رمز التحقق غير صحيح';
+      });
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    if (widget.isEmail) {
+      setState(() {
+        _error = 'إعادة الإرسال عبر البريد غير مدعومة هنا';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _otpService.sendOtp(_formattedPhone);
+
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      if (result['success'] != true) {
+        _error = result['error'] ?? 'فشل إعادة إرسال الرمز';
       }
     });
+
+    if (result['success'] == true) {
+      _startTimer();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    // Pin Theme
+     // Pin Theme
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 60,
@@ -167,7 +205,7 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
             Directionality(
               textDirection: TextDirection.ltr,
               child: Pinput(
-                length: 4,
+                length: 6,
                 controller: _otpController,
                 focusNode: _focusNode,
                 defaultPinTheme: defaultPinTheme,
@@ -220,7 +258,7 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
                     if (_resendCountdown == 0)
                       TextButton(
                         onPressed: () {
-                           _startTimer();
+                          _resendOtp();
                         },
                         child: Text(
                           "إعادة الإرسال",
@@ -239,4 +277,3 @@ class _OtpVerificationDialogState extends State<OtpVerificationDialog> {
     );
   }
 }
-
