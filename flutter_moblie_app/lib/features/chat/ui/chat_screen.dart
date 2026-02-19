@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
+import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/features/home_screen/ui/category_doctors_screen.dart';
 import 'package:thotha_mobile_app/core/routing/routes.dart';
 
@@ -16,25 +19,16 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   // Same API used by the frontend chatbot
-  static const String _apiBase = 'https://thoutha.page/api';
-  static const Map<String, String> _apiHeaders = {
-    'Content-Type': 'application/json'
-  };
-
+  static const String _apiBase = ApiConstants.otpBaseUrl;
+  
   // UI colors to match frontend CSS (ChatBot.css)
   static const Color _color2 = Color(0xFF53CAF9); // header + user bubble
   static const Color _color3 = Color(0x2853CAF9); // bot bubble (53caf928)
   static const Color _outline = Color(0xFFCCCCE5);
   static const String _thinkingText = 'يفكر.....';
-
-  final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: _apiBase,
-      headers: _apiHeaders,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  );
+  
+  // Use centralized Dio from factory
+  final Dio _dio = DioFactory.getDio();
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _inputController = TextEditingController();
@@ -64,15 +58,35 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_isLoading || _sessionId != null || _flowItems.isNotEmpty) return;
     setState(() => _isLoading = true);
     try {
-      final res = await _dio.post('/session/start', data: {'language': 'ar'});
-      final data = res.data;
-      if (data is Map && data['session_id'] != null) {
-        _sessionId = data['session_id'].toString();
+      final String url = '$_apiBase/api/session/start';
+      print('🚀 [ChatBot] Starting Session: $url');
+      
+      final res = await _dio.post(
+        url,
+        data: jsonEncode({'language': 'ar'}),
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+      
+      print('📥 [ChatBot] Status: ${res.statusCode}');
+      final decodedData = jsonDecode(utf8.decode(res.data as List<int>));
+      print('📥 [ChatBot] Data: $decodedData');
+
+      if (decodedData is Map && decodedData['session_id'] != null) {
+        _sessionId = decodedData['session_id'].toString();
       }
-      _processResponse(data);
-    } catch (_) {
-      // If session flow fails, fall back to chat mode
-      setState(() => _chatMode = true);
+      
+      // Artificial delay to show "thinking" state
+      await Future.delayed(const Duration(milliseconds: 800));
+      _processResponse(decodedData);
+    } catch (e) {
+      print('❌ [ChatBot] Error starting session: $e');
+      if (mounted) setState(() => _chatMode = true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
       _scrollToBottom();
@@ -99,16 +113,21 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   bool _processResponse(dynamic data) {
+    print('🔄 [ChatBot] Processing response keys: ${data is Map ? data.keys : 'not a map'}');
+
+    if (data is Map && data['chatbot_mode'] == true) {
+      print('🤖 [ChatBot] Mode triggered: chatbot_mode');
+      setState(() => _chatMode = true);
+      return true;
+    }
+    
     final nextStep = (data is Map)
         ? (data['next_step'] ?? data['next'] ?? data['mode'] ?? data['state'])
         : null;
 
-    if (data is Map && data['chatbot_mode'] == true) {
-      setState(() => _chatMode = true);
-      return true;
-    }
     if (nextStep is String &&
         <String>['chat', 'chatbot', 'ai'].contains(nextStep.toLowerCase())) {
+      print('🤖 [ChatBot] Mode triggered: nextStep=$nextStep');
       setState(() => _chatMode = true);
       return true;
     }
@@ -120,6 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
         category = (result['category'] ?? result['category_en'])?.toString();
       }
       if (category != null && category.trim().isNotEmpty) {
+        print('🎯 [ChatBot] Category found: $category');
         setState(() {
           _flowItems.add(_FlowItem.result(
               text: '✅ تم تحديد الفئة: $category', category: category));
@@ -130,6 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final q = _normalizeQuestion(data);
     if (q != null) {
+      print('❓ [ChatBot] Question found: ${q.id}');
       setState(() {
         _flowItems.add(_FlowItem.question(q));
         _activeQuestionId = q.id;
@@ -137,6 +158,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return true;
     }
 
+    print('⚠️ [ChatBot] No specific flow found, falling back to chat');
     setState(() => _chatMode = true);
     return false;
   }
@@ -199,13 +221,23 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     try {
-      final res = await _dio.post('/session/answer', data: {
-        'session_id': _sessionId,
-        'question_id': q.id,
-        'answer_id': a.id
-      });
-      final data = res.data;
-      if (!_processResponse(data)) {
+      final String url = '$_apiBase/api/session/answer';
+      print('🚀 [ChatBot] Submitting Answer: $url');
+      
+      final res = await _dio.post(
+        url,
+        data: {
+          'session_id': _sessionId,
+          'question_id': q.id,
+          'answer_id': a.id
+        },
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final decodedData = jsonDecode(utf8.decode(res.data as List<int>));
+      print('📥 [ChatBot] Answer Response: $decodedData');
+      
+      if (!_processResponse(decodedData)) {
         setState(() {
           _flowItems.add(_FlowItem.result(
             text:
@@ -214,7 +246,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _chatMode = true;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      print('❌ [ChatBot] Error submitting answer: $e');
       setState(() => _chatMode = true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -237,21 +270,31 @@ class _ChatScreenState extends State<ChatScreen> {
 
     const errorMsg = 'عذراً، حدث خطأ في الاتصال. حاول مرة أخرى.';
     try {
-      final res = await _dio
-          .post('/chat', data: {'message': msg, 'session_id': _sessionId});
-      final data = res.data;
-      if (data is Map && data['session_id'] != null) {
-        _sessionId = data['session_id'].toString();
+      final String url = '$_apiBase/api/chat';
+      print('🚀 [ChatBot] Sending Message: $url');
+      
+      final res = await _dio.post(
+        url,
+        data: {'message': msg, 'session_id': _sessionId},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final decodedData = jsonDecode(utf8.decode(res.data as List<int>));
+      print('📥 [ChatBot] Chat Response: $decodedData');
+      
+      if (decodedData is Map && decodedData['session_id'] != null) {
+        _sessionId = decodedData['session_id'].toString();
       }
-      final reply = (data is Map && data['reply'] != null)
-          ? data['reply'].toString()
+      final reply = (decodedData is Map && decodedData['reply'] != null)
+          ? decodedData['reply'].toString()
           : errorMsg;
       setState(() {
         _chatHistory.removeWhere(
             (m) => m.role == _ChatRole.bot && m.text == _thinkingText);
         _chatHistory.add(_ChatItem.bot(reply));
       });
-    } catch (_) {
+    } catch (e) {
+      print('❌ [ChatBot] Error sending message: $e');
       setState(() {
         _chatHistory.removeWhere(
             (m) => m.role == _ChatRole.bot && m.text == _thinkingText);
@@ -390,7 +433,9 @@ class _ChatScreenState extends State<ChatScreen> {
           _botMessage('👋🏻 اهلا بك\nازاى اقدر اساعدك؟'),
           if (_isLoading && _flowItems.isEmpty) ...[
             SizedBox(height: 16.h),
-            _botMessage('...جاري تجهيز الأسئلة'),
+            _botMessage('ثوثة بتفكر.....'),
+            SizedBox(height: 16.h),
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ],
           for (final item in _flowItems) ...[
             SizedBox(height: 16.h),

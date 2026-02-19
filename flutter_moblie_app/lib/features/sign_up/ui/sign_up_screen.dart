@@ -227,10 +227,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                        Center(
                          child: SingleChildScrollView(
                            child: Padding(
-                             padding: EdgeInsets.all(24.0.w),
+                             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 40.h),
                              child: Container(
                                width: double.infinity,
-                               padding: EdgeInsets.all(24.0.w),
+                               padding: EdgeInsets.all(24.w),
                                decoration: BoxDecoration(
                                  color: Colors.white,
                                  borderRadius: BorderRadius.circular(16.0),
@@ -248,7 +248,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                    mainAxisSize: MainAxisSize.min,
                                    crossAxisAlignment: CrossAxisAlignment.center,
                                    children: [
-                                     verticalSpace(20),
+                                     verticalSpace(10),
                                      Image.asset(
                                        'assets/images/splash-logo.png',
                                        width: 80.w,
@@ -258,10 +258,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                      Text(
                                        'أنشئ حسابك للبدء في استخدام التطبيق.',
                                        style: TextStyles.font14GrayRegular,
-                                       textAlign: TextAlign.right,
+                                       textAlign: TextAlign.center,
                                      ),
-                                     verticalSpace(10),
-                                     verticalSpace(16),
+                                     verticalSpace(20),
                                      // First Name Field
                                      TextFormField(
                                        controller: firstNameController,
@@ -336,6 +335,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                      verticalSpace(16),
                                      // Study Year Dropdown
                                      DropdownButtonFormField<String>(
+                                       isExpanded: true,
                                        value: _selectedStudyYear,
                                        decoration: InputDecoration(
                                          labelText: 'السنة الدراسية',
@@ -425,96 +425,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                              buttonText: 'إنشاء حساب',
                                              textStyle: TextStyles.font16WhiteMedium,
                                              onPressed: () {
-                                               if (firstNameController.text
-                                                   .trim()
-                                                   .isEmpty) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال الاسم الأول'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               if (lastNameController.text
-                                                   .trim()
-                                                   .isEmpty) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال الاسم الأخير'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               // Validate email
-                                               if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$')
-                                                   .hasMatch(
-                                                   emailController.text.trim())) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال بريد إلكتروني صالح'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               // Validate password length
-                                               if (passwordController.text.length <
-                                                   6) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'يجب أن تكون كلمة المرور 6 أحرف على الأقل'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               if (passwordController.text !=
-                                                   confirmPasswordController.text) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'كلمتا المرور غير متطابقتين'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               final phone = phoneController.text.trim();
-
-                                               // If all validations pass, proceed with sign up
-                                               context.read<SignUpCubit>().signUp(
-                                                 email: emailController.text.trim(),
-                                                 password: passwordController.text,
-
-                                                 firstName: firstNameController.text.trim(),
-                                                 lastName: lastNameController.text.trim(),
-                                                 phone: phoneController.text.trim(),
-                                                 college: _selectedCollege,
-                                                 studyYear: _selectedStudyYear,
-                                                 governorate: _selectedGovernorate,
-                                                 category: _selectedCategory, // Add this
-                                               );
+                                               _validateAndSubmit(context);
                                              },
                                            ),
                                          );
@@ -552,5 +463,91 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               )));
+  }
+
+  Widget _buildErrorRefresh(String label, VoidCallback onRefresh) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh, color: Colors.blue),
+          onPressed: onRefresh,
+        ),
+      ],
+    );
+  }
+
+  void _validateAndSubmit(BuildContext context) {
+    if (firstNameController.text.trim().isEmpty) {
+      _showError(context, 'الرجاء إدخال الاسم الأول');
+      return;
+    }
+
+    if (lastNameController.text.trim().isEmpty) {
+      _showError(context, 'الرجاء إدخال الاسم الأخير');
+      return;
+    }
+
+    if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$')
+        .hasMatch(emailController.text.trim())) {
+      _showError(context, 'الرجاء إدخال بريد إلكتروني صالح');
+      return;
+    }
+
+    if (passwordController.text.length < 6) {
+      _showError(context, 'يجب أن تكون كلمة المرور 6 أحرف على الأقل');
+      return;
+    }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      _showError(context, 'كلمتا المرور غير متطابقتين');
+      return;
+    }
+
+    if (_selectedCollege == null) {
+      _showError(context, 'الرجاء اختيار الكلية');
+      return;
+    }
+
+    if (_selectedStudyYear == null) {
+      _showError(context, 'الرجاء اختيار السنة الدراسية');
+      return;
+    }
+
+    if (_selectedGovernorate == null) {
+      _showError(context, 'الرجاء اختيار المحافظة');
+      return;
+    }
+
+    if (_selectedCategory == null) {
+      _showError(context, 'الرجاء اختيار التخصص');
+      return;
+    }
+
+    context.read<SignUpCubit>().signUp(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+      firstName: firstNameController.text.trim(),
+      lastName: lastNameController.text.trim(),
+      phone: phoneController.text.trim(),
+      college: _selectedCollege,
+      studyYear: _selectedStudyYear,
+      governorate: _selectedGovernorate,
+      category: _selectedCategory,
+    );
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 }
