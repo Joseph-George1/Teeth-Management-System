@@ -1,13 +1,15 @@
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
+import 'package:thotha_mobile_app/core/networking/otp_service.dart';
 
 part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'https://thoutha.page';
+  final OtpService _otpService = OtpService();
 
   SignUpCubit() : super(SignUpInitial());
 
@@ -60,7 +62,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       print('Request data: $requestData');
 
       final response = await _dio.post(
-        '$_baseUrl/api/auth/signup',
+        '${ApiConstants.otpBaseUrl}${ApiConstants.signup}',
         data: requestData,
         options: Options(
           headers: {
@@ -78,7 +80,32 @@ class SignUpCubit extends Cubit<SignUpState> {
       print('API Response Data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        emit(SignUpSuccess('تم إنشاء الحساب بنجاح'));
+        // Signup successful, now send OTP to phone number
+        print('Signup successful, sending OTP to phone: $phone');
+        
+        // Format phone number with country code
+        String formattedPhone = phone ?? '';
+        if (formattedPhone.isNotEmpty && !formattedPhone.startsWith('+')) {
+          formattedPhone = '+20$formattedPhone'; // Assuming Egypt +20
+        }
+        
+        // Send OTP
+        final otpResult = await _otpService.sendOtp(formattedPhone);
+        
+        if (otpResult['success']) {
+          // OTP sent successfully, navigate to OTP verification
+          emit(SignUpOtpSent(
+            phoneNumber: formattedPhone,
+            email: email.trim(),
+            message: otpResult['message'] ?? 'تم إرسال رمز التحقق',
+          ));
+        } else {
+          // OTP send failed, but signup was successful
+          // You can either emit an error or navigate to login
+          emit(SignUpError(
+            'تم إنشاء الحساب لكن فشل إرسال رمز التحقق. يرجى تسجيل الدخول.',
+          ));
+        }
       } else {
         // Handle different error status codes
         String errorMessage = 'حدث خطأ في التسجيل';

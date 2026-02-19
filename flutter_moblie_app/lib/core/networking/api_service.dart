@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
@@ -96,14 +97,15 @@ class ApiService {
         print('=== API Call ===');
         print('Trying URL: $url');
         
-        final response = await _dio.get(url);
+        final response = await _dio.get(url, options: Options(responseType: ResponseType.plain));
         
         print('Response Status: ${response.statusCode}');
-        print('Response Data: ${response.data}');
         print('Response Type: ${response.data.runtimeType}');
 
         if (response.statusCode == 200) {
-          final List<CategoryModel> categories = (response.data as List)
+          // Manual UTF-8 decoding to fix Arabic characters
+          final decodedData = jsonDecode(utf8.decode(response.data.toString().codeUnits));
+          final List<CategoryModel> categories = (decodedData as List)
               .map((json) => CategoryModel.fromJson(json))
               .toList();
           print('✅ Success with endpoint: $endpoint');
@@ -142,14 +144,15 @@ class ApiService {
         print('=== Cities API Call ===');
         print('Trying URL: $url');
         
-        final response = await _dio.get(url);
+        final response = await _dio.get(url, options: Options(responseType: ResponseType.plain));
         
         print('Response Status: ${response.statusCode}');
-        print('Response Data: ${response.data}');
         print('Response Type: ${response.data.runtimeType}');
 
         if (response.statusCode == 200) {
-          final List<CityModel> cities = (response.data as List)
+          // Manual UTF-8 decoding
+          final decodedData = jsonDecode(utf8.decode(response.data.toString().codeUnits));
+          final List<CityModel> cities = (decodedData as List)
               .map((json) => CityModel.fromJson(json))
               .toList();
           print('✅ Success with endpoint: $endpoint');
@@ -180,14 +183,15 @@ class ApiService {
       print('=== Universities API Call ===');
       print('Trying URL: $url');
       
-      final response = await _dio.get(url);
+      final response = await _dio.get(url, options: Options(responseType: ResponseType.plain));
       
       print('Response Status: ${response.statusCode}');
-      print('Response Data: ${response.data}');
       print('Response Type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
-        final List<UniversityModel> universities = (response.data as List)
+        // Manual UTF-8 decoding
+        final decodedData = jsonDecode(utf8.decode(response.data.toString().codeUnits));
+        final List<UniversityModel> universities = (decodedData as List)
             .map((json) => UniversityModel.fromJson(json))
             .toList();
         print('✅ Success fetching universities');
