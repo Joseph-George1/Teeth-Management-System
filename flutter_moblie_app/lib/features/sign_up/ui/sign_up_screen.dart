@@ -321,77 +321,95 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                        ),
                                      ),
                                      verticalSpace(16),
-                                      // University/College Dropdown
-                                      _isLoadingUniversities
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedCollege,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر الكلية',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              items: _universities
-                                                  .map((u) => DropdownMenuItem(
-                                                      value: u.name,
-                                                      child: Text(u.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedCollege = v),
-                                            ),
+                                       // University/College Dropdown
+                                       _isLoadingUniversities
+                                           ? const Center(child: CircularProgressIndicator())
+                                           : DropdownButtonFormField<String>(
+                                               value: _selectedCollege,
+                                               isExpanded: true,
+                                               decoration: InputDecoration(
+                                                 labelText: 'اختر الكلية',
+                                                 border: OutlineInputBorder(
+                                                   borderRadius: BorderRadius.circular(8),
+                                                 ),
+                                               ),
+                                               items: _universities
+                                                   .map((u) => DropdownMenuItem(
+                                                       value: u.name,
+                                                       child: Text(
+                                                         u.name,
+                                                         overflow: TextOverflow.ellipsis,
+                                                       )))
+                                                   .toList(),
+                                               onChanged: (v) => setState(() => _selectedCollege = v),
+                                             ),
                                      verticalSpace(16),
-                                     // Study Year Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedStudyYear,
-                                       decoration: InputDecoration(
-                                         labelText: 'السنة الدراسية',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _studyYears
-                                           .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedStudyYear = v),
-                                     ),
+                                      // Study Year Dropdown
+                                      DropdownButtonFormField<String>(
+                                        value: _selectedStudyYear,
+                                        isExpanded: true,
+                                        decoration: InputDecoration(
+                                          labelText: 'السنة الدراسية',
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        items: _studyYears
+                                            .map((y) => DropdownMenuItem(
+                                              value: y,
+                                              child: Text(
+                                                y,
+                                                overflow: TextOverflow.ellipsis,
+                                              )))
+                                            .toList(),
+                                        onChanged: (v) => setState(() => _selectedStudyYear = v),
+                                      ),
                                      verticalSpace(16),
-                                      // City/Governorate Dropdown
-                                      _isLoadingCities
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedGovernorate,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر المحافظة',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              items: _cities
-                                                  .map((city) => DropdownMenuItem(
-                                                      value: city.name,
-                                                      child: Text(city.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedGovernorate = v),
-                                            ),
+                                       // City/Governorate Dropdown
+                                       _isLoadingCities
+                                           ? const Center(child: CircularProgressIndicator())
+                                           : DropdownButtonFormField<String>(
+                                               value: _selectedGovernorate,
+                                               isExpanded: true,
+                                               decoration: InputDecoration(
+                                                 labelText: 'اختر المحافظة',
+                                                 border: OutlineInputBorder(
+                                                   borderRadius: BorderRadius.circular(8),
+                                                 ),
+                                               ),
+                                               items: _cities
+                                                   .map((city) => DropdownMenuItem(
+                                                       value: city.name,
+                                                       child: Text(
+                                                         city.name,
+                                                         overflow: TextOverflow.ellipsis,
+                                                       )))
+                                                   .toList(),
+                                               onChanged: (v) => setState(() => _selectedGovernorate = v),
+                                             ),
                                      verticalSpace(16),
-                                      // Category/Specialty Dropdown  
-                                      _isLoadingCategories
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedCategory,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر التخصص',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              items: _categories
-                                                  .map((cat) => DropdownMenuItem(
-                                                      value: cat.name,
-                                                      child: Text(cat.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedCategory = v),
-                                            ),
+                                       // Category/Specialty Dropdown
+                                       _isLoadingCategories
+                                           ? const Center(child: CircularProgressIndicator())
+                                           : DropdownButtonFormField<String>(
+                                               value: _selectedCategory,
+                                               isExpanded: true,
+                                               decoration: InputDecoration(
+                                                 labelText: 'اختر التخصص',
+                                                 border: OutlineInputBorder(
+                                                   borderRadius: BorderRadius.circular(8),
+                                                 ),
+                                               ),
+                                               items: _categories
+                                                   .map((cat) => DropdownMenuItem(
+                                                       value: cat.name,
+                                                       child: Text(
+                                                         cat.name,
+                                                         overflow: TextOverflow.ellipsis,
+                                                       )))
+                                                   .toList(),
+                                               onChanged: (v) => setState(() => _selectedCategory = v),
+                                             ),
                                      verticalSpace(16),
                                      // Password Field
                                      TextFormField(
