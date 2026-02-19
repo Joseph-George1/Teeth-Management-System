@@ -432,9 +432,87 @@ start_web_ui() {
 #-------------------------------------------------------------
 
 BackEnd_start() {
-    # Run backend in background; output goes to process log only
-    cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
-    start_bg "backend" "-b" "$cmd"
+    verbose_log "BackEnd_start function invoked"
+    init_logging
+    log_activity "-b" "backend_manual"
+    
+    echo -e "${YELLOW}--- [Step 1] Checking System Prerequisites ---${NC}"
+    verbose_log "Step 1: Checking shared memory configuration"
+
+    # 1. Fix Shared Memory
+    if mount | grep "/dev/shm" | grep "size=2097152k" > /dev/null; then
+        echo -e "${GREEN}✔ Shared Memory is already 2GB.${NC}"
+        verbose_log "Shared memory already configured to 2GB"
+    else
+        echo -e "🔧 Increasing Shared Memory to 2GB..."
+        verbose_log "Attempting to increase shared memory to 2GB"
+        sudo mount -o remount,size=2G /dev/shm
+        verbose_log "Shared memory remount command executed"
+    fi
+
+    echo -e "\n${YELLOW}--- [Step 2] Checking Oracle Database ---${NC}"
+    verbose_log "Step 2: Starting Oracle Database services"
+
+    # 2. Start Oracle (Smart Mode)
+    # We use 'whenever sqlerror continue' so it doesn't crash if already running
+    verbose_log "Executing Oracle startup commands as oracle user"
+    sudo -u oracle bash -c "
+        export ORACLE_SID=XE
+        export ORACLE_HOME=/opt/oracle/product/21c/dbhomeXE
+        export PATH=\$ORACLE_HOME/bin:\$PATH
+
+        echo '   > checking listener...'
+        lsnrctl start > /dev/null 2>&1
+        
+        echo '   > ensuring database is open...'
+        sqlplus -s / as sysdba <<EOF
+            whenever sqlerror continue;
+            startup;
+            alter system register;
+            exit;
+EOF
+    "
+
+    echo -e "${GREEN}✔ Oracle Services are active.${NC}"
+    verbose_log "Oracle Database services confirmed active"
+
+    echo -e "\n${YELLOW}--- [Step 3] Scanning for Poison Code ---${NC}"
+    verbose_log "Step 3: Scanning source code for problematic patterns"
+
+    # 3. Check for 'desc'
+    PROJECT_DIR=~/Teeth-Management-System/Backend
+    verbose_log "Changing to project directory: $PROJECT_DIR"
+    cd $PROJECT_DIR || { echo -e "${RED}❌ Cannot find project directory!${NC}"; return 1; }
+
+    verbose_log "Searching for 'desc' variable in Java source files"
+    if grep -r "private String desc;" src/main/java/; then
+        echo -e "${RED}⚠️  DANGER FOUND: 'desc' variable detected!${NC}"
+        verbose_log "WARNING: Found 'desc' variable in source code"
+        read -p "Press Enter to ignore..."
+    else
+        echo -e "${GREEN}✔ Code looks clean.${NC}"
+        verbose_log "No problematic 'desc' variable found"
+    fi
+
+    echo -e "\n${YELLOW}--- [Step 4] Launching Spring Boot ---${NC}"
+    verbose_log "Step 4: Starting Spring Boot application with Maven"
+
+    # 4. Run Application (Fixed Quoting)
+    # We use a variable to ensure the shell treats all arguments as one block
+    verbose_log "Executing: mvn clean spring-boot:run with Oracle datasource configuration"
+    mvn clean spring-boot:run \
+        -Dspring-boot.run.arguments="--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha"
+    
+    backend_exit_code=$?
+    verbose_log "Spring Boot application exited with code: $backend_exit_code"
+    
+    # Log the completion
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+    echo "$ts | user=$user | ip=$ip | flag=-b | process=backend_manual | exit=$backend_exit_code" >> "$ACTIVITY_LOG"
+    
+    return $backend_exit_code
 }
 
 #-------------------------------------------------------------
@@ -513,6 +591,8 @@ update_production_server() {
     echo -e "${GREEN}Deployment completed successfully!${NC}"
 }
 
+
+
  
 #-------------------------------------------------------------
 # Function to display help message
@@ -579,7 +659,7 @@ while getopts ":cauwbxsvh" option; do
             Run_whole_system
             ;;
         b)
-            echo -e "${GREEN}Starting Backend server only...${NC}"
+            echo -e "${GREEN}Starting Backend (3Z Protcal)...${NC}"
             verbose_log "Executing: BackEnd_start"
             BackEnd_start
             exit 0
