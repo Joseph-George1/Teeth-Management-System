@@ -480,9 +480,8 @@ EOF
     verbose_log "Step 3: Scanning source code for problematic patterns"
 
     # 3. Check for 'desc'
-    PROJECT_DIR=~/Teeth-Management-System/Backend
-    verbose_log "Changing to project directory: $PROJECT_DIR"
-    cd $PROJECT_DIR || { echo -e "${RED}❌ Cannot find project directory!${NC}"; return 1; }
+    verbose_log "Changing to project directory: $backend_path"
+    cd $backend_path || { echo -e "${RED}❌ Cannot find project directory!${NC}"; return 1; }
 
     verbose_log "Searching for 'desc' variable in Java source files"
     if grep -r "private String desc;" src/main/java/; then
