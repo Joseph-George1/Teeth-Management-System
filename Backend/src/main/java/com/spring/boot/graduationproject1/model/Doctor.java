@@ -16,20 +16,20 @@ public class Doctor {
     private String firstName;
     @Column(nullable = false)
     private String lastName;
-    @Column(nullable = false)
-    private String email;
     @Column(nullable = false,unique = true)
+    private String email;
+    @Column(nullable = false)
     private String password;
-   @Column(nullable = false)
+    @Column(nullable = false)
     private String studyYear;
-   @Column(nullable = false ,unique = true)
+    @Column(nullable = false ,unique = true)
     private String phoneNumber;
-   @Column(nullable = false)
+    @Column(nullable = false)
     private String cityName;
-   @Column(nullable = false)
+    @Column(nullable = false)
     private String universityName;
-   @Column(nullable = false)
-   private String categoryName;
+    @Column(nullable = false)
+    private String categoryName;
     @ManyToOne
     @JoinColumn(name = "university_id", nullable = false)
     private University university;

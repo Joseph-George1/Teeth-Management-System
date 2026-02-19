@@ -4,15 +4,10 @@ package com.spring.boot.graduationproject1.service.impl;
 import com.spring.boot.graduationproject1.dto.DoctorDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
 import com.spring.boot.graduationproject1.mapper.DoctorMapper;
-import com.spring.boot.graduationproject1.model.Category;
-import com.spring.boot.graduationproject1.model.City;
-import com.spring.boot.graduationproject1.model.Doctor;
-import com.spring.boot.graduationproject1.model.Role;
-import com.spring.boot.graduationproject1.repo.CategoryRepo;
-import com.spring.boot.graduationproject1.repo.CityRepo;
-import com.spring.boot.graduationproject1.repo.DoctorRepo;
-import com.spring.boot.graduationproject1.repo.RoleRepo;
+import com.spring.boot.graduationproject1.model.*;
+import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.DoctorService;
+import com.spring.boot.graduationproject1.service.UniversityService;
 import jakarta.transaction.SystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,14 +26,18 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorMapper doctorMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepo roleRepo;
+    private final UniversityRepo universityRepo;
 
-    public DoctorServiceImpl(DoctorRepo doctorRepo, CityRepo cityRepo, CategoryRepo categoryRepo, DoctorMapper doctorMapper, PasswordEncoder passwordEncoder,RoleRepo roleRepo) {
+
+    public DoctorServiceImpl(DoctorRepo doctorRepo, CityRepo cityRepo, CategoryRepo categoryRepo,
+                             DoctorMapper doctorMapper, PasswordEncoder passwordEncoder,RoleRepo roleRepo,UniversityRepo universityRepo) {
         this.doctorRepo = doctorRepo;
         this.cityRepo = cityRepo;
         this.categoryRepo = categoryRepo;
         this.doctorMapper = doctorMapper;
         this.passwordEncoder = passwordEncoder;
         this.roleRepo=roleRepo;
+        this.universityRepo=universityRepo;
     }
 
     @Override
@@ -82,6 +81,63 @@ public class DoctorServiceImpl implements DoctorService {
             throw new SystemException("Email Already Exists");
         }
         return doctorRepo.save(doctor);
+    }
+
+    @Override
+    public DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException {
+        if(Objects.isNull(doctorDto.getId())){
+            throw new SystemException("id must be not null");
+        }
+        Doctor doctor = doctorRepo.findById(doctorDto.getId())
+                .orElseThrow(() -> new SystemException("Doctor Not Found"));
+
+        if (doctorDto.getFirstName() != null) {
+            doctor.setFirstName(doctorDto.getFirstName());
+        }
+
+        if (doctorDto.getLastName() != null) {
+            doctor.setLastName(doctorDto.getLastName());
+        }
+
+        if (doctorDto.getPhoneNumber() != null) {
+            doctor.setPhoneNumber(doctorDto.getPhoneNumber());
+        }
+
+        if (doctorDto.getPassword() != null) {
+            doctor.setPassword(passwordEncoder.encode(doctorDto.getPassword()));
+        }
+
+        if (doctorDto.getCategoryName() != null) {
+
+            Category category = categoryRepo
+                    .findByName(doctorDto.getCategoryName())
+                    .orElseThrow(() -> new SystemException("No Such Category"));
+
+            doctor.setCategory(category);
+        }
+
+        if(doctorDto.getUniversityName() != null) {
+            University university=universityRepo
+                    .findByName(doctorDto.getUniversityName())
+                    .orElseThrow(() -> new SystemException("No Such University"));
+
+            doctor.setUniversity(university);
+        }
+
+        doctorRepo.save(doctor);
+
+        return doctorMapper.toDto(doctor);
+
+    }
+
+    @Override
+    public DoctorDto getDoctorById(Long doctorId) throws SystemException {
+        Optional<Doctor>doctorOptional=doctorRepo.findById(doctorId);
+        if(doctorOptional.isEmpty()){
+            throw new SystemException("No Such Doctor");
+        }
+        Doctor doctor=doctorOptional.get();
+        return doctorMapper.toDto(doctor);
     }
 
 }
