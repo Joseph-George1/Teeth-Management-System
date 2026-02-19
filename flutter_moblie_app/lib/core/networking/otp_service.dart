@@ -31,7 +31,7 @@ class OtpService {
       print('Sending OTP to: $formattedPhone');
 
       final response = await _dio.post(
-        '${ApiConstants.otpBaseUrl}${ApiConstants.sendOtp}',
+        '${ApiConstants.baseUrl}${ApiConstants.sendOtp}',
         data: {
           'phone_number': formattedPhone,
         },
@@ -126,7 +126,7 @@ class OtpService {
       print('Verifying OTP: $otp for phone: $formattedPhone');
 
       final response = await _dio.post(
-        '${ApiConstants.otpBaseUrl}${ApiConstants.verifyOtp}',
+        '${ApiConstants.baseUrl}${ApiConstants.verifyOtp}',
         data: {
           'phone_number': formattedPhone,
           'otp': otp,
