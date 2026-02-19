@@ -13,6 +13,18 @@ class SignUpSuccess extends SignUpState {
   SignUpSuccess(this.message);
 }
 
+class SignUpOtpSent extends SignUpState {
+  final String phoneNumber;
+  final String email;
+  final String message;
+  
+  SignUpOtpSent({
+    required this.phoneNumber,
+    required this.email,
+    this.message = 'تم إرسال رمز التحقق',
+  });
+}
+
 class SignUpError extends SignUpState {
   final String message;
   
