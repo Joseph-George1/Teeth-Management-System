@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:thotha_mobile_app/core/helpers/constants.dart';
 import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
-import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
 class AuthService {
+  static const String _baseUrl = 'https://thoutha.page';
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({
@@ -24,7 +24,7 @@ class AuthService {
 
       // Make the API request
       final response = await _dio.post(
-        '${ApiConstants.otpBaseUrl}${ApiConstants.doctorLogin}',
+        '$_baseUrl/api/auth/login/doctor',
         data: {
           'email': email.trim(),
           'password': password,
@@ -231,7 +231,7 @@ class AuthService {
       }
 
       final response = await _dio.post(
-        '${ApiConstants.otpBaseUrl}${ApiConstants.signup}',
+        '$_baseUrl/register',
         data: {
           'email': email.trim(),
           'password': password,
