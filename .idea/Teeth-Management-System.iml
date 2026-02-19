@@ -34,6 +34,9 @@
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/image_picker_linux/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/image_picker_linux/example/build" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/build" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.14 (Teeth-Management-System) (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

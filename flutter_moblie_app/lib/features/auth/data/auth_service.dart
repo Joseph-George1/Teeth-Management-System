@@ -5,7 +5,7 @@ import 'package:thotha_mobile_app/core/helpers/shared_pref_helper.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 
 class AuthService {
-  static const String _baseUrl = 'https://thoutha.page';
+  static const String _baseUrl = 'http://16.16.218.59:8080';
   final Dio _dio = DioFactory.getDio();
 
   Future<Map<String, dynamic>> login({

@@ -11,6 +11,7 @@ import 'package:thotha_mobile_app/core/networking/api_service.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
+import 'package:thotha_mobile_app/features/booking/ui/otp_verification_dialog.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -156,21 +157,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Navigator.pushReplacementNamed(context, Routes.loginScreen);
                 });
               } else if (state is SignUpOtpSent) {
-                // Navigate to OTP verification screen
-                Navigator.pushNamed(
-                  context,
-                  Routes.signupOtpVerificationScreen,
-                  arguments: {
-                    'phoneNumber': state.phoneNumber,
-                    'email': state.email,
-                  },
-                );
-                // Optionally show a snackbar
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.blue,
-                    behavior: SnackBarBehavior.floating,
+                // Show OTP dialog for phone verification
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (dialogContext) => OtpVerificationDialog(
+                    contactInfo: state.phoneNumber,
+                    isEmail: false,
+                    onVerified: (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم التحقق من رقم الهاتف بنجاح'),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.pushReplacementNamed(
+                        context,
+                        Routes.loginScreen,
+                      );
+                    },
                   ),
                 );
               } else if (state is SignUpError) {

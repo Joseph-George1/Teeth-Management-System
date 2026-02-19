@@ -3,12 +3,13 @@ import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/networking/otp_service.dart';
+import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 
 part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  static const String _baseUrl = 'https://thoutha.page';
+  final OtpService _otpService = OtpService();
 
   SignUpCubit() : super(SignUpInitial());
 
@@ -61,7 +62,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       print('Request data: $requestData');
 
       final response = await _dio.post(
-        '$_baseUrl/api/auth/signup',
+        '${ApiConstants.baseUrl}${ApiConstants.signup}',
         data: requestData,
         options: Options(
           headers: {
@@ -147,4 +148,3 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(SignUpError('حدث خطأ غير متوقع'));
     }
   }}
-
