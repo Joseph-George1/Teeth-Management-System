@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
-import 'package:thotha_mobile_app/core/networking/api_constants.dart';
 import 'package:thotha_mobile_app/core/networking/dio_factory.dart';
 import 'package:thotha_mobile_app/core/networking/otp_service.dart';
 
@@ -9,7 +8,7 @@ part 'sign_up_state.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   final Dio _dio = DioFactory.getDio();
-  final OtpService _otpService = OtpService();
+  static const String _baseUrl = 'https://thoutha.page';
 
   SignUpCubit() : super(SignUpInitial());
 
@@ -62,7 +61,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       print('Request data: $requestData');
 
       final response = await _dio.post(
-        '${ApiConstants.otpBaseUrl}${ApiConstants.signup}',
+        '$_baseUrl/api/auth/signup',
         data: requestData,
         options: Options(
           headers: {

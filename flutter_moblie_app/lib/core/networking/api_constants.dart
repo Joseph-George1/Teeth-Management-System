@@ -1,14 +1,9 @@
 class ApiConstants {
-  static const String baseUrl = 'http://16.16.218.59:8080';
-  static const String otpBaseUrl = 'https://thotha.page';
+  static const String baseUrl = 'https://thoutha.page';
 
   // Authentication endpoints
   static const String doctorLogin = '/api/auth/login/doctor';
   static const String signup = '/api/auth/signup';
-
-  // OTP endpoints
-  static const String sendOtp = '/api/otp/send';
-  static const String verifyOtp = '/api/otp/verify';
 
   // Doctor endpoints (public) - Try different variations
   static const String getDoctorsByCities = '/api/doctor/getDoctorsByCities';
