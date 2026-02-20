@@ -417,6 +417,142 @@ install_astart() {
         err "Failed to create or verify astart symlink at $DEST"
     fi
 }
+
+# -----------------------------
+# Function: Create systemd service files
+# -----------------------------
+create_service() {
+    local service_name="$1"
+    local service_file="/etc/systemd/system/${service_name}.service"
+    local service_content="$2"
+    
+    msg "Creating systemd service: $service_name"
+    
+    # Create service file
+    echo "$service_content" | sudo tee "$service_file" > /dev/null
+    
+    if [ ! -f "$service_file" ]; then
+        err "Failed to create service file: $service_file"
+    fi
+    
+    ok "Service file created: $service_file"
+    track_file "$service_file"
+    
+    # Reload systemd
+    sudo systemctl daemon-reload
+    
+    # Enable service (but don't start yet)
+    sudo systemctl enable "$service_name" 2>/dev/null || warn "Failed to enable $service_name service"
+    
+    ok "Service $service_name created and enabled"
+    track_component "service-$service_name"
+}
+
+# -----------------------------
+# Function: Create all system services
+# -----------------------------
+create_all_services() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        warn "systemd not detected. Skipping service creation."
+        return 0
+    fi
+    
+    msg "Creating systemd services for Teeth Management System..."
+    echo
+    
+    # Ask user if they want to create services
+    echo -n "Create systemd services for auto-start on boot? (y/n) [y]: "
+    read -r -t 30 create_services_choice || create_services_choice="y"
+    
+    if ! validate_yes_no "${create_services_choice:-y}"; then
+        msg "Skipping service creation"
+        return 0
+    fi
+    
+    # Detect executables
+    local python_exec=$(which python3 2>/dev/null || echo "/usr/bin/python3")
+    local gunicorn_exec=$(which gunicorn 2>/dev/null || echo "$ACTUAL_HOME/.local/bin/gunicorn")
+    
+    # Service 1: OTP FastAPI Service
+    if [ -d "$SCRIPT_DIR/OTP" ] && [ -f "$SCRIPT_DIR/OTP/OTP_W.py" ]; then
+        local otp_service="[Unit]
+Description=OTP FastAPI Service
+After=network.target
+
+[Service]
+User=$ACTUAL_USER
+WorkingDirectory=$SCRIPT_DIR/OTP
+ExecStart=$python_exec -m gunicorn OTP_W:app -k uvicorn.workers.UvicornWorker -w 4 --bind 0.0.0.0:8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target"
+        
+        create_service "otp" "$otp_service"
+    else
+        warn "OTP directory or OTP_W.py not found. Skipping OTP service."
+    fi
+    
+    # Service 2: Teeth Management Bot Service
+    if [ -f "$SCRIPT_DIR/bot.py" ]; then
+        local bot_service="[Unit]
+Description=Teeth Management Bot Service
+After=network.target
+
+[Service]
+User=$ACTUAL_USER
+WorkingDirectory=$SCRIPT_DIR
+ExecStart=$python_exec $SCRIPT_DIR/bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target"
+        
+        create_service "bot" "$bot_service"
+    else
+        warn "bot.py not found. Skipping Bot service."
+    fi
+    
+    # Service 3: Flask API Service (AI Chatbot)
+    if [ -d "$AI_DIR" ] && [ -f "$AI_DIR/api.py" ]; then
+        # Create logs directory if it doesn't exist
+        mkdir -p "$SCRIPT_DIR/logs/process_logs"
+        
+        local flask_api_service="[Unit]
+Description=Flask API Service (AI Chatbot)
+After=network.target
+
+[Service]
+User=$ACTUAL_USER
+WorkingDirectory=$AI_DIR
+ExecStart=$gunicorn_exec --bind 127.0.0.1:5010 api:app --access-logfile $SCRIPT_DIR/logs/process_logs/ai_chatbot_api.log --error-logfile $SCRIPT_DIR/logs/process_logs/ai_chatbot_api.log --log-level info
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target"
+        
+        create_service "flask-api" "$flask_api_service"
+    else
+        warn "AI Chatbot api.py not found. Skipping Flask API service."
+    fi
+    
+    echo
+    ok "Services created successfully!"
+    echo
+    msg "Service Management Commands:"
+    echo -e "  ${YELLOW}Start all services:${RESET}   sudo systemctl start otp bot flask-api"
+    echo -e "  ${YELLOW}Stop all services:${RESET}    sudo systemctl stop otp bot flask-api"
+    echo -e "  ${YELLOW}Check status:${RESET}         sudo systemctl status otp"
+    echo -e "  ${YELLOW}View logs:${RESET}            sudo journalctl -u otp -f"
+    echo -e "  ${YELLOW}Restart service:${RESET}      sudo systemctl restart bot"
+    echo -e "  ${YELLOW}Disable service:${RESET}      sudo systemctl disable flask-api"
+    echo
+    warn "Note: Services are enabled but not started. Use 'sudo systemctl start <service>' to start them."
+}
+
 # -----------------------------
 # Function: Install Node.js and npm packages
 # -----------------------------
@@ -783,8 +919,9 @@ show_menu() {
     echo -e "  ${BLUE}5)${RESET} Oracle Database Prerequisites"
     echo -e "  ${BLUE}6)${RESET} Install astart Launcher"
     echo -e "  ${BLUE}7)${RESET} Setup .env Configuration"
-    echo -e "  ${BLUE}8)${RESET} Update Production Server"
-    echo -e "  ${BLUE}9)${RESET} Custom Selection"
+    echo -e "  ${BLUE}8)${RESET} Create systemd Services"
+    echo -e "  ${BLUE}9)${RESET} Update Production Server"
+    echo -e "  ${BLUE}10)${RESET} Custom Selection"
     echo -e "  ${BLUE}0)${RESET} Exit"
     echo
     echo -n "Enter your choice [1]: "
@@ -869,10 +1006,14 @@ main() {
             SETUP_ENV=true
             ;;
         8)
-            update_production_server
+            create_all_services
             exit 0
             ;;
         9)
+            update_production_server
+            exit 0
+            ;;
+        10)
             msg "Custom selection - you will be prompted for each component"
             INSTALL_PYTHON=true
             INSTALL_NODE=true
@@ -938,6 +1079,9 @@ main() {
             msg "Skipping Oracle Database installation."
         fi
     fi
+    
+    # Create systemd services if available
+    create_all_services
     
     # Ask about production server update
     echo
