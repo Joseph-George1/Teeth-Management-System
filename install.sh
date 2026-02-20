@@ -6,36 +6,130 @@
 set -euo pipefail
 
 # -----------------------------
+# Configuration
+# -----------------------------
+VERSION="2.0.0"
+INSTALL_LOG="/tmp/teeth-install-$(date +%Y%m%d-%H%M%S).log"
+ROLLBACK_LOG="/tmp/teeth-rollback-$(date +%Y%m%d-%H%M%S).log"
+MIN_DISK_SPACE_GB=10
+MIN_PYTHON_VERSION="3.8"
+MIN_NODE_VERSION="18"
+ORACLE_SHA256="YOUR_ORACLE_CHECKSUM_HERE"  # Update with actual checksum
+
+# Track installed components for rollback
+declare -a INSTALLED_COMPONENTS=()
+declare -a CREATED_FILES=()
+
+# -----------------------------
 # Define color variables for output
 # -----------------------------
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
 BLUE="\033[1;34m"
+MAGENTA="\033[1;35m"
+CYAN="\033[1;36m"
 RESET="\033[0m"
 
 # -----------------------------
-# Helper functions for messages
+# Helper functions for messages and logging
 # -----------------------------
-msg() { echo -e "${BLUE}==>${RESET} $1"; }   # Print normal info message
-ok()  { echo -e "${GREEN}✔${RESET} $1"; }    # Print success message
-warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; }   # Print warning message
-err() { echo -e "${RED}✖ $1${RESET}"; exit 1; }  # Print error and exit
+log_msg() {
+    local level="$1"
+    shift
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [$level] $*" | tee -a "$INSTALL_LOG"
+}
+
+msg() { echo -e "${BLUE}==>${RESET} $1"; log_msg "INFO" "$1"; }   # Print normal info message
+ok()  { echo -e "${GREEN}✔${RESET} $1"; log_msg "SUCCESS" "$1"; }    # Print success message
+warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; log_msg "WARNING" "$1"; }   # Print warning message
+err() { echo -e "${RED}✖ $1${RESET}"; log_msg "ERROR" "$1"; rollback; exit 1; }  # Print error and exit
+
+# Rollback function to undo changes on failure
+rollback() {
+    if [ ${#INSTALLED_COMPONENTS[@]} -eq 0 ] && [ ${#CREATED_FILES[@]} -eq 0 ]; then
+        return
+    fi
+    
+    warn "Installation failed. Rolling back changes..."
+    
+    # Remove created files
+    for file in "${CREATED_FILES[@]}"; do
+        if [ -f "$file" ] || [ -L "$file" ]; then
+            rm -f "$file" 2>/dev/null && echo "Removed: $file" | tee -a "$ROLLBACK_LOG"
+        fi
+    done
+    
+    warn "Rollback complete. Check $ROLLBACK_LOG for details."
+}
+
+# Track created file
+track_file() {
+    CREATED_FILES+=("$1")
+    echo "$1" >> "$ROLLBACK_LOG"
+}
+
+# Track installed component
+track_component() {
+    INSTALLED_COMPONENTS+=("$1")
+    echo "Component: $1" >> "$ROLLBACK_LOG"
+}
 
 # -----------------------------
-# Resolve script paths
+# Resolve script paths (works with sudo)
 # -----------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Directory where the script is located
 AI_DIR="$SCRIPT_DIR/Ai-chatbot"                             # Ai-chatbot folder (if present)
-REQ_FILE="$AI_DIR/requirements.txt"                         # Path to Python requirements file
-# Primary `astart` location is now next to the installer (project root).
+REQ_FILE="$SCRIPT_DIR/requirements.txt"                     # Path to Python requirements file
 ASTART="$SCRIPT_DIR/astart"
 oracle_url="https://download.oracle.com/otn-pub/otn_software/db-express/oracle-database-xe-21c-1.0-1.ol8.x86_64.rpm"
 server_dir="/var/www/html"
-webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
-# Note: virtualenv creation/activation removed — installer will
-# install requirements system-wide (with an optional retry using
-# --break-system-packages if pip complains about system packages).
+WEBUI_PATH="$SCRIPT_DIR/Thoutha-Website"
+BACKEND_PATH="$SCRIPT_DIR/Backend"
+
+# Get the actual user (not root) when run with sudo
+if [ -n "${SUDO_USER:-}" ]; then
+    ACTUAL_USER="$SUDO_USER"
+    ACTUAL_HOME=$(eval echo ~$SUDO_USER)
+else
+    ACTUAL_USER="$(whoami)"
+    ACTUAL_HOME="$HOME"
+fi
+
+# -----------------------------
+# Function: Check system requirements
+# -----------------------------
+check_system_requirements() {
+    msg "Checking system requirements..."
+    
+    # Check disk space
+    local available_space=$(df "$SCRIPT_DIR" | tail -1 | awk '{print int($4/1024/1024)}')
+    if [ "$available_space" -lt "$MIN_DISK_SPACE_GB" ]; then
+        err "Insufficient disk space. Need ${MIN_DISK_SPACE_GB}GB, found ${available_space}GB"
+    fi
+    ok "Disk space: ${available_space}GB available"
+    
+    # Check for required system commands
+    local missing_cmds=()
+    for cmd in curl wget git; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing_cmds+=("$cmd")
+        fi
+    done
+    
+    if [ ${#missing_cmds[@]} -gt 0 ]; then
+        err "Missing required commands: ${missing_cmds[*]}. Please install them first."
+    fi
+    ok "Required system commands found"
+}
+
+# -----------------------------
+# Function: Compare versions
+# Returns: 0 if $1 >= $2, 1 otherwise
+# -----------------------------
+version_gte() {
+    printf '%s\n%s' "$2" "$1" | sort -V -C
+}
 
 # -----------------------------
 # Function: Detect available package manager
@@ -48,13 +142,10 @@ detect_pkg_mgr() {
     elif command -v zypper >/dev/null 2>&1; then echo "zypper"
     else echo ""; fi
 }
-
 # Save detected package manager name
 PKG_MGR="$(detect_pkg_mgr)"
-
 # If no supported package manager is found, warn user
 if [[ -z "$PKG_MGR" ]]; then warn "No supported package manager found. You must install python3 and pip manually."; fi
-
 # -----------------------------
 # Function: Install Python packages based on detected manager
 # -----------------------------
@@ -86,6 +177,21 @@ install_pkgs() {
             ;;
     esac
 }
+# -----------------------------
+# Function: Validate user input
+# -----------------------------
+validate_yes_no() {
+    local input="$1"
+    case "${input,,}" in  # Convert to lowercase
+        y|yes) return 0 ;;
+        n|no) return 1 ;;
+        *) return 2 ;;
+    esac
+}
+
+validate_number() {
+    [[ "$1" =~ ^[0-9]+$ ]]
+}
 
 # -----------------------------
 # Function: Ensure Python3 and pip are installed
@@ -99,7 +205,13 @@ ensure_python_pip() {
             err "python3 not found and no package manager detected."
         fi
     else
-        ok "python3 found: $(python3 --version 2>&1)"
+        local py_version=$(python3 --version 2>&1 | awk '{print $2}')
+        ok "python3 found: $py_version"
+        
+        # Check minimum version
+        if ! version_gte "$py_version" "$MIN_PYTHON_VERSION"; then
+            err "Python $py_version found, but $MIN_PYTHON_VERSION or higher is required"
+        fi
     fi
 
     # Check for pip
@@ -116,16 +228,10 @@ ensure_python_pip() {
         ok "pip: $(python3 -m pip --version 2>&1)"
     fi
 }
-
 # -----------------------------
 # Function: Install Python dependencies
 # -----------------------------
 install_requirements() {
-    # Check if Ai-chatbot directory exists
-    if [[ ! -d "$AI_DIR" ]]; then
-        err "Ai-chatbot directory not found at: $AI_DIR"
-    fi
-
     # Check if requirements.txt exists
     if [[ ! -f "$REQ_FILE" ]]; then
         warn "requirements.txt not found at $REQ_FILE. Skipping pip install."
@@ -133,6 +239,32 @@ install_requirements() {
     fi
 
     msg "Installing Python requirements from $REQ_FILE ..."
+    
+    # Option to use virtual environment
+    local use_venv=false
+    echo -n "Install in virtual environment (recommended)? (y/n) [y]: "
+    read -r -t 15 venv_choice || venv_choice="y"
+    
+    if validate_yes_no "${venv_choice:-y}"; then
+        use_venv=true
+        local venv_path="$SCRIPT_DIR/venv"
+        
+        if [ ! -d "$venv_path" ]; then
+            msg "Creating virtual environment at $venv_path..."
+            python3 -m venv "$venv_path"
+            track_file "$venv_path"
+        fi
+        
+        msg "Installing requirements in virtual environment..."
+        source "$venv_path/bin/activate"
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --no-cache-dir -r "$REQ_FILE"
+        deactivate
+        ok "Requirements installed in virtual environment at $venv_path"
+        msg "To use: source $venv_path/bin/activate"
+        track_component "python-venv"
+        return
+    fi
 
     # Try system-wide install first. If pip fails with a message
     # suggesting `--break-system-packages`, retry with that flag.
@@ -147,7 +279,8 @@ install_requirements() {
     set -e
 
     if [[ $rc -eq 0 ]]; then
-        ok "requirements installed system-wide."
+        ok "Requirements installed system-wide."
+        track_component "python-packages"
         return
     fi
 
@@ -176,11 +309,79 @@ install_requirements() {
     # Generic failure: surface pip output for debugging
     err "Failed to install requirements. pip output:\n$output"
 }
+# -----------------------------
+# Function: Install Maven (required for backend)
+# -----------------------------
+install_maven() {
+    if command -v mvn >/dev/null 2>&1; then
+        ok "Maven already installed: $(mvn -v | head -1)"
+        return 0
+    fi
+    
+    msg "Maven not found. Installing..."
+    case "$PKG_MGR" in
+        apt-get)
+            sudo apt-get install -y maven
+            ;;
+        dnf|yum)
+            sudo "$PKG_MGR" install -y maven
+            ;;
+        pacman)
+            sudo pacman -S --noconfirm maven
+            ;;
+        zypper)
+            sudo zypper install -y maven
+            ;;
+        *)
+            warn "Cannot auto-install Maven. Please install manually."
+            return 1
+            ;;
+    esac
+    
+    if command -v mvn >/dev/null 2>&1; then
+        ok "Maven installed successfully"
+        track_component "maven"
+    else
+        err "Maven installation failed"
+    fi
+}
 
-
-
-
-
+# -----------------------------
+# Function: Install Java (required for backend)
+# -----------------------------
+install_java() {
+    if command -v java >/dev/null 2>&1; then
+        ok "Java already installed: $(java -version 2>&1 | head -1)"
+        return 0
+    fi
+    
+    msg "Java not found. Installing OpenJDK 17..."
+    case "$PKG_MGR" in
+        apt-get)
+            sudo apt-get install -y openjdk-17-jdk
+            ;;
+        dnf|yum)
+            sudo "$PKG_MGR" install -y java-17-openjdk-devel
+            ;;
+        pacman)
+            sudo pacman -S --noconfirm jdk17-openjdk
+            ;;
+        zypper)
+            sudo zypper install -y java-17-openjdk-devel
+            ;;
+        *)
+            warn "Cannot auto-install Java. Please install manually."
+            return 1
+            ;;
+    esac
+    
+    if command -v java >/dev/null 2>&1; then
+        ok "Java installed successfully"
+        track_component "java"
+    else
+        err "Java installation failed"
+    fi
+}
 
 # -----------------------------
 # Function: Install 'astart' launcher script
@@ -198,37 +399,55 @@ install_astart() {
     fi
 
     DEST="/bin/astart"
-    msg "Installing astart to $DEST (will overwrite if exists)..."
+    msg "Creating symbolic link for astart at $DEST (will overwrite if exists)..."
 
     if [[ $EUID -eq 0 ]]; then
-        cp -f "$SRC" "$DEST"
-        chmod +x "$DEST"
+        ln -sf "$SRC" "$DEST" 2>/dev/null
     else
-        sudo cp -f "$SRC" "$DEST"
-        sudo chmod +x "$DEST"
+        sudo ln -sf "$SRC" "$DEST" 2>/dev/null
     fi
 
-    ok "astart installed to $DEST"
-    msg "You can run it as: astart (-c or -a)"
+    # Verify the symlink was created successfully
+    if [[ -L "$DEST" ]] && command -v astart >/dev/null 2>&1; then
+        ok "astart symlinked to $DEST and verified"
+        msg "You can run it as: astart -h to see usage"
+        track_file "$DEST"
+        track_component "astart"
+    else
+        err "Failed to create or verify astart symlink at $DEST"
+    fi
 }
-
 # -----------------------------
-# Function: Install Node.js system-wide using NodeSource (apt-based systems only)
+# Function: Install Node.js and npm packages
 # -----------------------------
-install_node_system_wide() {
+install_node_and_packages() {
+    # Check if Node is already installed
+    if command -v node >/dev/null 2>&1; then
+        local node_version=$(node -v | sed 's/v//')
+        ok "Node.js already installed: v$node_version"
+        
+        # Check minimum version
+        if ! version_gte "$node_version" "$MIN_NODE_VERSION"; then
+            warn "Node.js $node_version found, but $MIN_NODE_VERSION or higher is recommended"
+            echo -n "Upgrade Node.js? (y/n) [n]: "
+            read -r -t 15 upgrade_choice || upgrade_choice="n"
+            if ! validate_yes_no "${upgrade_choice:-n}"; then
+                return 0
+            fi
+        else
+            # Node is installed and version is good, install npm packages
+            install_npm_packages
+            return 0
+        fi
+    fi
+    
     # Skip for non-apt systems
     if [[ "$PKG_MGR" != "apt-get" ]]; then
-        warn "Option B (system-wide Node install) currently supports apt-based systems only. Skipping."
+        warn "System-wide Node install currently supports apt-based systems only. Skipping."
         return 0
     fi
 
-    msg "Option B: Install Node.js system-wide via NodeSource (may remove conflicting dev packages)."
-
-    # If Node is already installed, skip
-    if command -v node >/dev/null 2>&1; then
-        ok "Node is already installed: $(node -v)"
-        return 0
-    fi
+    msg "Installing Node.js system-wide via NodeSource..."
 
     # Handle dpkg conflicts (common.gypi issue)
     CONFLICT_FILE="/usr/include/node/common.gypi"
@@ -246,10 +465,13 @@ install_node_system_wide() {
     fi
 
     # Ask user which Node version to install (default 20)
-    read -r -p "Which Node major version do you want to install? (20/18) [20]: " NODE_VER
+    echo -n "Which Node major version do you want to install? (20/18) [20]: "
+    read -r -t 15 NODE_VER || NODE_VER="20"
     NODE_VER=${NODE_VER:-20}
-    if [[ "$NODE_VER" != "18" && "$NODE_VER" != "20" ]]; then
-        warn "Unrecognized choice; defaulting to 20"
+    
+    # Validate input
+    if ! validate_number "$NODE_VER" || [[ "$NODE_VER" != "18" && "$NODE_VER" != "20" ]]; then
+        warn "Invalid input '$NODE_VER'; defaulting to 20"
         NODE_VER=20
     fi
 
@@ -270,11 +492,40 @@ install_node_system_wide() {
     if command -v node >/dev/null 2>&1; then
         ok "Node installed: $(node -v)"
         ok "npm installed: $(npm -v)"
+        track_component "nodejs"
+        
+        # Install npm packages for web UI
+        install_npm_packages
     else
-        err "Node installation failed. Check apt output above. You can try the non-invasive Option A (nvm) instead."
+        err "Node installation failed. Check apt output above."
     fi
 }
 
+# -----------------------------
+# Function: Install npm packages for web UI
+# -----------------------------
+install_npm_packages() {
+    if [ ! -d "$WEBUI_PATH" ]; then
+        warn "Web UI directory not found at $WEBUI_PATH. Skipping npm install."
+        return 0
+    fi
+    
+    if [ ! -f "$WEBUI_PATH/package.json" ]; then
+        warn "package.json not found in $WEBUI_PATH. Skipping npm install."
+        return 0
+    fi
+    
+    msg "Installing npm packages for Web UI..."
+    cd "$WEBUI_PATH" || return 1
+    
+    npm install || {
+        err "Failed to install npm packages"
+    }
+    
+    ok "npm packages installed successfully"
+    track_component "npm-packages"
+    cd "$SCRIPT_DIR"
+}
 # -----------------------------
 # Function: Check and fix prerequisites for Oracle Database
 # -----------------------------
@@ -418,12 +669,50 @@ ensure_oracle_prereqs() {
 
     ok "Oracle prerequisites check and fix complete."
 } 
+# -----------------------------
+# Function: Setup .env configuration file
+# -----------------------------
+setup_env_file() {
+    local env_file="$SCRIPT_DIR/.env"
+    local env_example="$SCRIPT_DIR/.env.example"
+    
+    if [ -f "$env_file" ]; then
+        ok ".env file already exists at $env_file"
+        return 0
+    fi
+    
+    msg "Creating .env configuration file..."
+    
+    if [ -f "$env_example" ]; then
+        cp "$env_example" "$env_file"
+        ok ".env file created from .env.example"
+    else
+        # Create basic .env file
+        cat > "$env_file" << 'EOF'
+# Teeth Management System Configuration
+
+# Database Configuration
+DB_URL=jdbc:oracle:thin:@localhost:1521/orclpdb
+DB_USERNAME=hr
+DB_PASSWORD=hr
+
+# Port Configuration
+WEB_UI_PORT=5173
+BACKEND_PORT=8080
+API_PORT=5010
+LOGIN_API_PORT=5000
+EOF
+        ok ".env file created with default values"
+    fi
+    
+    warn "Please review and update $env_file with your actual configuration"
+    track_file "$env_file"
+}
 
 #---------------------------------------------------------------------
 #Function to fetch the latest code from the repository and update the 
 #Production server 
 #---------------------------------------------------------------------
-
 update_production_server() {
     echo -e "${GREEN}Updating production server...${NC}"
 
@@ -433,10 +722,14 @@ update_production_server() {
         exit 1
     fi
 
+    # Validate web UI path
+    if [ ! -d "$WEBUI_PATH" ]; then
+        err "Web UI directory not found at $WEBUI_PATH"
+    fi
+    
     # Move to the web UI directory
-    cd "$webui_path" || { 
-        echo -e "${RED}Failed to change directory to $webui_path${NC}"
-        exit 1
+    cd "$WEBUI_PATH" || { 
+        err "Failed to change directory to $WEBUI_PATH"
     }
 
     # Pull latest changes
@@ -473,43 +766,196 @@ update_production_server() {
 
 
 # -----------------------------
+# Function: Display interactive menu
+# -----------------------------
+show_menu() {
+    echo
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${CYAN}║${RESET}    Teeth Management System - Installation Menu v$VERSION  ${CYAN}║${RESET}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${RESET}"
+    echo
+    echo -e "${GREEN}Select components to install:${RESET}"
+    echo
+    echo -e "  ${BLUE}1)${RESET} Full Installation (All components)"
+    echo -e "  ${BLUE}2)${RESET} Python Dependencies Only"
+    echo -e "  ${BLUE}3)${RESET} Node.js and Web UI Packages"
+    echo -e "  ${BLUE}4)${RESET} Java and Maven (Backend)"
+    echo -e "  ${BLUE}5)${RESET} Oracle Database Prerequisites"
+    echo -e "  ${BLUE}6)${RESET} Install astart Launcher"
+    echo -e "  ${BLUE}7)${RESET} Setup .env Configuration"
+    echo -e "  ${BLUE}8)${RESET} Update Production Server"
+    echo -e "  ${BLUE}9)${RESET} Custom Selection"
+    echo -e "  ${BLUE}0)${RESET} Exit"
+    echo
+    echo -n "Enter your choice [1]: "
+}
+
+# -----------------------------
+# Function: Display post-install instructions
+# -----------------------------
+show_post_install() {
+    echo
+    echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${GREEN}║${RESET}           Installation Complete!                          ${GREEN}║${RESET}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${RESET}"
+    echo
+    echo -e "${CYAN}Next Steps:${RESET}"
+    echo -e "  1. Review and update: ${YELLOW}$SCRIPT_DIR/.env${RESET}"
+    echo -e "  2. Start all services: ${YELLOW}astart -w${RESET}"
+    echo -e "  3. Check service status: ${YELLOW}astart -l${RESET}"
+    echo -e "  4. View logs: ${YELLOW}astart -L <service_name>${RESET}"
+    echo
+    echo -e "${CYAN}Available Services:${RESET}"
+    echo -e "  - Backend (Spring Boot): Port 8080"
+    echo -e "  - Login API: Port 5000"
+    echo -e "  - AI Chatbot API: Port 5010"
+    echo -e "  - Web UI (Vite): Port 5173"
+    echo
+    echo -e "${CYAN}Documentation:${RESET}"
+    echo -e "  - Installation log: ${YELLOW}$INSTALL_LOG${RESET}"
+    echo -e "  - Rollback log: ${YELLOW}$ROLLBACK_LOG${RESET}"
+    echo -e "  - Help: ${YELLOW}astart -h${RESET}"
+    echo
+    echo -e "${MAGENTA}For issues or questions, check the README.md file${RESET}"
+    echo
+}
+
+# -----------------------------
 # Main installer function
 # -----------------------------
 main() {
     echo
-    msg "Starting installation protocol... "
+    msg "Starting installation protocol v$VERSION..."
+    msg "Installation log: $INSTALL_LOG"
     echo
+    
+    # Check system requirements first
+    check_system_requirements
+    
     msg "Detected package manager: ${PKG_MGR:-None}"
-    fi
-    # Ensure Python and pip are available
-    ensure_python_pip
-
-    # Install Python requirements
-    install_requirements
-
-    # Install Node.js system-wide (if apt system)
-    install_node_system_wide
-    #install production server update prompt
     echo
-    msg "Do you want to update the production server? (y/n) [default: n, auto-skip after 30s]"
-    if ! read -t 30 -r update_choice; then
-        update_choice="n"
-        msg "No response received within 30 seconds; skipping production server update."
+    
+    # Show interactive menu
+    show_menu
+    read -r -t 30 menu_choice || menu_choice="1"
+    menu_choice=${menu_choice:-1}
+    
+    case "$menu_choice" in
+        1)
+            msg "Full installation selected"
+            INSTALL_PYTHON=true
+            INSTALL_NODE=true
+            INSTALL_JAVA=true
+            INSTALL_ORACLE=true
+            INSTALL_ASTART=true
+            SETUP_ENV=true
+            ;;
+        2)
+            INSTALL_PYTHON=true
+            ;;
+        3)
+            INSTALL_NODE=true
+            ;;
+        4)
+            INSTALL_JAVA=true
+            ;;
+        5)
+            INSTALL_ORACLE=true
+            ;;
+        6)
+            INSTALL_ASTART=true
+            ;;
+        7)
+            SETUP_ENV=true
+            ;;
+        8)
+            update_production_server
+            exit 0
+            ;;
+        9)
+            msg "Custom selection - you will be prompted for each component"
+            INSTALL_PYTHON=true
+            INSTALL_NODE=true
+            INSTALL_JAVA=true
+            INSTALL_ORACLE=false
+            INSTALL_ASTART=true
+            SETUP_ENV=true
+            ;;
+        0)
+            msg "Installation cancelled by user"
+            exit 0
+            ;;
+        *)
+            warn "Invalid choice, defaulting to full installation"
+            INSTALL_PYTHON=true
+            INSTALL_NODE=true
+            INSTALL_JAVA=true
+            INSTALL_ORACLE=true
+            INSTALL_ASTART=true
+            SETUP_ENV=true
+            ;;
+    esac
+    
+    echo
+    # Ensure Python and pip are available
+    if [ "${INSTALL_PYTHON:-false}" = true ]; then
+        ensure_python_pip
+        install_requirements
     fi
-    if [[ "$update_choice" = "y" ]]; then
+
+    
+    # Install Java and Maven for backend
+    if [ "${INSTALL_JAVA:-false}" = true ]; then
+        install_java
+        install_maven
+    fi
+    
+    # Install Node.js and npm packages
+    if [ "${INSTALL_NODE:-false}" = true ]; then
+        install_node_and_packages
+    fi
+    
+    # Setup .env file
+    if [ "${SETUP_ENV:-false}" = true ]; then
+        setup_env_file
+    fi
+    
+    # Install astart launcher
+    if [ "${INSTALL_ASTART:-false}" = true ]; then
+        install_astart
+    fi
+    
+    # Run Oracle checks
+    if [ "${INSTALL_ORACLE:-false}" = true ]; then
+        echo
+        msg "Oracle Database installation is optional and requires 2GB+ download."
+        echo -n "Install Oracle Database prerequisites? (y/n) [n]: "
+        read -r -t 30 oracle_choice || oracle_choice="n"
+        
+        if validate_yes_no "${oracle_choice:-n}"; then
+            ensure_oracle_prereqs
+        else
+            msg "Skipping Oracle Database installation."
+        fi
+    fi
+    
+    # Ask about production server update
+    echo
+    echo -n "Do you want to update the production server? (y/n) [n]: "
+    read -r -t 30 update_choice || update_choice="n"
+    
+    if validate_yes_no "${update_choice:-n}"; then
         update_production_server
     else
         msg "Skipping production server update."
     fi
-
-    # Copy 'astart' launcher
-    install_astart
-
-    # Run Oracle checks first
-    ensure_oracle_prereqs
-
+    
     echo
-    ok "Installation complete."
+    ok "Installation completed successfully!"
+    echo
+    
+    # Show post-install instructions
+    show_post_install
 }
 
 # -----------------------------
