@@ -89,15 +89,15 @@ class ApiService {
       ApiConstants.getCategoriesAlt,
       ApiConstants.getCategoriesFallback,
     ];
-    
+
     for (String endpoint in endpoints) {
       try {
         final url = '${ApiConstants.baseUrl}$endpoint';
         print('=== API Call ===');
         print('Trying URL: $url');
-        
+
         final response = await _dio.get(url);
-        
+
         print('Response Status: ${response.statusCode}');
         print('Response Data: ${response.data}');
         print('Response Type: ${response.data.runtimeType}');
@@ -117,7 +117,7 @@ class ApiService {
         continue; // Try next endpoint
       }
     }
-    
+
     // All endpoints failed
     print('❌ All endpoints failed');
     return {
@@ -131,19 +131,19 @@ class ApiService {
   Future<Map<String, dynamic>> getCities() async {
     // Try different endpoint variations, starting with the new one
     final endpoints = [
-      ApiConstants.getCities,      // Primary: /api/cities/getAllCities
-      ApiConstants.getCitiesAlt,   // Fallback: /cities
+      ApiConstants.getCities, // Primary: /api/cities/getAllCities
+      ApiConstants.getCitiesAlt, // Fallback: /cities
       ApiConstants.getCitiesFallback, // Fallback: /api/cities
     ];
-    
+
     for (String endpoint in endpoints) {
       try {
         final url = '${ApiConstants.baseUrl}$endpoint';
         print('=== Cities API Call ===');
         print('Trying URL: $url');
-        
+
         final response = await _dio.get(url);
-        
+
         print('Response Status: ${response.statusCode}');
         print('Response Data: ${response.data}');
         print('Response Type: ${response.data.runtimeType}');
@@ -163,7 +163,7 @@ class ApiService {
         continue; // Try next endpoint
       }
     }
-    
+
     // All endpoints failed
     print('❌ All endpoints failed');
     return {
@@ -179,9 +179,9 @@ class ApiService {
       final url = '${ApiConstants.baseUrl}${ApiConstants.getUniversities}';
       print('=== Universities API Call ===');
       print('Trying URL: $url');
-      
+
       final response = await _dio.get(url);
-      
+
       print('Response Status: ${response.statusCode}');
       print('Response Data: ${response.data}');
       print('Response Type: ${response.data.runtimeType}');
@@ -212,8 +212,6 @@ class ApiService {
       };
     }
   }
-
-
 
   /// Fetch case requests by category.
   Future<Map<String, dynamic>> getCaseRequestsByCategory(int categoryId) async {
@@ -251,7 +249,8 @@ class ApiService {
 
   /// Create a new case request.
   /// Needs auth (handled by interceptor).
-  Future<Map<String, dynamic>> createCaseRequest(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> createCaseRequest(
+      Map<String, dynamic> body) async {
     try {
       final response = await _dio.post(
         '${ApiConstants.baseUrl}${ApiConstants.createCaseRequest}',
@@ -292,7 +291,6 @@ class ApiService {
   }
 
   String _handleDioError(DioException e) {
-
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return 'انتهت مهلة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت';

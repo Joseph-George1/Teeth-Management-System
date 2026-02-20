@@ -46,6 +46,9 @@
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/package_info_plus/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/package_info_plus/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/package_info_plus/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_local_notifications_linux/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_local_notifications_linux/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/flutter_moblie_app/linux/flutter/ephemeral/.plugin_symlinks/flutter_local_notifications_linux/build" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.14 (Teeth-Management-System) (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

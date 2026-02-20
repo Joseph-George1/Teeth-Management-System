@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/routing/routes.dart';
+import 'core/routing/navigator_service.dart';
 import 'core/theming/app_theme.dart';
 import 'core/theming/theme_provider.dart';
-
 
 class DocApp extends StatelessWidget {
   final AppRouter appRouter;
@@ -23,6 +23,7 @@ class DocApp extends StatelessWidget {
             designSize: const Size(375, 812),
             minTextAdapt: true,
             child: MaterialApp(
+              navigatorKey: NavigatorService.navigatorKey,
               title: 'Doc App',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,

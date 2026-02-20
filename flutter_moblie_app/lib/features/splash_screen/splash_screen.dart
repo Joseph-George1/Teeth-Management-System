@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/routing/routes.dart';
 import '../../core/theming/colors.dart';
+import '../../core/helpers/notification_permission_helper.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -60,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
           onPressed: () async {
             Navigator.of(context).pop();
             await Geolocator.openLocationSettings();
-            _checkLocationPermission();
+            _checkLocationPermission(); // Retry loop
           },
         );
       }
@@ -74,10 +76,11 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           _showLocationDialog(
             title: 'إذن الموقع مطلوب',
-            content: 'يحتاج التطبيق إلى إذن الموقع ليعمل بشكل صحيح. يرجى منح الإذن.',
+            content:
+                'يحتاج التطبيق إلى إذن الموقع ليعمل بشكل صحيح. يرجى منح الإذن.',
             onPressed: () {
               Navigator.of(context).pop();
-              _checkLocationPermission();
+              _checkLocationPermission(); // Retry loop
             },
           );
         }
@@ -89,18 +92,70 @@ class _SplashScreenState extends State<SplashScreen> {
       if (mounted) {
         _showLocationDialog(
           title: 'إذن الموقع مطلوب',
-          content: 'تم رفض إذن الموقع بشكل دائم. يرجى تفعيله من إعدادات التطبيق.',
+          content:
+              'تم رفض إذن الموقع بشكل دائم. يرجى تفعيله من إعدادات التطبيق للمتابعة.',
           onPressed: () async {
             Navigator.of(context).pop();
             await Geolocator.openAppSettings();
-            _checkLocationPermission();
+            _checkLocationPermission(); // Retry loop
           },
         );
       }
       return;
     }
 
-    // Permission granted, navigate to next screen
+    // Location permission granted, now check notifications
+    if (mounted) {
+      _checkNotificationPermission();
+    }
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    NotificationSettings settings =
+        await FirebaseMessaging.instance.getNotificationSettings();
+
+    // 1. If already authorized, move on to onboarding
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
+      }
+      return;
+    }
+
+    // 2. If denied (disabled from settings), show the "Settings" dialog
+    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      if (mounted) {
+        await NotificationPermissionHelper.showPermanentlyDeniedDialog(
+          context,
+          () async {
+            Navigator.pop(context);
+            await Geolocator.openAppSettings();
+          },
+        );
+        // After returning from settings, the user should have enabled them.
+        _checkNotificationPermission();
+      }
+      return;
+    }
+
+    // 3. If not determined (first time), show our pitch dialog
+    if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+      if (mounted) {
+        await NotificationPermissionHelper.showNotificationPermissionDialog(
+            context);
+        // After pitch, trigger the system request
+        await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        // Re-check whatever the user chose in the system dialog
+        _checkNotificationPermission();
+      }
+      return;
+    }
+
+    // Default: Final navigation if for some reason we reach here (e.g. provisional)
     if (mounted) {
       Navigator.pushReplacementNamed(context, Routes.onBoardingScreen);
     }

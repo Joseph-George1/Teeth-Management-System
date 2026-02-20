@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -6,10 +7,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/routing/app_router.dart';
 import 'doc_app.dart';
+import 'firebase_options.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options : DefaultFirebaseOptions.currentPlatform);
 
   // Setup Dependency Injection
   await setupGetIt();
@@ -22,6 +25,7 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
 
   runApp(DocApp(
     appRouter: AppRouter(),

@@ -58,8 +58,8 @@ class OtpService {
         if (response.data != null) {
           if (response.data is Map) {
             errorMessage = response.data['message'] ??
-                          response.data['error'] ??
-                          errorMessage;
+                response.data['error'] ??
+                errorMessage;
           } else if (response.data is String) {
             errorMessage = response.data;
           }
@@ -155,8 +155,8 @@ class OtpService {
         if (response.data != null) {
           if (response.data is Map) {
             errorMessage = response.data['message'] ??
-                          response.data['error'] ??
-                          errorMessage;
+                response.data['error'] ??
+                errorMessage;
           } else if (response.data is String) {
             errorMessage = response.data;
           }

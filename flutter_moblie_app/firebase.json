@@ -1,0 +1,24 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "teeth-management-system-b60a7",
+          "appId": "1:386411267159:android:a422e190d261d911b48f12",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "teeth-management-system-b60a7",
+          "configurations": {
+            "android": "1:386411267159:android:a422e190d261d911b48f12",
+            "ios": "1:386411267159:ios:1eb429c7134e65e3b48f12",
+            "macos": "1:386411267159:ios:1eb429c7134e65e3b48f12",
+            "web": "1:386411267159:web:2a7a5c34de936ee4b48f12"
+          }
+        }
+      }
+    }
+  }
+}

@@ -11,6 +11,8 @@ import 'package:thotha_mobile_app/core/networking/api_service.dart';
 import 'package:thotha_mobile_app/core/networking/models/city_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/university_model.dart';
 import 'package:thotha_mobile_app/core/networking/models/category_model.dart';
+import 'package:thotha_mobile_app/core/helpers/app_regex.dart';
+import 'package:thotha_mobile_app/features/login/ui/widgets/password_validations.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -25,13 +27,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final String _userType = 'طالب'; // Default user type
 
   String? _selectedCollege;
   String? _selectedStudyYear;
   String? _selectedGovernorate;
   String? _selectedCategory;
+
+  final _formKey = GlobalKey<FormState>();
+  bool hasLowerCase = false;
+  bool hasUpperCase = false;
+  bool hasSpecialCharacters = false;
+  bool hasNumber = false;
+  bool hasMinLength = false;
 
   // Dynamic data from API
   final ApiService _apiService = ApiService();
@@ -185,358 +195,429 @@ class _SignUpScreenState extends State<SignUpScreen> {
               }
             },
             child: Scaffold(
-                 body: Container(
-                   width: double.infinity,
-                   height: double.infinity,
-                   child: Stack(
-                     children: [
-                       // Full screen gradient overlay (same as login)
-                       Container(
-                         width: double.infinity,
-                         height: double.infinity,
-                         decoration: BoxDecoration(
-                           gradient: RadialGradient(
-                             center: Alignment(-0.7, -0.7),
-                             radius: 1.5,
-                             colors: [
-                               ColorsManager.layerBlur1.withOpacity(0.4),
-                               ColorsManager.layerBlur1.withOpacity(0.1),
-                               Colors.transparent,
-                             ],
-                             stops: const [0.0, 0.3, 0.8],
-                           ),
-                         ),
-                       ),
-                       // Bottom-right gradient overlay (same as login)
-                       Container(
-                         width: double.infinity,
-                         height: double.infinity,
-                         decoration: BoxDecoration(
-                           gradient: RadialGradient(
-                             center: Alignment(0.7, 0.7),
-                             radius: 1.5,
-                             colors: [
-                               ColorsManager.layerBlur2.withOpacity(0.4),
-                               ColorsManager.layerBlur2.withOpacity(0.1),
-                               Colors.transparent,
-                             ],
-                             stops: const [0.0, 0.3, 0.8],
-                           ),
-                         ),
-                       ),
-                       Center(
-                         child: SingleChildScrollView(
-                           child: Padding(
-                             padding: EdgeInsets.all(24.0.w),
-                             child: Container(
-                               width: double.infinity,
-                               padding: EdgeInsets.all(24.0.w),
-                               decoration: BoxDecoration(
-                                 color: Colors.white,
-                                 borderRadius: BorderRadius.circular(16.0),
-                                 boxShadow: [
-                                   BoxShadow(
-                                     color: Colors.black.withOpacity(0.1),
-                                     blurRadius: 10,
-                                     offset: const Offset(0, 4),
-                                   ),
-                                 ],
-                               ),
-                               child: Directionality(
-                                 textDirection: TextDirection.rtl,
-                                 child: Column(
-                                   mainAxisSize: MainAxisSize.min,
-                                   crossAxisAlignment: CrossAxisAlignment.center,
-                                   children: [
-                                     verticalSpace(20),
-                                     Image.asset(
-                                       'assets/images/splash-logo.png',
-                                       width: 80.w,
-                                       height: 80.h,
-                                     ),
-                                     Text(' إنشاء حساب', style: TextStyles.font24BlueBold),
-                                     Text(
-                                       'أنشئ حسابك للبدء في استخدام التطبيق.',
-                                       style: TextStyles.font14GrayRegular,
-                                       textAlign: TextAlign.right,
-                                     ),
-                                     verticalSpace(10),
-                                     verticalSpace(16),
-                                     // First Name Field
-                                     TextFormField(
-                                       controller: firstNameController,
-                                       textInputAction: TextInputAction.next,
-                                       decoration: InputDecoration(
-                                         labelText: 'الاسم الأول',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.person_outline),
-                                       ),
-                                     ),
-                                     verticalSpace(16),
-                                     // Last Name Field
-                                     TextFormField(
-                                       controller: lastNameController,
-                                       textInputAction: TextInputAction.next,
-                                       decoration: InputDecoration(
-                                         labelText: 'الاسم الأخير',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.person_outline),
-                                       ),
-                                     ),
-                                     verticalSpace(16),
-                                     // Email Field
-                                     TextFormField(
-                                       controller: emailController,
-                                       keyboardType: TextInputType.emailAddress,
-                                       decoration: InputDecoration(
-                                         labelText: 'البريد الإلكتروني',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.email_outlined),
-                                       ),
-                                     ),
-                                     verticalSpace(16),
-                                     // Phone Number with Country Code
-                                     // Phone Number Field
-                                     TextFormField(
-                                       controller: phoneController,
-                                       keyboardType: TextInputType.phone,
-                                       decoration: InputDecoration(
-                                         labelText: 'رقم الهاتف',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.phone_outlined),
-                                       ),
-                                     ),
-                                     verticalSpace(16),
-                                      // University/College Dropdown
-                                      _isLoadingUniversities
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedCollege,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر الكلية',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
+              body: Container(
+                width: double.infinity,
+                height: double.infinity,
+                child: Stack(
+                  children: [
+                    // Full screen gradient overlay (same as login)
+                    Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(-0.7, -0.7),
+                          radius: 1.5,
+                          colors: [
+                            ColorsManager.layerBlur1.withOpacity(0.4),
+                            ColorsManager.layerBlur1.withOpacity(0.1),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.3, 0.8],
+                        ),
+                      ),
+                    ),
+                    // Bottom-right gradient overlay (same as login)
+                    Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(0.7, 0.7),
+                          radius: 1.5,
+                          colors: [
+                            ColorsManager.layerBlur2.withOpacity(0.4),
+                            ColorsManager.layerBlur2.withOpacity(0.1),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.3, 0.8],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.0.w),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(24.0.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    verticalSpace(20),
+                                    Image.asset(
+                                      'assets/images/splash-logo.png',
+                                      width: 80.w,
+                                      height: 80.h,
+                                    ),
+                                    Text(' إنشاء حساب',
+                                        style: TextStyles.font24BlueBold),
+                                    Text(
+                                      'أنشئ حسابك للبدء في استخدام التطبيق.',
+                                      style: TextStyles.font14GrayRegular,
+                                      textAlign: TextAlign.right,
+                                    ),
+                                    verticalSpace(10),
+                                    verticalSpace(16),
+                                    // First Name Field
+                                    TextFormField(
+                                      controller: firstNameController,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText: 'الاسم الأول',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.person_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'الرجاء إدخال الاسم الأول';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(16),
+                                    // Last Name Field
+                                    TextFormField(
+                                      controller: lastNameController,
+                                      textInputAction: TextInputAction.next,
+                                      decoration: InputDecoration(
+                                        labelText: 'الاسم الأخير',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.person_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'الرجاء إدخال الاسم الأخير';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(16),
+                                    // Email Field
+                                    TextFormField(
+                                      controller: emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      decoration: InputDecoration(
+                                        labelText: 'البريد الإلكتروني',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.email_outlined),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.isEmpty ||
+                                            !AppRegex.isEmailValid(value)) {
+                                          return 'الرجاء إدخال بريد إلكتروني صالح';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(16),
+                                    // Phone Number with Country Code
+                                    // Phone Number Field
+                                    TextFormField(
+                                      controller: phoneController,
+                                      keyboardType: TextInputType.phone,
+                                      decoration: InputDecoration(
+                                        labelText: 'رقم الهاتف',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.phone_outlined),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null ||
+                                            value.isEmpty ||
+                                            !AppRegex.isPhoneNumberValid(
+                                                value)) {
+                                          return 'الرجاء إدخال رقم هاتف صالح';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(16),
+                                    // University/College Dropdown
+                                    _isLoadingUniversities
+                                        ? const Center(
+                                            child: CircularProgressIndicator())
+                                        : DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            value: _selectedCollege,
+                                            decoration: InputDecoration(
+                                              labelText: 'اختر الكلية',
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              items: _universities
-                                                  .map((u) => DropdownMenuItem(
-                                                      value: u.name,
-                                                      child: Text(u.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedCollege = v),
                                             ),
-                                     verticalSpace(16),
-                                     // Study Year Dropdown
-                                     DropdownButtonFormField<String>(
-                                       value: _selectedStudyYear,
-                                       decoration: InputDecoration(
-                                         labelText: 'السنة الدراسية',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                       ),
-                                       items: _studyYears
-                                           .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                                           .toList(),
-                                       onChanged: (v) => setState(() => _selectedStudyYear = v),
-                                     ),
-                                     verticalSpace(16),
-                                      // City/Governorate Dropdown
-                                      _isLoadingCities
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedGovernorate,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر المحافظة',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
+                                            items: _universities
+                                                .map((u) => DropdownMenuItem(
+                                                    value: u.name,
+                                                    child: Text(u.name)))
+                                                .toList(),
+                                            onChanged: (v) => setState(
+                                                () => _selectedCollege = v),
+                                          ),
+                                    verticalSpace(16),
+                                    // Study Year Dropdown
+                                    DropdownButtonFormField<String>(
+                                      isExpanded: true,
+                                      value: _selectedStudyYear,
+                                      decoration: InputDecoration(
+                                        labelText: 'السنة الدراسية',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      items: _studyYears
+                                          .map((y) => DropdownMenuItem(
+                                              value: y, child: Text(y)))
+                                          .toList(),
+                                      onChanged: (v) => setState(
+                                          () => _selectedStudyYear = v),
+                                    ),
+                                    verticalSpace(16),
+                                    // City/Governorate Dropdown
+                                    _isLoadingCities
+                                        ? const Center(
+                                            child: CircularProgressIndicator())
+                                        : DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            value: _selectedGovernorate,
+                                            decoration: InputDecoration(
+                                              labelText: 'اختر المحافظة',
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              items: _cities
-                                                  .map((city) => DropdownMenuItem(
-                                                      value: city.name,
-                                                      child: Text(city.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedGovernorate = v),
                                             ),
-                                     verticalSpace(16),
-                                      // Category/Specialty Dropdown  
-                                      _isLoadingCategories
-                                          ? const Center(child: CircularProgressIndicator())
-                                          : DropdownButtonFormField<String>(
-                                              value: _selectedCategory,
-                                              decoration: InputDecoration(
-                                                labelText: 'اختر التخصص',
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
+                                            items: _cities
+                                                .map((city) => DropdownMenuItem(
+                                                    value: city.name,
+                                                    child: Text(city.name)))
+                                                .toList(),
+                                            onChanged: (v) => setState(
+                                                () => _selectedGovernorate = v),
+                                          ),
+                                    verticalSpace(16),
+                                    // Category/Specialty Dropdown
+                                    _isLoadingCategories
+                                        ? const Center(
+                                            child: CircularProgressIndicator())
+                                        : DropdownButtonFormField<String>(
+                                            isExpanded: true,
+                                            value: _selectedCategory,
+                                            decoration: InputDecoration(
+                                              labelText: 'اختر التخصص',
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              items: _categories
-                                                  .map((cat) => DropdownMenuItem(
-                                                      value: cat.name,
-                                                      child: Text(cat.name)))
-                                                  .toList(),
-                                              onChanged: (v) => setState(() => _selectedCategory = v),
                                             ),
-                                     verticalSpace(16),
-                                     // Password Field
-                                     TextFormField(
-                                       controller: passwordController,
-                                       obscureText: true,
-                                       decoration: InputDecoration(
-                                         labelText: 'كلمة المرور',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.lock_outline),
-                                       ),
-                                     ),
-                                     verticalSpace(16),
-                                     // Confirm Password Field
-                                     TextFormField(
-                                       controller: confirmPasswordController,
-                                       obscureText: true,
-                                       decoration: InputDecoration(
-                                         labelText: 'تأكيد كلمة المرور',
-                                         border: OutlineInputBorder(
-                                           borderRadius: BorderRadius.circular(8),
-                                         ),
-                                         prefixIcon: const Icon(Icons.lock_outline),
-                                       ),
-                                     ),
-                                     verticalSpace(24),
-                                     // Sign Up Button
-                                     BlocBuilder<SignUpCubit, SignUpState>(
-                                       builder: (context, state) {
-                                         return SizedBox(
-                                           width: double.infinity,
-                                           child: state is SignUpLoading
-                                               ? const Center(
-                                               child: CircularProgressIndicator())
-                                               : AppTextButton(
-                                             buttonText: 'إنشاء حساب',
-                                             textStyle: TextStyles.font16WhiteMedium,
-                                             onPressed: () {
-                                               if (firstNameController.text
-                                                   .trim()
-                                                   .isEmpty) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال الاسم الأول'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
+                                            items: _categories
+                                                .map((cat) => DropdownMenuItem(
+                                                    value: cat.name,
+                                                    child: Text(cat.name)))
+                                                .toList(),
+                                            onChanged: (v) => setState(
+                                                () => _selectedCategory = v),
+                                          ),
+                                    verticalSpace(16),
+                                    // Password Field
+                                    TextFormField(
+                                      controller: passwordController,
+                                      obscureText: true,
+                                      onChanged: (password) {
+                                        setState(() {
+                                          hasLowerCase =
+                                              AppRegex.hasLowerCase(password);
+                                          hasUpperCase =
+                                              AppRegex.hasUpperCase(password);
+                                          hasSpecialCharacters =
+                                              AppRegex.hasSpecialCharacter(
+                                                  password);
+                                          hasNumber =
+                                              AppRegex.hasNumber(password);
+                                          hasMinLength =
+                                              AppRegex.hasMinLength(password);
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'كلمة المرور',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.lock_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'الرجاء إدخال كلمة المرور';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(16),
+                                    PasswordValidations(
+                                      hasLowerCase: hasLowerCase,
+                                      hasUpperCase: hasUpperCase,
+                                      hasSpecialCharacters:
+                                          hasSpecialCharacters,
+                                      hasNumber: hasNumber,
+                                      hasMinLength: hasMinLength,
+                                    ),
+                                    verticalSpace(16),
+                                    // Confirm Password Field
+                                    TextFormField(
+                                      controller: confirmPasswordController,
+                                      obscureText: true,
+                                      decoration: InputDecoration(
+                                        labelText: 'تأكيد كلمة المرور',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        prefixIcon:
+                                            const Icon(Icons.lock_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'الرجاء تأكيد كلمة المرور';
+                                        }
+                                        if (value != passwordController.text) {
+                                          return 'كلمتا المرور غير متطابقتين';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    verticalSpace(24),
+                                    // Sign Up Button
+                                    BlocBuilder<SignUpCubit, SignUpState>(
+                                      builder: (context, state) {
+                                        return SizedBox(
+                                          width: double.infinity,
+                                          child: state is SignUpLoading
+                                              ? const Center(
+                                                  child:
+                                                      CircularProgressIndicator())
+                                              : AppTextButton(
+                                                  buttonText: 'إنشاء حساب',
+                                                  textStyle: TextStyles
+                                                      .font16WhiteMedium,
+                                                  onPressed: () {
+                                                    if (_formKey.currentState!
+                                                        .validate()) {
+                                                      // Check if password criteria are met
+                                                      if (!hasLowerCase ||
+                                                          !hasUpperCase ||
+                                                          !hasSpecialCharacters ||
+                                                          !hasNumber ||
+                                                          !hasMinLength) {
+                                                        ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                                'يرجى التأكد من استكمال جميع شروط كلمة المرور'),
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                          ),
+                                                        );
+                                                        return;
+                                                      }
 
-                                               if (lastNameController.text
-                                                   .trim()
-                                                   .isEmpty) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال الاسم الأخير'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
+                                                      final phone =
+                                                          phoneController.text
+                                                              .trim();
 
-                                               // Validate email
-                                               if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$')
-                                                   .hasMatch(
-                                                   emailController.text.trim())) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'الرجاء إدخال بريد إلكتروني صالح'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
+                                                      // If all validations pass, proceed with sign up
+                                                      context
+                                                          .read<SignUpCubit>()
+                                                          .signUp(
+                                                            email:
+                                                                emailController
+                                                                    .text
+                                                                    .trim(),
+                                                            password:
+                                                                passwordController
+                                                                    .text,
 
-                                               // Validate password length
-                                               if (passwordController.text.length <
-                                                   6) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'يجب أن تكون كلمة المرور 6 أحرف على الأقل'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               if (passwordController.text !=
-                                                   confirmPasswordController.text) {
-                                                 ScaffoldMessenger
-                                                     .of(context)
-                                                     .showSnackBar(
-                                                   const SnackBar(
-                                                     content: Text(
-                                                         'كلمتا المرور غير متطابقتين'),
-                                                     backgroundColor: Colors.red,
-                                                   ),
-                                                 );
-                                                 return;
-                                               }
-
-                                               final phone = phoneController.text.trim();
-
-                                               // If all validations pass, proceed with sign up
-                                               context.read<SignUpCubit>().signUp(
-                                                 email: emailController.text.trim(),
-                                                 password: passwordController.text,
-
-                                                 firstName: firstNameController.text.trim(),
-                                                 lastName: lastNameController.text.trim(),
-                                                 phone: phoneController.text.trim(),
-                                                 college: _selectedCollege,
-                                                 studyYear: _selectedStudyYear,
-                                                 governorate: _selectedGovernorate,
-                                                 category: _selectedCategory, // Add this
-                                               );
-                                             },
-                                           ),
-                                         );
-                                       },
-                                     ),
+                                                            firstName:
+                                                                firstNameController
+                                                                    .text
+                                                                    .trim(),
+                                                            lastName:
+                                                                lastNameController
+                                                                    .text
+                                                                    .trim(),
+                                                            phone: phone,
+                                                            college:
+                                                                _selectedCollege,
+                                                            studyYear:
+                                                                _selectedStudyYear,
+                                                            governorate:
+                                                                _selectedGovernorate,
+                                                            category:
+                                                                _selectedCategory, // Add this
+                                                          );
+                                                    }
+                                                  },
+                                                ),
+                                        );
+                                      },
+                                    ),
 
                                     verticalSpace(24),
                                     // Already have an account? Login
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           'لديك حساب بالفعل؟',
-                                          style: TextStyles.font13DarkBlueMedium,
+                                          style:
+                                              TextStyles.font13DarkBlueMedium,
                                         ),
                                         TextButton(
                                           onPressed: () {
-                                            Navigator.of(context).pushNamed(Routes.loginScreen);
+                                            Navigator.of(context)
+                                                .pushNamed(Routes.loginScreen);
                                           },
                                           child: Text(
                                             'تسجيل الدخول',
-                                            style: TextStyles.font13BlueSemiBold,
+                                            style:
+                                                TextStyles.font13BlueSemiBold,
                                           ),
                                         ),
                                       ],
@@ -548,9 +629,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              )));
+              ),
+            )));
   }
 }

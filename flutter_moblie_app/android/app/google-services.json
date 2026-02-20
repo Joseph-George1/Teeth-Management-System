@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386411267159",
+    "project_id": "teeth-management-system-b60a7",
+    "storage_bucket": "teeth-management-system-b60a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386411267159:android:a422e190d261d911b48f12",
+        "android_client_info": {
+          "package_name": "com.example.flutter_moblie_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP2KjIw6EG-bxVVrTkjnhpfOOtw5EFYdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

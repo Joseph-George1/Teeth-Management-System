@@ -54,7 +54,7 @@ class SignUpCubit extends Cubit<SignUpState> {
         if (firstName != null && firstName.isNotEmpty) 'firstName': firstName,
         if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
         if (phone != null && phone.isNotEmpty) 'phoneNumber': phone,
-        if (college != null && college.isNotEmpty) 'universtyName': college,
+        if (college != null && college.isNotEmpty) 'universty': college,
         if (studyYear != null && studyYear.isNotEmpty) 'studyYear': studyYear,
         if (governorate != null && governorate.isNotEmpty)
           'cityName': governorate,

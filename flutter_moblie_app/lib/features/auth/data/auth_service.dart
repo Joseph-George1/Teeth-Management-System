@@ -74,21 +74,21 @@ class AuthService {
               final user = data['user'] as Map;
               f = (user['first_name'] ?? user['firstName']) as String?;
               l = (user['last_name'] ?? user['lastName']) as String?;
-              e = (user['email']??user['email']) as String?;
-              p = (user['phone']??user['phone'])?.toString();
-              y = (user['year']??user['year']) as String?;
-              g = (user['governorate']??user['governorate']) as String?;
-              fa = (user['faculty']??user['faculty']) as String?;
-              c = (user['category']??user['category'])?.toString();
+              e = (user['email'] ?? user['email']) as String?;
+              p = (user['phone'] ?? user['phone'])?.toString();
+              y = (user['year'] ?? user['year']) as String?;
+              g = (user['governorate'] ?? user['governorate']) as String?;
+              fa = (user['faculty'] ?? user['faculty']) as String?;
+              c = (user['category'] ?? user['category'])?.toString();
             }
 
             f = f ?? (data['first_name'] ?? data['firstName']) as String?;
             l = l ?? (data['last_name'] ?? data['lastName']) as String?;
-            e = e ?? (data['email']??data['email']) as String?;
-            p = p ?? (data['phone']??data['phone'])?.toString();
-            y = y ?? (data['year']??data['year']) as String?;
-            g = g ?? (data['governorate']??data['governorate']) as String?;
-            fa = fa ?? (data['faculty']??data['faculty']) as String?;
+            e = e ?? (data['email'] ?? data['email']) as String?;
+            p = p ?? (data['phone'] ?? data['phone'])?.toString();
+            y = y ?? (data['year'] ?? data['year']) as String?;
+            g = g ?? (data['governorate'] ?? data['governorate']) as String?;
+            fa = fa ?? (data['faculty'] ?? data['faculty']) as String?;
             c = c ?? data['category']?.toString();
           }
 
@@ -114,10 +114,13 @@ class AuthService {
             final category = data['category']?.toString();
 
             if (phone != null) await SharedPrefHelper.setData('phone', phone);
-            if (faculty != null) await SharedPrefHelper.setData('faculty', faculty);
+            if (faculty != null)
+              await SharedPrefHelper.setData('faculty', faculty);
             if (year != null) await SharedPrefHelper.setData('year', year);
-            if (governorate != null) await SharedPrefHelper.setData('governorate', governorate);
-            if (category != null) await SharedPrefHelper.setData('category', category);
+            if (governorate != null)
+              await SharedPrefHelper.setData('governorate', governorate);
+            if (category != null)
+              await SharedPrefHelper.setData('category', category);
           }
         } catch (_) {
           // ignore persistence failures; UI can fallback to /me

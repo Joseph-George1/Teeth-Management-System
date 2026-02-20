@@ -11,6 +11,7 @@ import '../../features/chat/ui/chat_screen.dart';
 import '../../features/forgot_password/ui/forgot_password_screen.dart';
 import '../../features/reset_password/ui/reset_password_screen.dart';
 import '../../features/home_screen/ui/home_screen.dart';
+import '../../features/notifications/ui/notifications_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
@@ -61,6 +62,10 @@ class AppRouter {
       case Routes.categoriesScreen:
         return MaterialPageRoute(
           builder: (context) => const HomeScreen(),
+        );
+      case Routes.notificationsScreen:
+        return MaterialPageRoute(
+          builder: (context) => const NotificationsScreen(),
         );
 
       default:

@@ -39,7 +39,8 @@ class AppTextButton extends StatelessWidget {
         ),
         backgroundColor: MaterialStateProperty.resolveWith((states) {
           if (states.contains(MaterialState.disabled)) {
-            return disabledBackgroundColor ?? (backgroundColor ?? ColorsManager.mainBlue).withOpacity(0.5);
+            return disabledBackgroundColor ??
+                (backgroundColor ?? ColorsManager.mainBlue).withOpacity(0.5);
           }
           return backgroundColor ?? ColorsManager.mainBlue;
         }),
