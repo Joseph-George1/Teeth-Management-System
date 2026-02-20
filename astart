@@ -810,69 +810,67 @@ update_production_server() {
 # Function to display help message
 #-------------------------------------------------------------
 display_help() {
-    cat << EOF
-${BLUE}=============================================================
-  Teeth Management System - Service Launcher
-=============================================================${NC}
-
-${GREEN}Usage:${NC} $0 [options]
-
-${GREEN}Service Control:${NC}
-  ${RED}-w${NC}    Start the whole system (Backend, Login API, AI API, Web UI)
-  ${RED}-b${NC}    Start Backend server only
-  ${RED}-x${NC}    Start Login/Registration API only
-  ${RED}-a${NC}    Start AI Chatbot API only
-  ${RED}-c${NC}    Start Web UI (Frontend) only
-  ${RED}-s${NC}    Stop all running services
-  ${RED}-l${NC}    List status of all services
-  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service
-
-${GREEN}Logs & Monitoring:${NC}
-  ${RED}-L${NC} ${YELLOW}<service>${NC}  View logs for a service (latest 50 lines)
-  ${RED}-F${NC} ${YELLOW}<service>${NC}  Follow logs for a service (tail -f)
-  ${RED}-L${NC} ${YELLOW}all${NC}       List all available log files
-
-${GREEN}Deployment:${NC}
-  ${RED}-u${NC}    Update and deploy to production server
-
-${GREEN}Other:${NC}
-  ${RED}-v${NC}    Enable verbose/debug output
-  ${RED}-h${NC}    Display this help message
-
-${GREEN}Examples:${NC}
-  $0 -w                    # Start all services
-  $0 -v -b                 # Start backend with verbose output
-  $0 -l                    # Check service status
-  $0 -r backend            # Restart backend service
-  $0 -L web_ui             # View web UI logs
-  $0 -F ai_chatbot_api     # Follow AI API logs
-  $0 -s                    # Stop all services
-
-${GREEN}Available Services:${NC}
-  - backend              (Spring Boot backend on port ${BACKEND_PORT})
-  - loginreg             (Login/Registration API on port ${LOGIN_API_PORT})
-  - ai_chatbot_api       (AI Chatbot API on port ${API_PORT})
-  - web_ui               (Vite Frontend on port ${WEB_UI_PORT})
-  - ai_chatbot_web       (Streamlit Web Interface)
-
-${GREEN}Configuration:${NC}
-  Create ${YELLOW}.env${NC} file at ${YELLOW}$HOME/Teeth-Management-System/.env${NC}
-  to customize database credentials and port numbers:
-  
-    DB_URL=jdbc:oracle:thin:@localhost:1521/XE
-    DB_USERNAME=system
-    DB_PASSWORD=your_password
-    WEB_UI_PORT=5173
-    BACKEND_PORT=8080
-    API_PORT=8000
-    LOGIN_API_PORT=5000
-
-${GREEN}Logs Location:${NC}
-  Activity Log:  ${YELLOW}$ACTIVITY_LOG${NC}
-  Process Logs:  ${YELLOW}$PROCESS_LOG_DIR${NC}
-  PID Files:     ${YELLOW}$PID_DIR${NC}
-
-EOF
+    echo -e "${BLUE}=============================================================${NC}"
+    echo -e "${BLUE}  Teeth Management System - Service Launcher${NC}"
+    echo -e "${BLUE}=============================================================${NC}"
+    echo ""
+    echo -e "${GREEN}Usage:${NC} $0 [options]"
+    echo ""
+    echo -e "${GREEN}Service Control:${NC}"
+    echo -e "  ${RED}-w${NC}    Start the whole system (Backend, Login API, AI API, Web UI)"
+    echo -e "  ${RED}-b${NC}    Start Backend server only"
+    echo -e "  ${RED}-x${NC}    Start Login/Registration API only"
+    echo -e "  ${RED}-a${NC}    Start AI Chatbot API only"
+    echo -e "  ${RED}-c${NC}    Start Web UI (Frontend) only"
+    echo -e "  ${RED}-s${NC}    Stop all running services"
+    echo -e "  ${RED}-l${NC}    List status of all services"
+    echo -e "  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service"
+    echo ""
+    echo -e "${GREEN}Logs & Monitoring:${NC}"
+    echo -e "  ${RED}-L${NC} ${YELLOW}<service>${NC}  View logs for a service (latest 50 lines)"
+    echo -e "  ${RED}-F${NC} ${YELLOW}<service>${NC}  Follow logs for a service (tail -f)"
+    echo -e "  ${RED}-L${NC} ${YELLOW}all${NC}       List all available log files"
+    echo ""
+    echo -e "${GREEN}Deployment:${NC}"
+    echo -e "  ${RED}-u${NC}    Update and deploy to production server"
+    echo ""
+    echo -e "${GREEN}Other:${NC}"
+    echo -e "  ${RED}-v${NC}    Enable verbose/debug output"
+    echo -e "  ${RED}-h${NC}    Display this help message"
+    echo ""
+    echo -e "${GREEN}Examples:${NC}"
+    echo -e "  $0 -w                    # Start all services"
+    echo -e "  $0 -v -b                 # Start backend with verbose output"
+    echo -e "  $0 -l                    # Check service status"
+    echo -e "  $0 -r backend            # Restart backend service"
+    echo -e "  $0 -L web_ui             # View web UI logs"
+    echo -e "  $0 -F ai_chatbot_api     # Follow AI API logs"
+    echo -e "  $0 -s                    # Stop all services"
+    echo ""
+    echo -e "${GREEN}Available Services:${NC}"
+    echo -e "  - backend              (Spring Boot backend on port ${BACKEND_PORT})"
+    echo -e "  - loginreg             (Login/Registration API on port ${LOGIN_API_PORT})"
+    echo -e "  - ai_chatbot_api       (AI Chatbot API on port ${API_PORT})"
+    echo -e "  - web_ui               (Vite Frontend on port ${WEB_UI_PORT})"
+    echo -e "  - ai_chatbot_web       (Streamlit Web Interface)"
+    echo ""
+    echo -e "${GREEN}Configuration:${NC}"
+    echo -e "  Create ${YELLOW}.env${NC} file at ${YELLOW}\$HOME/Teeth-Management-System/.env${NC}"
+    echo -e "  to customize database credentials and port numbers:"
+    echo ""
+    echo -e "    DB_URL=jdbc:oracle:thin:@localhost:1521/orclpdb"
+    echo -e "    DB_USERNAME=hr"
+    echo -e "    DB_PASSWORD=your_password"
+    echo -e "    WEB_UI_PORT=5173"
+    echo -e "    BACKEND_PORT=8080"
+    echo -e "    API_PORT=5010"
+    echo -e "    LOGIN_API_PORT=5000"
+    echo ""
+    echo -e "${GREEN}Logs Location:${NC}"
+    echo -e "  Activity Log:  ${YELLOW}$ACTIVITY_LOG${NC}"
+    echo -e "  Process Logs:  ${YELLOW}$PROCESS_LOG_DIR${NC}"
+    echo -e "  PID Files:     ${YELLOW}$PID_DIR${NC}"
+    echo ""
     exit 0
 }
 
