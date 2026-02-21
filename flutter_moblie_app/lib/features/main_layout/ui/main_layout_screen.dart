@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:thotha_mobile_app/core/routing/routes.dart';
 
-import '../../../../core/routing/routes.dart';
+//import '../../../../core/routing/routes.dart';
 import '../../../features/chat/ui/chat_screen.dart';
 import '../../home_screen/ui/home_screen.dart';
 

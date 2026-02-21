@@ -603,49 +603,101 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Future<void> _restartSession() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _dio.post('/session/start', data: {'language': 'ar'});
+      final data = res.data;
+      if (data is Map && data['session_id'] != null) {
+        _sessionId = data['session_id'].toString();
+      }
+      // Keep old messages — just push a divider message then new question
+      setState(() {
+        _chatMode = false;
+        _activeQuestionId = null;
+        _flowItems.add(_FlowItem.result(text: '— بدء محادثة جديدة —'));
+      });
+      _processResponse(data);
+    } catch (_) {
+      setState(() => _chatMode = true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+      _scrollToBottom();
+    }
+  }
+
   Widget _resultButton(String category) {
-    return Center(
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 6.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: _color2.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: () => _openCategory(category),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _color2,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 14.h),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'عرض أطباء $category',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
+    return Column(
+      children: [
+        // ── زرار عرض الأطباء ──────────────────────────────────────
+        Center(
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 6.h),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: _color2.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: () => _openCategory(category),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _color2,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 14.h),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r)),
               ),
-              SizedBox(width: 10.w),
-              Icon(Icons.arrow_back_rounded, size: 20.r),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'عرض أطباء $category',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Icon(Icons.arrow_back_rounded, size: 20.r),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+
+        // ── زرار إعادة المحادثة ───────────────────────────────────
+        SizedBox(height: 10.h),
+        Center(
+          child: OutlinedButton.icon(
+            onPressed: _isLoading ? null : _restartSession,
+            icon: Icon(Icons.refresh_rounded, size: 18.r, color: _color2),
+            label: Text(
+              'إعادة المحادثة من البداية',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: _color2,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: _color2, width: 1.5),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999)),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
