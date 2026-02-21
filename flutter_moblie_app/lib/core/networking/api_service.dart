@@ -80,136 +80,69 @@ class ApiService {
     }
   }
 
-  /// Fetch all dental categories.
-  /// Public endpoint — no auth required.
-  Future<Map<String, dynamic>> getCategories() async {
-    // Try different endpoint variations
-    final endpoints = [
-      ApiConstants.getCategories,
-      ApiConstants.getCategoriesAlt,
-      ApiConstants.getCategoriesFallback,
-    ];
-    
-    for (String endpoint in endpoints) {
-      try {
-        final url = '${ApiConstants.baseUrl}$endpoint';
-        print('=== API Call ===');
-        print('Trying URL: $url');
-        
-        final response = await _dio.get(url);
-        
-        print('Response Status: ${response.statusCode}');
-        print('Response Data: ${response.data}');
-        print('Response Type: ${response.data.runtimeType}');
+  /// Returns a fresh Dio instance targeting the Spring Boot backend.
+  /// Used for public endpoints that don't need auth.
+  Dio _publicDio() => Dio(BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      ));
 
-        if (response.statusCode == 200) {
-          final List<CategoryModel> categories = (response.data as List)
-              .map((json) => CategoryModel.fromJson(json))
-              .toList();
-          print('✅ Success with endpoint: $endpoint');
-          return {'success': true, 'data': categories};
-        }
-      } on DioException catch (e) {
-        print('❌ Failed with endpoint $endpoint: ${e.response?.statusCode}');
-        continue; // Try next endpoint
-      } catch (e) {
-        print('❌ Exception with endpoint $endpoint: $e');
-        continue; // Try next endpoint
+  /// Fetch all dental categories.
+  Future<Map<String, dynamic>> getCategories() async {
+    try {
+      final response = await _publicDio().get(ApiConstants.getCategories);
+      if (response.statusCode == 200) {
+        final List<CategoryModel> categories = (response.data as List)
+            .map((json) => CategoryModel.fromJson(json))
+            .toList();
+        return {'success': true, 'data': categories};
       }
+      return {'success': false, 'error': 'فشل في تحميل التخصصات', 'statusCode': response.statusCode};
+    } on DioException catch (e) {
+      return {'success': false, 'error': _handleDioError(e)};
+    } catch (e) {
+      return {'success': false, 'error': 'حدث خطأ غير متوقع'};
     }
-    
-    // All endpoints failed
-    print('❌ All endpoints failed');
-    return {
-      'success': false,
-      'error': 'فشل في تحميل التخصصات - جميع الـ endpoints فشلت',
-    };
   }
 
   /// Fetch all cities.
-  /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getCities() async {
-    // Try different endpoint variations, starting with the new one
-    final endpoints = [
-      ApiConstants.getCities,      // Primary: /api/cities/getAllCities
-      ApiConstants.getCitiesAlt,   // Fallback: /cities
-      ApiConstants.getCitiesFallback, // Fallback: /api/cities
-    ];
-    
-    for (String endpoint in endpoints) {
-      try {
-        final url = '${ApiConstants.baseUrl}$endpoint';
-        print('=== Cities API Call ===');
-        print('Trying URL: $url');
-        
-        final response = await _dio.get(url);
-        
-        print('Response Status: ${response.statusCode}');
-        print('Response Data: ${response.data}');
-        print('Response Type: ${response.data.runtimeType}');
-
-        if (response.statusCode == 200) {
-          final List<CityModel> cities = (response.data as List)
-              .map((json) => CityModel.fromJson(json))
-              .toList();
-          print('✅ Success with endpoint: $endpoint');
-          return {'success': true, 'data': cities};
-        }
-      } on DioException catch (e) {
-        print('❌ Failed with endpoint $endpoint: ${e.response?.statusCode}');
-        continue; // Try next endpoint
-      } catch (e) {
-        print('❌ Exception with endpoint $endpoint: $e');
-        continue; // Try next endpoint
+    try {
+      final response = await _publicDio().get(ApiConstants.getCities);
+      if (response.statusCode == 200) {
+        final List<CityModel> cities = (response.data as List)
+            .map((json) => CityModel.fromJson(json))
+            .toList();
+        return {'success': true, 'data': cities};
       }
+      return {'success': false, 'error': 'فشل في تحميل المدن', 'statusCode': response.statusCode};
+    } on DioException catch (e) {
+      return {'success': false, 'error': _handleDioError(e)};
+    } catch (e) {
+      return {'success': false, 'error': 'حدث خطأ غير متوقع'};
     }
-    
-    // All endpoints failed
-    print('❌ All endpoints failed');
-    return {
-      'success': false,
-      'error': 'فشل في تحميل المدن - جميع الـ endpoints فشلت',
-    };
   }
 
   /// Fetch all universities.
-  /// Public endpoint — no auth required.
   Future<Map<String, dynamic>> getUniversities() async {
     try {
-      final url = '${ApiConstants.baseUrl}${ApiConstants.getUniversities}';
-      print('=== Universities API Call ===');
-      print('Trying URL: $url');
-      
-      final response = await _dio.get(url);
-      
-      print('Response Status: ${response.statusCode}');
-      print('Response Data: ${response.data}');
-      print('Response Type: ${response.data.runtimeType}');
-
+      final response = await _publicDio().get(ApiConstants.getUniversities);
       if (response.statusCode == 200) {
         final List<UniversityModel> universities = (response.data as List)
             .map((json) => UniversityModel.fromJson(json))
             .toList();
-        print('✅ Success fetching universities');
         return {'success': true, 'data': universities};
       }
-
-      return {
-        'success': false,
-        'error': 'فشل في تحميل الجامعات',
-        'statusCode': response.statusCode,
-      };
+      return {'success': false, 'error': 'فشل في تحميل الجامعات', 'statusCode': response.statusCode};
     } on DioException catch (e) {
-      return {
-        'success': false,
-        'error': _handleDioError(e),
-        'statusCode': e.response?.statusCode ?? 500,
-      };
+      return {'success': false, 'error': _handleDioError(e)};
     } catch (e) {
-      return {
-        'success': false,
-        'error': 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى',
-      };
+      return {'success': false, 'error': 'حدث خطأ غير متوقع'};
     }
   }
 

@@ -54,12 +54,12 @@ class OtpService {
         };
       } else {
         String errorMessage = 'فشل إرسال رمز التحقق';
-        
+
         if (response.data != null) {
           if (response.data is Map) {
-            errorMessage = response.data['message'] ?? 
-                          response.data['error'] ?? 
-                          errorMessage;
+            errorMessage = response.data['message'] ??
+                response.data['error'] ??
+                errorMessage;
           } else if (response.data is String) {
             errorMessage = response.data;
           }
@@ -86,10 +86,10 @@ class OtpService {
   }
 
   /// Verify the OTP code for the provided phone number
-  /// 
+  ///
   /// [phoneNumber] should be in international format: +20XXXXXXXXXX
   /// [otp] is the 6-digit code received via SMS
-  /// 
+  ///
   /// Returns a Map with:
   /// - 'success': true/false
   /// - 'message': success/error message
@@ -151,12 +151,12 @@ class OtpService {
         };
       } else {
         String errorMessage = 'رمز التحقق غير صحيح';
-        
+
         if (response.data != null) {
           if (response.data is Map) {
-            errorMessage = response.data['message'] ?? 
-                          response.data['error'] ?? 
-                          errorMessage;
+            errorMessage = response.data['message'] ??
+                response.data['error'] ??
+                errorMessage;
           } else if (response.data is String) {
             errorMessage = response.data;
           }
