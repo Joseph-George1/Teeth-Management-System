@@ -43,7 +43,7 @@ public class DoctorController {
     }
 
     @PutMapping("updateDoctor")
-    public ResponseEntity<DoctorDto>updateDoctor(@RequestBody @Valid DoctorDto doctorDto) throws SystemException {
+    public ResponseEntity<DoctorDto>updateDoctor(@RequestBody  DoctorDto doctorDto) throws SystemException {
         return ResponseEntity.ok().body(doctorService.updateDoctor(doctorDto));
     }
 }

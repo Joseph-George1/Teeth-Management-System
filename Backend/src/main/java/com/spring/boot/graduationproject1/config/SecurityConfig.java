@@ -45,16 +45,17 @@ public class SecurityConfig {
                                 "/api/doctor/getDoctorsBy**",
                                 "/api/category/**",
                                 "/api/cities/**",
-                                "/api/university/**")
+                                "/api/university/**",
+                                "/api/doctor/getDoctorById")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasRole("DOCTOR")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-
     }
 
 

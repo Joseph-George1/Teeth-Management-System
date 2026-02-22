@@ -17,8 +17,4 @@ public class DoctorDto {
     private String password;
     private String phoneNumber;
     private String cityName;
-    private RoleDto role;
-    private long universityId;
-    private long roleId;
-    private long categoryId;
 }

@@ -9,6 +9,7 @@ import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.DoctorService;
 import com.spring.boot.graduationproject1.service.UniversityService;
 import jakarta.transaction.SystemException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -85,10 +86,14 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException {
-        if(Objects.isNull(doctorDto.getId())){
-            throw new SystemException("id must be not null");
-        }
-        Doctor doctor = doctorRepo.findById(doctorDto.getId())
+
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new SystemException("Doctor Not Found"));
 
         if (doctorDto.getFirstName() != null) {
@@ -108,7 +113,6 @@ public class DoctorServiceImpl implements DoctorService {
         }
 
         if (doctorDto.getCategoryName() != null) {
-
             Category category = categoryRepo
                     .findByName(doctorDto.getCategoryName())
                     .orElseThrow(() -> new SystemException("No Such Category"));
@@ -116,8 +120,8 @@ public class DoctorServiceImpl implements DoctorService {
             doctor.setCategory(category);
         }
 
-        if(doctorDto.getUniversityName() != null) {
-            University university=universityRepo
+        if (doctorDto.getUniversityName() != null) {
+            University university = universityRepo
                     .findByName(doctorDto.getUniversityName())
                     .orElseThrow(() -> new SystemException("No Such University"));
 
@@ -127,7 +131,6 @@ public class DoctorServiceImpl implements DoctorService {
         doctorRepo.save(doctor);
 
         return doctorMapper.toDto(doctor);
-
     }
 
     @Override
