@@ -30,6 +30,10 @@ The application allows patients to describe their symptoms and dental needs, whi
 
 Top languages in this repository.
 
+## Announcement!
+You can find the mobile application at: https://github.com/abdelhalimramadan/thouthapart2
+
+
 
 ## Contributors
 
