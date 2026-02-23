@@ -5,10 +5,35 @@
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW="\033[1;33m"
+BLUE="\033[1;34m"
 NC="\033[0m"
 
 # Verbose flag
 VERBOSE=0
+
+# Load configuration from .env file if it exists
+ENV_FILE="$HOME/Teeth-Management-System/.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
+
+# Database configuration (use env vars or defaults)
+# Detected from: Backend/src/main/resources/application.properties
+DB_URL="${DB_URL:-jdbc:oracle:thin:@localhost:1521/orclpdb}"
+DB_USERNAME="${DB_USERNAME:-hr}"
+DB_PASSWORD="${DB_PASSWORD:-hr}"
+
+# Port configuration (detected from project files)
+# Web UI: Vite default port (vite.config.js)
+# Backend: Spring Boot default port (no custom server.port in application.properties)
+# AI API: Detected from Ai-chatbot/api.py line 581
+# Login API: Detected from Backend/loginapi.py line 291
+WEB_UI_PORT="${WEB_UI_PORT:-5173}"
+BACKEND_PORT="${BACKEND_PORT:-8080}"
+API_PORT="${API_PORT:-5010}"
+LOGIN_API_PORT="${LOGIN_API_PORT:-5000}"
 
 #-------------------------------------------------------------
 # Logging subsystem
@@ -49,6 +74,83 @@ verbose_log() {
     if [ "$VERBOSE" -eq 1 ] 2>/dev/null; then
         echo -e "${YELLOW}[VERBOSE]${NC} $1" >&2
     fi
+}
+
+#-------------------------------------------------------------
+# validate_paths
+# Validates that all required directories exist
+# Returns: 0 if all paths valid, 1 otherwise
+#-------------------------------------------------------------
+validate_paths() {
+    local valid=0
+    
+    if [ ! -d "$core_path" ]; then
+        echo -e "${RED}ERROR: AI Chatbot path does not exist: $core_path${NC}"
+        valid=1
+    fi
+    
+    if [ ! -d "$webui_path" ]; then
+        echo -e "${RED}ERROR: Web UI path does not exist: $webui_path${NC}"
+        valid=1
+    fi
+    
+    if [ ! -d "$backend_path" ]; then
+        echo -e "${RED}ERROR: Backend path does not exist: $backend_path${NC}"
+        valid=1
+    fi
+    
+    return $valid
+}
+
+#-------------------------------------------------------------
+# check_port
+# Check if a port is already in use
+# Parameters:
+# - $1: port number
+# Returns: 0 if port is free, 1 if in use
+#-------------------------------------------------------------
+check_port() {
+    local port=$1
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -i:"$port" >/dev/null 2>&1
+        return $?
+    elif command -v netstat >/dev/null 2>&1; then
+        netstat -tuln | grep -q ":$port "
+        return $?
+    else
+        verbose_log "Warning: Cannot check port $port (lsof/netstat not available)"
+        return 0
+    fi
+}
+
+#-------------------------------------------------------------
+# check_process_health
+# Verify that a process is responding (basic check)
+# Parameters:
+# - $1: process name
+# - $2: port to check
+# - $3: max wait time in seconds (default 30)
+# Returns: 0 if healthy, 1 otherwise
+#-------------------------------------------------------------
+check_process_health() {
+    local name=$1
+    local port=$2
+    local max_wait=${3:-30}
+    local waited=0
+    
+    verbose_log "Health checking $name on port $port..."
+    
+    while [ $waited -lt $max_wait ]; do
+        if check_port "$port"; then
+            verbose_log "$name is responding on port $port"
+            return 0
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    
+    echo -e "${YELLOW}Warning: $name did not respond on port $port after ${max_wait}s${NC}"
+    return 1
 }
 
 #-------------------------------------------------------------
@@ -174,7 +276,7 @@ _wait_and_log() {
     # process termination and then write a STOP record. Exact exit code
     # is not available when not a parent; we record `UNKNOWN` in that case.
     while kill -0 "$pid" 2>/dev/null; do
-        sleep 1
+        sleep 2
     done
     # Process exited; we cannot reliably obtain its exit code here.
     code="UNKNOWN"
@@ -211,31 +313,54 @@ _wait_and_log() {
 # Returns: 0 on successful start (note: the process itself may fail later).
 #-------------------------------------------------------------
 start_bg() {
-    # params: name, flag, cmd
+    # params: name, flag, cmd, [optional_port_for_health_check]
     name="$1"
     flag="$2"
     cmd="$3"
+    health_port="$4"
+    
     verbose_log "Starting background process: $name"
     verbose_log "Command: $cmd"
     init_logging
+    
     # Create a timestamped logfile for this run
     TIMESTAMP=$(date +"%H-%M-%S_%d-%m-%Y")
     logfile="$PROCESS_LOG_DIR/${name}_${TIMESTAMP}.log"
     verbose_log "Log file: $logfile"
     log_activity "$flag" "$name"
     log_process_start "$name" "$cmd" "$logfile"
+    
     nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
     pid=$!
+    
+    # Verify process actually started
+    sleep 0.5
+    if ! kill -0 "$pid" 2>/dev/null; then
+        echo -e "${RED}ERROR: Failed to start $name (PID $pid exited immediately)${NC}"
+        echo -e "${YELLOW}Check log: $logfile${NC}"
+        return 1
+    fi
+    
     verbose_log "Process $name started with PID: $pid"
+    echo -e "${GREEN}✓ $name started (PID: $pid)${NC}"
+    
     # Store both pid and logfile path so stop/wait routines can find the file
     printf "%s\n%s\n" "$pid" "$logfile" > "$PID_DIR/${name}.pid"
+    
     # record the pid immediately in the global activity log
     ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     user=$(whoami 2>/dev/null || echo unknown)
     ip=$(get_instance_ip)
     echo "$ts | user=$user | ip=$ip | flag=$flag | process=$name | pid=$pid | logfile=$(basename "$logfile") | state=started" >> "$ACTIVITY_LOG"
+    
     # spawn waiter to log stop when it finishes
     (_wait_and_log "$name" "$pid") &
+    
+    # Optionally check health if port provided
+    if [ -n "$health_port" ]; then
+        check_process_health "$name" "$health_port" 10 || true
+    fi
+    
     return 0
 }
 
@@ -395,10 +520,132 @@ stop_all() {
 
 
 #-------------------------------------------------------------
+# show_status
+# Display status of all services
+#-------------------------------------------------------------
+show_status() {
+    init_logging
+    echo -e "${BLUE}=== Service Status ===${NC}"
+    
+    local any_running=0
+    for f in "$PID_DIR"/*.pid; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .pid)
+        pid=$(sed -n '1p' "$f" 2>/dev/null || true)
+        
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo -e "${GREEN}✓${NC} $name (PID: $pid) - ${GREEN}RUNNING${NC}"
+            any_running=1
+        else
+            echo -e "${RED}✗${NC} $name - ${RED}NOT RUNNING${NC} (stale PID file)"
+            rm -f "$f"
+        fi
+    done
+    
+    if [ $any_running -eq 0 ]; then
+        echo -e "${YELLOW}No services are currently running${NC}"
+    fi
+}
+
+#-------------------------------------------------------------
+# restart_service
+# Restart a specific service
+# Parameters:
+# - $1: service name
+#-------------------------------------------------------------
+restart_service() {
+    local service="$1"
+    
+    if [ -z "$service" ]; then
+        echo -e "${RED}ERROR: No service specified${NC}"
+        echo "Usage: $0 -r <service_name>"
+        echo "Available services: backend, loginreg, ai_api, web_ui, ai_chatbot_web, ai_chatbot_api"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Restarting $service...${NC}"
+    
+    # Stop the service if running
+    if [ -f "$PID_DIR/${service}.pid" ]; then
+        local pid=$(sed -n '1p' "$PID_DIR/${service}.pid" 2>/dev/null || true)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo -e "${YELLOW}Stopping $service (PID: $pid)...${NC}"
+            kill "$pid" 2>/dev/null || true
+            sleep 2
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        fi
+        rm -f "$PID_DIR/${service}.pid"
+    fi
+    
+    # Start the service
+    case "$service" in
+        backend)
+            backend_start
+            ;;
+        loginreg)
+            loginreg_script
+            ;;
+        ai_api|ai_chatbot_api)
+            ai_chatbot_api_only
+            ;;
+        web_ui)
+            start_web_ui
+            ;;
+        ai_chatbot_web)
+            ai_chatbot_with_web
+            ;;
+        *)
+            echo -e "${RED}ERROR: Unknown service: $service${NC}"
+            return 1
+            ;;
+    esac
+}
+
+#-------------------------------------------------------------
+# view_logs
+# View logs for a specific service or all logs
+# Parameters:
+# - $1: service name (optional, 'all' for all logs)
+# - $2: follow flag (optional, 'follow' to tail -f)
+#-------------------------------------------------------------
+view_logs() {
+    local service="$1"
+    local follow="$2"
+    
+    init_logging
+    
+    if [ -z "$service" ] || [ "$service" = "all" ]; then
+        echo -e "${BLUE}=== Available Log Files ===${NC}"
+        ls -lht "$PROCESS_LOG_DIR" 2>/dev/null || echo "No logs found"
+        return 0
+    fi
+    
+    # Find the most recent log for the service
+    local logfile=$(ls -t "$PROCESS_LOG_DIR/${service}_"*.log 2>/dev/null | head -n1)
+    
+    if [ -z "$logfile" ]; then
+        echo -e "${RED}ERROR: No logs found for service: $service${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}=== Log: $logfile ===${NC}"
+    
+    if [ "$follow" = "follow" ]; then
+        tail -f "$logfile"
+    else
+        tail -n 50 "$logfile"
+    fi
+}
+
+#-------------------------------------------------------------
 # Function to start the chatbot with streamlit web interface
 #-------------------------------------------------------------
 
-AI_chatbot_with_web(){
+ai_chatbot_with_web(){
+    validate_paths || return 1
+    
     # Run Streamlit web UI in foreground with logging
     cmd="cd \"$core_path\" && streamlit run app.py"
     # keep Streamlit in foreground so the developer can see live UI logs
@@ -409,16 +656,31 @@ AI_chatbot_with_web(){
 # To run only the API without the web interface
 #-------------------------------------------------------------
 
-AI_chatbot_api_only(){
-    # Run API in foreground with logging
+ai_chatbot_api_only(){
+    validate_paths || return 1
+    
+    # Check if port is already in use
+    if check_port "$API_PORT"; then
+        echo -e "${RED}ERROR: Port $API_PORT is already in use${NC}"
+        return 1
+    fi
+    
     # Run API in background; output goes to process log only
     cmd="cd \"$core_path\" && python3 api.py"
-    start_bg "ai_chatbot_api" "-a" "$cmd"
+    start_bg "ai_chatbot_api" "-a" "$cmd" "$API_PORT"
 }
 
 
 # Function to start the Frontend server
 start_web_ui() {
+    validate_paths || return 1
+    
+    # Check if port is already in use
+    if check_port "$WEB_UI_PORT"; then
+        echo -e "${RED}ERROR: Port $WEB_UI_PORT is already in use${NC}"
+        return 1
+    fi
+    
     # Run frontend (vite) in foreground with logging
     cmd="cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
     start_fg "web_ui" "-web" "$cmd"
@@ -431,32 +693,62 @@ start_web_ui() {
 #if there are any issues with the database connection, the backend may fail to start.
 #-------------------------------------------------------------
 
-BackEnd_start() {
-    # Run backend in background; output goes to process log only
-    cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
-    start_bg "backend" "-b" "$cmd"
+backend_start() {
+    validate_paths || return 1
+    
+    # Check if port is already in use
+    if check_port "$BACKEND_PORT"; then
+        echo -e "${RED}ERROR: Port $BACKEND_PORT is already in use${NC}"
+        return 1
+    fi
+    
+    # Run backend in background using environment variables for credentials
+    cmd="cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=$DB_URL --spring.datasource.username=$DB_USERNAME --spring.datasource.password=$DB_PASSWORD\""
+    start_bg "backend" "-b" "$cmd" "$BACKEND_PORT"
 }
 
 #-------------------------------------------------------------
 #Function to run the login/registration script (temporary)
 #-------------------------------------------------------------
 
-Loginreg_script() {
+loginreg_script() {
+    validate_paths || return 1
+    
+    # Check if port is already in use
+    if check_port "$LOGIN_API_PORT"; then
+        echo -e "${RED}ERROR: Port $LOGIN_API_PORT is already in use${NC}"
+        return 1
+    fi
+    
     # Run login/registration script in background; output goes to process log only
     cmd="cd \"$backend_path\" && python3 loginapi.py"
-    start_bg "loginreg" "-x" "$cmd"
+    start_bg "loginreg" "-x" "$cmd" "$LOGIN_API_PORT"
 }
 
 #-------------------------------------------------------------
 #Function to run the whole system (temporary parts)
 #-------------------------------------------------------------
-Run_whole_system() {
-    # Start backend, login script, and API in background and the web UI in foreground
-    start_bg "backend" "-b" "cd \"$backend_path\" && mvn clean spring-boot:run -Dspring-boot.run.arguments=\"--spring.datasource.url=jdbc:oracle:thin:@localhost:1521/XE --spring.datasource.username=system --spring.datasource.password=thoutha\""
-    start_bg "loginreg" "-x" "cd \"$backend_path\" && python3 loginapi.py"
-    start_bg "ai_api" "-a" "cd \"$core_path\" && python3 api.py"
+run_whole_system() {
+    validate_paths || return 1
+    
+    echo -e "${BLUE}Starting all services...${NC}"
+    
+    # Start backend, login script, and API in background
+    backend_start || echo -e "${YELLOW}Warning: Backend failed to start${NC}"
+    sleep 2
+    
+    loginreg_script || echo -e "${YELLOW}Warning: Login/Registration API failed to start${NC}"
+    sleep 2
+    
+    ai_chatbot_api_only || echo -e "${YELLOW}Warning: AI API failed to start${NC}"
+    sleep 2
+    
+    echo -e "${GREEN}Background services started${NC}"
+    echo -e "${BLUE}Starting Web UI (foreground)...${NC}"
+    
     # Start web UI in foreground so user sees its output
     start_fg "web_ui" "-w" "cd \"$webui_path\" && npm run dev -- --host 0.0.0.0"
+    
     # wait for any background waiters (they log stops independently)
     wait
 }
@@ -518,17 +810,55 @@ update_production_server() {
 # Function to display help message
 #-------------------------------------------------------------
 display_help() {
-    echo "Usage: $0 [options]"
-    echo "Options:"
-    echo -e "  ${RED}-c${NC}    ${GREEN}Start Web Interface${NC}"
-    echo -e "  ${RED}-u${NC}    ${GREEN}Update Production Server${NC}"
-    echo -e "  ${RED}-a${NC}    ${GREEN}Start AI Chatbot API Only${NC}"
-    echo -e "  ${RED}-w${NC}    ${GREEN}Start the whole system (Backend, Login/Registration, API, Web UI)${NC}"
-    echo -e "  ${RED}-b${NC}    ${GREEN}Start Backend server only${NC}"
-    echo -e "  ${RED}-x${NC}    ${GREEN}Start Login/Registration script only${NC}"
-    echo -e "  ${RED}-s${NC}    ${GREEN}Stop all services started by astart${NC}"
-    echo -e "  ${RED}-v${NC}    ${GREEN}Enable verbose/debug output${NC}"
-    echo -e "  ${RED}-h${NC}    ${GREEN}Display this help message${NC}"
+    echo -e "${BLUE}=============================================================${NC}"
+    echo -e "${BLUE}  Teeth Management System - Service Launcher${NC}"
+    echo -e "${BLUE}=============================================================${NC}"
+    echo ""
+    echo -e "${GREEN}Usage:${NC} $0 [options]"
+    echo ""
+    echo -e "${GREEN}Service Control:${NC}"
+    echo -e "  ${RED}-w${NC}    Start the whole system (Backend, Login API, AI API, Web UI)"
+    echo -e "  ${RED}-b${NC}    Start Backend server only"
+    echo -e "  ${RED}-x${NC}    Start Login/Registration API only"
+    echo -e "  ${RED}-a${NC}    Start AI Chatbot API only"
+    echo -e "  ${RED}-c${NC}    Start Web UI (Frontend) only"
+    echo -e "  ${RED}-s${NC}    Stop all running services"
+    echo -e "  ${RED}-l${NC}    List status of all services"
+    echo -e "  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service"
+    echo ""
+    echo -e "${GREEN}Logs & Monitoring:${NC}"
+    echo -e "  ${RED}-L${NC} ${YELLOW}<service>${NC}  View logs for a service (latest 50 lines)"
+    echo -e "  ${RED}-F${NC} ${YELLOW}<service>${NC}  Follow logs for a service (tail -f)"
+    echo -e "  ${RED}-L${NC} ${YELLOW}all${NC}       List all available log files"
+    echo ""
+    echo -e "${GREEN}Deployment:${NC}"
+    echo -e "  ${RED}-u${NC}    Update and deploy to production server"
+    echo ""
+    echo -e "${GREEN}Other:${NC}"
+    echo -e "  ${RED}-v${NC}    Enable verbose/debug output"
+    echo -e "  ${RED}-h${NC}    Display this help message"
+    echo ""
+    echo -e "${GREEN}Examples:${NC}"
+    echo -e "  $0 -w                    # Start all services"
+    echo -e "  $0 -v -b                 # Start backend with verbose output"
+    echo -e "  $0 -l                    # Check service status"
+    echo -e "  $0 -r backend            # Restart backend service"
+    echo -e "  $0 -L web_ui             # View web UI logs"
+    echo -e "  $0 -F ai_chatbot_api     # Follow AI API logs"
+    echo -e "  $0 -s                    # Stop all services"
+    echo ""
+    echo -e "${GREEN}Available Services:${NC}"
+    echo -e "  - backend              (Spring Boot backend on port ${BACKEND_PORT})"
+    echo -e "  - loginreg             (Login/Registration API on port ${LOGIN_API_PORT})"
+    echo -e "  - ai_chatbot_api       (AI Chatbot API on port ${API_PORT})"
+    echo -e "  - web_ui               (Vite Frontend on port ${WEB_UI_PORT})"
+    echo -e "  - ai_chatbot_web       (Streamlit Web Interface)"
+    echo ""
+    echo -e "${GREEN}Logs Location:${NC}"
+    echo -e "  Activity Log:  ${YELLOW}$ACTIVITY_LOG${NC}"
+    echo -e "  Process Logs:  ${YELLOW}$PROCESS_LOG_DIR${NC}"
+    echo -e "  PID Files:     ${YELLOW}$PID_DIR${NC}"
+    echo ""
     exit 0
 }
 
@@ -544,7 +874,10 @@ if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
     echo "DEBUG: invoked as: $0 $*" >&2
 fi
 
-while getopts ":cauwbxsvh" option; do
+# Track if we need an argument for certain options
+NEED_ARG=""
+
+while getopts ":cauwbxsvhlr:L:F:" option; do
     case $option in
         v)
             VERBOSE=1
@@ -555,9 +888,11 @@ while getopts ":cauwbxsvh" option; do
             verbose_log "  - Web UI: $webui_path"
             verbose_log "  - Backend: $backend_path"
             verbose_log "  - Log directory: $LOG_DIR"
+            verbose_log "Database: $DB_URL (user: $DB_USERNAME)"
+            verbose_log "Ports: Web=$WEB_UI_PORT, Backend=$BACKEND_PORT, API=$API_PORT, Login=$LOGIN_API_PORT"
             ;;
         c)
-            echo -e "${GREEN}Starting Web Interface...${NC}"
+            echo -e "${GREEN}Starting Web UI (Frontend)...${NC}"
             verbose_log "Executing: start_web_ui"
             start_web_ui
             ;;
@@ -569,25 +904,45 @@ while getopts ":cauwbxsvh" option; do
             ;;
         a)
             echo -e "${GREEN}Starting AI Chatbot API Only...${NC}"
-            verbose_log "Executing: AI_chatbot_api_only"
-            AI_chatbot_api_only
+            verbose_log "Executing: ai_chatbot_api_only"
+            ai_chatbot_api_only
             exit 0
             ;;
         w)
             echo -e "${GREEN}Starting the whole system...${NC}"
-            verbose_log "Executing: Run_whole_system"
-            Run_whole_system
+            verbose_log "Executing: run_whole_system"
+            run_whole_system
             ;;
         b)
             echo -e "${GREEN}Starting Backend server only...${NC}"
-            verbose_log "Executing: BackEnd_start"
-            BackEnd_start
+            verbose_log "Executing: backend_start"
+            backend_start
             exit 0
             ;;
         x)
-            echo -e "${GREEN}Starting Login/Registration script only...${NC}"
-            verbose_log "Executing: Loginreg_script"
-            Loginreg_script
+            echo -e "${GREEN}Starting Login/Registration API only...${NC}"
+            verbose_log "Executing: loginreg_script"
+            loginreg_script
+            exit 0
+            ;;
+        l)
+            verbose_log "Executing: show_status"
+            show_status
+            exit 0
+            ;;
+        r)
+            verbose_log "Executing: restart_service $OPTARG"
+            restart_service "$OPTARG"
+            exit 0
+            ;;
+        L)
+            verbose_log "Executing: view_logs $OPTARG"
+            view_logs "$OPTARG"
+            exit 0
+            ;;
+        F)
+            verbose_log "Executing: view_logs $OPTARG follow"
+            view_logs "$OPTARG" "follow"
             exit 0
             ;;
         h)
@@ -601,22 +956,26 @@ while getopts ":cauwbxsvh" option; do
             ;;
         \?)
             # Unknown option (getopts sets OPTARG to the option character)
-            echo -e "${RED}Invalid option: -${OPTARG}. Please try again.${NC}"
-            if [ "$DEBUG" -eq 1 ] 2>/dev/null; then
-                echo "DEBUG: raw args: $*" >&2
-            fi
+            echo -e "${RED}Invalid option: -${OPTARG}${NC}"
+            echo -e "Use ${YELLOW}$0 -h${NC} for help."
+            exit 1
             ;;
         :)
-            # Missing option argument (shouldn't occur with current flags)
-            echo -e "${RED}Missing argument for -${OPTARG}.${NC}"
+            # Missing option argument
+            echo -e "${RED}Option -${OPTARG} requires an argument${NC}"
+            echo -e "Use ${YELLOW}$0 -h${NC} for help."
+            exit 1
             ;;
         *)
             echo -e "${RED}Invalid option. Please try again.${NC}"
+            exit 1
             ;;
     esac
 done
 
 if [ $OPTIND -eq 1 ]; then
-    echo -e "${RED}No options were passed. Use -h for help.${NC}"
+    echo -e "${RED}No options were passed.${NC}"
+    echo -e "Use ${YELLOW}$0 -h${NC} for help."
+    exit 1
 fi
  

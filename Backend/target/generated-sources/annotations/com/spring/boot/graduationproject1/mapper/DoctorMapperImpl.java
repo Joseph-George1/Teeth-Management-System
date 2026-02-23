@@ -2,10 +2,8 @@ package com.spring.boot.graduationproject1.mapper;
 
 import com.spring.boot.graduationproject1.dto.DoctorDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
-import com.spring.boot.graduationproject1.dto.RoleDto;
 import com.spring.boot.graduationproject1.dto.SignUpRequest;
 import com.spring.boot.graduationproject1.model.Doctor;
-import com.spring.boot.graduationproject1.model.Role;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.processing.Generated;
@@ -13,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-02-06T20:36:33+0200",
+    date = "2026-02-22T21:03:55+0200",
     comments = "version: 1.5.2.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
 )
 @Component
@@ -37,7 +35,6 @@ public class DoctorMapperImpl implements DoctorMapper {
         doctorDto.setPassword( doctor.getPassword() );
         doctorDto.setPhoneNumber( doctor.getPhoneNumber() );
         doctorDto.setCityName( doctor.getCityName() );
-        doctorDto.setRole( roleToRoleDto( doctor.getRole() ) );
 
         return doctorDto;
     }
@@ -60,7 +57,6 @@ public class DoctorMapperImpl implements DoctorMapper {
         doctor.setCityName( doctorDto.getCityName() );
         doctor.setUniversityName( doctorDto.getUniversityName() );
         doctor.setCategoryName( doctorDto.getCategoryName() );
-        doctor.setRole( roleDtoToRole( doctorDto.getRole() ) );
 
         return doctor;
     }
@@ -145,31 +141,5 @@ public class DoctorMapperImpl implements DoctorMapper {
         doctor.setCategoryName( request.getCategoryName() );
 
         return doctor;
-    }
-
-    protected RoleDto roleToRoleDto(Role role) {
-        if ( role == null ) {
-            return null;
-        }
-
-        RoleDto roleDto = new RoleDto();
-
-        roleDto.setId( role.getId() );
-        roleDto.setName( role.getName() );
-
-        return roleDto;
-    }
-
-    protected Role roleDtoToRole(RoleDto roleDto) {
-        if ( roleDto == null ) {
-            return null;
-        }
-
-        Role role = new Role();
-
-        role.setId( roleDto.getId() );
-        role.setName( roleDto.getName() );
-
-        return role;
     }
 }

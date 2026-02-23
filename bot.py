@@ -103,6 +103,20 @@ async def get_health_status():
 		}
 
 
+async def get_otp_health_status():
+	"""Fetch health status from OTP system API."""
+	try:
+		async with ClientSession() as session:
+			async with session.get('http://127.0.0.1:8000/health', timeout=5) as response:
+				data = await response.json()
+				return data
+	except Exception as e:
+		return {
+			'status': 'error',
+			'error': str(e)
+		}
+
+
 @bot.event
 async def on_ready():
 	print(f'Bot connected as {bot.user} (ASTART={ASTART_SCRIPT})')
@@ -136,6 +150,9 @@ async def status_cmd(ctx: commands.Context):
 	# Get health status from AI chatbot API
 	health = await get_health_status()
 	
+	# Get health status from OTP system API
+	otp_health = await get_otp_health_status()
+	
 	# Build a concise list of running process NAMES (from pid files)
 	running = []
 	missing = []
@@ -158,9 +175,9 @@ async def status_cmd(ctx: commands.Context):
 				missing.append(f'{name} (no-pid)')
 	
 	# Determine embed color based on status
-	if health.get('status') == 'ok' and len(running) > 0:
+	if health.get('status') == 'ok' and otp_health.get('status') == 'healthy' and len(running) > 0:
 		color = 0x2ecc71  # Green - everything is good
-	elif health.get('status') == 'ok' or len(running) > 0:
+	elif health.get('status') == 'ok' or otp_health.get('status') == 'healthy' or len(running) > 0:
 		color = 0xf39c12  # Orange - partially working
 	else:
 		color = 0xe74c3c  # Red - problems detected
@@ -185,6 +202,18 @@ async def status_cmd(ctx: commands.Context):
 		health_text += f"\n⚠️ **Error:** {health['error']}"
 	
 	embed.add_field(name="🤖 AI Chatbot API", value=health_text, inline=False)
+	
+	# Add OTP System Health
+	otp_status_emoji = "✅" if otp_health.get('status') == 'healthy' else "❌"
+	otp_health_text = f"{otp_status_emoji} **Status:** {otp_health.get('status', 'unknown')}"
+	
+	if 'timestamp' in otp_health:
+		otp_health_text += f"\n🕒 **Last Check:** {otp_health['timestamp']}"
+	
+	if 'error' in otp_health:
+		otp_health_text += f"\n⚠️ **Error:** {otp_health['error']}"
+	
+	embed.add_field(name="📱 OTP System API", value=otp_health_text, inline=False)
 	
 	# Add Running Processes
 	if running:

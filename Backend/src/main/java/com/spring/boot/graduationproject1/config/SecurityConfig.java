@@ -38,15 +38,18 @@ public class SecurityConfig {
             http
 
         .csrf(csrf -> csrf.disable())
+                    .cors(cors -> {})
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers("/api/auth/**").permitAll()
                             .requestMatchers(HttpMethod.GET,
                                     "/api/doctor/getDoctorsBy**",
                                     "/api/category/**",
                                     "/api/cities/**",
-                                    "/api/university/**")
+                                    "/api/university/**",
+                                    "/api/doctor/getDoctorById")
                             .permitAll()
                             .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasRole("DOCTOR")
                             .anyRequest().authenticated()
                     )
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
