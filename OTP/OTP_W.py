@@ -10,6 +10,13 @@ import asyncio
 from collections import defaultdict
 import threading
 import logging
+import traceback  # Moved to top for efficiency
+
+# --- Async logging note ---
+# For production, consider using an async logging handler or a logging queue to avoid blocking the event loop.
+
+# --- Redis suggestion ---
+# NOTE: For production, replace the in-memory OTPStore with Redis or another external cache for scalability and multi-instance support.
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,18 +43,22 @@ RATE_LIMIT_SECONDS = 60  # Minimum time between OTP requests per phone number
 
 # Thread-safe storage for OTPs and metadata
 class OTPStore:
+    """
+    Thread-safe (asyncio) in-memory OTP store.
+    For production, use aioredis or another async cache for these stores.
+    """
     def __init__(self):
         self._store: Dict[str, dict] = {}
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         self._rate_limit: Dict[str, datetime] = {}
     
     def generate_otp(self) -> str:
         """Generate a random 6-digit OTP"""
         return ''.join(random.choices(string.digits, k=OTP_LENGTH))
     
-    def set_otp(self, phone_number: str, otp: str) -> None:
+    async def set_otp(self, phone_number: str, otp: str) -> None:
         """Store OTP with metadata"""
-        with self._lock:
+        async with self._lock:
             self._store[phone_number] = {
                 'otp': otp,
                 'created_at': datetime.now(),
@@ -57,36 +68,37 @@ class OTPStore:
             }
             logger.info(f"OTP stored for {phone_number}")
     
-    def get_otp_data(self, phone_number: str) -> Optional[dict]:
+    async def get_otp_data(self, phone_number: str) -> Optional[dict]:
         """Retrieve OTP data for a phone number"""
-        with self._lock:
+        async with self._lock:
             return self._store.get(phone_number)
     
-    def increment_attempts(self, phone_number: str) -> int:
+    async def increment_attempts(self, phone_number: str) -> int:
         """Increment verification attempts and return current count"""
-        with self._lock:
+        async with self._lock:
             if phone_number in self._store:
                 self._store[phone_number]['attempts'] += 1
                 return self._store[phone_number]['attempts']
             return 0
     
-    def mark_verified(self, phone_number: str) -> None:
+    async def mark_verified(self, phone_number: str) -> None:
         """Mark OTP as verified"""
-        with self._lock:
+        async with self._lock:
             if phone_number in self._store:
                 self._store[phone_number]['verified'] = True
                 logger.info(f"OTP verified for {phone_number}")
     
-    def delete_otp(self, phone_number: str) -> None:
+    async def delete_otp(self, phone_number: str) -> None:
         """Remove OTP data"""
-        with self._lock:
+        async with self._lock:
             if phone_number in self._store:
                 del self._store[phone_number]
                 logger.info(f"OTP deleted for {phone_number}")
     
-    def can_request_otp(self, phone_number: str) -> tuple[bool, Optional[int]]:
-        """Check if phone number can request a new OTP (rate limiting)"""
-        with self._lock:
+    async def can_request_otp(self, phone_number: str) -> tuple[bool, Optional[int]]:
+        """Check if phone number can request a new OTP (rate limiting).
+        NOTE: Rate limiting is per phone number. For higher concurrency, consider a distributed rate limiter (e.g., Redis)."""
+        async with self._lock:
             if phone_number in self._rate_limit:
                 time_passed = (datetime.now() - self._rate_limit[phone_number]).total_seconds()
                 if time_passed < RATE_LIMIT_SECONDS:
@@ -94,14 +106,14 @@ class OTPStore:
                     return False, remaining
             return True, None
     
-    def update_rate_limit(self, phone_number: str) -> None:
+    async def update_rate_limit(self, phone_number: str) -> None:
         """Update rate limit timestamp"""
-        with self._lock:
+        async with self._lock:
             self._rate_limit[phone_number] = datetime.now()
     
-    def cleanup_expired(self) -> int:
+    async def cleanup_expired(self) -> int:
         """Remove expired OTPs and return count of removed items"""
-        with self._lock:
+        async with self._lock:
             now = datetime.now()
             expired_phones = [
                 phone for phone, data in self._store.items()
@@ -110,7 +122,6 @@ class OTPStore:
             for phone in expired_phones:
                 del self._store[phone]
                 logger.info(f"Cleaned up expired OTP for {phone}")
-            
             # Also cleanup old rate limit entries (older than 1 hour)
             old_rate_limits = [
                 phone for phone, timestamp in self._rate_limit.items()
@@ -118,7 +129,6 @@ class OTPStore:
             ]
             for phone in old_rate_limits:
                 del self._rate_limit[phone]
-            
             return len(expired_phones)
 
 # Initialize OTP store
@@ -170,7 +180,7 @@ async def periodic_cleanup():
     """Periodically clean up expired OTPs"""
     while True:
         await asyncio.sleep(60)  # Run every minute
-        count = otp_store.cleanup_expired()
+        count = await otp_store.cleanup_expired()
         if count > 0:
             logger.info(f"Periodic cleanup: removed {count} expired OTPs")
 
@@ -189,7 +199,7 @@ async def send_otp(request: OTPRequest, background_tasks: BackgroundTasks):
     phone_number = request.phone_number
     
     # Check rate limiting
-    can_request, wait_time = otp_store.can_request_otp(phone_number)
+    can_request, wait_time = await otp_store.can_request_otp(phone_number)
     if not can_request:
         raise HTTPException(
             status_code=429,
@@ -259,11 +269,8 @@ async def send_otp(request: OTPRequest, background_tasks: BackgroundTasks):
         )
     
     # Store OTP
-    otp_store.set_otp(phone_number, otp)
-    otp_store.update_rate_limit(phone_number)
-    
-    # Schedule cleanup in background
-    background_tasks.add_task(asyncio.sleep, OTP_EXPIRY_MINUTES * 60)
+    await otp_store.set_otp(phone_number, otp)
+    await otp_store.update_rate_limit(phone_number)
     
     return OTPResponse(
         success=True,
@@ -281,7 +288,7 @@ async def verify_otp(request: OTPVerification):
     provided_otp = request.otp
     
     # Get OTP data
-    otp_data = otp_store.get_otp_data(phone_number)
+    otp_data = await otp_store.get_otp_data(phone_number)
     
     if not otp_data:
         raise HTTPException(
@@ -298,7 +305,7 @@ async def verify_otp(request: OTPVerification):
     
     # Check expiration
     if datetime.now() > otp_data['expires_at']:
-        otp_store.delete_otp(phone_number)
+        await otp_store.delete_otp(phone_number)
         raise HTTPException(
             status_code=410,
             detail="OTP has expired. Please request a new OTP."
@@ -314,10 +321,10 @@ async def verify_otp(request: OTPVerification):
     
     # Verify OTP
     if otp_data['otp'] == provided_otp:
-        otp_store.mark_verified(phone_number)
+        await otp_store.mark_verified(phone_number)
         logger.info(f"OTP verification successful for {phone_number}")
         # Delete OTP and phone number after successful verification
-        otp_store.delete_otp(phone_number)
+        await otp_store.delete_otp(phone_number)
         return VerificationResponse(
             success=True,
             message="OTP verified successfully",
@@ -325,7 +332,7 @@ async def verify_otp(request: OTPVerification):
             verified=True
         )
     else:
-        attempts = otp_store.increment_attempts(phone_number)
+        attempts = await otp_store.increment_attempts(phone_number)
         remaining_attempts = MAX_ATTEMPTS - attempts
         
         logger.warning(f"Invalid OTP attempt for {phone_number}. Attempts: {attempts}/{MAX_ATTEMPTS}")
@@ -336,7 +343,7 @@ async def verify_otp(request: OTPVerification):
                 detail=f"Invalid OTP. {remaining_attempts} attempts remaining."
             )
         else:
-            otp_store.delete_otp(phone_number)
+            await otp_store.delete_otp(phone_number)
             raise HTTPException(
                 status_code=429,
                 detail="Maximum verification attempts exceeded. Please request a new OTP."
@@ -347,7 +354,7 @@ async def check_otp_status(phone_number: str):
     """
     Check OTP status for a phone number
     """
-    otp_data = otp_store.get_otp_data(phone_number)
+    otp_data = await otp_store.get_otp_data(phone_number)
     
     if not otp_data:
         return {
@@ -358,7 +365,7 @@ async def check_otp_status(phone_number: str):
     is_expired = datetime.now() > otp_data['expires_at']
     
     if is_expired:
-        otp_store.delete_otp(phone_number)
+        await otp_store.delete_otp(phone_number)
         return {
             "exists": False,
             "message": "OTP has expired"
@@ -380,7 +387,7 @@ async def delete_otp(phone_number: str):
     """
     Delete OTP for a phone number (admin/cleanup endpoint)
     """
-    otp_data = otp_store.get_otp_data(phone_number)
+    otp_data = await otp_store.get_otp_data(phone_number)
     
     if not otp_data:
         raise HTTPException(
@@ -388,7 +395,7 @@ async def delete_otp(phone_number: str):
             detail="No OTP found for this phone number"
         )
     
-    otp_store.delete_otp(phone_number)
+    await otp_store.delete_otp(phone_number)
     
     return {
         "success": True,
