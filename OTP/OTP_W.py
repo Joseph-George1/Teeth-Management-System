@@ -295,6 +295,18 @@ async def verify_otp(request: OTPVerification):
             status_code=400,
             detail="OTP already verified. Please request a new OTP if needed."
         )
+        """
+            Delete OTP for a phone number (admin/cleanup endpoint)
+        """
+        otp_data = otp_store.get_otp_data(phone_number)
+
+        if not otp_data:
+            raise HTTPException(
+                status_code=404,
+                detail="No OTP found for this phone number"
+            )
+
+        otp_store.delete_otp(phone_number)
     
     # Check expiration
     if datetime.now() > otp_data['expires_at']:
@@ -316,7 +328,8 @@ async def verify_otp(request: OTPVerification):
     if otp_data['otp'] == provided_otp:
         otp_store.mark_verified(phone_number)
         logger.info(f"OTP verification successful for {phone_number}")
-        
+        # Delete OTP and phone number after successful verification
+        otp_store.delete_otp(phone_number)
         return VerificationResponse(
             success=True,
             message="OTP verified successfully",
