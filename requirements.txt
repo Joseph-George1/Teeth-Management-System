@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+httpx
+pydantic
+python-multipart
+google-generativeai
+python-dotenv
+flask
+textblob
+flask_cors

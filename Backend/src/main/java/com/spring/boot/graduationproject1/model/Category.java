@@ -21,4 +21,7 @@ public class Category {
     @OneToMany(mappedBy = "category")
     private List<Doctor> doctors;
 
+    @OneToMany(mappedBy = "category")
+    private List<Requests> requests;
+
 }

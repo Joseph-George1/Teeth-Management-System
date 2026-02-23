@@ -3,6 +3,8 @@ package com.spring.boot.graduationproject1.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -42,5 +44,7 @@ public class Doctor {
     @ManyToOne
     @JoinColumn(name = "city_id", nullable = false)
     private City city;
+    @OneToMany(mappedBy = "doctor")
+    private List<Appointments> appointments;
 
 }

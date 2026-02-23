@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -31,5 +33,6 @@ public class Patients {
     @ManyToOne
     @JoinColumn(name = "city_id", nullable = false)
     private City city;
-
+    @OneToMany(mappedBy = "patient")
+    private List<Appointments> appointments;
 }
