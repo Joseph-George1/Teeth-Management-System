@@ -10,11 +10,11 @@ import java.util.List;
 
 @Service
 public interface DoctorService {
-List<DoctorSummaryDto> getDoctors();
-List<DoctorSummaryDto> getDoctorsByCityId(Long cityId) throws SystemException;
-List<DoctorSummaryDto> getDoctorByCategoryId(Long categoryId) throws SystemException;
-DoctorDto getDoctorByEmail(String email);
-Doctor saveDoctor(Doctor doctor) throws SystemException;
-DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException;
-DoctorDto getDoctorById(Long doctorId) throws SystemException;
+    List<DoctorSummaryDto> getDoctors();
+    List<DoctorSummaryDto> getDoctorsByCityId(Long cityId) throws SystemException;
+    List<DoctorSummaryDto> getDoctorByCategoryId(Long categoryId) throws SystemException;
+    DoctorDto getDoctorByEmail(String email);
+    Doctor saveDoctor(Doctor doctor) throws SystemException;
+    DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException;
+    DoctorDto getDoctorById(Long doctorId) throws SystemException;
 }
