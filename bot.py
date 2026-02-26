@@ -265,6 +265,7 @@ async def help_cmd(ctx: commands.Context):
 			"🔧 **`-b`** — Start Backend only\n"
 			"👥 **`-x`** — Start Login/Registration script\n"
 			"⚡ **`-w`** — Run **WHOLE SYSTEM** (Backend + Web + AI)"
+			"📱 **`-o`** — Start OTP System API"
 		),
 		inline=True,
 	)

@@ -10,9 +10,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const storedStatus = localStorage.getItem("isLoggedIn");
     const storedUser = localStorage.getItem("user");
-    if (storedStatus === "true" && storedUser) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(storedUser));
+    if (storedStatus === "true" && storedUser && storedUser !== "undefined") {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setIsLoggedIn(true);
+        setUser(parsedUser);
+      } catch {
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("user");
+        setIsLoggedIn(false);
+        setUser(null);
+      }
     }
   }, []);
 

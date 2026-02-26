@@ -9,6 +9,7 @@ import Profile from "./Pages/Profile";
 import TermsConditions from "./Pages/TermsConditions";
 import Footer from "./Components/Footer";
 import Otp from "./Pages/Otp";
+import OtpVerify from "./Pages/Otp-verify";
 import NotFoundPage from "./Pages/NotFoundPage";
 import OtpDone from "./Pages/OtpDone";
 import DoctorHome from "./Pages/DoctorHome";
@@ -32,6 +33,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage/>}/>
       <Route path="/sign" element={<RegisterForm/>}/>
       <Route path="/otp" element={<Otp/>}/>
+      <Route path="/otp-verify" element={<OtpVerify/>}/>
       <Route path="/profile" element={<Profile/>}></Route>
       <Route path="/chatbot" element={<ChatBot/>}/>
       <Route path="/terms&conditions" element={<TermsConditions/>}></Route>
