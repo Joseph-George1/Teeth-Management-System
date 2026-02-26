@@ -103,7 +103,7 @@ validate_paths() {
     if [ ! -d "$otp_dir" ]; then
         echo -e "${RED}ERROR: OTP path does not exist: $otp_dir${NC}"
         valid=1
-    fiz
+    fi
 
     
     return $valid
