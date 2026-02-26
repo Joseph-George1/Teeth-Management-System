@@ -56,7 +56,7 @@ OTP_PORT="${OTP_PORT:-8000}"
 # Define paths
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
-backend_path="$HOME/Teeth-Management-System/BackEnd"
+backend_path="$HOME/Teeth-Management-System/Backend"
 LOG_DIR="$HOME/Teeth-Management-System/logs"
 PROCESS_LOG_DIR="$LOG_DIR/process_logs"
 PID_DIR="$LOG_DIR/pids"
