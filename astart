@@ -673,8 +673,7 @@ OTP_satrt(){
         return 1
     fi
     cmd="cd \"$otp_dir\" && python3 OTP_W.py"
-    # keep Streamlit in foreground so the developer can see live UI logs
-    start_fg "otp_service" "-c" "$cmd"
+    start_bg "otp_service" "-c" "$cmd"
 }
 
 #-------------------------------------------------------------
@@ -903,7 +902,7 @@ fi
 # Track if we need an argument for certain options
 NEED_ARG=""
 
-while getopts ":cauwbxsvhlro:L:F:" option; do
+while getopts ":cauwbxsvhlor:L:F:" option; do
     case $option in
         v)
             VERBOSE=1
