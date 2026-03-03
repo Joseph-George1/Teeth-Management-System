@@ -1,3 +1,5 @@
+import DoctorsList from "./DoctorsList";
+
 export default function DentalCheckUp(){
     return(
         <>
@@ -9,6 +11,7 @@ export default function DentalCheckUp(){
             <p>فحص شامل للأسنان</p>
         </div>
     </div>
+    <DoctorsList categoryName="فحص شامل للأسنان" />
         </>
     )
 }

@@ -1,3 +1,5 @@
+import DoctorsList from "./DoctorsList";
+
 export default function Braces(){
     return(
         <>
@@ -9,6 +11,7 @@ export default function Braces(){
             <p>تقويم الأسنان</p>
         </div>
     </div>
+    <DoctorsList categoryName="تقويم الأسنان" />
         </>
     )
 }

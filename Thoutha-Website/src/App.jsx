@@ -24,6 +24,8 @@ import DentalImplant from "./Pages/DentalImplant";
 import CrownsBridges from "./Pages/CrownsBridges";
 import Braces from "./Pages/Braces";
 import Support from "./Pages/Support";
+import PrivacyPolicy from "./Pages/PrivacyPolicy";
+import DeleteAccount from "./Pages/DeleteAccount";
 export default function App() {
   return (
     <>
@@ -50,6 +52,8 @@ export default function App() {
       <Route path="/crowns&bridges" element={<CrownsBridges/>}></Route>
       <Route path="/braces" element={<Braces/>}></Route>
       <Route path="/support" element={<Support/>}></Route>
+      <Route path="/privacy-policy" element={<PrivacyPolicy/>}></Route>
+      <Route path="/delete-account" element={<DeleteAccount/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
     </Routes>
     <Footer/>

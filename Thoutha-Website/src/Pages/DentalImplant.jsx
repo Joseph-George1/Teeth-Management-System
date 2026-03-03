@@ -1,3 +1,5 @@
+import DoctorsList from "./DoctorsList";
+
 export default function DentalImplant(){
     return(
         <>
@@ -9,6 +11,7 @@ export default function DentalImplant(){
             <p>زراعة الأسنان</p>
         </div>
     </div>
+    <DoctorsList categoryName="زراعة الأسنان" />
         </>
     )
 }

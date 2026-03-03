@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, Home, User, Bot, FileText, LogIn, LogOut, Users, Calendar } from "lucide-react";
+import { Menu, X, Home, User, Bot, FileText, Shield, LogIn, LogOut, Users, Calendar , PlusCircle } from "lucide-react";
 import "../Css/NavBar.css";
 import { AuthContext } from "../services/AuthContext";
 
@@ -57,7 +57,7 @@ export default function NavBar() {
 
                     <div className="user-info-email">
                       <span className="user-name">{user?.firstName || user?.first_name} {user?.lastName || user?.last_name}</span>
-                      <p className="user-email">{user?.faculty}</p>
+                      <p className="user-email">{user?.universityName || user?.faculty || user?.universities}</p>
                     </div>
                   </div>
                 </div>
@@ -67,11 +67,15 @@ export default function NavBar() {
                   <Home size={20} className="icon-color"/> الصفحة الرئيسية
                 </NavLink>
 
+                <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? "active-link" : "notactive-link"}>
+                  <PlusCircle size={20} className="icon-color" /> إضافه حاله جديده
+                </NavLink>
+
                 <NavLink to="/patients" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <Users size={20} className="icon-color"/> المرضى
                 </NavLink>
 
-                <NavLink to="/doctor-bookings" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/doctor-booking" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <Calendar size={20} className="icon-color"/> سجل الحجوزات
                 </NavLink>
 
@@ -81,6 +85,14 @@ export default function NavBar() {
 
                 <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <FileText size={20} className="icon-color"/> الشروط والاستخدام
+                </NavLink>
+
+                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                  <Shield size={20} className="icon-color"/> سياسة الخصوصية
+                </NavLink>
+
+                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                  <User size={20} className="icon-color"/> حذف الحساب
                 </NavLink>
 
                 <button onClick={handleLogout} className="mobile-login-btn cursor">
@@ -107,6 +119,10 @@ export default function NavBar() {
 
                 <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <FileText size={20} className="icon-color"/> الشروط والاستخدام
+                </NavLink>
+
+                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                  <Shield size={20} className="icon-color"/> سياسة الخصوصية
                 </NavLink>
 
                 <NavLink to="/login" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>

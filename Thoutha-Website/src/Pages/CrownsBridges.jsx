@@ -1,3 +1,5 @@
+import DoctorsList from "./DoctorsList";
+
 export default function CrownsBridges(){
     return(
         <>
@@ -9,6 +11,7 @@ export default function CrownsBridges(){
             <p>تيجان الأسنان / التركيبات</p>
         </div>
     </div>
+    <DoctorsList categoryName="تيجان الأسنان / التركيبات" />
         </>
     )
 }
