@@ -56,6 +56,7 @@ export default function App() {
       <Route path="/delete-account" element={<DeleteAccount/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
     </Routes>
+    
     <Footer/>
     </>
   );
