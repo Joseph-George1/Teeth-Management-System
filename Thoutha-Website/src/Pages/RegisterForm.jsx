@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
-const SERVER_URL = 'http://16.16.218.59:8080/api'; // رابط السيرفر
+const SERVER_URL = 'http://16.16.218.59:8080/api'; 
 
 export default function RegisterForm() {
   const navigate = useNavigate();

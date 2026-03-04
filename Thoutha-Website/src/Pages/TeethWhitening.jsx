@@ -1,4 +1,5 @@
 import "../Css/Category.css";
+import DoctorsList from "./DoctorsList";
 export default function TeethWhitening(){
     return(
     <>
@@ -10,6 +11,7 @@ export default function TeethWhitening(){
             <p>تبييض الأسنان</p>
         </div>
     </div>
+    <DoctorsList categoryName="تبييض الأسنان" />
     </>
     )
 }
