@@ -33,30 +33,32 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
 
-        .csrf(csrf -> csrf.disable())
-                    .cors(cors -> {})
-                    .authorizeHttpRequests(auth -> auth
-                            .requestMatchers("/api/auth/**").permitAll()
-                            .requestMatchers(HttpMethod.GET,
-                                    "/api/doctor/getDoctorsBy**",
-                                    "/api/category/**",
-                                    "/api/cities/**",
-                                    "/api/university/**",
-                                    "/api/doctor/getDoctorById")
-                            .permitAll()
-                            .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
-                            .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasRole("DOCTOR")
-                            .anyRequest().authenticated()
-                    )
-                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                    .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> {})
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/doctor/getDoctorsBy**",
+                                "/api/category/**",
+                                "/api/cities/**",
+                                "/api/university/**",
+                                "/api/doctor/getDoctorById")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasAnyRole("DOCTOR","ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/request/createRequest").hasAnyRole("DOCTOR","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/request/**").hasAnyRole("DOCTOR","ADMIN","PATIENT")
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
-            return http.build();
-        }
+        return http.build();
+    }
 
 
 

@@ -8,7 +8,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface RequestMapper {
-    RequestDto toDto(RequestDto requestDto);
+    RequestDto toDto(Requests request);
     Requests toEntity(RequestDto requestDto);
     List<RequestDto>toListDto(List<Requests> requests);
     List<Requests>toListEntity(List<RequestDto> requestsDto);

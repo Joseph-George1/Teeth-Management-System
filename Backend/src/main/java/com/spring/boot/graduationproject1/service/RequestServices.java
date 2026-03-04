@@ -10,6 +10,6 @@ public interface RequestServices {
 
     List<RequestDto>getAllRequests();
     RequestDto getRequestById(Long id);
-    RequestDto createRequest(Long doctorId, Long categoryId);
+    RequestDto createRequest();
     void deleteRequest(Long id);
 }
