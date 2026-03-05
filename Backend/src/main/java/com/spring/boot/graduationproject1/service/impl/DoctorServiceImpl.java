@@ -9,6 +9,7 @@ import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.DoctorService;
 import com.spring.boot.graduationproject1.service.UniversityService;
 import jakarta.transaction.SystemException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -141,6 +142,26 @@ public class DoctorServiceImpl implements DoctorService {
         }
         Doctor doctor=doctorOptional.get();
         return doctorMapper.toDto(doctor);
+    }
+
+    @Override
+    public void deleteDoctorByAdmin(long doctorId) {
+        Optional<Doctor>doctor=doctorRepo.findById(doctorId);
+        if(doctor.isEmpty()){
+            throw new RuntimeException("No Such Doctor");
+        }
+        doctorRepo.deleteById(doctorId);
+    }
+
+    @Override
+    public void deleteDoctor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        doctorRepo.delete(doctor);
     }
 
 }

@@ -47,7 +47,7 @@ public class RequestServiceImpl implements RequestServices {
     }
 
     @Override
-    public RequestDto createRequest() {
+    public RequestDto createRequest(RequestDto requestDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
@@ -61,15 +61,25 @@ public class RequestServiceImpl implements RequestServices {
         request.setCategory(category);
         request.setStatus("PENDING");
 
+        request.setDescription(requestDto.getDescription());
+        request.setDateTime(requestDto.getDateTime());
+
         requestRepo.save(request);
 
         return requestMapper.toDto(request);
     }
 
     @Override
-    public void deleteRequest(Long id) {
-        Requests request = requestRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("No such request"));
+    public void deleteRequest() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        Requests request = requestRepo.findByDoctor(doctor)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
         requestRepo.delete(request);
     }

@@ -17,4 +17,7 @@ public interface DoctorService {
     Doctor saveDoctor(Doctor doctor) throws SystemException;
     DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException;
     DoctorDto getDoctorById(Long doctorId) throws SystemException;
+    void deleteDoctorByAdmin(long doctorId);
+    void deleteDoctor();
+
 }

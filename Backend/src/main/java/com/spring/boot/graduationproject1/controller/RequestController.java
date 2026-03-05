@@ -26,7 +26,13 @@ public class RequestController {
     }
 
     @PostMapping("/createRequest")
-    public ResponseEntity<RequestDto> createRequest() {
-        return ResponseEntity.ok(requestServices.createRequest());
+    public ResponseEntity<RequestDto> createRequest(@RequestBody RequestDto requestDto) {
+        return ResponseEntity.ok(requestServices.createRequest(requestDto));
+    }
+
+    @DeleteMapping("/deleteRequest")
+    public ResponseEntity<Void> deleteRequest(){
+        requestServices.deleteRequest();
+        return ResponseEntity.noContent().build();
     }
 }

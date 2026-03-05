@@ -10,6 +10,6 @@ public interface RequestServices {
 
     List<RequestDto>getAllRequests();
     RequestDto getRequestById(Long id);
-    RequestDto createRequest();
-    void deleteRequest(Long id);
+    RequestDto createRequest(RequestDto requestDto);
+    void deleteRequest();
 }

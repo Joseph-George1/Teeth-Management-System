@@ -6,6 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,4 +22,6 @@ public class RequestDto {
 
     private Long categoryId;
     private String categoryName;
+    private String description;
+    private LocalDateTime dateTime;
 }

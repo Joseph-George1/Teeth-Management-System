@@ -46,4 +46,16 @@ public class DoctorController {
     public ResponseEntity<DoctorDto>updateDoctor(@RequestBody  DoctorDto doctorDto) throws SystemException {
         return ResponseEntity.ok().body(doctorService.updateDoctor(doctorDto));
     }
+
+    @DeleteMapping("/deleteByDoctorAdmin")
+    public ResponseEntity<Void>deleteDoctorByAdmin(@RequestParam Long doctorId)  {
+        doctorService.deleteDoctorByAdmin(doctorId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("deleteDoctor")
+    public ResponseEntity<Void>deleteDoctor(){
+        doctorService.deleteDoctor();
+        return ResponseEntity.noContent().build();
+    }
 }

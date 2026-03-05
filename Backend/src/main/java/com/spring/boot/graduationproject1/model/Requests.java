@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
@@ -21,4 +23,7 @@ public class Requests {
     private Category category;
 
     private String status;
+    private String description;
+    private LocalDateTime dateTime;
+
 }
