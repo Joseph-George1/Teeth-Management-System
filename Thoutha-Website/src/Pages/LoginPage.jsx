@@ -24,13 +24,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://16.16.218.59:8080/api/auth/login/doctor", {
+      const response = await fetch("/backend/api/auth/login/doctor", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        }),
       });
+      let data = null;
 
-      const data = await response.json();
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
       console.log("Server response:", data);
 
       if (response.ok) {
