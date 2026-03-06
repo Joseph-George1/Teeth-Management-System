@@ -267,7 +267,7 @@ def health():
         "questions_loaded": len(QUESTIONS) > 0
     })
 
-@app.route("/api/resolve", methods=["POST"])
+@app.route("/resolve", methods=["POST"])
 def resolve():
     """Resolve category from a provided answer sequence without creating a session.
     Request: { "answers": [ {"question_id":"Q1","answer_id":"C"}, ... ], "language": "en" }
@@ -289,7 +289,7 @@ def resolve():
         qobj = localized_question(next_q, payload.get("language")) if next_q else None
         return jsonify({"category": None, "next_question": qobj, "reason": path})
 
-@app.route("/api/session/start", methods=["POST"])
+@app.route("/session/start", methods=["POST"])
 def start_session():
     """Start a new session with language selection."""
     session_id = str(uuid4())
@@ -311,7 +311,7 @@ def start_session():
         "session": session
     })
 
-@app.route("/api/session/answer", methods=["POST"])
+@app.route("/session/answer", methods=["POST"])
 def answer():
     """Process an answer and determine next step (question, category, or chatbot)."""
     payload = request.get_json(force=True)
@@ -446,7 +446,7 @@ def answer():
         "session": session
     })
 
-@app.route('/api/chat', methods=['POST'])
+@app.route('/chat', methods=['POST'])
 def chat():
     """Chat with AI bot (used after chatbot mode is activated)."""
     if init_error is not None:
@@ -547,7 +547,7 @@ def chat():
     except Exception as e:
         tb = traceback.format_exc()
         print(f"\n{'='*60}")
-        print(f"[CHAT ERROR] Internal error in /api/chat endpoint:")
+        print(f"[CHAT ERROR] Internal error in /chat endpoint:")
         print(f"{'='*60}")
         print(tb)
         print(f"{'='*60}\n")
@@ -564,7 +564,7 @@ def chat():
             "error": "service_unavailable"
         }, status=500)
 
-@app.route("/api/session/<session_id>", methods=["GET"])
+@app.route("/session/<session_id>", methods=["GET"])
 def get_session(session_id):
     """Get session details."""
     session = SESSIONS.get(session_id)
