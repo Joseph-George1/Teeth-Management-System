@@ -539,16 +539,40 @@ WantedBy=multi-user.target"
         warn "AI Chatbot api.py not found. Skipping Flask API service."
     fi
     
+    # Service 4: Proxy Server Service
+    if [ -f "$SCRIPT_DIR/proxy_server.py" ]; then
+        local proxy_service="[Unit]
+Description=Proxy Server Flask App
+After=network.target
+
+[Service]
+User=$ACTUAL_USER
+Group=$ACTUAL_USER
+WorkingDirectory=$SCRIPT_DIR
+ExecStart=/usr/bin/gunicorn -w 4 -b 0.0.0.0:5173 proxy_server:app
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target"
+        
+        create_service "proxy_server" "$proxy_service"
+    else
+        warn "proxy_server.py not found. Skipping Proxy Server service."
+    fi
+    
     echo
     ok "Services created successfully!"
     echo
     msg "Service Management Commands:"
-    echo -e "  ${YELLOW}Start all services:${RESET}   sudo systemctl start otp bot flask-api"
-    echo -e "  ${YELLOW}Stop all services:${RESET}    sudo systemctl stop otp bot flask-api"
+    echo -e "  ${YELLOW}Start all services:${RESET}   sudo systemctl start otp bot flask-api proxy_server"
+    echo -e "  ${YELLOW}Stop all services:${RESET}    sudo systemctl stop otp bot flask-api proxy_server"
     echo -e "  ${YELLOW}Check status:${RESET}         sudo systemctl status otp"
     echo -e "  ${YELLOW}View logs:${RESET}            sudo journalctl -u otp -f"
     echo -e "  ${YELLOW}Restart service:${RESET}      sudo systemctl restart bot"
     echo -e "  ${YELLOW}Disable service:${RESET}      sudo systemctl disable flask-api"
+    echo -e "  ${YELLOW}Proxy server status:${RESET}  sudo systemctl status proxy_server"
     echo
     warn "Note: Services are enabled but not started. Use 'sudo systemctl start <service>' to start them."
 }
