@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
-const SERVER_URL = 'https://thoutha.page/api'; 
+const SERVER_URL = '/backend/api'; 
 
 export default function RegisterForm() {
   const navigate = useNavigate();
