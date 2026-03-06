@@ -872,7 +872,7 @@ display_help() {
     echo -e "  ${RED}-s${NC}    Stop all running services"
     echo -e "  ${RED}-l${NC}    List status of all services"
     echo -e "  ${RED}-o${NC}    Start OTP Service"
-    echo -e "  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service
+    echo -e "  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service"
     echo ""
     echo -e "${GREEN}Logs & Monitoring:${NC}"
     echo -e "  ${RED}-L${NC} ${YELLOW}<service>${NC}  View logs for a service (latest 50 lines)"
