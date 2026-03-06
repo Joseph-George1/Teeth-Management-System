@@ -139,10 +139,10 @@ def health():
 if __name__ == '__main__':
     print(f"""
     ╔═══════════════════════════════════════════════════════════╗
-    ║         CORS Proxy Server - Teeth Management System      ║
+    ║         CORS Proxy Server - Teeth Management System       ║
     ╠═══════════════════════════════════════════════════════════╣
-    ║  Proxy Server: http://localhost:5000                      ║
-    ║  Backend URL:  {BACKEND_URL}                     ║
+    ║  Proxy Server: http://localhost:5173                      ║
+    ║  Backend URL:  {BACKEND_URL}                              ║
     ║  Status: Running...                                       ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
