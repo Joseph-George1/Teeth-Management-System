@@ -9,3 +9,4 @@ flask
 textblob
 flask_cors
 requests
+gunicorn
