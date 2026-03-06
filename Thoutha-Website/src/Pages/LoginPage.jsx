@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://16.16.218.59:8080/api/auth/login/doctor", {
+      const response = await fetch("/api/auth/login/doctor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
