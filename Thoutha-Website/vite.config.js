@@ -5,7 +5,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://16.16.218.59:8080',
+        target: 'https://thoutha.page',
         changeOrigin: true,
         secure: false,
         configure: (proxy) => {
