@@ -24,24 +24,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/backend/api/auth/login/doctor", {
+      const response = await fetch("https://thoutha.page/api/auth/login/doctor", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      let data = null;
 
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
+      const data = await response.json();
       console.log("Server response:", data);
 
       if (response.ok) {

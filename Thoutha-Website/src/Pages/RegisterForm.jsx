@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
-// const SERVER_URL = 'http://16.16.218.59:8080/api'; 
+const SERVER_URL = 'https://thoutha.page/api'; 
 
 export default function RegisterForm() {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export default function RegisterForm() {
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        const response = await fetch(`/backend/api/cities/getAllCities`);
+        const response = await fetch(`${SERVER_URL}/cities/getAllCities`);
         if (!response.ok) throw new Error('Failed to load cities');
         const data = await response.json();
         setCities(data || []);
@@ -63,7 +63,7 @@ export default function RegisterForm() {
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const response = await fetch(`/backend/api/university/getAllUniversities`);
+        const response = await fetch(`${SERVER_URL}/university/getAllUniversities`);
         if (!response.ok) throw new Error('Failed to load universities');
         const data = await response.json();
         setUniversities(data || []);
@@ -81,7 +81,7 @@ export default function RegisterForm() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`/backend/api/category/getCategories`);
+        const response = await fetch(`${SERVER_URL}/category/getCategories`);
         if (!response.ok) throw new Error('Failed to load categories');
         const data = await response.json();
         setCategories(data || []);
@@ -120,26 +120,20 @@ export default function RegisterForm() {
         password: password,
         phoneNumber: phone,
         cityName: city,
-        studyYear: parseInt(year, 10),
+        studyYear: year,
         categoryName: category,
         universityName: faculty,
       };
 
       console.log('Signup payload:', signupPayload);
 
-      const response = await fetch(`/backend/api/auth/signup`, {
+      const response = await fetch(`${SERVER_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(signupPayload),
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        data = { message: responseText };
-      }
+      const data = await response.json();
       console.log('Signup response:', data);
 
       if (!response.ok) {
