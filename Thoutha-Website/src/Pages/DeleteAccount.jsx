@@ -35,7 +35,8 @@ export default function DeleteAccount() {
       <section className="terms-section">
         <h2>التواصل لطلب الحذف</h2>
         <p>يمكنك إرسال طلب حذف الحساب عبر البريد الإلكتروني التالي:</p>
-        <p>اكتب البريد الإلكتروني هنا</p>
+        <p>menna@thoutha.page</p>
+        <p>joseph@thoutha.page</p>
         <p>مع توضيح:</p>
         <ul>
           <li>الاسم</li>

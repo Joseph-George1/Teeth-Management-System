@@ -79,7 +79,7 @@ export default function NavBar() {
                   <Calendar size={20} className="icon-color"/> سجل الحجوزات
                 </NavLink>
 
-                <NavLink to="/profile" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/doctor-profile" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <User size={20} className="icon-color"/> الملف الشخصي
                 </NavLink>
 

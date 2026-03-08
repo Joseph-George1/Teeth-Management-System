@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../Css/Otp.css";
 
 const API_SEND_OTP = "https://thoutha.page/api/otp/send";
 
 export default function Otp() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [phone, setPhone] = useState("+20");
   const [loading, setLoading] = useState(false);
@@ -23,12 +24,23 @@ export default function Otp() {
   // Validate Egyptian phone number
   const isValidEgyptPhone = (number) => /^\+20\d{10}$/.test(number);
 
+  // إذا جاء الرقم من صفحة التسجيل، ابعت OTP تلقائياً
+  useEffect(() => {
+    const phoneFromState = location.state?.phone;
+    if (phoneFromState) {
+      const normalized = normalizePhone(phoneFromState);
+      setPhone(normalized);
+      sendOtp(normalized);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleChange = (e) => {
     setPhone(normalizePhone(e.target.value));
   };
 
-  const handleSendOtp = async () => {
-    const normalizedPhone = normalizePhone(phone);
+  const sendOtp = async (phoneNumber) => {
+    const normalizedPhone = normalizePhone(phoneNumber || phone);
 
     if (!isValidEgyptPhone(normalizedPhone)) {
       setError("من فضلك ادخل رقم صحيح بصيغة +20XXXXXXXXXX");
@@ -40,12 +52,6 @@ export default function Otp() {
       setError("");
 
       console.log("Sending OTP to:", normalizedPhone);
-       const bodyData = {
-      phone_number: normalizedPhone,
-    };
-
-    console.log("🚀 Request Body:", bodyData);
-
 
       const response = await fetch(API_SEND_OTP, {
         method: "POST",
@@ -56,7 +62,7 @@ export default function Otp() {
           phone_number: normalizedPhone,
         }),
       });
-       console.log("📡 Status:", response.status);
+      console.log("📡 Status:", response.status);
 
       const data = await response.json().catch(() => ({}));
       console.log("Send OTP response:", data);
@@ -80,6 +86,8 @@ export default function Otp() {
       setLoading(false);
     }
   };
+
+  const handleSendOtp = () => sendOtp(phone);
 
   return (
     <div className="otp-page">
