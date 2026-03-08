@@ -8,3 +8,5 @@ python-dotenv
 flask
 textblob
 flask_cors
+requests
+gunicorn

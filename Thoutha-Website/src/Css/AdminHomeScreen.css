@@ -1,0 +1,43 @@
+.admin-home-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-home-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-welcome-text {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  direction: rtl;
+}
+
+.admin-email-text {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #555555;
+  margin: 0;
+  direction: ltr;
+  word-break: break-all;
+}
+
+@media (max-width: 480px) {
+  .admin-welcome-text {
+    font-size: 1.5rem;
+  }
+
+  .admin-email-text {
+    font-size: 1rem;
+  }
+}

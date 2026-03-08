@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../Css/RegisterForm.css';
 
-const SERVER_URL = 'http://16.16.218.59:8080/api'; 
+const SERVER_URL = 'https://thoutha.page/api'; 
 
 export default function RegisterForm() {
   const navigate = useNavigate();
@@ -148,7 +148,7 @@ export default function RegisterForm() {
       }
 
       // لو التسجيل ناجح، نروح لصفحة OTP
-      navigate('/otp', { state: { email } });
+      navigate('/otp', { state: { email, phone } });
 
     } catch (err) {
       console.error(err);
@@ -253,9 +253,6 @@ export default function RegisterForm() {
               className="input-field-2"
             >
               <option value="">السنة الدراسية</option>
-              <option value="1">الاولى</option>
-              <option value="2">الثانية</option>
-              <option value="3">الثالثة</option>
               <option value="4">الرابعة</option>
               <option value="5">الخامسة</option>
             </select>

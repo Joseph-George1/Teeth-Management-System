@@ -117,6 +117,20 @@ async def get_otp_health_status():
 		}
 
 
+async def get_proxy_health_status():
+	"""Fetch health status from CORS Proxy Server."""
+	try:
+		async with ClientSession() as session:
+			async with session.get('http://127.0.0.1:5173/health', timeout=5) as response:
+				data = await response.json()
+				return data
+	except Exception as e:
+		return {
+			'proxy': 'error',
+			'error': str(e)
+		}
+
+
 @bot.event
 async def on_ready():
 	print(f'Bot connected as {bot.user} (ASTART={ASTART_SCRIPT})')
@@ -153,6 +167,9 @@ async def status_cmd(ctx: commands.Context):
 	# Get health status from OTP system API
 	otp_health = await get_otp_health_status()
 	
+	# Get health status from Proxy Server
+	proxy_health = await get_proxy_health_status()
+	
 	# Build a concise list of running process NAMES (from pid files)
 	running = []
 	missing = []
@@ -175,9 +192,9 @@ async def status_cmd(ctx: commands.Context):
 				missing.append(f'{name} (no-pid)')
 	
 	# Determine embed color based on status
-	if health.get('status') == 'ok' and otp_health.get('status') == 'healthy' and len(running) > 0:
+	if health.get('status') == 'ok' and otp_health.get('status') == 'healthy' and proxy_health.get('proxy') == 'healthy' and len(running) > 0:
 		color = 0x2ecc71  # Green - everything is good
-	elif health.get('status') == 'ok' or otp_health.get('status') == 'healthy' or len(running) > 0:
+	elif health.get('status') == 'ok' or otp_health.get('status') == 'healthy' or proxy_health.get('proxy') == 'healthy' or len(running) > 0:
 		color = 0xf39c12  # Orange - partially working
 	else:
 		color = 0xe74c3c  # Red - problems detected
@@ -214,6 +231,20 @@ async def status_cmd(ctx: commands.Context):
 		otp_health_text += f"\n⚠️ **Error:** {otp_health['error']}"
 	
 	embed.add_field(name="📱 OTP System API", value=otp_health_text, inline=False)
+	
+	# Add Proxy Server Health
+	proxy_status_emoji = "✅" if proxy_health.get('proxy') == 'healthy' else "❌"
+	proxy_health_text = f"{proxy_status_emoji} **Proxy:** {proxy_health.get('proxy', 'unknown')}"
+	proxy_backend_emoji = "✅" if proxy_health.get('backend') == 'healthy' else "❌"
+	proxy_health_text += f"\n{proxy_backend_emoji} **Backend:** {proxy_health.get('backend', 'unknown')}"
+	
+	if 'backend_url' in proxy_health:
+		proxy_health_text += f"\n🔗 **Backend URL:** {proxy_health['backend_url']}"
+	
+	if 'error' in proxy_health:
+		proxy_health_text += f"\n⚠️ **Error:** {proxy_health['error']}"
+	
+	embed.add_field(name="🔀 CORS Proxy Server", value=proxy_health_text, inline=False)
 	
 	# Add Running Processes
 	if running:
@@ -263,8 +294,9 @@ async def help_cmd(ctx: commands.Context):
 			"🌐 **`-c`** — Start Web Interface\n"
 			"🤖 **`-a`** — Start AI Chatbot API only\n"
 			"🔧 **`-b`** — Start Backend only\n"
+			"� **`-p`** — Start CORS Proxy Server only\n"
 			"👥 **`-x`** — Start Login/Registration script\n"
-			"⚡ **`-w`** — Run **WHOLE SYSTEM** (Backend + Web + AI)"
+			"⚡ **`-w`** — Run **WHOLE SYSTEM** (Backend + Proxy + Web + AI)"
 			"📱 **`-o`** — Start OTP System API"
 		),
 		inline=True,

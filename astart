@@ -35,6 +35,7 @@ BACKEND_PORT="${BACKEND_PORT:-8080}"
 API_PORT="${API_PORT:-5010}"
 LOGIN_API_PORT="${LOGIN_API_PORT:-5000}"
 OTP_PORT="${OTP_PORT:-8000}"
+PROXY_PORT="${PROXY_PORT:-5173}"
 #-------------------------------------------------------------
 # Logging subsystem
 # Purpose: centralized, human-readable logging for the launcher.
@@ -750,6 +751,24 @@ loginreg_script() {
 }
 
 #-------------------------------------------------------------
+#Function to start the CORS Proxy Server
+#-------------------------------------------------------------
+
+proxy_start() {
+    validate_paths || return 1
+    
+    # Check if port is already in use
+    if check_port "$PROXY_PORT"; then
+        echo -e "${RED}ERROR: Port $PROXY_PORT is already in use${NC}"
+        return 1
+    fi
+    
+    # Run proxy server in background; output goes to process log only
+    cmd="cd \"$HOME/Teeth-Management-System\" && python3 proxy_server.py"
+    start_bg "proxy_server" "-p" "$cmd" "$PROXY_PORT"
+}
+
+#-------------------------------------------------------------
 #Function to run the whole system (temporary parts)
 #-------------------------------------------------------------
 run_whole_system() {
@@ -757,8 +776,11 @@ run_whole_system() {
     
     echo -e "${BLUE}Starting all services...${NC}"
     
-    # Start backend, login script, and API in background
+    # Start backend, login script, proxy, and API in background
     backend_start || echo -e "${YELLOW}Warning: Backend failed to start${NC}"
+    sleep 2
+    
+    proxy_start || echo -e "${YELLOW}Warning: Proxy Server failed to start${NC}"
     sleep 2
     
     loginreg_script || echo -e "${YELLOW}Warning: Login/Registration API failed to start${NC}"
@@ -841,8 +863,9 @@ display_help() {
     echo -e "${GREEN}Usage:${NC} $0 [options]"
     echo ""
     echo -e "${GREEN}Service Control:${NC}"
-    echo -e "  ${RED}-w${NC}    Start the whole system (Backend, Login API, AI API, Web UI)"
+    echo -e "  ${RED}-w${NC}    Start the whole system (Backend, Proxy, Login API, AI API, Web UI)"
     echo -e "  ${RED}-b${NC}    Start Backend server only"
+    echo -e "  ${RED}-p${NC}    Start CORS Proxy server only"
     echo -e "  ${RED}-x${NC}    Start Login/Registration API only"
     echo -e "  ${RED}-a${NC}    Start AI Chatbot API only"
     echo -e "  ${RED}-c${NC}    Start Web UI (Frontend) only"
@@ -866,6 +889,7 @@ display_help() {
     echo -e "${GREEN}Examples:${NC}"
     echo -e "  $0 -w                    # Start all services"
     echo -e "  $0 -v -b                 # Start backend with verbose output"
+    echo -e "  $0 -p                    # Start proxy server"
     echo -e "  $0 -l                    # Check service status"
     echo -e "  $0 -r backend            # Restart backend service"
     echo -e "  $0 -L web_ui             # View web UI logs"
@@ -874,8 +898,10 @@ display_help() {
     echo ""
     echo -e "${GREEN}Available Services:${NC}"
     echo -e "  - backend              (Spring Boot backend on port ${BACKEND_PORT})"
+    echo -e "  - proxy_server         (CORS Proxy on port ${PROXY_PORT})"
     echo -e "  - loginreg             (Login/Registration API on port ${LOGIN_API_PORT})"
     echo -e "  - ai_chatbot_api       (AI Chatbot API on port ${API_PORT})"
+    echo -e "  - otp_service          (OTP Service on port ${OTP_PORT})"
     echo -e "  - web_ui               (Vite Frontend on port ${WEB_UI_PORT})"
     echo -e "  - ai_chatbot_web       (Streamlit Web Interface)"
     echo ""
@@ -902,7 +928,7 @@ fi
 # Track if we need an argument for certain options
 NEED_ARG=""
 
-while getopts ":cauwbxsvhlor:L:F:" option; do
+while getopts ":cauwbxpsvhlor:L:F:" option; do
     case $option in
         v)
             VERBOSE=1
@@ -914,7 +940,7 @@ while getopts ":cauwbxsvhlor:L:F:" option; do
             verbose_log "  - Backend: $backend_path"
             verbose_log "  - Log directory: $LOG_DIR"
             verbose_log "Database: $DB_URL (user: $DB_USERNAME)"
-            verbose_log "Ports: Web=$WEB_UI_PORT, Backend=$BACKEND_PORT, API=$API_PORT, Login=$LOGIN_API_PORT"
+            verbose_log "Ports: Web=$WEB_UI_PORT, Backend=$BACKEND_PORT, API=$API_PORT, Login=$LOGIN_API_PORT, Proxy=$PROXY_PORT"
             ;;
         c)
             echo -e "${GREEN}Starting Web UI (Frontend)...${NC}"
@@ -942,6 +968,12 @@ while getopts ":cauwbxsvhlor:L:F:" option; do
             echo -e "${GREEN}Starting Backend server only...${NC}"
             verbose_log "Executing: backend_start"
             backend_start
+            exit 0
+            ;;
+        p)
+            echo -e "${GREEN}Starting CORS Proxy server only...${NC}"
+            verbose_log "Executing: proxy_start"
+            proxy_start
             exit 0
             ;;
         x)

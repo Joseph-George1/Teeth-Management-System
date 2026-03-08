@@ -5,7 +5,6 @@ import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
 import RegisterForm from "./Pages/RegisterForm";
 import ChatBot from "./Pages/ChatBot";
-import Profile from "./Pages/Profile";
 import TermsConditions from "./Pages/TermsConditions";
 import Footer from "./Components/Footer";
 import Otp from "./Pages/Otp";
@@ -26,6 +25,10 @@ import Braces from "./Pages/Braces";
 import Support from "./Pages/Support";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DeleteAccount from "./Pages/DeleteAccount";
+import AdminHomeScreen from "./Pages/AdminHomeScreen";
+import DoctorProfile from "./Pages/DoctorProfile";
+import ProfileUpdate from "./Pages/ProfileUpdate";
+import DeleteMyAccount from "./Pages/DeleteMyAccount";
 export default function App() {
   return (
     <>
@@ -36,7 +39,6 @@ export default function App() {
       <Route path="/sign" element={<RegisterForm/>}/>
       <Route path="/otp" element={<Otp/>}/>
       <Route path="/otp-verify" element={<OtpVerify/>}/>
-      <Route path="/profile" element={<Profile/>}></Route>
       <Route path="/chatbot" element={<ChatBot/>}/>
       <Route path="/terms&conditions" element={<TermsConditions/>}></Route>
       <Route path="/doctor-home" element={<DoctorHome/>}></Route>
@@ -54,6 +56,10 @@ export default function App() {
       <Route path="/support" element={<Support/>}></Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy/>}></Route>
       <Route path="/delete-account" element={<DeleteAccount/>}></Route>
+      <Route path="/admin-home" element={<AdminHomeScreen/>}></Route>
+      <Route path="/doctor-profile" element={<DoctorProfile/>}></Route>
+      <Route path="/profile-update" element={<ProfileUpdate/>}></Route>
+      <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
     </Routes>
     <Footer/>

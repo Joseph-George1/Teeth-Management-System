@@ -32,11 +32,14 @@ export default function Support(){
         <p>
           يمكنك التواصل معنا عبر البريد الإلكتروني:
         </p>
-        {/* <p className="support-email">
-          menna128492@gmail.com
-        </p> */}
+        <p className="support-email">
+          menna@thoutha.page
+        </p>
+        <p>
+          joseph@thoutha.page
+        </p>
       </section>
-
+{/* 
       <section className="support-section">
         <h2>نموذج التواصل</h2>
 
@@ -61,7 +64,7 @@ export default function Support(){
 
           <button type="submit">إرسال</button>
         </form>
-      </section>
+      </section> */}
     </div>
   );
 };
