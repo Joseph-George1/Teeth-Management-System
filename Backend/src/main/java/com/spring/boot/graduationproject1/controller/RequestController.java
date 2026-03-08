@@ -20,8 +20,8 @@ public class RequestController {
         return ResponseEntity.ok(requestServices.getAllRequests());
     }
 
-    @GetMapping("/getRequestById/{id}")
-    public ResponseEntity<RequestDto> getRequestById(@PathVariable Long id) {
+    @GetMapping("/getRequestById")
+    public ResponseEntity<RequestDto> getRequestById(@RequestParam Long id) {
         return ResponseEntity.ok(requestServices.getRequestById(id));
     }
 
@@ -34,5 +34,15 @@ public class RequestController {
     public ResponseEntity<Void> deleteRequest(){
         requestServices.deleteRequest();
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/getRequestByCategoryId")
+    public ResponseEntity<List<RequestDto>>getRequestByCategoryId(@RequestParam Long categoryId){
+        return ResponseEntity.ok(requestServices.getRequestByCategoryId(categoryId));
+    }
+
+    @GetMapping("/getRequestsByDoctorId")
+    public ResponseEntity<List<RequestDto>> getRequestsByDoctorId(){
+        return ResponseEntity.ok(requestServices.getRequestByDoctorId());
     }
 }

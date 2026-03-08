@@ -6,6 +6,7 @@ import com.spring.boot.graduationproject1.model.Category;
 import com.spring.boot.graduationproject1.model.Doctor;
 import com.spring.boot.graduationproject1.model.Requests;
 import com.spring.boot.graduationproject1.repo.CategoryRepo;
+import com.spring.boot.graduationproject1.repo.CityRepo;
 import com.spring.boot.graduationproject1.repo.DoctorRepo;
 import com.spring.boot.graduationproject1.repo.RequestRepo;
 import com.spring.boot.graduationproject1.service.RequestServices;
@@ -23,13 +24,15 @@ public class RequestServiceImpl implements RequestServices {
     private final RequestMapper requestMapper;
     private final DoctorRepo doctorRepo;
     private final CategoryRepo categoryRepo;
+    private final CityRepo cityRepo;
 
     public RequestServiceImpl(RequestRepo requestRepo, RequestMapper requestMapper,
-                              DoctorRepo doctorRepo, CategoryRepo categoryRepo) {
+                              DoctorRepo doctorRepo, CategoryRepo categoryRepo,CityRepo cityRepo) {
         this.requestRepo = requestRepo;
         this.requestMapper = requestMapper;
         this.doctorRepo = doctorRepo;
         this.categoryRepo = categoryRepo;
+        this.cityRepo = cityRepo;
     }
 
     @Override
@@ -78,9 +81,42 @@ public class RequestServiceImpl implements RequestServices {
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        Requests request = requestRepo.findByDoctor(doctor)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        List<Requests> requests = requestRepo.findByDoctor(doctor);
 
-        requestRepo.delete(request);
+        if (requests.isEmpty()) {
+            throw new RuntimeException("Request not found");
+        }
+
+        requestRepo.deleteAll(requests);
     }
+
+    @Override
+    public List<RequestDto> getRequestByCategoryId(Long categoryId) {
+        if (!categoryRepo.existsById(categoryId)) {
+            throw new RuntimeException("Category not found");
+        }
+
+
+        List<Requests> requests = requestRepo.findByCategoryId(categoryId);
+
+
+        return requestMapper.toListDto(requests);
+    }
+
+    @Override
+    public List<RequestDto> getRequestByDoctorId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+
+        List<Requests> requests = requestRepo.findByDoctor(doctor);
+
+        return requestMapper.toListDto(requests);
+    }
+
+
+
 }
