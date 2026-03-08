@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import requests
 import json
+import os
 
 app = Flask(__name__)
 
@@ -22,8 +23,9 @@ CORS(app, resources={
     }
 })
 
-# Backend configuration
-BACKEND_URL = "http://localhost:8080"  # Default Spring Boot port
+# Backend configuration - use environment variables for production
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8080")
+PROXY_PORT = int(os.getenv("PROXY_PORT", "5173"))
 
 # Proxy all requests to backend
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
@@ -92,16 +94,19 @@ def proxy(path):
         return response
 
     except requests.exceptions.ConnectionError:
+        app.logger.error(f"Connection error: Could not connect to {BACKEND_URL}")
         return jsonify({
             "error": "Backend server is not available",
             "message": f"Could not connect to {BACKEND_URL}"
         }), 503
     except requests.exceptions.Timeout:
+        app.logger.error(f"Timeout error: Backend server took too long to respond")
         return jsonify({
             "error": "Request timeout",
             "message": "Backend server took too long to respond"
         }), 504
     except Exception as e:
+        app.logger.error(f"Proxy error: {str(e)}")
         return jsonify({
             "error": "Proxy error",
             "message": str(e)
@@ -139,18 +144,21 @@ def health():
 if __name__ == '__main__':
     print(f"""
     ╔═══════════════════════════════════════════════════════════╗
-    ║         CORS Proxy Server - Teeth Management System      ║
+    ║         CORS Proxy Server - Teeth Management System       ║
     ╠═══════════════════════════════════════════════════════════╣
-    ║  Proxy Server: http://localhost:5000                      ║
-    ║  Backend URL:  {BACKEND_URL}                     ║
+    ║  Proxy Server: http://localhost:{PROXY_PORT}              ║
+    ║  Backend URL:  {BACKEND_URL}                              ║
     ║  Status: Running...                                       ║
+    ║                                                           ║
+    ║  NOTE: For production, use gunicorn instead:              ║
+    ║  gunicorn -w 4 -b 0.0.0.0:{PROXY_PORT} proxy_server:app  ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
     
-    # Run the Flask app
+    # Run the Flask app (development only)
     app.run(
         host='0.0.0.0',
-        port=5173,
+        port=PROXY_PORT,
         debug=True,
         threaded=True
     )
