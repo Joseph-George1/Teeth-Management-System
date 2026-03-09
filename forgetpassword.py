@@ -82,16 +82,23 @@ def find_user_by_phone(phone_number):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Try finding in Doctor table
+        # Normalize phone number for comparison (remove spaces, dashes, etc.)
+        clean_phone = phone_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        logger.info(f"Searching for phone number: {phone_number} (cleaned: {clean_phone})")
+        
+        # Try finding in Doctor table with flexible matching
+        # Check both exact match and without '+' prefix
         cursor.execute(
             """SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, PHONE_NUMBER 
                FROM DOCTOR 
-               WHERE PHONE_NUMBER = :phone""",
-            {"phone": phone_number}
+               WHERE REPLACE(REPLACE(REPLACE(PHONE_NUMBER, ' ', ''), '-', ''), '+', '') = 
+                     REPLACE(:phone, '+', '')""",
+            {"phone": clean_phone}
         )
         result = cursor.fetchone()
         
         if result:
+            logger.info(f"Found doctor with ID: {result[0]}, phone: {result[5]}")
             user_data = {
                 'id': result[0],
                 'first_name': result[1],
@@ -103,17 +110,21 @@ def find_user_by_phone(phone_number):
             cursor.close()
             return 'doctor', user_data
         
+        logger.info("No doctor found, checking patients table...")
+        
         # Try finding in Patients table (no email or password fields)
         # Patients can only be found but cannot reset password (no password field in schema)
         cursor.execute(
             """SELECT ID, FIRST_NAME, LAST_NAME, PHONE_NUMBER 
                FROM PATIENTS 
-               WHERE PHONE_NUMBER = :phone""",
-            {"phone": phone_number}
+               WHERE REPLACE(REPLACE(REPLACE(PHONE_NUMBER, ' ', ''), '-', ''), '+', '') = 
+                     REPLACE(:phone, '+', '')""",
+            {"phone": clean_phone}
         )
         result = cursor.fetchone()
         
         if result:
+            logger.info(f"Found patient with ID: {result[0]}, but patients cannot reset passwords")
             # Patients don't have email or password in the current schema
             # This is for future compatibility if schema changes
             user_data = {
@@ -126,10 +137,10 @@ def find_user_by_phone(phone_number):
             }
             cursor.close()
             # Return None since patients don't have passwords to reset
-            logger.info(f"Found patient but they don't have password field")
             return None, None
         
         cursor.close()
+        logger.warning(f"No user found with phone number: {phone_number}")
         return None, None
         
     except Exception as e:
