@@ -23,18 +23,6 @@ DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "6500"))
 SECRET_KEY     = os.getenv("SECRET_KEY",     secrets.token_hex(32))
 REQUEST_TIMEOUT = 6  # seconds
 
-app = Flask(__name__)
-app.secret_key = SECRET_KEY
-# Configure session to persist for 30 days
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
-app.config['SESSION_COOKIE_PATH'] = '/'
-# CORS is not needed for admin dashboard since it's server-side rendered
-# Only allow CORS for AJAX API endpoints
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-
 # ─────────────────────────────────────────────
 #  OBFUSCATED ROUTE PREFIX
 #  All dashboard URLs are served under this prefix.
@@ -43,6 +31,23 @@ CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 #  Override via env:  ADMIN_PREFIX=/your-custom-path
 # ─────────────────────────────────────────────
 ADMIN_PREFIX = os.getenv("ADMIN_PREFIX", "/api/tms-mng-x7k2p9q3").rstrip("/")
+
+app = Flask(__name__)
+app.secret_key = SECRET_KEY
+# Configure session to persist for 30 days
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_NAME'] = 'admin_session'
+# Important: Cookie path must include the admin prefix
+app.config['SESSION_COOKIE_PATH'] = ADMIN_PREFIX or '/'
+# Refresh session on each access to prevent expiration
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+# Only enable CORS for API endpoints that need it, exclude admin routes
+CORS(app, resources={
+    r"/api/(?!tms-mng-).*": {"origins": "*", "supports_credentials": True}
+})
 
 
 # ─────────────────────────────────────────────
@@ -1504,13 +1509,17 @@ function exportRequests() {
 async function viewDoctor(id) {
   try {
     const res = await fetch(`${BASE}/api/doctor/${id}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
     const data = await res.json();
-    if (data.success) {
+    if (data.success && data.data) {
       showDoctorModal(data.data);
     } else {
-      showToast('Failed to load doctor details', 'error');
+      showToast('Failed to load doctor details: ' + (data.message || 'Unknown error'), 'error');
     }
   } catch(e) {
+    console.error('View doctor error:', e);
     showToast('Error loading doctor: ' + e.message, 'error');
   }
 }
@@ -1518,6 +1527,12 @@ async function viewDoctor(id) {
 function showDoctorModal(doctor) {
   const modal = document.getElementById('doctor-modal');
   const content = document.getElementById('doctor-modal-content');
+  
+  if (!modal || !content) {
+    console.error('Modal elements not found');
+    showToast('Modal error: elements not found', 'error');
+    return;
+  }
   
   content.innerHTML = `
     <div class="modal-row">
@@ -1561,6 +1576,12 @@ function closeDoctorModal() {
 let toastId = 0;
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
+  if (!container) {
+    console.error('Toast container not found');
+    console.log(message); // Fallback to console
+    return;
+  }
+  
   const id = `toast-${toastId++}`;
   
   const icons = {
