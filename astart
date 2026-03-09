@@ -528,6 +528,71 @@ stop_all() {
 
 
 #-------------------------------------------------------------
+# stop_one
+# Stop a specific process by name (interactive helper for -s)
+# Parameters:
+# - $1: process name
+#-------------------------------------------------------------
+stop_one() {
+    local name="$1"
+    init_logging
+    local pid_file="$PID_DIR/${name}.pid"
+
+    if [ ! -f "$pid_file" ]; then
+        echo -e "${RED}No PID file found for: $name${NC}"
+        echo -e "${YELLOW}Use 'astart -l' to see running services${NC}"
+        return 1
+    fi
+
+    local pid
+    pid=$(sed -n '1p' "$pid_file" 2>/dev/null || true)
+    local plog
+    plog=$(sed -n '2p' "$pid_file" 2>/dev/null || true)
+
+    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        echo -e "${YELLOW}$name is not running (stale PID file removed)${NC}"
+        rm -f "$pid_file"
+        return 0
+    fi
+
+    local ts user ip
+    ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    user=$(whoami 2>/dev/null || echo unknown)
+    ip=$(get_instance_ip)
+
+    echo -e "${YELLOW}Stopping $name (PID: $pid)...${NC}"
+    echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=term" >> "$ACTIVITY_LOG"
+    kill "$pid" 2>/dev/null || true
+
+    local waited=0
+    while kill -0 "$pid" 2>/dev/null; do
+        sleep 0.5
+        waited=$((waited + 1))
+        if [ $waited -ge 10 ]; then
+            echo -e "${YELLOW}Force killing $name...${NC}"
+            echo "$ts | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | action=kill" >> "$ACTIVITY_LOG"
+            kill -9 "$pid" 2>/dev/null || true
+            break
+        fi
+    done
+
+    [ -z "$plog" ] && plog="$PROCESS_LOG_DIR/${name}.log"
+    local ts2
+    ts2=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    if kill -0 "$pid" 2>/dev/null; then
+        echo "==== STOP ${name} ${ts2} exit=KILLED ====" >> "$plog"
+        echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=KILLED" >> "$ACTIVITY_LOG"
+        echo -e "${RED}✗ $name killed (PID: $pid)${NC}"
+    else
+        echo "==== STOP ${name} ${ts2} exit=STOPPED ====" >> "$plog"
+        echo "$ts2 | user=$user | ip=$ip | flag=-s | process=$name | pid=$pid | exit=STOPPED" >> "$ACTIVITY_LOG"
+        echo -e "${GREEN}✓ $name stopped (PID: $pid)${NC}"
+    fi
+
+    rm -f "$pid_file"
+}
+
+#-------------------------------------------------------------
 # show_status
 # Display status of all services
 #-------------------------------------------------------------
@@ -869,7 +934,7 @@ display_help() {
     echo -e "  ${RED}-x${NC}    Start Login/Registration API only"
     echo -e "  ${RED}-a${NC}    Start AI Chatbot API only"
     echo -e "  ${RED}-c${NC}    Start Web UI (Frontend) only"
-    echo -e "  ${RED}-s${NC}    Stop all running services"
+    echo -e "  ${RED}-s${NC}    Stop services interactively (choose a process or 'all')"
     echo -e "  ${RED}-l${NC}    List status of all services"
     echo -e "  ${RED}-o${NC}    Start OTP Service"
     echo -e "  ${RED}-r${NC} ${YELLOW}<service>${NC}  Restart a specific service"
@@ -1012,9 +1077,36 @@ while getopts ":cauwbxpsvhlor:L:F:" option; do
             display_help
             ;;
         s)
-            echo -e "${GREEN}Stopping all services started by astart...${NC}"
-            verbose_log "Executing: stop_all"
-            stop_all
+            init_logging
+            echo -e "${BLUE}Running processes:${NC}"
+            local _any=0
+            for _f in "$PID_DIR"/*.pid; do
+                [ -e "$_f" ] || continue
+                _name=$(basename "$_f" .pid)
+                _pid=$(sed -n '1p' "$_f" 2>/dev/null || true)
+                if [ -n "$_pid" ] && kill -0 "$_pid" 2>/dev/null; then
+                    echo -e "  ${GREEN}•${NC} $_name (PID: $_pid)"
+                    _any=1
+                fi
+            done
+            if [ "$_any" -eq 0 ]; then
+                echo -e "${YELLOW}No services are currently running.${NC}"
+                exit 0
+            fi
+            echo
+            echo -e "${YELLOW}Enter process name to stop, or 'all' to stop all:${NC} "
+            read -r _stop_target
+            if [ "$_stop_target" = "all" ]; then
+                echo -e "${GREEN}Stopping all services...${NC}"
+                verbose_log "Executing: stop_all"
+                stop_all
+            elif [ -n "$_stop_target" ]; then
+                verbose_log "Executing: stop_one $_stop_target"
+                stop_one "$_stop_target"
+            else
+                echo -e "${RED}No process name given. Aborting.${NC}"
+                exit 1
+            fi
             exit 0
             ;;
         \?)
