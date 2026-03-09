@@ -1,29 +1,3 @@
-"""
-Admin Analytics Dashboard — Teeth Management System
-=====================================================
-A Flask web app that provides a rich analytics dashboard for the admin.
-
-Features:
-  - Admin login via the Spring Boot JWT auth endpoint
-  - Live analytics: doctors, requests, categories, cities, appointments
-  - Service health monitoring (same services tracked by the Discord bot)
-  - Full doctor & request tables with delete action (admin privilege)
-  - Auto-refreshing health panel every 30 seconds
-  - Responsive UI (Bootstrap 5 dark theme + Chart.js + Font Awesome)
-
-Configuration (env vars or edit the CONFIG block below):
-  BACKEND_URL     Spring Boot base URL  (default: http://localhost:8080)
-  AI_URL          AI chatbot base URL   (default: http://127.0.0.1:5010)
-  OTP_URL         OTP service base URL  (default: http://127.0.0.1:8000)
-  PROXY_URL       CORS proxy base URL   (default: http://127.0.0.1:5173)
-  DASHBOARD_PORT  Port to run dashboard (default: 5500)
-  SECRET_KEY      Flask session secret  (default: auto-generated)
-
-Usage:
-  pip install flask flask-cors requests
-  python admin_dashboard.py
-"""
-
 import os
 import json
 import secrets
@@ -55,7 +29,11 @@ app.secret_key = SECRET_KEY
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-CORS(app)
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_PATH'] = '/'
+# CORS is not needed for admin dashboard since it's server-side rendered
+# Only allow CORS for AJAX API endpoints
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # ─────────────────────────────────────────────
 #  OBFUSCATED ROUTE PREFIX
@@ -222,13 +200,22 @@ def get_analytics(token):
 
 
 # ─────────────────────────────────────────────
-#  AUTH DECORATOR
+#  AUTH DECORATOR & HOOKS
 # ─────────────────────────────────────────────
+
+@app.before_request
+def make_session_permanent():
+    """Ensure all sessions are permanent and properly initialized."""
+    if request.endpoint and request.endpoint not in ['static', 'robots', 'catch_all']:
+        session.permanent = True
+
 
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("jwt_token"):
+        token = session.get("jwt_token")
+        if not token:
+            app.logger.warning(f"Access denied to {request.path} - no token in session")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
@@ -252,6 +239,10 @@ def catch_all(path):
 
 @app.route(f"{ADMIN_PREFIX}/login", methods=["GET", "POST"])
 def login():
+    # If already logged in, redirect to dashboard
+    if session.get("jwt_token"):
+        return redirect(url_for("dashboard"))
+    
     error = None
     if request.method == "POST":
         email    = request.form.get("email", "").strip()
@@ -265,13 +256,35 @@ def login():
             )
             if r.status_code == 200:
                 data = r.json()
-                session.permanent = True  # Make session persistent across browser restarts
-                session["jwt_token"]   = data.get("token") or data.get("accessToken") or list(data.values())[0]
-                session["admin_email"] = email
-                return redirect(url_for("dashboard"))
+                # Extract token - try different possible keys
+                token = data.get("token") or data.get("accessToken")
+                if not token and data:
+                    # If neither key exists, try to get the first string value
+                    token = next((v for v in data.values() if isinstance(v, str)), None)
+                
+                if not token:
+                    error = "No authentication token received from backend"
+                else:
+                    # Set session data
+                    session.clear()  # Clear any existing session data
+                    session.permanent = True  # Make session persistent across browser restarts
+                    session["jwt_token"] = token
+                    session["admin_email"] = email
+                    session.modified = True  # Explicitly mark session as modified
+                    
+                    app.logger.info(f"Admin login successful: {email}")
+                    
+                    # Create response with redirect
+                    response = redirect(url_for("dashboard"))
+                    # Ensure session cookie is set by adding cache-control headers
+                    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                    response.headers['Pragma'] = 'no-cache'
+                    response.headers['Expires'] = '0'
+                    return response
             else:
                 error = f"Invalid credentials (HTTP {r.status_code})"
         except Exception as exc:
+            app.logger.error(f"Login error: {exc}")
             error = f"Cannot reach backend: {exc}"
     return render_template_string(LOGIN_TEMPLATE, error=error)
 
@@ -279,13 +292,21 @@ def login():
 @app.route(f"{ADMIN_PREFIX}/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    response = redirect(url_for("login"))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route(f"{ADMIN_PREFIX}/")
 @login_required
 def dashboard():
-    token = session["jwt_token"]
+    token = session.get("jwt_token")
+    if not token:
+        # Defensive check - should not happen due to @login_required
+        return redirect(url_for("login"))
+    
     analytics = get_analytics(token)
     health    = get_all_health()
     return render_template_string(
@@ -319,6 +340,93 @@ def api_delete_doctor(doctor_id):
     if status in (200, 204):
         return jsonify({"success": True, "message": f"Doctor {doctor_id} deleted."})
     return jsonify({"success": False, "message": f"Backend returned HTTP {status}."}), 400
+
+
+# ── Export endpoints ──
+
+@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
+@login_required
+def export_doctors():
+    """Export doctors list as CSV"""
+    import csv
+    from io import StringIO
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"])
+    
+    # Write data
+    for d in doctors:
+        writer.writerow([
+            d.get("id", ""),
+            d.get("firstName", ""),
+            d.get("lastName", ""),
+            d.get("email", ""),
+            d.get("phoneNumber", ""),
+            d.get("categoryName", ""),
+            d.get("cityName", ""),
+            d.get("universityName", ""),
+            d.get("studyYear", ""),
+        ])
+    
+    output.seek(0)
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/requests")
+@login_required
+def export_requests():
+    """Export requests list as CSV"""
+    import csv
+    from io import StringIO
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(["ID", "Doctor Name", "Category", "Status", "Date & Time", "Description"])
+    
+    # Write data
+    for r in requests_list:
+        writer.writerow([
+            r.get("id", ""),
+            r.get("doctorName", ""),
+            r.get("categoryName", ""),
+            r.get("status", ""),
+            r.get("dateTime", ""),
+            r.get("description", ""),
+        ])
+    
+    output.seek(0)
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctor/<int:doctor_id>")
+@login_required
+def get_doctor_details(doctor_id):
+    """Get full doctor details"""
+    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
+    if status == 200:
+        return jsonify({"success": True, "data": data})
+    return jsonify({"success": False, "message": f"HTTP {status}"}), 400
 
 
 # ─────────────────────────────────────────────
@@ -523,9 +631,83 @@ DASHBOARD_TEMPLATE = """
     .badge-rejected { background: rgba(248,81,73,.2);   color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
     .badge-unknown  { background: rgba(139,148,158,.15); color: var(--text-muted); border: 1px solid var(--border); }
 
+    /* ── Modals ── */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+      background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal-content {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh;
+      overflow-y: auto; padding: 1.5rem; transform: scale(0.9); transition: transform .2s;
+    }
+    .modal-overlay.show .modal-content { transform: scale(1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-header h5 { margin: 0; color: #f0f6fc; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem;
+      cursor: pointer; padding: 0; width: 32px; height: 32px; }
+    .modal-close:hover { color: #f0f6fc; }
+    .modal-body { color: #c9d1d9; }
+    .modal-row { display: flex; padding: .75rem 0; border-bottom: 1px solid var(--border); }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-label { font-weight: 600; color: var(--text-muted); width: 140px; flex-shrink: 0; }
+    .modal-value { color: #f0f6fc; flex: 1; }
+
+    /* ── Toast Notifications ── */
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 10000;
+      display: flex; flex-direction: column; gap: 10px; max-width: 400px;
+    }
+    .toast {
+      background: var(--bg-card2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(120%);
+      animation: slideIn .3s forwards;
+    }
+    @keyframes slideIn { to { transform: translateX(0); } }
+    .toast.hiding { animation: slideOut .3s forwards; }
+    @keyframes slideOut { to { transform: translateX(120%); } }
+    .toast-icon { font-size: 1.25rem; }
+    .toast.toast-success { border-left: 4px solid var(--green); }
+    .toast.toast-success .toast-icon { color: var(--green); }
+    .toast.toast-error { border-left: 4px solid var(--red); }
+    .toast.toast-error .toast-icon { color: var(--red); }
+    .toast.toast-info { border-left: 4px solid var(--accent); }
+    .toast.toast-info .toast-icon { color: var(--accent); }
+    .toast-message { flex: 1; color: #f0f6fc; font-size: .9rem; }
+
+    /* ── Dark Mode Toggle ── */
+    .theme-toggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 100;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 50%; width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all .2s;
+    }
+    .theme-toggle:hover { transform: scale(1.1); background: var(--bg-card2); }
+    .theme-toggle i { color: var(--accent); font-size: 1.25rem; }
+    
+    body.light-mode {
+      --bg-base: #f5f7fa; --bg-card: #ffffff; --bg-card2: #f8f9fa;
+      --border: #dee2e6; --text-muted: #6c757d; --accent: #0366d6;
+    }
+    body.light-mode { background: var(--bg-base); color: #212529; }
+    body.light-mode .sidebar, body.light-mode .stat-card, body.light-mode .chart-card,
+    body.light-mode .data-card, body.light-mode .service-card,
+    body.light-mode .modal-content { color: #212529; }
+    body.light-mode .nav-link { color: #6c757d; }
+    body.light-mode .nav-link:hover, body.light-mode .nav-link.active { color: #212529; }
+    body.light-mode h4, body.light-mode h5, body.light-mode h6,
+    body.light-mode .stat-value, body.light-mode .modal-value { color: #212529; }
+    body.light-mode .toast { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
     @media(max-width:768px){
       .sidebar { display: none; }
       .main { margin-left: 0; padding: 1rem; }
+      .theme-toggle { bottom: 10px; right: 10px; width: 40px; height: 40px; }
     }
   </style>
 </head>
@@ -632,6 +814,42 @@ DASHBOARD_TEMPLATE = """
       </div>
     </div>
 
+    <!-- Quick Stats Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="chart-card" style="padding:1rem;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-chart-line me-1"></i>Pending Requests</small>
+          </div>
+          <h4 class="mb-0" id="stat-pending">{{ analytics.requests_by_status.get('PENDING', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="chart-card" style="padding:1rem;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-check-circle me-1"></i>Approved</small>
+          </div>
+          <h4 class="mb-0 text-success" id="stat-approved">{{ analytics.requests_by_status.get('APPROVED', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="chart-card" style="padding:1rem;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-times-circle me-1"></i>Rejected</small>
+          </div>
+          <h4 class="mb-0 text-danger" id="stat-rejected">{{ analytics.requests_by_status.get('REJECTED', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="chart-card" style="padding:1rem;">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-graduation-cap me-1"></i>Universities</small>
+          </div>
+          <h4 class="mb-0" id="stat-universities">{{ analytics.doctors_by_university | length }}</h4>
+        </div>
+      </div>
+    </div>
+
     <!-- Charts row 1 -->
     <div class="row g-3 mb-3">
       <div class="col-md-6">
@@ -701,23 +919,45 @@ DASHBOARD_TEMPLATE = """
   <div id="section-doctors" class="section">
     <div class="data-card">
       <div class="card-head">
-        <h6><i class="fa-solid fa-user-doctor me-2 text-info"></i>All Registered Doctors
-          <span class="badge bg-secondary ms-2" id="doctors-count"></span>
-        </h6>
-        <input type="text" id="doctor-search" class="form-control form-control-sm w-auto"
-               placeholder="🔍 Search…" oninput="filterTable('doctor-table',this.value)">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0"><i class="fa-solid fa-user-doctor me-2 text-info"></i>All Registered Doctors
+            <span class="badge bg-secondary ms-2" id="doctors-count"></span>
+          </h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <select id="filter-category" class="form-select form-select-sm" style="width:150px" onchange="applyDoctorFilters()">
+            <option value="">All Categories</option>
+            {% for cat in analytics.categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+          <select id="filter-city" class="form-select form-select-sm" style="width:140px" onchange="applyDoctorFilters()">
+            <option value="">All Cities</option>
+            {% for city in analytics.cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" id="doctor-search" class="form-control form-control-sm"
+                 style="width:200px" placeholder="🔍 Search…" oninput="applyDoctorFilters()">
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearDoctorFilters()" title="Clear Filters">
+            <i class="fa fa-times"></i>
+          </button>
+          <button class="btn btn-sm btn-success" onclick="exportDoctors()" title="Export to CSV">
+            <i class="fa fa-download me-1"></i>Export CSV
+          </button>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover table-sm" id="doctor-table">
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Category</th><th>City</th>
-              <th>University</th><th>Study Year</th><th>Phone</th><th>Action</th>
+              <th>University</th><th>Study Year</th><th>Phone</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="doctor-tbody">
             {% for d in analytics.doctors_list %}
-            <tr data-id="">
+            <tr data-id="{{ d.get('id', '') }}" data-doctor='{{ d | tojson }}'>
               <td>{{ loop.index }}</td>
               <td>{{ d.firstName or '' }} {{ d.lastName or '' }}</td>
               <td><span class="badge bg-info text-dark">{{ d.categoryName or '—' }}</span></td>
@@ -727,10 +967,14 @@ DASHBOARD_TEMPLATE = """
               <td>{{ d.phoneNumber or '—' }}</td>
               <td>
                 {% if d.get('id') %}
-                <button class="btn btn-outline-danger delete-btn"
-                        onclick="deleteDoctor({{ d.id }}, this)">
-                  <i class="fa fa-trash"></i>
-                </button>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" onclick="viewDoctor({{ d.id }})" title="View Details">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="deleteDoctor({{ d.id }}, this)" title="Delete">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
                 {% else %}<span class="text-muted">—</span>{% endif %}
               </td>
             </tr>
@@ -747,11 +991,18 @@ DASHBOARD_TEMPLATE = """
   <div id="section-requests" class="section">
     <div class="data-card">
       <div class="card-head">
-        <h6><i class="fa-solid fa-file-medical me-2 text-success"></i>All Service Requests
-          <span class="badge bg-secondary ms-2" id="requests-count"></span>
-        </h6>
-        <input type="text" id="request-search" class="form-control form-control-sm w-auto"
-               placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0"><i class="fa-solid fa-file-medical me-2 text-success"></i>All Service Requests
+            <span class="badge bg-secondary ms-2" id="requests-count"></span>
+          </h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input type="text" id="request-search" class="form-control form-control-sm"
+                 style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
+          <button class="btn btn-sm btn-success" onclick="exportRequests()" title="Export to CSV">
+            <i class="fa fa-download me-1"></i>Export CSV
+          </button>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover table-sm" id="request-table">
@@ -912,6 +1163,45 @@ function filterTable(tableId, query) {
   rows.forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+}
+
+/* ─── Advanced Doctor Filters ─── */
+function applyDoctorFilters() {
+  const searchQuery = document.getElementById('doctor-search').value.toLowerCase();
+  const categoryFilter = document.getElementById('filter-category').value;
+  const cityFilter = document.getElementById('filter-city').value;
+  
+  const rows = document.querySelectorAll('#doctor-table tbody tr');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const cells = row.cells;
+    
+    // Get category and city from table cells (index 2 and 3)
+    const category = cells[2]?.textContent.trim() || '';
+    const city = cells[3]?.textContent.trim() || '';
+    
+    const matchesSearch = text.includes(searchQuery);
+    const matchesCategory = !categoryFilter || category === categoryFilter;
+    const matchesCity = !cityFilter || city === cityFilter;
+    
+    const shouldShow = matchesSearch && matchesCategory && matchesCity;
+    row.style.display = shouldShow ? '' : 'none';
+    if (shouldShow) visibleCount++;
+  });
+  
+  // Update count badge
+  const badge = document.getElementById('doctors-count');
+  if (badge) badge.textContent = visibleCount;
+}
+
+function clearDoctorFilters() {
+  document.getElementById('doctor-search').value = '';
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-city').value = '';
+  applyDoctorFilters();
+  showToast('Filters cleared', 'info');
 }
 
 function setNow() {
@@ -1152,8 +1442,11 @@ function rebuildRequestTable(reqs) {
 /* ─── Delete doctor ─── */
 async function deleteDoctor(id, btn) {
   if (!confirm(`Delete doctor ID ${id}? This action cannot be undone.`)) return;
+  
+  const originalHTML = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  
   try {
     const res = await fetch(`${BASE}/api/doctor/delete/${id}`, { method: 'POST' });
     if (!res.ok) {
@@ -1165,15 +1458,16 @@ async function deleteDoctor(id, btn) {
       btn.closest('tr').remove();
       const dc = document.getElementById('total-doctors');
       if (dc) dc.textContent = parseInt(dc.textContent||0) - 1;
+      showToast(`Doctor ID ${id} deleted successfully`, 'success');
     } else {
-      alert('Delete failed: ' + data.message);
+      showToast('Delete failed: ' + data.message, 'error');
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-trash"></i>';
+      btn.innerHTML = originalHTML;
     }
   } catch(e) {
-    alert('Request error: ' + e.message);
+    showToast('Request error: ' + e.message, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa fa-trash"></i>';
+    btn.innerHTML = originalHTML;
   }
 }
 
@@ -1187,8 +1481,140 @@ async function deleteDoctor(id, btn) {
 
   // Auto-refresh health every 30 s
   setInterval(loadHealth, 30000);
+  
+  // Load theme preference
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
 })();
+
+/* ─── Export Functions ─── */
+function exportDoctors() {
+  window.location.href = `${BASE}/api/export/doctors`;
+  showToast('Downloading doctors CSV...', 'info');
+}
+
+function exportRequests() {
+  window.location.href = `${BASE}/api/export/requests`;
+  showToast('Downloading requests CSV...', 'info');
+}
+
+/* ─── Doctor Details Modal ─── */
+async function viewDoctor(id) {
+  try {
+    const res = await fetch(`${BASE}/api/doctor/${id}`);
+    const data = await res.json();
+    if (data.success) {
+      showDoctorModal(data.data);
+    } else {
+      showToast('Failed to load doctor details', 'error');
+    }
+  } catch(e) {
+    showToast('Error loading doctor: ' + e.message, 'error');
+  }
+}
+
+function showDoctorModal(doctor) {
+  const modal = document.getElementById('doctor-modal');
+  const content = document.getElementById('doctor-modal-content');
+  
+  content.innerHTML = `
+    <div class="modal-row">
+      <div class="modal-label">Name</div>
+      <div class="modal-value">${doctor.firstName || ''} ${doctor.lastName || ''}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Email</div>
+      <div class="modal-value">${doctor.email || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Phone</div>
+      <div class="modal-value">${doctor.phoneNumber || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Category</div>
+      <div class="modal-value">${doctor.categoryName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">City</div>
+      <div class="modal-value">${doctor.cityName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">University</div>
+      <div class="modal-value">${doctor.universityName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Study Year</div>
+      <div class="modal-value">${doctor.studyYear || '—'}</div>
+    </div>
+  `;
+  
+  modal.classList.add('show');
+}
+
+function closeDoctorModal() {
+  document.getElementById('doctor-modal').classList.remove('show');
+}
+
+/* ─── Toast Notifications ─── */
+let toastId = 0;
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const id = `toast-${toastId++}`;
+  
+  const icons = {
+    success: 'fa-circle-check',
+    error: 'fa-circle-xmark',
+    info: 'fa-circle-info'
+  };
+  
+  const toast = document.createElement('div');
+  toast.id = id;
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <i class="fa ${icons[type] || icons.info} toast-icon"></i>
+    <div class="toast-message">${message}</div>
+  `;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+/* ─── Theme Toggle ─── */
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  showToast(`Switched to ${isLight ? 'light' : 'dark'} mode`, 'success');
+}
 </script>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Doctor Details Modal -->
+<div id="doctor-modal" class="modal-overlay" onclick="if(event.target === this) closeDoctorModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5><i class="fa fa-user-doctor me-2"></i>Doctor Details</h5>
+      <button class="modal-close" onclick="closeDoctorModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="doctor-modal-content">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Theme Toggle -->
+<div class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+  <i class="fa fa-circle-half-stroke"></i>
+</div>
+
 </body>
 </html>
 """
