@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     setUser(userData);
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("user", JSON.stringify(userData));
+    if (userData?.token) localStorage.setItem("token", userData.token);
   };
 
   const logout = () => {
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   return (

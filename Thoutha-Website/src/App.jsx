@@ -25,7 +25,6 @@ import Braces from "./Pages/Braces";
 import Support from "./Pages/Support";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DeleteAccount from "./Pages/DeleteAccount";
-import AdminHomeScreen from "./Pages/AdminHomeScreen";
 import DoctorProfile from "./Pages/DoctorProfile";
 import ProfileUpdate from "./Pages/ProfileUpdate";
 import DeleteMyAccount from "./Pages/DeleteMyAccount";
@@ -56,7 +55,6 @@ export default function App() {
       <Route path="/support" element={<Support/>}></Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy/>}></Route>
       <Route path="/delete-account" element={<DeleteAccount/>}></Route>
-      <Route path="/admin-home" element={<AdminHomeScreen/>}></Route>
       <Route path="/doctor-profile" element={<DoctorProfile/>}></Route>
       <Route path="/profile-update" element={<ProfileUpdate/>}></Route>
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>

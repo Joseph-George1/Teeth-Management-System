@@ -130,6 +130,88 @@
   opacity: 0.9;
 }
 
+.add-request-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.requests-status {
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+  margin: 12px 0;
+}
+.requests-status--error { color: #ef4444; }
+
+/* ── Request Card ───────────────────────────────────────── */
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px;
+  margin: 16px auto 0;
+  max-width: 560px;
+}
+
+.request-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.09);
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  direction: rtl;
+}
+
+.request-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.request-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1d61e7;
+  margin: 0;
+}
+
+.request-card-detail {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0;
+}
+
+.request-card-notes {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.request-card-book-btn {
+  background: linear-gradient(135deg, #1d61e7, #25b4e5);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
+  transition: opacity 0.2s;
+}
+
+.request-card-book-btn:hover {
+  opacity: 0.88;
+}
+
 .open-request-btn {
   display: flex;
   align-items: center;
