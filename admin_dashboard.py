@@ -553,7 +553,7 @@ DASHBOARD_TEMPLATE = """
       <i class="fa-solid fa-circle-user text-secondary"></i>
       <small class="text-muted text-truncate">{{ admin_email }}</small>
     </div>
-    <a href="/logout" class="btn btn-sm btn-outline-danger w-100">
+    <a href="{{ admin_prefix }}/logout" class="btn btn-sm btn-outline-danger w-100">
       <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
     </a>
   </div>
@@ -1156,6 +1156,10 @@ async function deleteDoctor(id, btn) {
   btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
   try {
     const res = await fetch(`${BASE}/api/doctor/delete/${id}`, { method: 'POST' });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
     const data = await res.json();
     if (data.success) {
       btn.closest('tr').remove();
@@ -1167,7 +1171,7 @@ async function deleteDoctor(id, btn) {
       btn.innerHTML = '<i class="fa fa-trash"></i>';
     }
   } catch(e) {
-    alert('Request error: ' + e);
+    alert('Request error: ' + e.message);
     btn.disabled = false;
     btn.innerHTML = '<i class="fa fa-trash"></i>';
   }
