@@ -20,8 +20,23 @@ AI_URL         = os.getenv("AI_URL",         "http://127.0.0.1:5010")
 OTP_URL        = os.getenv("OTP_URL",        "http://127.0.0.1:8000")
 PROXY_URL      = os.getenv("PROXY_URL",      "http://127.0.0.1:5173")
 DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "6500"))
-SECRET_KEY     = os.getenv("SECRET_KEY",     secrets.token_hex(32))
 REQUEST_TIMEOUT = 6  # seconds
+
+# SECRET_KEY: MUST be consistent across restarts for sessions to persist
+# Set SECRET_KEY env var to a fixed value in production!
+if not os.getenv("SECRET_KEY"):
+    # Use a file-based key that persists across restarts
+    key_file = os.path.join(os.path.dirname(__file__), ".flask_secret")
+    if os.path.exists(key_file):
+        with open(key_file, 'r') as f:
+            SECRET_KEY = f.read().strip()
+    else:
+        SECRET_KEY = secrets.token_hex(32)
+        with open(key_file, 'w') as f:
+            f.write(SECRET_KEY)
+        print(f"Generated new SECRET_KEY and saved to {key_file}")
+else:
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
 # ─────────────────────────────────────────────
 #  OBFUSCATED ROUTE PREFIX
@@ -38,16 +53,14 @@ app.secret_key = SECRET_KEY
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
-app.config['SESSION_COOKIE_NAME'] = 'admin_session'
-# Important: Cookie path must include the admin prefix
-app.config['SESSION_COOKIE_PATH'] = ADMIN_PREFIX or '/'
-# Refresh session on each access to prevent expiration
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-# Only enable CORS for API endpoints that need it, exclude admin routes
-CORS(app, resources={
-    r"/api/(?!tms-mng-).*": {"origins": "*", "supports_credentials": True}
-})
+app.config['SESSION_COOKIE_SECURE'] = True  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_NAME'] = 'tms_admin_sess'
+# Use root path for cookie to ensure it works correctly
+app.config['SESSION_COOKIE_PATH'] = '/'
+# Don't refresh on every request to avoid session conflicts
+app.config['SESSION_REFRESH_EACH_REQUEST'] = False
+# Simple CORS - allow all for API endpoints
+CORS(app)
 
 
 # ─────────────────────────────────────────────
@@ -205,15 +218,8 @@ def get_analytics(token):
 
 
 # ─────────────────────────────────────────────
-#  AUTH DECORATOR & HOOKS
+#  AUTH DECORATOR
 # ─────────────────────────────────────────────
-
-@app.before_request
-def make_session_permanent():
-    """Ensure all sessions are permanent and properly initialized."""
-    if request.endpoint and request.endpoint not in ['static', 'robots', 'catch_all']:
-        session.permanent = True
-
 
 def login_required(f):
     @wraps(f)
@@ -246,6 +252,7 @@ def catch_all(path):
 def login():
     # If already logged in, redirect to dashboard
     if session.get("jwt_token"):
+        app.logger.info("Already logged in, redirecting to dashboard")
         return redirect(url_for("dashboard"))
     
     error = None
@@ -269,25 +276,18 @@ def login():
                 
                 if not token:
                     error = "No authentication token received from backend"
+                    app.logger.error(f"No token in response: {data}")
                 else:
-                    # Set session data
-                    session.clear()  # Clear any existing session data
-                    session.permanent = True  # Make session persistent across browser restarts
+                    # Set session data - simpler approach
                     session["jwt_token"] = token
                     session["admin_email"] = email
-                    session.modified = True  # Explicitly mark session as modified
+                    session.permanent = True
                     
                     app.logger.info(f"Admin login successful: {email}")
-                    
-                    # Create response with redirect
-                    response = redirect(url_for("dashboard"))
-                    # Ensure session cookie is set by adding cache-control headers
-                    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-                    response.headers['Pragma'] = 'no-cache'
-                    response.headers['Expires'] = '0'
-                    return response
+                    return redirect(url_for("dashboard"))
             else:
                 error = f"Invalid credentials (HTTP {r.status_code})"
+                app.logger.warning(f"Login failed for {email}: HTTP {r.status_code}")
         except Exception as exc:
             app.logger.error(f"Login error: {exc}")
             error = f"Cannot reach backend: {exc}"
