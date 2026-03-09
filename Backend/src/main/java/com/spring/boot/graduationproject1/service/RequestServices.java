@@ -12,4 +12,6 @@ public interface RequestServices {
     RequestDto getRequestById(Long id);
     RequestDto createRequest(RequestDto requestDto);
     void deleteRequest();
+    List<RequestDto> getRequestByCategoryId(Long categoryId);
+    List<RequestDto> getRequestByDoctorId();
 }

@@ -46,15 +46,17 @@ public class SecurityConfig {
                                 "/api/category/**",
                                 "/api/cities/**",
                                 "/api/university/**",
-                                "/api/doctor/getDoctorById")
+                                "/api/doctor/getDoctorById",
+                                "/api/request/getRequestByCategoryId")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasAnyRole("DOCTOR","ADMIN")
-                        .requestMatchers(HttpMethod.POST,"/api/request/createRequest").hasAnyRole("DOCTOR","ADMIN")
-                        .requestMatchers(HttpMethod.GET,"/api/request/**").hasAnyRole("DOCTOR","ADMIN","PATIENT")
-                        .requestMatchers(HttpMethod.DELETE,"/api/request/**").hasAnyRole("DOCTOR","ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/doctor/deleteDoctor").hasAnyRole("DOCTOR","ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/api/doctor/deleteByDoctorAdmin").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/request/getRequestsByDoctorId").hasAnyRole("ADMIN","DOCTOR")
+                        .requestMatchers(HttpMethod.GET,"/api/request/getAllRequests").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/request/createRequest").hasAnyRole("DOCTOR","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/request/deleteRequest").hasAnyRole("DOCTOR","ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
