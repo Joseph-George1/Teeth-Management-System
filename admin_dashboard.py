@@ -45,7 +45,7 @@ BACKEND_URL    = os.getenv("BACKEND_URL",    "http://localhost:8080")
 AI_URL         = os.getenv("AI_URL",         "http://127.0.0.1:5010")
 OTP_URL        = os.getenv("OTP_URL",        "http://127.0.0.1:8000")
 PROXY_URL      = os.getenv("PROXY_URL",      "http://127.0.0.1:5173")
-DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "5500"))
+DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "6500"))
 SECRET_KEY     = os.getenv("SECRET_KEY",     secrets.token_hex(32))
 REQUEST_TIMEOUT = 6  # seconds
 
