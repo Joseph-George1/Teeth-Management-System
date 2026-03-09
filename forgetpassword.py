@@ -171,7 +171,7 @@ def update_user_password(user_type, user_id, new_password_hash):
         # Use quoted identifier for PASSWORD (reserved word in Oracle)
         cursor.execute(
             'UPDATE DOCTOR SET "PASSWORD" = :pwd WHERE ID = :uid',
-            pwd=new_password_hash, uid=user_id
+            {"pwd": new_password_hash, "uid": user_id}
         )
         
         conn.commit()
