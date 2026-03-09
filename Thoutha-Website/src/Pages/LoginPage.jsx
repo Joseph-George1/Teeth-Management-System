@@ -47,7 +47,14 @@ export default function LoginPage() {
         // 🔹 سجل الدخول في الـ context
         login(userData);
 
-        navigate('/doctor-home'); // تحويل على صفحة الطبيب
+        // 🔹 توجيه المستخدم بناءً على نوع البريد الإلكتروني
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const isAdmin = normalizedEmail.endsWith('@thoutha.page');
+        if (isAdmin) {
+          navigate('/admin-home', { replace: true });
+        } else {
+          navigate('/doctor-home', { replace: true });
+        }
       } else {
         setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات');
       }
