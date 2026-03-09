@@ -169,9 +169,10 @@ def update_user_password(user_type, user_id, new_password_hash):
             raise ValueError(f"Password reset not supported for user type: {user_type}")
         
         # Use quoted identifier for PASSWORD (reserved word in Oracle)
+        # Use explicit bind variable names to avoid conflicts
         cursor.execute(
-            'UPDATE DOCTOR SET "PASSWORD" = :pwd WHERE ID = :uid',
-            {"pwd": new_password_hash, "uid": user_id}
+            'UPDATE DOCTOR SET "PASSWORD" = :password_value WHERE ID = :user_id_value',
+            {"password_value": new_password_hash, "user_id_value": user_id}
         )
         
         conn.commit()
