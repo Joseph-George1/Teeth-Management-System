@@ -27,7 +27,7 @@ Usage:
 import os
 import json
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import Counter
 from functools import wraps
 
@@ -51,6 +51,10 @@ REQUEST_TIMEOUT = 6  # seconds
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+# Configure session to persist for 30 days
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 CORS(app)
 
 # ─────────────────────────────────────────────
@@ -261,6 +265,7 @@ def login():
             )
             if r.status_code == 200:
                 data = r.json()
+                session.permanent = True  # Make session persistent across browser restarts
                 session["jwt_token"]   = data.get("token") or data.get("accessToken") or list(data.values())[0]
                 session["admin_email"] = email
                 return redirect(url_for("dashboard"))
