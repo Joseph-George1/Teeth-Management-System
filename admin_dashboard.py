@@ -527,15 +527,18 @@ DASHBOARD_TEMPLATE = """
       --yellow:     #d29922;
       --orange:     #e3b341;
     }
-    body { background: var(--bg-base); color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg-base); color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
 
     /* ── Sidebar ── */
     .sidebar {
       position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
       background: var(--bg-card); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; z-index: 100;
+      display: flex; flex-direction: column; z-index: 1000;
       padding-top: 1rem;
+      transition: transform 0.3s ease;
     }
+    .sidebar.mobile-hidden { transform: translateX(-100%); }
     .sidebar .brand {
       padding: 1rem 1.5rem 1.5rem;
       border-bottom: 1px solid var(--border);
@@ -553,12 +556,34 @@ DASHBOARD_TEMPLATE = """
     .sidebar .nav-link i { width: 20px; margin-right: .6rem; }
     .sidebar-bottom { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
 
+    /* ── Mobile Menu Toggle ── */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed; top: 1rem; left: 1rem; z-index: 1001;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; width: 44px; height: 44px;
+      align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all .2s;
+    }
+    .mobile-menu-toggle:hover { background: var(--bg-card2); }
+    .mobile-menu-toggle i { color: var(--accent); font-size: 1.25rem; }
+    
+    .mobile-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 999;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay.show { opacity: 1; }
+
     /* ── Main ── */
-    .main { margin-left: 240px; padding: 2rem; }
+    .main { margin-left: 240px; padding: 2rem; min-height: 100vh; }
     .page-header {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 2rem;
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
     }
     .page-header h4 { margin: 0; color: #f0f6fc; font-weight: 700; }
 
@@ -612,24 +637,105 @@ DASHBOARD_TEMPLATE = """
       padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
       background: var(--bg-card2);
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem;
     }
+    .data-card .card-head > div { flex-wrap: wrap; }
     .data-card .card-head h6 { margin: 0; font-weight: 700; color: #f0f6fc; }
     table { margin: 0; }
     thead { background: var(--bg-card2); }
     th { font-size: .8rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: .05em; }
     td, th { border-color: var(--border) !important; padding: .65rem 1rem !important; }
     tbody tr:hover { background: rgba(88,166,255,.05); }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    @media(max-width:992px) {
+      table { font-size: .85rem; }
+      td, th { padding: .5rem .6rem !important; white-space: nowrap; }
+    }
+    
+    /* ── Mobile Card View ── */
+    .mobile-card-view {
+      display: none;
+      padding: 1rem;
+    }
+    .data-item-card {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s;
+    }
+    .data-item-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-row:last-child {
+      border-bottom: none;
+    }
+    .card-label {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .card-value {
+      color: #f0f6fc;
+      text-align: right;
+      font-size: 0.85rem;
+    }
+    @media(max-width:768px) {
+      .table-responsive { display: none; }
+      .mobile-card-view { display: block; }
+    }
+
+    /* ── Quick Stats ── */
+    .quick-stat-card {
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .quick-stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
 
     /* ── Misc ── */
     .section { display: none; }
     .section.active { display: block; }
     .refresh-btn { cursor: pointer; }
+    .refresh-btn.refreshing #manual-refresh-icon { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #auto-refresh-toggle.active { background-color: var(--green); border-color: var(--green); color: white; }
+    .refreshing-indicator {
+      position: fixed; top: 70px; right: 20px; z-index: 500;
+      background: var(--bg-card); border: 1px solid var(--accent);
+      border-radius: 8px; padding: 0.5rem 1rem;
+      box-shadow: 0 4px 12px rgba(88,166,255,0.3);
+      display: none; align-items: center; gap: 0.5rem;
+      animation: slideInRight 0.3s;
+    }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .refreshing-indicator.show { display: flex; }
+    .refresh-spinner { 
+      width: 14px; height: 14px; 
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
     .dot-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
     .dot-green { background: var(--green); }
     .dot-red   { background: var(--red); }
     .dot-yellow{ background: var(--yellow); }
     .dot-grey  { background: var(--text-muted); }
-    #last-updated { font-size: .75rem; color: var(--text-muted); }
+    #last-updated { font-size: .75rem; color: var(--text-muted); display: block; }
     .delete-btn { padding: .2rem .6rem; font-size: .78rem; }
     .badge-pending  { background: rgba(210,153,34,.2);  color: var(--orange); border: 1px solid rgba(210,153,34,.3); }
     .badge-approved { background: rgba(63,185,80,.2);   color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
@@ -685,7 +791,7 @@ DASHBOARD_TEMPLATE = """
 
     /* ── Dark Mode Toggle ── */
     .theme-toggle {
-      position: fixed; bottom: 20px; right: 20px; z-index: 100;
+      position: fixed; bottom: 20px; right: 20px; z-index: 500;
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: 50%; width: 48px; height: 48px;
       display: flex; align-items: center; justify-content: center;
@@ -702,24 +808,103 @@ DASHBOARD_TEMPLATE = """
     body.light-mode { background: var(--bg-base); color: #212529; }
     body.light-mode .sidebar, body.light-mode .stat-card, body.light-mode .chart-card,
     body.light-mode .data-card, body.light-mode .service-card,
-    body.light-mode .modal-content { color: #212529; }
+    body.light-mode .modal-content, body.light-mode .data-item-card { color: #212529; }
     body.light-mode .nav-link { color: #6c757d; }
     body.light-mode .nav-link:hover, body.light-mode .nav-link.active { color: #212529; }
     body.light-mode h4, body.light-mode h5, body.light-mode h6,
-    body.light-mode .stat-value, body.light-mode .modal-value { color: #212529; }
+    body.light-mode .stat-value, body.light-mode .modal-value, 
+    body.light-mode .card-value { color: #212529; }
     body.light-mode .toast { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    body.light-mode .mobile-menu-toggle { color: #212529; }
+    body.light-mode .mobile-overlay { background: rgba(0,0,0,0.4); }
 
+    /* ── Mobile Responsive ── */
     @media(max-width:768px){
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 1rem; }
-      .theme-toggle { bottom: 10px; right: 10px; width: 40px; height: 40px; }
+      .mobile-menu-toggle { display: flex; }
+      .mobile-overlay.show { display: block; }
+      .sidebar { 
+        transform: translateX(-100%);
+        box-shadow: 4px 0 12px rgba(0,0,0,0.5);
+      }
+      .sidebar.show { transform: translateX(0); }
+      .main { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+      .theme-toggle { bottom: 80px; right: 15px; width: 44px; height: 44px; }
+      
+      .page-header { padding: 1rem; }
+      .page-header h4 { font-size: 1.1rem; width: 100%; }
+      .page-header > div:first-child { width: 100%; margin-bottom: 0.75rem; }
+      .page-header .d-flex { width: 100%; justify-content: stretch; }
+      .page-header .btn { flex: 1; }
+      
+      .refreshing-indicator { top: 60px; right: 10px; font-size: 0.8rem; padding: 0.4rem 0.75rem; }
+      
+      .stat-card { padding: 1rem; }
+      .stat-value { font-size: 1.5rem; }
+      .stat-label { font-size: .75rem; }
+      .stat-icon { width: 40px; height: 40px; font-size: 1.1rem; }
+      
+      .chart-card { padding: 1rem; }
+      .chart-card h6 { font-size: .9rem; }
+      
+      .data-card .card-head { padding: .75rem 1rem; flex-direction: column; align-items: flex-start; }
+      .data-card .card-head > div { width: 100%; }
+      .data-card .card-head .d-flex { flex-direction: column; gap: 0.5rem !important; }
+      .data-card .card-head select,
+      .data-card .card-head input,
+      .data-card .card-head .btn { width: 100% !important; max-width: 100% !important; }
+      
+      .service-card { padding: .85rem 1rem; }
+      .service-name { font-size: .9rem; }
+      .service-detail { font-size: .75rem; }
+      .health-badge { font-size: .75rem; padding: .25rem .6rem; }
+      
+      .modal-content { width: 95%; padding: 1.25rem; max-height: 85vh; }
+      .modal-row { flex-direction: column; padding: .5rem 0; }
+      .modal-label { width: 100%; margin-bottom: .25rem; font-size: .85rem; }
+      .modal-value { font-size: .9rem; }
+      
+      .toast-container { right: 10px; left: 10px; max-width: 100%; }
+      .toast { font-size: .85rem; padding: .75rem 1rem; }
+      
+      /* Better button spacing on mobile */
+      .btn-group { display: flex; gap: 0.25rem; }
+      .btn-sm { padding: .35rem .6rem; font-size: .8rem; }
+      
+      /* Stack columns on mobile */
+      .row.g-3 > [class*="col-"] { margin-bottom: 1rem; }
+    }
+    
+    @media(max-width:576px){
+      .stat-card .d-flex { flex-direction: column; align-items: flex-start !important; gap: 0.5rem; }
+      .stat-icon { margin-bottom: .5rem; }
+      
+      .quick-stat-card h4 { font-size: 1.25rem; }
+      .quick-stat-card small { font-size: 0.7rem; }
+      
+      table { font-size: .75rem; }
+      td, th { padding: .4rem .5rem !important; }
+      .badge { font-size: .7rem; padding: .2rem .4rem; }
+      
+      .btn { font-size: .8rem; padding: .4rem .7rem; }
+      .btn-sm { font-size: .72rem; padding: .3rem .5rem; }
+      
+      .page-header h4 { font-size: 1rem; }
+      .chart-card h6 { font-size: .85rem; }
     }
   </style>
 </head>
 <body>
 
+<!-- Mobile Menu Toggle -->
+<div class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+  <i class="fa fa-bars"></i>
+</div>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="brand"><i class="fa-solid fa-tooth"></i>TMS Admin</div>
   <nav class="nav flex-column mt-2">
     <a class="nav-link active" data-section="overview" href="#" onclick="showSection('overview',this)">
@@ -755,9 +940,16 @@ DASHBOARD_TEMPLATE = """
       <h4><i class="fa-solid fa-chart-line me-2 text-info"></i>Analytics Dashboard</h4>
       <span id="last-updated">Last updated: —</span>
     </div>
-    <button class="btn btn-sm btn-outline-secondary refresh-btn" onclick="refreshAll()">
-      <i class="fa-solid fa-rotate-right me-1"></i>Refresh
-    </button>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn btn-sm btn-outline-secondary" id="auto-refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle Auto-Refresh">
+        <i class="fa-solid fa-pause" id="refresh-icon"></i>
+        <span class="d-none d-md-inline ms-1" id="refresh-text">Pause</span>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary refresh-btn" onclick="refreshAll()">
+        <i class="fa-solid fa-rotate-right me-1" id="manual-refresh-icon"></i>
+        <span class="d-none d-sm-inline">Refresh</span>
+      </button>
+    </div>
   </div>
 
   <!-- ── OVERVIEW SECTION ── -->
@@ -821,32 +1013,32 @@ DASHBOARD_TEMPLATE = """
 
     <!-- Quick Stats Row -->
     <div class="row g-3 mb-4">
-      <div class="col-md-3">
-        <div class="chart-card" style="padding:1rem;">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-chart-line me-1"></i>Pending Requests</small>
           </div>
           <h4 class="mb-0" id="stat-pending">{{ analytics.requests_by_status.get('PENDING', 0) }}</h4>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="chart-card" style="padding:1rem;">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-check-circle me-1"></i>Approved</small>
           </div>
           <h4 class="mb-0 text-success" id="stat-approved">{{ analytics.requests_by_status.get('APPROVED', 0) }}</h4>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="chart-card" style="padding:1rem;">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-times-circle me-1"></i>Rejected</small>
           </div>
           <h4 class="mb-0 text-danger" id="stat-rejected">{{ analytics.requests_by_status.get('REJECTED', 0) }}</h4>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="chart-card" style="padding:1rem;">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-graduation-cap me-1"></i>Universities</small>
           </div>
@@ -989,6 +1181,49 @@ DASHBOARD_TEMPLATE = """
           </tbody>
         </table>
       </div>
+      <!-- Mobile Card View -->
+      <div class="mobile-card-view" id="doctor-cards">
+        {% for d in analytics.doctors_list %}
+        <div class="data-item-card" data-doctor-card data-id="{{ d.get('id', '') }}">
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user me-1"></i>Name</span>
+            <span class="card-value"><strong>{{ d.firstName or '' }} {{ d.lastName or '' }}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value"><span class="badge bg-info text-dark">{{ d.categoryName or '—' }}</span></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">{{ d.cityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">{{ d.universityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-graduation-cap me-1"></i>Study Year</span>
+            <span class="card-value">{{ d.studyYear or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">{{ d.phoneNumber or '—' }}</span>
+          </div>
+          {% if d.get('id') %}
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick=\"viewDoctor({{ d.id }})\" title=\"View Details\">
+              <i class="fa fa-eye me-1"></i>View
+            </button>
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick=\"deleteDoctor({{ d.id }}, this)\" title=\"Delete\">
+              <i class="fa fa-trash me-1"></i>Delete
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No doctors found</div>
+        {% endfor %}
+      </div>
     </div>
   </div><!-- /doctors -->
 
@@ -1046,6 +1281,50 @@ DASHBOARD_TEMPLATE = """
             {% endfor %}
           </tbody>
         </table>
+      </div>
+      <!-- Mobile Card View -->
+      <div class="mobile-card-view" id="request-cards">
+        {% for r in analytics.requests_list %}
+        <div class="data-item-card" data-request-card>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-hashtag me-1"></i>ID</span>
+            <span class="card-value"><strong>{{ r.id or '—' }}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
+            <span class="card-value">{{ r.doctorName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value">{{ r.categoryName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-clock me-1"></i>Status</span>
+            <span class="card-value">
+              {% set s = (r.status or 'UNKNOWN')|upper %}
+              {% if s == 'PENDING' %}
+              <span class="badge badge-pending">⏳ Pending</span>
+              {% elif s == 'APPROVED' %}
+              <span class="badge badge-approved">✅ Approved</span>
+              {% elif s == 'REJECTED' %}
+              <span class="badge badge-rejected">❌ Rejected</span>
+              {% else %}
+              <span class="badge badge-unknown">{{ s }}</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
+            <span class="card-value">{{ r.dateTime or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-file-text me-1"></i>Description</span>
+            <span class="card-value text-muted" style="text-align: left; font-size: 0.8rem;">{{ r.description or '—' }}</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No requests found</div>
+        {% endfor %}
       </div>
     </div>
   </div><!-- /requests -->
@@ -1154,11 +1433,29 @@ const PALETTE = [
 ];
 
 /* ─── Helpers ─── */
+function toggleMobileMenu() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.toggle('show');
+  overlay.classList.toggle('show');
+}
+
+function closeMobileMenu() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.remove('show');
+  overlay.classList.remove('show');
+}
+
 function showSection(name, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelector('#section-' + name).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   el.classList.add('active');
+  // Close mobile menu when navigating
+  if (window.innerWidth <= 768) {
+    closeMobileMenu();
+  }
   event.preventDefault();
 }
 
@@ -1168,6 +1465,14 @@ function filterTable(tableId, query) {
   rows.forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+  
+  // Also filter mobile cards for requests
+  if (tableId === 'request-table') {
+    const cards = document.querySelectorAll('[data-request-card]');
+    cards.forEach(card => {
+      card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
 }
 
 /* ─── Advanced Doctor Filters ─── */
@@ -1176,6 +1481,7 @@ function applyDoctorFilters() {
   const categoryFilter = document.getElementById('filter-category').value;
   const cityFilter = document.getElementById('filter-city').value;
   
+  // Filter desktop table
   const rows = document.querySelectorAll('#doctor-table tbody tr');
   let visibleCount = 0;
   
@@ -1196,9 +1502,34 @@ function applyDoctorFilters() {
     if (shouldShow) visibleCount++;
   });
   
-  // Update count badge
+  // Filter mobile cards
+  const cards = document.querySelectorAll('[data-doctor-card]');
+  let mobileVisibleCount = 0;
+  
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const categoryBadge = card.querySelector('.badge');
+    const category = categoryBadge ? categoryBadge.textContent.trim() : '';
+    
+    // Find city in card rows
+    const cityRow = Array.from(card.querySelectorAll('.card-row')).find(row => 
+      row.querySelector('.card-label')?.textContent.includes('City')
+    );
+    const city = cityRow ? cityRow.querySelector('.card-value')?.textContent.trim() : '';
+    
+    const matchesSearch = text.includes(searchQuery);
+    const matchesCategory = !categoryFilter || category === categoryFilter;
+    const matchesCity = !cityFilter || city === cityFilter;
+    
+    const shouldShow = matchesSearch && matchesCategory && matchesCity;
+    card.style.display = shouldShow ? '' : 'none';
+    if (shouldShow) mobileVisibleCount++;
+  });
+  
+  // Update count badge (use table count if available, otherwise mobile count)
+  const count = visibleCount > 0 ? visibleCount : mobileVisibleCount;
   const badge = document.getElementById('doctors-count');
-  if (badge) badge.textContent = visibleCount;
+  if (badge) badge.textContent = count;
 }
 
 function clearDoctorFilters() {
@@ -1210,8 +1541,12 @@ function clearDoctorFilters() {
 }
 
 function setNow() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString();
+  const dateStr = now.toLocaleDateString();
   document.getElementById('last-updated').textContent =
-    'Last updated: ' + new Date().toLocaleTimeString();
+    `Last updated: ${timeStr}`;
+  document.getElementById('last-updated').title = `${dateStr} ${timeStr}`;
 }
 
 /* ─── Charts ─── */
@@ -1366,20 +1701,43 @@ function renderHealthStrip(h) {
 /* ─── Prefix (injected server-side, never guessable by crawlers) ─── */
 const BASE = "{{ admin_prefix }}";
 
+/* ─── Auto-refresh state ─── */
+let autoRefreshEnabled = true;
+let analyticsRefreshInterval = null;
+let healthRefreshInterval = null;
+let isRefreshing = false;
+
 /* ─── AJAX refresh ─── */
-async function loadAnalytics() {
+async function loadAnalytics(silent = false) {
+  if (isRefreshing && !silent) return; // Prevent concurrent refreshes
+  
+  if (!silent) {
+    isRefreshing = true;
+    showRefreshingIndicator();
+  }
+  
   try {
     const res = await fetch(BASE + '/api/analytics');
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (!silent) showToast('Failed to refresh analytics', 'error');
+      return;
+    }
     const data = await res.json();
     renderCharts(data);
     rebuildDoctorTable(data.doctors_list || []);
     rebuildRequestTable(data.requests_list || []);
     setNow();
-  } catch(e) { console.warn('Analytics load failed', e); }
+    if (!silent) showToast('Dashboard refreshed successfully', 'success');
+  } catch(e) { 
+    console.warn('Analytics load failed', e);
+    if (!silent) showToast('Network error during refresh', 'error');
+  } finally {
+    isRefreshing = false;
+    hideRefreshingIndicator();
+  }
 }
 
-async function loadHealth() {
+async function loadHealth(silent = true) {
   try {
     const res = await fetch(BASE + '/api/health');
     if (!res.ok) return;
@@ -1390,39 +1748,160 @@ async function loadHealth() {
   } catch(e) { console.warn('Health load failed', e); }
 }
 
-function refreshAll() { loadAnalytics(); loadHealth(); }
+function refreshAll() { 
+  const btn = document.querySelector('.refresh-btn');
+  if (btn) btn.classList.add('refreshing');
+  
+  Promise.all([loadAnalytics(false), loadHealth(false)])
+    .finally(() => {
+      if (btn) btn.classList.remove('refreshing');
+    });
+}
+
+function showRefreshingIndicator() {
+  const indicator = document.getElementById('refreshing-indicator');
+  if (indicator) indicator.classList.add('show');
+}
+
+function hideRefreshingIndicator() {
+  const indicator = document.getElementById('refreshing-indicator');
+  if (indicator) indicator.classList.remove('show');
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const btn = document.getElementById('auto-refresh-toggle');
+  const icon = document.getElementById('refresh-icon');
+  const text = document.getElementById('refresh-text');
+  
+  if (autoRefreshEnabled) {
+    btn.classList.add('active');
+    icon.className = 'fa-solid fa-play';
+    if (text) text.textContent = 'Auto';
+    btn.title = 'Auto-refresh enabled (every 30s)';
+    startAutoRefresh();
+    showToast('Auto-refresh enabled', 'success');
+  } else {
+    btn.classList.remove('active');
+    icon.className = 'fa-solid fa-pause';
+    if (text) text.textContent = 'Pause';
+    btn.title = 'Auto-refresh paused';
+    stopAutoRefresh();
+    showToast('Auto-refresh paused', 'info');
+  }
+}
+
+function startAutoRefresh() {
+  // Clear existing intervals
+  stopAutoRefresh();
+  
+  // Analytics refresh every 30 seconds
+  analyticsRefreshInterval = setInterval(() => {
+    if (autoRefreshEnabled && !document.querySelector('.modal-overlay.show')) {
+      loadAnalytics(true); // Silent refresh
+    }
+  }, 30000);
+  
+  // Health refresh every 20 seconds
+  healthRefreshInterval = setInterval(() => {
+    if (autoRefreshEnabled) {
+      loadHealth(true);
+    }
+  }, 20000);
+}
+
+function stopAutoRefresh() {
+  if (analyticsRefreshInterval) {
+    clearInterval(analyticsRefreshInterval);
+    analyticsRefreshInterval = null;
+  }
+  if (healthRefreshInterval) {
+    clearInterval(healthRefreshInterval);
+    healthRefreshInterval = null;
+  }
+}
 
 /* ─── Dynamic table rebuild ─── */
 function rebuildDoctorTable(doctors) {
   const tbody = document.getElementById('doctor-tbody');
-  if (!tbody) return;
-  if (!doctors.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No doctors found</td></tr>';
-    return;
+  const cardsContainer = document.getElementById('doctor-cards');
+  
+  // Rebuild desktop table
+  if (tbody) {
+    if (!doctors.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No doctors found</td></tr>';
+    } else {
+      tbody.innerHTML = doctors.map((d,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${(d.firstName||'')+' '+(d.lastName||'')}</td>
+          <td><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></td>
+          <td>${d.cityName||'—'}</td>
+          <td>${d.universityName||'—'}</td>
+          <td>${d.studyYear||'—'}</td>
+          <td>${d.phoneNumber||'—'}</td>
+          <td>${d.id
+            ? `<div class="btn-group btn-group-sm">
+                 <button class="btn btn-outline-primary" onclick="viewDoctor(${d.id})" title="View Details"><i class="fa fa-eye"></i></button>
+                 <button class="btn btn-outline-danger" onclick="deleteDoctor(${d.id},this)" title="Delete"><i class="fa fa-trash"></i></button>
+               </div>`
+            : '<span class="text-muted">—</span>'}</td>
+        </tr>
+      `).join('');
+    }
   }
-  tbody.innerHTML = doctors.map((d,i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td>${(d.firstName||'')+' '+(d.lastName||'')}</td>
-      <td><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></td>
-      <td>${d.cityName||'—'}</td>
-      <td>${d.universityName||'—'}</td>
-      <td>${d.studyYear||'—'}</td>
-      <td>${d.phoneNumber||'—'}</td>
-      <td>${d.id
-        ? `<button class="btn btn-outline-danger delete-btn" onclick="deleteDoctor(${d.id},this)"><i class="fa fa-trash"></i></button>`
-        : '<span class="text-muted">—</span>'}</td>
-    </tr>
-  `).join('');
+  
+  // Rebuild mobile cards
+  if (cardsContainer) {
+    if (!doctors.length) {
+      cardsContainer.innerHTML = '<div class="text-center text-muted py-4">No doctors found</div>';
+    } else {
+      cardsContainer.innerHTML = doctors.map(d => `
+        <div class="data-item-card" data-doctor-card data-id="${d.id||''}">
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user me-1"></i>Name</span>
+            <span class="card-value"><strong>${(d.firstName||'')+' '+(d.lastName||'')}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value"><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">${d.cityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">${d.universityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-graduation-cap me-1"></i>Study Year</span>
+            <span class="card-value">${d.studyYear||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">${d.phoneNumber||'—'}</span>
+          </div>
+          ${d.id ? `
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewDoctor(${d.id})" title="View Details">
+              <i class="fa fa-eye me-1"></i>View
+            </button>
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteDoctor(${d.id},this)" title="Delete">
+              <i class="fa fa-trash me-1"></i>Delete
+            </button>
+          </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+  }
 }
 
 function rebuildRequestTable(reqs) {
   const tbody = document.querySelector('#request-table tbody');
-  if (!tbody) return;
-  if (!reqs.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>';
-    return;
-  }
+  const cardsContainer = document.getElementById('request-cards');
+  
   const statusBadge = s => {
     switch((s||'').toUpperCase()) {
       case 'PENDING':  return '<span class="badge badge-pending">⏳ Pending</span>';
@@ -1431,17 +1910,61 @@ function rebuildRequestTable(reqs) {
       default:         return `<span class="badge badge-unknown">${s||'UNKNOWN'}</span>`;
     }
   };
-  tbody.innerHTML = reqs.map((r,i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td>${r.id||'—'}</td>
-      <td>${r.doctorName||'—'}</td>
-      <td>${r.categoryName||'—'}</td>
-      <td>${statusBadge(r.status)}</td>
-      <td>${r.dateTime||'—'}</td>
-      <td class="text-muted" style="max-width:250px;white-space:normal">${r.description||'—'}</td>
-    </tr>
-  `).join('');
+  
+  // Rebuild desktop table
+  if (tbody) {
+    if (!reqs.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>';
+    } else {
+      tbody.innerHTML = reqs.map((r,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.id||'—'}</td>
+          <td>${r.doctorName||'—'}</td>
+          <td>${r.categoryName||'—'}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${r.dateTime||'—'}</td>
+          <td class="text-muted" style="max-width:250px;white-space:normal">${r.description||'—'}</td>
+        </tr>
+      `).join('');
+    }
+  }
+  
+  // Rebuild mobile cards
+  if (cardsContainer) {
+    if (!reqs.length) {
+      cardsContainer.innerHTML = '<div class="text-center text-muted py-4">No requests found</div>';
+    } else {
+      cardsContainer.innerHTML = reqs.map(r => `
+        <div class="data-item-card" data-request-card>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-hashtag me-1"></i>ID</span>
+            <span class="card-value"><strong>${r.id||'—'}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
+            <span class="card-value">${r.doctorName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value">${r.categoryName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-clock me-1"></i>Status</span>
+            <span class="card-value">${statusBadge(r.status)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
+            <span class="card-value">${r.dateTime||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-file-text me-1"></i>Description</span>
+            <span class="card-value text-muted" style="text-align: left; font-size: 0.8rem;">${r.description||'—'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 /* ─── Delete doctor ─── */
@@ -1460,10 +1983,24 @@ async function deleteDoctor(id, btn) {
     }
     const data = await res.json();
     if (data.success) {
-      btn.closest('tr').remove();
+      // Remove the row/card immediately
+      const tableRow = btn.closest('tr');
+      if (tableRow) tableRow.remove();
+      
+      const mobileCard = btn.closest('[data-doctor-card]');
+      if (mobileCard) mobileCard.remove();
+      
+      // Update counts
       const dc = document.getElementById('total-doctors');
       if (dc) dc.textContent = parseInt(dc.textContent||0) - 1;
+      
+      const badge = document.getElementById('doctors-count');
+      if (badge) badge.textContent = parseInt(badge.textContent||0) - 1;
+      
       showToast(`Doctor ID ${id} deleted successfully`, 'success');
+      
+      // Trigger a silent refresh after 2 seconds to ensure data consistency
+      setTimeout(() => loadAnalytics(true), 2000);
     } else {
       showToast('Delete failed: ' + data.message, 'error');
       btn.disabled = false;
@@ -1484,13 +2021,37 @@ async function deleteDoctor(id, btn) {
   renderHealthStrip({{ health | tojson }});
   setNow();
 
-  // Auto-refresh health every 30 s
-  setInterval(loadHealth, 30000);
+  // Start auto-refresh intervals
+  startAutoRefresh();
   
   // Load theme preference
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'light') {
     document.body.classList.add('light-mode');
+  }
+  
+  // Handle window resize - close mobile menu when resizing to desktop
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.innerWidth > 768) {
+        closeMobileMenu();
+      }
+    }, 250);
+  });
+  
+  // Set initial counts
+  const doctorCards = document.querySelectorAll('[data-doctor-card]');
+  const requestCards = document.querySelectorAll('[data-request-card]');
+  const dcBadge = document.getElementById('doctors-count');
+  const rcBadge = document.getElementById('requests-count');
+  
+  if (dcBadge && !dcBadge.textContent) {
+    dcBadge.textContent = doctorCards.length || initialData.totals.doctors;
+  }
+  if (rcBadge && !rcBadge.textContent) {
+    rcBadge.textContent = requestCards.length || initialData.totals.requests;
   }
 })();
 
@@ -1566,10 +2127,23 @@ function showDoctorModal(doctor) {
   `;
   
   modal.classList.add('show');
+  
+  // Pause auto-refresh while modal is open
+  if (autoRefreshEnabled) {
+    stopAutoRefresh();
+    modal.dataset.resumeRefresh = 'true';
+  }
 }
 
 function closeDoctorModal() {
-  document.getElementById('doctor-modal').classList.remove('show');
+  const modal = document.getElementById('doctor-modal');
+  modal.classList.remove('show');
+  
+  // Resume auto-refresh if it was paused for the modal
+  if (modal.dataset.resumeRefresh === 'true') {
+    startAutoRefresh();
+    delete modal.dataset.resumeRefresh;
+  }
 }
 
 /* ─── Toast Notifications ─── */
@@ -1614,6 +2188,12 @@ function toggleTheme() {
   showToast(`Switched to ${isLight ? 'light' : 'dark'} mode`, 'success');
 }
 </script>
+
+<!-- Refreshing Indicator -->
+<div id="refreshing-indicator" class="refreshing-indicator">
+  <div class="refresh-spinner"></div>
+  <span style="font-size: 0.85rem; color: var(--accent);">Updating...</span>
+</div>
 
 <!-- Toast Container -->
 <div id="toast-container" class="toast-container"></div>
