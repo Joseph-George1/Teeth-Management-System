@@ -402,13 +402,21 @@ def export_requests():
     writer = csv.writer(output)
     
     # Write header
-    writer.writerow(["ID", "Doctor Name", "Category", "Status", "Date & Time", "Description"])
+    writer.writerow(["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"])
     
     # Write data
     for r in requests_list:
+        # Handle both old and new format
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
         writer.writerow([
             r.get("id", ""),
-            r.get("doctorName", ""),
+            doctor_name,
+            r.get("doctorPhoneNumber", ""),
+            r.get("doctorCityName", ""),
+            r.get("doctorUniversityName", ""),
             r.get("categoryName", ""),
             r.get("status", ""),
             r.get("dateTime", ""),
@@ -419,8 +427,11 @@ def export_requests():
     from flask import Response
     return Response(
         output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            "Content-Type": "text/csv; charset=utf-8"
+        }
     )
 
 
@@ -510,6 +521,7 @@ DASHBOARD_TEMPLATE = """
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Admin Dashboard — Teeth Management System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
@@ -647,6 +659,13 @@ DASHBOARD_TEMPLATE = """
     td, th { border-color: var(--border) !important; padding: .65rem 1rem !important; }
     tbody tr:hover { background: rgba(88,166,255,.05); }
     .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    
+    /* Support for RTL text (Arabic, etc.) */
+    td, th, .card-value, .modal-value { 
+      direction: auto; 
+      unicode-bidi: plaintext; 
+    }
+    
     @media(max-width:992px) {
       table { font-size: .85rem; }
       td, th { padding: .5rem .6rem !important; white-space: nowrap; }
@@ -1248,8 +1267,8 @@ DASHBOARD_TEMPLATE = """
         <table class="table table-hover table-sm" id="request-table">
           <thead>
             <tr>
-              <th>#</th><th>ID</th><th>Doctor</th><th>Category</th>
-              <th>Status</th><th>Date &amp; Time</th><th>Description</th>
+              <th>#</th><th>ID</th><th>Doctor</th><th>Phone</th><th>City</th>
+              <th>Category</th><th>Status</th><th>Date &amp; Time</th><th>Description</th>
             </tr>
           </thead>
           <tbody>
@@ -1257,7 +1276,9 @@ DASHBOARD_TEMPLATE = """
             <tr>
               <td>{{ loop.index }}</td>
               <td>{{ r.id or '—' }}</td>
-              <td>{{ r.doctorName or '—' }}</td>
+              <td>{{ (r.doctorFirstName or '') + ' ' + (r.doctorLastName or '') if r.get('doctorFirstName') else (r.doctorName or '—') }}</td>
+              <td>{{ r.doctorPhoneNumber or '—' }}</td>
+              <td>{{ r.doctorCityName or '—' }}</td>
               <td>{{ r.categoryName or '—' }}</td>
               <td>
                 {% set s = (r.status or 'UNKNOWN')|upper %}
@@ -1277,7 +1298,7 @@ DASHBOARD_TEMPLATE = """
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>
+            <tr><td colspan="9" class="text-center text-muted py-4">No requests found</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -1292,7 +1313,19 @@ DASHBOARD_TEMPLATE = """
           </div>
           <div class="card-row">
             <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
-            <span class="card-value">{{ r.doctorName or '—' }}</span>
+            <span class="card-value">{{ (r.doctorFirstName or '') + ' ' + (r.doctorLastName or '') if r.get('doctorFirstName') else (r.doctorName or '—') }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">{{ r.doctorPhoneNumber or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">{{ r.doctorCityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">{{ r.doctorUniversityName or '—' }}</span>
           </div>
           <div class="card-row">
             <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
@@ -1433,6 +1466,16 @@ const PALETTE = [
 ];
 
 /* ─── Helpers ─── */
+function getDoctorName(request) {
+  // Support both old format (doctorName) and new format (doctorFirstName + doctorLastName)
+  if (request.doctorFirstName || request.doctorLastName) {
+    const firstName = request.doctorFirstName || '';
+    const lastName = request.doctorLastName || '';
+    return `${firstName} ${lastName}`.trim() || '—';
+  }
+  return request.doctorName || '—';
+}
+
 function toggleMobileMenu() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('mobile-overlay');
@@ -1914,13 +1957,15 @@ function rebuildRequestTable(reqs) {
   // Rebuild desktop table
   if (tbody) {
     if (!reqs.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No requests found</td></tr>';
     } else {
       tbody.innerHTML = reqs.map((r,i) => `
         <tr>
           <td>${i+1}</td>
           <td>${r.id||'—'}</td>
-          <td>${r.doctorName||'—'}</td>
+          <td>${getDoctorName(r)}</td>
+          <td>${r.doctorPhoneNumber||'—'}</td>
+          <td>${r.doctorCityName||'—'}</td>
           <td>${r.categoryName||'—'}</td>
           <td>${statusBadge(r.status)}</td>
           <td>${r.dateTime||'—'}</td>
@@ -1943,7 +1988,19 @@ function rebuildRequestTable(reqs) {
           </div>
           <div class="card-row">
             <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
-            <span class="card-value">${r.doctorName||'—'}</span>
+            <span class="card-value">${getDoctorName(r)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">${r.doctorPhoneNumber||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">${r.doctorCityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">${r.doctorUniversityName||'—'}</span>
           </div>
           <div class="card-row">
             <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
