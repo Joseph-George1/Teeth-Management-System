@@ -1,6 +1,7 @@
 package com.spring.boot.graduationproject1.mapper;
 
 import com.spring.boot.graduationproject1.dto.DoctorDto;
+import com.spring.boot.graduationproject1.dto.DoctorRepresentDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
 import com.spring.boot.graduationproject1.dto.SignUpRequest;
 import com.spring.boot.graduationproject1.model.Doctor;
@@ -17,4 +18,6 @@ public interface DoctorMapper {
     DoctorSummaryDto toSummaryDto(Doctor doctor);
     List<DoctorSummaryDto> toSummaryDtoList(List<Doctor> doctors);
     Doctor toEntity(SignUpRequest request);
+    DoctorRepresentDto toRepresentDto(Doctor doctor);
+    List<DoctorRepresentDto>toRepresentListDto(List<Doctor> doctors);
 }

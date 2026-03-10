@@ -10,4 +10,5 @@ public interface AppointmentService {
     List<AppointmentDto>getAllAppointments();
     AppointmentDto getAppointmentById(Long id);
     AppointmentDto createAppointment(AppointmentDto appointmentDto);
+    List<AppointmentDto>getAppointmentsByDoctorId();
 }

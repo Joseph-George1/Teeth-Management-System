@@ -2,6 +2,7 @@ package com.spring.boot.graduationproject1.controller;
 
 
 import com.spring.boot.graduationproject1.dto.DoctorDto;
+import com.spring.boot.graduationproject1.dto.DoctorRepresentDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
 import com.spring.boot.graduationproject1.service.DoctorService;
 import jakarta.transaction.SystemException;
@@ -38,8 +39,8 @@ public class DoctorController {
     }
 
     @GetMapping("/getDoctorById")
-    public ResponseEntity<DoctorDto>getDoctorById(@RequestParam Long doctorId) throws SystemException {
-        return ResponseEntity.ok().body(doctorService.getDoctorById(doctorId));
+    public ResponseEntity<DoctorRepresentDto>getDoctorById() throws SystemException {
+        return ResponseEntity.ok().body(doctorService.getDoctorById());
     }
 
     @PutMapping("updateDoctor")
