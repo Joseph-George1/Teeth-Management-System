@@ -3,10 +3,12 @@ import "../Css/Category.css";
 import "../Css/AddRequest.css";
 import DoctorsList from "./DoctorsList";
 import AddRequest from "./AddRequest";
+import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
 export default function ToothExtraction() {
   const [openModal, setOpenModal] = useState(false);
+  const [newRequest, setNewRequest] = useState(null);
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
@@ -23,10 +25,12 @@ export default function ToothExtraction() {
           + اطلب جديد
         </button>
       )}
+      <RequestsList categoryName="خلع الأسنان" newRequest={newRequest} />
       <DoctorsList categoryName="خلع الأسنان" />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
+        onSuccess={(req) => setNewRequest(req)}
         specialization="خلع الأسنان"
       />
     </>

@@ -37,7 +37,10 @@ export default function LoginPage() {
         // 🔹 استخرج بيانات المستخدم من التوكين بدل data مباشرة
         const token = data.token;
         const payload = JSON.parse(atob(token.split('.')[1])); // decode base64
+        console.log("JWT payload:", payload); // debug – remove after fixing
         const userData = {
+          token,
+          id: payload.id || payload.doctorId || payload.userId || payload.sub,
           firstName: payload.firstName || payload.first_name,
           lastName: payload.lastName || payload.last_name,
           email: payload.sub,
@@ -46,15 +49,7 @@ export default function LoginPage() {
 
         // 🔹 سجل الدخول في الـ context
         login(userData);
-
-        // 🔹 توجيه المستخدم بناءً على نوع البريد الإلكتروني
-        const normalizedEmail = (email || '').trim().toLowerCase();
-        const isAdmin = normalizedEmail.endsWith('@thoutha.page');
-        if (isAdmin) {
-          navigate('/admin-home', { replace: true });
-        } else {
-          navigate('/doctor-home', { replace: true });
-        }
+        navigate('/doctor-home', { replace: true });
       } else {
         setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات');
       }

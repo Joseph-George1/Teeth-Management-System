@@ -10,3 +10,5 @@ textblob
 flask_cors
 requests
 gunicorn
+oracledb
+bcrypt

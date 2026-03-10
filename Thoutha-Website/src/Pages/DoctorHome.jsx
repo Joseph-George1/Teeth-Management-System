@@ -3,11 +3,11 @@ import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorHome.css";
 
 // ─── Mock API ─────────────────────────────────────────────────────────────────
-const fetchDoctorProfile = async () => {
-  await new Promise((r) => setTimeout(r, 700));
-  // Replace with: const res = await fetch('/api/doctor/profile'); return res.json();
-  return { firstName: "أحمد", lastName: "محمد" };
-};
+// const fetchDoctorProfile = async () => {
+//   await new Promise((r) => setTimeout(r, 700));
+//   // Replace with: const res = await fetch('/api/doctor/profile'); return res.json();
+//   return { firstName: "أحمد", lastName: "محمد" };
+// };
 
 const mockAppointments = [
   { id: 1, name: "محمد أشرف",        specialty: "تقويم أسنان",   time: "09:00", period: "صباحاً", phone: "01012345678" },
@@ -120,7 +120,7 @@ export default function DoctorHome() {
             <div className="dh-skeleton dh-skeleton--name" />
           ) : (
             <h1 className="dh-greeting">
-              مرحباً يا د/ {firstName || "دكتور"}
+              مرحباً يا د/ {displayName}
             </h1>
           )}
           <p className="dh-subtitle">إليك نظرة عامة على حجوزاتك وأدائك</p>

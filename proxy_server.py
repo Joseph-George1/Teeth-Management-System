@@ -49,10 +49,13 @@ def proxy(path):
     if request.query_string:
         url += f"?{request.query_string.decode('utf-8')}"
 
-    # Prepare headers (exclude host-specific headers)
+    # Prepare headers (exclude host-specific and CORS-triggering headers)
+    # Stripping 'origin' and 'referer' prevents Spring Boot's CORS filter from
+    # validating the browser origin on this server-to-server leg of the request.
+    EXCLUDED_HEADERS = {'host', 'connection', 'origin', 'referer'}
     headers = {}
     for key, value in request.headers:
-        if key.lower() not in ['host', 'connection']:
+        if key.lower() not in EXCLUDED_HEADERS:
             headers[key] = value
 
     try:

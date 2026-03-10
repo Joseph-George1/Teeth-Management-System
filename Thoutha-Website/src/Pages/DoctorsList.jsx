@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import "../Css/DoctorsList.css";
 
-const API_URL = "/backend/api/doctor/getDoctorByCategory";
+const API_URL = "https://thoutha.page/api/doctor/getDoctorByCategory";
 
 const normalizeDoctorsResponse = (payload) => {
   if (Array.isArray(payload)) return payload;

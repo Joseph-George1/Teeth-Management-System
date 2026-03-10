@@ -3,10 +3,12 @@ import "../Css/Category.css";
 import "../Css/AddRequest.css";
 import DoctorsList from "./DoctorsList";
 import AddRequest from "./AddRequest";
+import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
 export default function DentalImplant() {
   const [openModal, setOpenModal] = useState(false);
+  const [newRequest, setNewRequest] = useState(null);
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
@@ -23,10 +25,12 @@ export default function DentalImplant() {
           + اطلب جديد
         </button>
       )}
+      <RequestsList categoryName="زراعة الأسنان" newRequest={newRequest} />
       <DoctorsList categoryName="زراعة الأسنان" />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
+        onSuccess={(req) => setNewRequest(req)}
         specialization="زراعة الأسنان"
       />
     </>

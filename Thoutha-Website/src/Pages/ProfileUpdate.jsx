@@ -1,72 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../services/AuthContext";
 import "../Css/ProfileUpdate.css";
 
-// ─── Mock API functions (replace with real calls later) ───────────────────────
-const fetchProfile = async () => {
-  await delay(600);
-  return {
-    firstName: "أحمد",
-    lastName: "محمد",
-    email: "doctor@example.com",
-    phone: "01012345678",
-    faculty: "",
-    year: "",
-    city: "",
-    specialization: "",
-    profileImage: null,
-  };
-};
-
-const fetchCities = async () => {
-  await delay(400);
-  return [
-    "القاهرة", "الإسكندرية", "الجيزة", "الشرقية", "الدقهلية",
-    "البحيرة", "المنوفية", "القليوبية", "الغربية", "كفر الشيخ",
-    "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "شمال سيناء",
-    "جنوب سيناء", "الفيوم", "بني سويف", "المنيا", "أسيوط",
-    "سوهاج", "قنا", "الأقصر", "أسوان", "البحر الأحمر",
-    "الوادي الجديد", "مطروح",
-  ];
-};
-
-const fetchUniversities = async () => {
-  await delay(400);
-  return [
-    "كلية طب الأسنان - جامعة القاهرة",
-    "كلية طب الأسنان - جامعة عين شمس",
-    "كلية طب الأسنان - جامعة الإسكندرية",
-    "كلية طب الأسنان - جامعة المنصورة",
-    "كلية طب الأسنان - جامعة أسيوط",
-    "كلية طب الأسنان - جامعة طنطا",
-    "كلية طب الأسنان - جامعة المنوفية",
-  ];
-};
-
-const fetchCategories = async () => {
-  await delay(400);
-  return [
-    "تقويم الأسنان",
-    "زراعة الأسنان",
-    "تيجان الأسنان / التركيبات",
-    "حشوات الأسنان",
-    "تبييض الأسنان",
-    "خلع الأسنان",
-    "فحص شامل للأسنان",
-  ];
-};
-
-const updateProfile = async (data) => {
-  await delay(800);
-  // Replace with: await fetch('/api/profile', { method: 'PUT', body: JSON.stringify(data) })
-  return { success: true };
-};
-
-const YEARS = ["الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة", "خريج"];
-
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-// ─────────────────────────────────────────────────────────────────────────────
+const SERVER_URL = "https://thoutha.page/api";
+const YEARS = [ "الرابعة", "الخامسة", "خريج"];
 
 export default function ProfileUpdate() {
+  const { user, login } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -88,15 +28,31 @@ export default function ProfileUpdate() {
   });
 
   useEffect(() => {
+    // Pre-fill from stored user
+    if (user) {
+      setForm({
+        firstName:      user.firstName      || user.first_name  || "",
+        lastName:       user.lastName       || user.last_name   || "",
+        email:          user.email          || "",
+        phone:          user.phone          || "",
+        faculty:        user.faculty        || user.universityName || "",
+        year:           user.year           || user.studyYear   || "",
+        city:           user.city           || "",
+        specialization: user.specialization || "",
+      });
+    }
+
     let cancelled = false;
-    setLoading(true);
-    Promise.all([fetchProfile(), fetchCities(), fetchUniversities(), fetchCategories()])
-      .then(([profile, cityList, uniList, catList]) => {
+    Promise.all([
+      fetch(`${SERVER_URL}/cities/getAllCities`).then((r) => r.json()),
+      fetch(`${SERVER_URL}/university/getAllUniversities`).then((r) => r.json()),
+      fetch(`${SERVER_URL}/category/getCategories`).then((r) => r.json()),
+    ])
+      .then(([cityData, uniData, catData]) => {
         if (cancelled) return;
-        setForm((prev) => ({ ...prev, ...profile }));
-        setCities(cityList);
-        setUniversities(uniList);
-        setCategories(catList);
+        setCities(Array.isArray(cityData)   ? cityData.map((c) => c.name || c)   : []);
+        setUniversities(Array.isArray(uniData) ? uniData.map((u) => u.name || u) : []);
+        setCategories(Array.isArray(catData)   ? catData.map((c) => c.name || c) : []);
         setLoading(false);
       })
       .catch(() => {
@@ -106,7 +62,7 @@ export default function ProfileUpdate() {
         }
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [user]);
 
   const showToast = (type, msg) => {
     setToast({ type, msg });
@@ -123,10 +79,33 @@ export default function ProfileUpdate() {
     }
     setSaving(true);
     try {
-      const result = await updateProfile(form);
-      if (result.success) showToast("success", "تم حفظ البيانات بنجاح ✓");
-    } catch {
-      showToast("error", "فشل حفظ البيانات. حاول مرة أخرى.");
+      const token = user?.token || localStorage.getItem("token");
+      const response = await fetch(`${SERVER_URL}/doctor/updateDoctor`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName:      form.firstName,
+          lastName:       form.lastName,
+          email:          form.email,
+          phone:          form.phone,
+          universityName: form.faculty,
+          studyYear:      form.year,
+          cityName:       form.city,
+          categoryName:   form.specialization,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message || data?.messageAr || "فشل حفظ البيانات");
+      }
+      // Update stored user with new values
+      login({ ...user, ...form, faculty: form.faculty, universityName: form.faculty });
+      showToast("success", "تم حفظ البيانات بنجاح ✓");
+    } catch (err) {
+      showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
     } finally {
       setSaving(false);
     }

@@ -8,6 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 public class DoctorSummaryDto {
 
+    private Long id;
     private String firstName;
     private String lastName;
     private String studyYear;

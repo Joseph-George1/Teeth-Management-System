@@ -3,29 +3,56 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DeleteMyAccount.css";
 
-// Replace with real API call later
-const deleteAccountApi = async () => {
-  await new Promise((r) => setTimeout(r, 900));
-  return { success: true };
-};
-
-export default function DeleteMyAccount() {
-  const { logout, user } = useContext(AuthContext);
+export default function DeleteMyAccount() {  const { logout, user } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleDelete = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const result = await deleteAccountApi();
-      if (result.success) {
-        logout();
-        navigate("/", { replace: true });
+      const token = user?.token || localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("لم يتم العثور على جلسة تسجيل الدخول");
       }
-    } catch {
-      navigate("/delete-account", { replace: true });
+
+      console.log("token being sent:", token);
+
+      const response = await fetch(
+        "https://thoutha.page/api/doctor/deleteDoctor",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("deleteDoctor status:", response.status);
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.log("deleteDoctor error body:", data);
+
+        throw new Error(
+          data?.message ||
+          data?.messageAr ||
+          "فشل حذف الحساب، حاول مرة أخرى"
+        );
+      }
+
+      // تسجيل خروج بعد الحذف
+      logout();
+
+      // الرجوع للصفحة الرئيسية
+      navigate("/", { replace: true });
+
+    } catch (err) {
+      setError(err.message || "حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
