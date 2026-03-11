@@ -1,29 +1,3 @@
-"""
-Admin Analytics Dashboard — Teeth Management System
-=====================================================
-A Flask web app that provides a rich analytics dashboard for the admin.
-
-Features:
-  - Admin login via the Spring Boot JWT auth endpoint
-  - Live analytics: doctors, requests, categories, cities, appointments
-  - Service health monitoring (same services tracked by the Discord bot)
-  - Full doctor & request tables with delete action (admin privilege)
-  - Auto-refreshing health panel every 30 seconds
-  - Responsive UI (Bootstrap 5 dark theme + Chart.js + Font Awesome)
-
-Configuration (env vars or edit the CONFIG block below):
-  BACKEND_URL     Spring Boot base URL  (default: http://localhost:8080)
-  AI_URL          AI chatbot base URL   (default: http://127.0.0.1:5010)
-  OTP_URL         OTP service base URL  (default: http://127.0.0.1:8000)
-  PROXY_URL       CORS proxy base URL   (default: http://127.0.0.1:5173)
-  DASHBOARD_PORT  Port to run dashboard (default: 5500)
-  SECRET_KEY      Flask session secret  (default: auto-generated)
-
-Usage:
-  pip install flask flask-cors requests
-  python admin_dashboard.py
-"""
-
 import os
 import json
 import secrets
@@ -46,16 +20,23 @@ AI_URL         = os.getenv("AI_URL",         "http://127.0.0.1:5010")
 OTP_URL        = os.getenv("OTP_URL",        "http://127.0.0.1:8000")
 PROXY_URL      = os.getenv("PROXY_URL",      "http://127.0.0.1:5173")
 DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "6500"))
-SECRET_KEY     = os.getenv("SECRET_KEY",     secrets.token_hex(32))
 REQUEST_TIMEOUT = 6  # seconds
 
-app = Flask(__name__)
-app.secret_key = SECRET_KEY
-# Configure session to persist for 30 days
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-CORS(app)
+# SECRET_KEY: MUST be consistent across restarts for sessions to persist
+# Set SECRET_KEY env var to a fixed value in production!
+if not os.getenv("SECRET_KEY"):
+    # Use a file-based key that persists across restarts
+    key_file = os.path.join(os.path.dirname(__file__), ".flask_secret")
+    if os.path.exists(key_file):
+        with open(key_file, 'r') as f:
+            SECRET_KEY = f.read().strip()
+    else:
+        SECRET_KEY = secrets.token_hex(32)
+        with open(key_file, 'w') as f:
+            f.write(SECRET_KEY)
+        print(f"Generated new SECRET_KEY and saved to {key_file}")
+else:
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
 # ─────────────────────────────────────────────
 #  OBFUSCATED ROUTE PREFIX
@@ -65,6 +46,21 @@ CORS(app)
 #  Override via env:  ADMIN_PREFIX=/your-custom-path
 # ─────────────────────────────────────────────
 ADMIN_PREFIX = os.getenv("ADMIN_PREFIX", "/api/tms-mng-x7k2p9q3").rstrip("/")
+
+app = Flask(__name__)
+app.secret_key = SECRET_KEY
+# Configure session to persist for 30 days
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_NAME'] = 'tms_admin_sess'
+# Use root path for cookie to ensure it works correctly
+app.config['SESSION_COOKIE_PATH'] = '/'
+# Don't refresh on every request to avoid session conflicts
+app.config['SESSION_REFRESH_EACH_REQUEST'] = False
+# Simple CORS - allow all for API endpoints
+CORS(app)
 
 
 # ─────────────────────────────────────────────
@@ -228,7 +224,9 @@ def get_analytics(token):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get("jwt_token"):
+        token = session.get("jwt_token")
+        if not token:
+            app.logger.warning(f"Access denied to {request.path} - no token in session")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
@@ -252,6 +250,11 @@ def catch_all(path):
 
 @app.route(f"{ADMIN_PREFIX}/login", methods=["GET", "POST"])
 def login():
+    # If already logged in, redirect to dashboard
+    if session.get("jwt_token"):
+        app.logger.info("Already logged in, redirecting to dashboard")
+        return redirect(url_for("dashboard"))
+    
     error = None
     if request.method == "POST":
         email    = request.form.get("email", "").strip()
@@ -265,13 +268,28 @@ def login():
             )
             if r.status_code == 200:
                 data = r.json()
-                session.permanent = True  # Make session persistent across browser restarts
-                session["jwt_token"]   = data.get("token") or data.get("accessToken") or list(data.values())[0]
-                session["admin_email"] = email
-                return redirect(url_for("dashboard"))
+                # Extract token - try different possible keys
+                token = data.get("token") or data.get("accessToken")
+                if not token and data:
+                    # If neither key exists, try to get the first string value
+                    token = next((v for v in data.values() if isinstance(v, str)), None)
+                
+                if not token:
+                    error = "No authentication token received from backend"
+                    app.logger.error(f"No token in response: {data}")
+                else:
+                    # Set session data - simpler approach
+                    session["jwt_token"] = token
+                    session["admin_email"] = email
+                    session.permanent = True
+                    
+                    app.logger.info(f"Admin login successful: {email}")
+                    return redirect(url_for("dashboard"))
             else:
                 error = f"Invalid credentials (HTTP {r.status_code})"
+                app.logger.warning(f"Login failed for {email}: HTTP {r.status_code}")
         except Exception as exc:
+            app.logger.error(f"Login error: {exc}")
             error = f"Cannot reach backend: {exc}"
     return render_template_string(LOGIN_TEMPLATE, error=error)
 
@@ -279,13 +297,21 @@ def login():
 @app.route(f"{ADMIN_PREFIX}/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    response = redirect(url_for("login"))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route(f"{ADMIN_PREFIX}/")
 @login_required
 def dashboard():
-    token = session["jwt_token"]
+    token = session.get("jwt_token")
+    if not token:
+        # Defensive check - should not happen due to @login_required
+        return redirect(url_for("login"))
+    
     analytics = get_analytics(token)
     health    = get_all_health()
     return render_template_string(
@@ -319,6 +345,104 @@ def api_delete_doctor(doctor_id):
     if status in (200, 204):
         return jsonify({"success": True, "message": f"Doctor {doctor_id} deleted."})
     return jsonify({"success": False, "message": f"Backend returned HTTP {status}."}), 400
+
+
+# ── Export endpoints ──
+
+@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
+@login_required
+def export_doctors():
+    """Export doctors list as CSV"""
+    import csv
+    from io import StringIO
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"])
+    
+    # Write data
+    for d in doctors:
+        writer.writerow([
+            d.get("id", ""),
+            d.get("firstName", ""),
+            d.get("lastName", ""),
+            d.get("email", ""),
+            d.get("phoneNumber", ""),
+            d.get("categoryName", ""),
+            d.get("cityName", ""),
+            d.get("universityName", ""),
+            d.get("studyYear", ""),
+        ])
+    
+    output.seek(0)
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/requests")
+@login_required
+def export_requests():
+    """Export requests list as CSV"""
+    import csv
+    from io import StringIO
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"])
+    
+    # Write data
+    for r in requests_list:
+        # Handle both old and new format
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        writer.writerow([
+            r.get("id", ""),
+            doctor_name,
+            r.get("doctorPhoneNumber", ""),
+            r.get("doctorCityName", ""),
+            r.get("doctorUniversityName", ""),
+            r.get("categoryName", ""),
+            r.get("status", ""),
+            r.get("dateTime", ""),
+            r.get("description", ""),
+        ])
+    
+    output.seek(0)
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            "Content-Type": "text/csv; charset=utf-8"
+        }
+    )
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctor/<int:doctor_id>")
+@login_required
+def get_doctor_details(doctor_id):
+    """Get full doctor details"""
+    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
+    if status == 200:
+        return jsonify({"success": True, "data": data})
+    return jsonify({"success": False, "message": f"HTTP {status}"}), 400
 
 
 # ─────────────────────────────────────────────
@@ -397,6 +521,7 @@ DASHBOARD_TEMPLATE = """
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>Admin Dashboard — Teeth Management System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
@@ -414,15 +539,18 @@ DASHBOARD_TEMPLATE = """
       --yellow:     #d29922;
       --orange:     #e3b341;
     }
-    body { background: var(--bg-base); color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { background: var(--bg-base); color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
 
     /* ── Sidebar ── */
     .sidebar {
       position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
       background: var(--bg-card); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; z-index: 100;
+      display: flex; flex-direction: column; z-index: 1000;
       padding-top: 1rem;
+      transition: transform 0.3s ease;
     }
+    .sidebar.mobile-hidden { transform: translateX(-100%); }
     .sidebar .brand {
       padding: 1rem 1.5rem 1.5rem;
       border-bottom: 1px solid var(--border);
@@ -440,12 +568,34 @@ DASHBOARD_TEMPLATE = """
     .sidebar .nav-link i { width: 20px; margin-right: .6rem; }
     .sidebar-bottom { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
 
+    /* ── Mobile Menu Toggle ── */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed; top: 1rem; left: 1rem; z-index: 1001;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; width: 44px; height: 44px;
+      align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all .2s;
+    }
+    .mobile-menu-toggle:hover { background: var(--bg-card2); }
+    .mobile-menu-toggle i { color: var(--accent); font-size: 1.25rem; }
+    
+    .mobile-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 999;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay.show { opacity: 1; }
+
     /* ── Main ── */
-    .main { margin-left: 240px; padding: 2rem; }
+    .main { margin-left: 240px; padding: 2rem; min-height: 100vh; }
     .page-header {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 2rem;
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
     }
     .page-header h4 { margin: 0; color: #f0f6fc; font-weight: 700; }
 
@@ -499,40 +649,281 @@ DASHBOARD_TEMPLATE = """
       padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
       background: var(--bg-card2);
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem;
     }
+    .data-card .card-head > div { flex-wrap: wrap; }
     .data-card .card-head h6 { margin: 0; font-weight: 700; color: #f0f6fc; }
     table { margin: 0; }
     thead { background: var(--bg-card2); }
     th { font-size: .8rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: .05em; }
     td, th { border-color: var(--border) !important; padding: .65rem 1rem !important; }
     tbody tr:hover { background: rgba(88,166,255,.05); }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    
+    /* Support for RTL text (Arabic, etc.) */
+    td, th, .card-value, .modal-value { 
+      direction: auto; 
+      unicode-bidi: plaintext; 
+    }
+    
+    @media(max-width:992px) {
+      table { font-size: .85rem; }
+      td, th { padding: .5rem .6rem !important; white-space: nowrap; }
+    }
+    
+    /* ── Mobile Card View ── */
+    .mobile-card-view {
+      display: none;
+      padding: 1rem;
+    }
+    .data-item-card {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s;
+    }
+    .data-item-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-row:last-child {
+      border-bottom: none;
+    }
+    .card-label {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .card-value {
+      color: #f0f6fc;
+      text-align: right;
+      font-size: 0.85rem;
+    }
+    @media(max-width:768px) {
+      .table-responsive { display: none; }
+      .mobile-card-view { display: block; }
+    }
+
+    /* ── Quick Stats ── */
+    .quick-stat-card {
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .quick-stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
 
     /* ── Misc ── */
     .section { display: none; }
     .section.active { display: block; }
     .refresh-btn { cursor: pointer; }
+    .refresh-btn.refreshing #manual-refresh-icon { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #auto-refresh-toggle.active { background-color: var(--green); border-color: var(--green); color: white; }
+    .refreshing-indicator {
+      position: fixed; top: 70px; right: 20px; z-index: 500;
+      background: var(--bg-card); border: 1px solid var(--accent);
+      border-radius: 8px; padding: 0.5rem 1rem;
+      box-shadow: 0 4px 12px rgba(88,166,255,0.3);
+      display: none; align-items: center; gap: 0.5rem;
+      animation: slideInRight 0.3s;
+    }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .refreshing-indicator.show { display: flex; }
+    .refresh-spinner { 
+      width: 14px; height: 14px; 
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
     .dot-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
     .dot-green { background: var(--green); }
     .dot-red   { background: var(--red); }
     .dot-yellow{ background: var(--yellow); }
     .dot-grey  { background: var(--text-muted); }
-    #last-updated { font-size: .75rem; color: var(--text-muted); }
+    #last-updated { font-size: .75rem; color: var(--text-muted); display: block; }
     .delete-btn { padding: .2rem .6rem; font-size: .78rem; }
     .badge-pending  { background: rgba(210,153,34,.2);  color: var(--orange); border: 1px solid rgba(210,153,34,.3); }
     .badge-approved { background: rgba(63,185,80,.2);   color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
     .badge-rejected { background: rgba(248,81,73,.2);   color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
     .badge-unknown  { background: rgba(139,148,158,.15); color: var(--text-muted); border: 1px solid var(--border); }
 
+    /* ── Modals ── */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+      background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal-content {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh;
+      overflow-y: auto; padding: 1.5rem; transform: scale(0.9); transition: transform .2s;
+    }
+    .modal-overlay.show .modal-content { transform: scale(1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-header h5 { margin: 0; color: #f0f6fc; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem;
+      cursor: pointer; padding: 0; width: 32px; height: 32px; }
+    .modal-close:hover { color: #f0f6fc; }
+    .modal-body { color: #c9d1d9; }
+    .modal-row { display: flex; padding: .75rem 0; border-bottom: 1px solid var(--border); }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-label { font-weight: 600; color: var(--text-muted); width: 140px; flex-shrink: 0; }
+    .modal-value { color: #f0f6fc; flex: 1; }
+
+    /* ── Toast Notifications ── */
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 10000;
+      display: flex; flex-direction: column; gap: 10px; max-width: 400px;
+    }
+    .toast {
+      background: var(--bg-card2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(120%);
+      animation: slideIn .3s forwards;
+    }
+    @keyframes slideIn { to { transform: translateX(0); } }
+    .toast.hiding { animation: slideOut .3s forwards; }
+    @keyframes slideOut { to { transform: translateX(120%); } }
+    .toast-icon { font-size: 1.25rem; }
+    .toast.toast-success { border-left: 4px solid var(--green); }
+    .toast.toast-success .toast-icon { color: var(--green); }
+    .toast.toast-error { border-left: 4px solid var(--red); }
+    .toast.toast-error .toast-icon { color: var(--red); }
+    .toast.toast-info { border-left: 4px solid var(--accent); }
+    .toast.toast-info .toast-icon { color: var(--accent); }
+    .toast-message { flex: 1; color: #f0f6fc; font-size: .9rem; }
+
+    /* ── Dark Mode Toggle ── */
+    .theme-toggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 500;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 50%; width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all .2s;
+    }
+    .theme-toggle:hover { transform: scale(1.1); background: var(--bg-card2); }
+    .theme-toggle i { color: var(--accent); font-size: 1.25rem; }
+    
+    body.light-mode {
+      --bg-base: #f5f7fa; --bg-card: #ffffff; --bg-card2: #f8f9fa;
+      --border: #dee2e6; --text-muted: #6c757d; --accent: #0366d6;
+    }
+    body.light-mode { background: var(--bg-base); color: #212529; }
+    body.light-mode .sidebar, body.light-mode .stat-card, body.light-mode .chart-card,
+    body.light-mode .data-card, body.light-mode .service-card,
+    body.light-mode .modal-content, body.light-mode .data-item-card { color: #212529; }
+    body.light-mode .nav-link { color: #6c757d; }
+    body.light-mode .nav-link:hover, body.light-mode .nav-link.active { color: #212529; }
+    body.light-mode h4, body.light-mode h5, body.light-mode h6,
+    body.light-mode .stat-value, body.light-mode .modal-value, 
+    body.light-mode .card-value { color: #212529; }
+    body.light-mode .toast { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    body.light-mode .mobile-menu-toggle { color: #212529; }
+    body.light-mode .mobile-overlay { background: rgba(0,0,0,0.4); }
+
+    /* ── Mobile Responsive ── */
     @media(max-width:768px){
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 1rem; }
+      .mobile-menu-toggle { display: flex; }
+      .mobile-overlay.show { display: block; }
+      .sidebar { 
+        transform: translateX(-100%);
+        box-shadow: 4px 0 12px rgba(0,0,0,0.5);
+      }
+      .sidebar.show { transform: translateX(0); }
+      .main { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+      .theme-toggle { bottom: 80px; right: 15px; width: 44px; height: 44px; }
+      
+      .page-header { padding: 1rem; }
+      .page-header h4 { font-size: 1.1rem; width: 100%; }
+      .page-header > div:first-child { width: 100%; margin-bottom: 0.75rem; }
+      .page-header .d-flex { width: 100%; justify-content: stretch; }
+      .page-header .btn { flex: 1; }
+      
+      .refreshing-indicator { top: 60px; right: 10px; font-size: 0.8rem; padding: 0.4rem 0.75rem; }
+      
+      .stat-card { padding: 1rem; }
+      .stat-value { font-size: 1.5rem; }
+      .stat-label { font-size: .75rem; }
+      .stat-icon { width: 40px; height: 40px; font-size: 1.1rem; }
+      
+      .chart-card { padding: 1rem; }
+      .chart-card h6 { font-size: .9rem; }
+      
+      .data-card .card-head { padding: .75rem 1rem; flex-direction: column; align-items: flex-start; }
+      .data-card .card-head > div { width: 100%; }
+      .data-card .card-head .d-flex { flex-direction: column; gap: 0.5rem !important; }
+      .data-card .card-head select,
+      .data-card .card-head input,
+      .data-card .card-head .btn { width: 100% !important; max-width: 100% !important; }
+      
+      .service-card { padding: .85rem 1rem; }
+      .service-name { font-size: .9rem; }
+      .service-detail { font-size: .75rem; }
+      .health-badge { font-size: .75rem; padding: .25rem .6rem; }
+      
+      .modal-content { width: 95%; padding: 1.25rem; max-height: 85vh; }
+      .modal-row { flex-direction: column; padding: .5rem 0; }
+      .modal-label { width: 100%; margin-bottom: .25rem; font-size: .85rem; }
+      .modal-value { font-size: .9rem; }
+      
+      .toast-container { right: 10px; left: 10px; max-width: 100%; }
+      .toast { font-size: .85rem; padding: .75rem 1rem; }
+      
+      /* Better button spacing on mobile */
+      .btn-group { display: flex; gap: 0.25rem; }
+      .btn-sm { padding: .35rem .6rem; font-size: .8rem; }
+      
+      /* Stack columns on mobile */
+      .row.g-3 > [class*="col-"] { margin-bottom: 1rem; }
+    }
+    
+    @media(max-width:576px){
+      .stat-card .d-flex { flex-direction: column; align-items: flex-start !important; gap: 0.5rem; }
+      .stat-icon { margin-bottom: .5rem; }
+      
+      .quick-stat-card h4 { font-size: 1.25rem; }
+      .quick-stat-card small { font-size: 0.7rem; }
+      
+      table { font-size: .75rem; }
+      td, th { padding: .4rem .5rem !important; }
+      .badge { font-size: .7rem; padding: .2rem .4rem; }
+      
+      .btn { font-size: .8rem; padding: .4rem .7rem; }
+      .btn-sm { font-size: .72rem; padding: .3rem .5rem; }
+      
+      .page-header h4 { font-size: 1rem; }
+      .chart-card h6 { font-size: .85rem; }
     }
   </style>
 </head>
 <body>
 
+<!-- Mobile Menu Toggle -->
+<div class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+  <i class="fa fa-bars"></i>
+</div>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="brand"><i class="fa-solid fa-tooth"></i>TMS Admin</div>
   <nav class="nav flex-column mt-2">
     <a class="nav-link active" data-section="overview" href="#" onclick="showSection('overview',this)">
@@ -553,7 +944,7 @@ DASHBOARD_TEMPLATE = """
       <i class="fa-solid fa-circle-user text-secondary"></i>
       <small class="text-muted text-truncate">{{ admin_email }}</small>
     </div>
-    <a href="/logout" class="btn btn-sm btn-outline-danger w-100">
+    <a href="{{ admin_prefix }}/logout" class="btn btn-sm btn-outline-danger w-100">
       <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
     </a>
   </div>
@@ -568,9 +959,16 @@ DASHBOARD_TEMPLATE = """
       <h4><i class="fa-solid fa-chart-line me-2 text-info"></i>Analytics Dashboard</h4>
       <span id="last-updated">Last updated: —</span>
     </div>
-    <button class="btn btn-sm btn-outline-secondary refresh-btn" onclick="refreshAll()">
-      <i class="fa-solid fa-rotate-right me-1"></i>Refresh
-    </button>
+    <div class="d-flex gap-2 align-items-center">
+      <button class="btn btn-sm btn-outline-secondary" id="auto-refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle Auto-Refresh">
+        <i class="fa-solid fa-pause" id="refresh-icon"></i>
+        <span class="d-none d-md-inline ms-1" id="refresh-text">Pause</span>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary refresh-btn" onclick="refreshAll()">
+        <i class="fa-solid fa-rotate-right me-1" id="manual-refresh-icon"></i>
+        <span class="d-none d-sm-inline">Refresh</span>
+      </button>
+    </div>
   </div>
 
   <!-- ── OVERVIEW SECTION ── -->
@@ -628,6 +1026,42 @@ DASHBOARD_TEMPLATE = """
               <i class="fa-solid fa-city"></i>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-chart-line me-1"></i>Pending Requests</small>
+          </div>
+          <h4 class="mb-0" id="stat-pending">{{ analytics.requests_by_status.get('PENDING', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-check-circle me-1"></i>Approved</small>
+          </div>
+          <h4 class="mb-0 text-success" id="stat-approved">{{ analytics.requests_by_status.get('APPROVED', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-times-circle me-1"></i>Rejected</small>
+          </div>
+          <h4 class="mb-0 text-danger" id="stat-rejected">{{ analytics.requests_by_status.get('REJECTED', 0) }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-graduation-cap me-1"></i>Universities</small>
+          </div>
+          <h4 class="mb-0" id="stat-universities">{{ analytics.doctors_by_university | length }}</h4>
         </div>
       </div>
     </div>
@@ -701,23 +1135,45 @@ DASHBOARD_TEMPLATE = """
   <div id="section-doctors" class="section">
     <div class="data-card">
       <div class="card-head">
-        <h6><i class="fa-solid fa-user-doctor me-2 text-info"></i>All Registered Doctors
-          <span class="badge bg-secondary ms-2" id="doctors-count"></span>
-        </h6>
-        <input type="text" id="doctor-search" class="form-control form-control-sm w-auto"
-               placeholder="🔍 Search…" oninput="filterTable('doctor-table',this.value)">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0"><i class="fa-solid fa-user-doctor me-2 text-info"></i>All Registered Doctors
+            <span class="badge bg-secondary ms-2" id="doctors-count"></span>
+          </h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <select id="filter-category" class="form-select form-select-sm" style="width:150px" onchange="applyDoctorFilters()">
+            <option value="">All Categories</option>
+            {% for cat in analytics.categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+          <select id="filter-city" class="form-select form-select-sm" style="width:140px" onchange="applyDoctorFilters()">
+            <option value="">All Cities</option>
+            {% for city in analytics.cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" id="doctor-search" class="form-control form-control-sm"
+                 style="width:200px" placeholder="🔍 Search…" oninput="applyDoctorFilters()">
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearDoctorFilters()" title="Clear Filters">
+            <i class="fa fa-times"></i>
+          </button>
+          <button class="btn btn-sm btn-success" onclick="exportDoctors()" title="Export to CSV">
+            <i class="fa fa-download me-1"></i>Export CSV
+          </button>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover table-sm" id="doctor-table">
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Category</th><th>City</th>
-              <th>University</th><th>Study Year</th><th>Phone</th><th>Action</th>
+              <th>University</th><th>Study Year</th><th>Phone</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="doctor-tbody">
             {% for d in analytics.doctors_list %}
-            <tr data-id="">
+            <tr data-id="{{ d.get('id', '') }}" data-doctor='{{ d | tojson }}'>
               <td>{{ loop.index }}</td>
               <td>{{ d.firstName or '' }} {{ d.lastName or '' }}</td>
               <td><span class="badge bg-info text-dark">{{ d.categoryName or '—' }}</span></td>
@@ -727,10 +1183,14 @@ DASHBOARD_TEMPLATE = """
               <td>{{ d.phoneNumber or '—' }}</td>
               <td>
                 {% if d.get('id') %}
-                <button class="btn btn-outline-danger delete-btn"
-                        onclick="deleteDoctor({{ d.id }}, this)">
-                  <i class="fa fa-trash"></i>
-                </button>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" onclick="viewDoctor({{ d.id }})" title="View Details">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="deleteDoctor({{ d.id }}, this)" title="Delete">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
                 {% else %}<span class="text-muted">—</span>{% endif %}
               </td>
             </tr>
@@ -740,6 +1200,49 @@ DASHBOARD_TEMPLATE = """
           </tbody>
         </table>
       </div>
+      <!-- Mobile Card View -->
+      <div class="mobile-card-view" id="doctor-cards">
+        {% for d in analytics.doctors_list %}
+        <div class="data-item-card" data-doctor-card data-id="{{ d.get('id', '') }}">
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user me-1"></i>Name</span>
+            <span class="card-value"><strong>{{ d.firstName or '' }} {{ d.lastName or '' }}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value"><span class="badge bg-info text-dark">{{ d.categoryName or '—' }}</span></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">{{ d.cityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">{{ d.universityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-graduation-cap me-1"></i>Study Year</span>
+            <span class="card-value">{{ d.studyYear or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">{{ d.phoneNumber or '—' }}</span>
+          </div>
+          {% if d.get('id') %}
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick=\"viewDoctor({{ d.id }})\" title=\"View Details\">
+              <i class="fa fa-eye me-1"></i>View
+            </button>
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick=\"deleteDoctor({{ d.id }}, this)\" title=\"Delete\">
+              <i class="fa fa-trash me-1"></i>Delete
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No doctors found</div>
+        {% endfor %}
+      </div>
     </div>
   </div><!-- /doctors -->
 
@@ -747,18 +1250,25 @@ DASHBOARD_TEMPLATE = """
   <div id="section-requests" class="section">
     <div class="data-card">
       <div class="card-head">
-        <h6><i class="fa-solid fa-file-medical me-2 text-success"></i>All Service Requests
-          <span class="badge bg-secondary ms-2" id="requests-count"></span>
-        </h6>
-        <input type="text" id="request-search" class="form-control form-control-sm w-auto"
-               placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0"><i class="fa-solid fa-file-medical me-2 text-success"></i>All Service Requests
+            <span class="badge bg-secondary ms-2" id="requests-count"></span>
+          </h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input type="text" id="request-search" class="form-control form-control-sm"
+                 style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
+          <button class="btn btn-sm btn-success" onclick="exportRequests()" title="Export to CSV">
+            <i class="fa fa-download me-1"></i>Export CSV
+          </button>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover table-sm" id="request-table">
           <thead>
             <tr>
-              <th>#</th><th>ID</th><th>Doctor</th><th>Category</th>
-              <th>Status</th><th>Date &amp; Time</th><th>Description</th>
+              <th>#</th><th>ID</th><th>Doctor</th><th>Phone</th><th>City</th>
+              <th>Category</th><th>Status</th><th>Date &amp; Time</th><th>Description</th>
             </tr>
           </thead>
           <tbody>
@@ -766,7 +1276,9 @@ DASHBOARD_TEMPLATE = """
             <tr>
               <td>{{ loop.index }}</td>
               <td>{{ r.id or '—' }}</td>
-              <td>{{ r.doctorName or '—' }}</td>
+              <td>{{ (r.doctorFirstName or '') + ' ' + (r.doctorLastName or '') if r.get('doctorFirstName') else (r.doctorName or '—') }}</td>
+              <td>{{ r.doctorPhoneNumber or '—' }}</td>
+              <td>{{ r.doctorCityName or '—' }}</td>
               <td>{{ r.categoryName or '—' }}</td>
               <td>
                 {% set s = (r.status or 'UNKNOWN')|upper %}
@@ -786,10 +1298,66 @@ DASHBOARD_TEMPLATE = """
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>
+            <tr><td colspan="9" class="text-center text-muted py-4">No requests found</td></tr>
             {% endfor %}
           </tbody>
         </table>
+      </div>
+      <!-- Mobile Card View -->
+      <div class="mobile-card-view" id="request-cards">
+        {% for r in analytics.requests_list %}
+        <div class="data-item-card" data-request-card>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-hashtag me-1"></i>ID</span>
+            <span class="card-value"><strong>{{ r.id or '—' }}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
+            <span class="card-value">{{ (r.doctorFirstName or '') + ' ' + (r.doctorLastName or '') if r.get('doctorFirstName') else (r.doctorName or '—') }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">{{ r.doctorPhoneNumber or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">{{ r.doctorCityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">{{ r.doctorUniversityName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value">{{ r.categoryName or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-clock me-1"></i>Status</span>
+            <span class="card-value">
+              {% set s = (r.status or 'UNKNOWN')|upper %}
+              {% if s == 'PENDING' %}
+              <span class="badge badge-pending">⏳ Pending</span>
+              {% elif s == 'APPROVED' %}
+              <span class="badge badge-approved">✅ Approved</span>
+              {% elif s == 'REJECTED' %}
+              <span class="badge badge-rejected">❌ Rejected</span>
+              {% else %}
+              <span class="badge badge-unknown">{{ s }}</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
+            <span class="card-value">{{ r.dateTime or '—' }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-file-text me-1"></i>Description</span>
+            <span class="card-value text-muted" style="text-align: left; font-size: 0.8rem;">{{ r.description or '—' }}</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No requests found</div>
+        {% endfor %}
       </div>
     </div>
   </div><!-- /requests -->
@@ -898,11 +1466,39 @@ const PALETTE = [
 ];
 
 /* ─── Helpers ─── */
+function getDoctorName(request) {
+  // Support both old format (doctorName) and new format (doctorFirstName + doctorLastName)
+  if (request.doctorFirstName || request.doctorLastName) {
+    const firstName = request.doctorFirstName || '';
+    const lastName = request.doctorLastName || '';
+    return `${firstName} ${lastName}`.trim() || '—';
+  }
+  return request.doctorName || '—';
+}
+
+function toggleMobileMenu() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.toggle('show');
+  overlay.classList.toggle('show');
+}
+
+function closeMobileMenu() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.remove('show');
+  overlay.classList.remove('show');
+}
+
 function showSection(name, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelector('#section-' + name).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   el.classList.add('active');
+  // Close mobile menu when navigating
+  if (window.innerWidth <= 768) {
+    closeMobileMenu();
+  }
   event.preventDefault();
 }
 
@@ -912,11 +1508,88 @@ function filterTable(tableId, query) {
   rows.forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+  
+  // Also filter mobile cards for requests
+  if (tableId === 'request-table') {
+    const cards = document.querySelectorAll('[data-request-card]');
+    cards.forEach(card => {
+      card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+}
+
+/* ─── Advanced Doctor Filters ─── */
+function applyDoctorFilters() {
+  const searchQuery = document.getElementById('doctor-search').value.toLowerCase();
+  const categoryFilter = document.getElementById('filter-category').value;
+  const cityFilter = document.getElementById('filter-city').value;
+  
+  // Filter desktop table
+  const rows = document.querySelectorAll('#doctor-table tbody tr');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const cells = row.cells;
+    
+    // Get category and city from table cells (index 2 and 3)
+    const category = cells[2]?.textContent.trim() || '';
+    const city = cells[3]?.textContent.trim() || '';
+    
+    const matchesSearch = text.includes(searchQuery);
+    const matchesCategory = !categoryFilter || category === categoryFilter;
+    const matchesCity = !cityFilter || city === cityFilter;
+    
+    const shouldShow = matchesSearch && matchesCategory && matchesCity;
+    row.style.display = shouldShow ? '' : 'none';
+    if (shouldShow) visibleCount++;
+  });
+  
+  // Filter mobile cards
+  const cards = document.querySelectorAll('[data-doctor-card]');
+  let mobileVisibleCount = 0;
+  
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const categoryBadge = card.querySelector('.badge');
+    const category = categoryBadge ? categoryBadge.textContent.trim() : '';
+    
+    // Find city in card rows
+    const cityRow = Array.from(card.querySelectorAll('.card-row')).find(row => 
+      row.querySelector('.card-label')?.textContent.includes('City')
+    );
+    const city = cityRow ? cityRow.querySelector('.card-value')?.textContent.trim() : '';
+    
+    const matchesSearch = text.includes(searchQuery);
+    const matchesCategory = !categoryFilter || category === categoryFilter;
+    const matchesCity = !cityFilter || city === cityFilter;
+    
+    const shouldShow = matchesSearch && matchesCategory && matchesCity;
+    card.style.display = shouldShow ? '' : 'none';
+    if (shouldShow) mobileVisibleCount++;
+  });
+  
+  // Update count badge (use table count if available, otherwise mobile count)
+  const count = visibleCount > 0 ? visibleCount : mobileVisibleCount;
+  const badge = document.getElementById('doctors-count');
+  if (badge) badge.textContent = count;
+}
+
+function clearDoctorFilters() {
+  document.getElementById('doctor-search').value = '';
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-city').value = '';
+  applyDoctorFilters();
+  showToast('Filters cleared', 'info');
 }
 
 function setNow() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString();
+  const dateStr = now.toLocaleDateString();
   document.getElementById('last-updated').textContent =
-    'Last updated: ' + new Date().toLocaleTimeString();
+    `Last updated: ${timeStr}`;
+  document.getElementById('last-updated').title = `${dateStr} ${timeStr}`;
 }
 
 /* ─── Charts ─── */
@@ -1071,20 +1744,43 @@ function renderHealthStrip(h) {
 /* ─── Prefix (injected server-side, never guessable by crawlers) ─── */
 const BASE = "{{ admin_prefix }}";
 
+/* ─── Auto-refresh state ─── */
+let autoRefreshEnabled = true;
+let analyticsRefreshInterval = null;
+let healthRefreshInterval = null;
+let isRefreshing = false;
+
 /* ─── AJAX refresh ─── */
-async function loadAnalytics() {
+async function loadAnalytics(silent = false) {
+  if (isRefreshing && !silent) return; // Prevent concurrent refreshes
+  
+  if (!silent) {
+    isRefreshing = true;
+    showRefreshingIndicator();
+  }
+  
   try {
     const res = await fetch(BASE + '/api/analytics');
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (!silent) showToast('Failed to refresh analytics', 'error');
+      return;
+    }
     const data = await res.json();
     renderCharts(data);
     rebuildDoctorTable(data.doctors_list || []);
     rebuildRequestTable(data.requests_list || []);
     setNow();
-  } catch(e) { console.warn('Analytics load failed', e); }
+    if (!silent) showToast('Dashboard refreshed successfully', 'success');
+  } catch(e) { 
+    console.warn('Analytics load failed', e);
+    if (!silent) showToast('Network error during refresh', 'error');
+  } finally {
+    isRefreshing = false;
+    hideRefreshingIndicator();
+  }
 }
 
-async function loadHealth() {
+async function loadHealth(silent = true) {
   try {
     const res = await fetch(BASE + '/api/health');
     if (!res.ok) return;
@@ -1095,39 +1791,160 @@ async function loadHealth() {
   } catch(e) { console.warn('Health load failed', e); }
 }
 
-function refreshAll() { loadAnalytics(); loadHealth(); }
+function refreshAll() { 
+  const btn = document.querySelector('.refresh-btn');
+  if (btn) btn.classList.add('refreshing');
+  
+  Promise.all([loadAnalytics(false), loadHealth(false)])
+    .finally(() => {
+      if (btn) btn.classList.remove('refreshing');
+    });
+}
+
+function showRefreshingIndicator() {
+  const indicator = document.getElementById('refreshing-indicator');
+  if (indicator) indicator.classList.add('show');
+}
+
+function hideRefreshingIndicator() {
+  const indicator = document.getElementById('refreshing-indicator');
+  if (indicator) indicator.classList.remove('show');
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const btn = document.getElementById('auto-refresh-toggle');
+  const icon = document.getElementById('refresh-icon');
+  const text = document.getElementById('refresh-text');
+  
+  if (autoRefreshEnabled) {
+    btn.classList.add('active');
+    icon.className = 'fa-solid fa-play';
+    if (text) text.textContent = 'Auto';
+    btn.title = 'Auto-refresh enabled (every 30s)';
+    startAutoRefresh();
+    showToast('Auto-refresh enabled', 'success');
+  } else {
+    btn.classList.remove('active');
+    icon.className = 'fa-solid fa-pause';
+    if (text) text.textContent = 'Pause';
+    btn.title = 'Auto-refresh paused';
+    stopAutoRefresh();
+    showToast('Auto-refresh paused', 'info');
+  }
+}
+
+function startAutoRefresh() {
+  // Clear existing intervals
+  stopAutoRefresh();
+  
+  // Analytics refresh every 30 seconds
+  analyticsRefreshInterval = setInterval(() => {
+    if (autoRefreshEnabled && !document.querySelector('.modal-overlay.show')) {
+      loadAnalytics(true); // Silent refresh
+    }
+  }, 30000);
+  
+  // Health refresh every 20 seconds
+  healthRefreshInterval = setInterval(() => {
+    if (autoRefreshEnabled) {
+      loadHealth(true);
+    }
+  }, 20000);
+}
+
+function stopAutoRefresh() {
+  if (analyticsRefreshInterval) {
+    clearInterval(analyticsRefreshInterval);
+    analyticsRefreshInterval = null;
+  }
+  if (healthRefreshInterval) {
+    clearInterval(healthRefreshInterval);
+    healthRefreshInterval = null;
+  }
+}
 
 /* ─── Dynamic table rebuild ─── */
 function rebuildDoctorTable(doctors) {
   const tbody = document.getElementById('doctor-tbody');
-  if (!tbody) return;
-  if (!doctors.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No doctors found</td></tr>';
-    return;
+  const cardsContainer = document.getElementById('doctor-cards');
+  
+  // Rebuild desktop table
+  if (tbody) {
+    if (!doctors.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No doctors found</td></tr>';
+    } else {
+      tbody.innerHTML = doctors.map((d,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${(d.firstName||'')+' '+(d.lastName||'')}</td>
+          <td><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></td>
+          <td>${d.cityName||'—'}</td>
+          <td>${d.universityName||'—'}</td>
+          <td>${d.studyYear||'—'}</td>
+          <td>${d.phoneNumber||'—'}</td>
+          <td>${d.id
+            ? `<div class="btn-group btn-group-sm">
+                 <button class="btn btn-outline-primary" onclick="viewDoctor(${d.id})" title="View Details"><i class="fa fa-eye"></i></button>
+                 <button class="btn btn-outline-danger" onclick="deleteDoctor(${d.id},this)" title="Delete"><i class="fa fa-trash"></i></button>
+               </div>`
+            : '<span class="text-muted">—</span>'}</td>
+        </tr>
+      `).join('');
+    }
   }
-  tbody.innerHTML = doctors.map((d,i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td>${(d.firstName||'')+' '+(d.lastName||'')}</td>
-      <td><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></td>
-      <td>${d.cityName||'—'}</td>
-      <td>${d.universityName||'—'}</td>
-      <td>${d.studyYear||'—'}</td>
-      <td>${d.phoneNumber||'—'}</td>
-      <td>${d.id
-        ? `<button class="btn btn-outline-danger delete-btn" onclick="deleteDoctor(${d.id},this)"><i class="fa fa-trash"></i></button>`
-        : '<span class="text-muted">—</span>'}</td>
-    </tr>
-  `).join('');
+  
+  // Rebuild mobile cards
+  if (cardsContainer) {
+    if (!doctors.length) {
+      cardsContainer.innerHTML = '<div class="text-center text-muted py-4">No doctors found</div>';
+    } else {
+      cardsContainer.innerHTML = doctors.map(d => `
+        <div class="data-item-card" data-doctor-card data-id="${d.id||''}">
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user me-1"></i>Name</span>
+            <span class="card-value"><strong>${(d.firstName||'')+' '+(d.lastName||'')}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value"><span class="badge bg-info text-dark">${d.categoryName||'—'}</span></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">${d.cityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">${d.universityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-graduation-cap me-1"></i>Study Year</span>
+            <span class="card-value">${d.studyYear||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">${d.phoneNumber||'—'}</span>
+          </div>
+          ${d.id ? `
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewDoctor(${d.id})" title="View Details">
+              <i class="fa fa-eye me-1"></i>View
+            </button>
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteDoctor(${d.id},this)" title="Delete">
+              <i class="fa fa-trash me-1"></i>Delete
+            </button>
+          </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+  }
 }
 
 function rebuildRequestTable(reqs) {
   const tbody = document.querySelector('#request-table tbody');
-  if (!tbody) return;
-  if (!reqs.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No requests found</td></tr>';
-    return;
-  }
+  const cardsContainer = document.getElementById('request-cards');
+  
   const statusBadge = s => {
     switch((s||'').toUpperCase()) {
       case 'PENDING':  return '<span class="badge badge-pending">⏳ Pending</span>';
@@ -1136,40 +1953,120 @@ function rebuildRequestTable(reqs) {
       default:         return `<span class="badge badge-unknown">${s||'UNKNOWN'}</span>`;
     }
   };
-  tbody.innerHTML = reqs.map((r,i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td>${r.id||'—'}</td>
-      <td>${r.doctorName||'—'}</td>
-      <td>${r.categoryName||'—'}</td>
-      <td>${statusBadge(r.status)}</td>
-      <td>${r.dateTime||'—'}</td>
-      <td class="text-muted" style="max-width:250px;white-space:normal">${r.description||'—'}</td>
-    </tr>
-  `).join('');
+  
+  // Rebuild desktop table
+  if (tbody) {
+    if (!reqs.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No requests found</td></tr>';
+    } else {
+      tbody.innerHTML = reqs.map((r,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.id||'—'}</td>
+          <td>${getDoctorName(r)}</td>
+          <td>${r.doctorPhoneNumber||'—'}</td>
+          <td>${r.doctorCityName||'—'}</td>
+          <td>${r.categoryName||'—'}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${r.dateTime||'—'}</td>
+          <td class="text-muted" style="max-width:250px;white-space:normal">${r.description||'—'}</td>
+        </tr>
+      `).join('');
+    }
+  }
+  
+  // Rebuild mobile cards
+  if (cardsContainer) {
+    if (!reqs.length) {
+      cardsContainer.innerHTML = '<div class="text-center text-muted py-4">No requests found</div>';
+    } else {
+      cardsContainer.innerHTML = reqs.map(r => `
+        <div class="data-item-card" data-request-card>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-hashtag me-1"></i>ID</span>
+            <span class="card-value"><strong>${r.id||'—'}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
+            <span class="card-value">${getDoctorName(r)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">${r.doctorPhoneNumber||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-location-dot me-1"></i>City</span>
+            <span class="card-value">${r.doctorCityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-university me-1"></i>University</span>
+            <span class="card-value">${r.doctorUniversityName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-tag me-1"></i>Category</span>
+            <span class="card-value">${r.categoryName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-clock me-1"></i>Status</span>
+            <span class="card-value">${statusBadge(r.status)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
+            <span class="card-value">${r.dateTime||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-file-text me-1"></i>Description</span>
+            <span class="card-value text-muted" style="text-align: left; font-size: 0.8rem;">${r.description||'—'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 /* ─── Delete doctor ─── */
 async function deleteDoctor(id, btn) {
   if (!confirm(`Delete doctor ID ${id}? This action cannot be undone.`)) return;
+  
+  const originalHTML = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  
   try {
     const res = await fetch(`${BASE}/api/doctor/delete/${id}`, { method: 'POST' });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
     const data = await res.json();
     if (data.success) {
-      btn.closest('tr').remove();
+      // Remove the row/card immediately
+      const tableRow = btn.closest('tr');
+      if (tableRow) tableRow.remove();
+      
+      const mobileCard = btn.closest('[data-doctor-card]');
+      if (mobileCard) mobileCard.remove();
+      
+      // Update counts
       const dc = document.getElementById('total-doctors');
       if (dc) dc.textContent = parseInt(dc.textContent||0) - 1;
+      
+      const badge = document.getElementById('doctors-count');
+      if (badge) badge.textContent = parseInt(badge.textContent||0) - 1;
+      
+      showToast(`Doctor ID ${id} deleted successfully`, 'success');
+      
+      // Trigger a silent refresh after 2 seconds to ensure data consistency
+      setTimeout(() => loadAnalytics(true), 2000);
     } else {
-      alert('Delete failed: ' + data.message);
+      showToast('Delete failed: ' + data.message, 'error');
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-trash"></i>';
+      btn.innerHTML = originalHTML;
     }
   } catch(e) {
-    alert('Request error: ' + e);
+    showToast('Request error: ' + e.message, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa fa-trash"></i>';
+    btn.innerHTML = originalHTML;
   }
 }
 
@@ -1181,10 +2078,201 @@ async function deleteDoctor(id, btn) {
   renderHealthStrip({{ health | tojson }});
   setNow();
 
-  // Auto-refresh health every 30 s
-  setInterval(loadHealth, 30000);
+  // Start auto-refresh intervals
+  startAutoRefresh();
+  
+  // Load theme preference
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
+  
+  // Handle window resize - close mobile menu when resizing to desktop
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.innerWidth > 768) {
+        closeMobileMenu();
+      }
+    }, 250);
+  });
+  
+  // Set initial counts
+  const doctorCards = document.querySelectorAll('[data-doctor-card]');
+  const requestCards = document.querySelectorAll('[data-request-card]');
+  const dcBadge = document.getElementById('doctors-count');
+  const rcBadge = document.getElementById('requests-count');
+  
+  if (dcBadge && !dcBadge.textContent) {
+    dcBadge.textContent = doctorCards.length || initialData.totals.doctors;
+  }
+  if (rcBadge && !rcBadge.textContent) {
+    rcBadge.textContent = requestCards.length || initialData.totals.requests;
+  }
 })();
+
+/* ─── Export Functions ─── */
+function exportDoctors() {
+  window.location.href = `${BASE}/api/export/doctors`;
+  showToast('Downloading doctors CSV...', 'info');
+}
+
+function exportRequests() {
+  window.location.href = `${BASE}/api/export/requests`;
+  showToast('Downloading requests CSV...', 'info');
+}
+
+/* ─── Doctor Details Modal ─── */
+async function viewDoctor(id) {
+  try {
+    const res = await fetch(`${BASE}/api/doctor/${id}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    const data = await res.json();
+    if (data.success && data.data) {
+      showDoctorModal(data.data);
+    } else {
+      showToast('Failed to load doctor details: ' + (data.message || 'Unknown error'), 'error');
+    }
+  } catch(e) {
+    console.error('View doctor error:', e);
+    showToast('Error loading doctor: ' + e.message, 'error');
+  }
+}
+
+function showDoctorModal(doctor) {
+  const modal = document.getElementById('doctor-modal');
+  const content = document.getElementById('doctor-modal-content');
+  
+  if (!modal || !content) {
+    console.error('Modal elements not found');
+    showToast('Modal error: elements not found', 'error');
+    return;
+  }
+  
+  content.innerHTML = `
+    <div class="modal-row">
+      <div class="modal-label">Name</div>
+      <div class="modal-value">${doctor.firstName || ''} ${doctor.lastName || ''}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Email</div>
+      <div class="modal-value">${doctor.email || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Phone</div>
+      <div class="modal-value">${doctor.phoneNumber || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Category</div>
+      <div class="modal-value">${doctor.categoryName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">City</div>
+      <div class="modal-value">${doctor.cityName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">University</div>
+      <div class="modal-value">${doctor.universityName || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Study Year</div>
+      <div class="modal-value">${doctor.studyYear || '—'}</div>
+    </div>
+  `;
+  
+  modal.classList.add('show');
+  
+  // Pause auto-refresh while modal is open
+  if (autoRefreshEnabled) {
+    stopAutoRefresh();
+    modal.dataset.resumeRefresh = 'true';
+  }
+}
+
+function closeDoctorModal() {
+  const modal = document.getElementById('doctor-modal');
+  modal.classList.remove('show');
+  
+  // Resume auto-refresh if it was paused for the modal
+  if (modal.dataset.resumeRefresh === 'true') {
+    startAutoRefresh();
+    delete modal.dataset.resumeRefresh;
+  }
+}
+
+/* ─── Toast Notifications ─── */
+let toastId = 0;
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) {
+    console.error('Toast container not found');
+    console.log(message); // Fallback to console
+    return;
+  }
+  
+  const id = `toast-${toastId++}`;
+  
+  const icons = {
+    success: 'fa-circle-check',
+    error: 'fa-circle-xmark',
+    info: 'fa-circle-info'
+  };
+  
+  const toast = document.createElement('div');
+  toast.id = id;
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <i class="fa ${icons[type] || icons.info} toast-icon"></i>
+    <div class="toast-message">${message}</div>
+  `;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+/* ─── Theme Toggle ─── */
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  showToast(`Switched to ${isLight ? 'light' : 'dark'} mode`, 'success');
+}
 </script>
+
+<!-- Refreshing Indicator -->
+<div id="refreshing-indicator" class="refreshing-indicator">
+  <div class="refresh-spinner"></div>
+  <span style="font-size: 0.85rem; color: var(--accent);">Updating...</span>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Doctor Details Modal -->
+<div id="doctor-modal" class="modal-overlay" onclick="if(event.target === this) closeDoctorModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5><i class="fa fa-user-doctor me-2"></i>Doctor Details</h5>
+      <button class="modal-close" onclick="closeDoctorModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="doctor-modal-content">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Theme Toggle -->
+<div class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+  <i class="fa fa-circle-half-stroke"></i>
+</div>
+
 </body>
 </html>
 """

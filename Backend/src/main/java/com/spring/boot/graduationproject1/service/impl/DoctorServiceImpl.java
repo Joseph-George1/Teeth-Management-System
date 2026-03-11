@@ -2,6 +2,7 @@ package com.spring.boot.graduationproject1.service.impl;
 
 
 import com.spring.boot.graduationproject1.dto.DoctorDto;
+import com.spring.boot.graduationproject1.dto.DoctorRepresentDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
 import com.spring.boot.graduationproject1.mapper.DoctorMapper;
 import com.spring.boot.graduationproject1.model.*;
@@ -135,13 +136,13 @@ public class DoctorServiceImpl implements DoctorService {
     }
 
     @Override
-    public DoctorDto getDoctorById(Long doctorId) throws SystemException {
-        Optional<Doctor>doctorOptional=doctorRepo.findById(doctorId);
-        if(doctorOptional.isEmpty()){
-            throw new SystemException("No Such Doctor");
-        }
-        Doctor doctor=doctorOptional.get();
-        return doctorMapper.toDto(doctor);
+    public DoctorRepresentDto getDoctorById() throws SystemException{
+        Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
+        String email=authentication.getName();
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new SystemException("Doctor not found"));
+
+        return doctorMapper.toRepresentDto(doctor);
     }
 
     @Override
