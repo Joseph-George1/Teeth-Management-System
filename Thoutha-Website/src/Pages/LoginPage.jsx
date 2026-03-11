@@ -136,7 +136,7 @@ export default function LoginPage() {
 
             {/* Remember Me & Forgot Password */}
             <div className="form-options">
-              <p className="forgot-password">نسيت كلمة المرور؟</p>
+              <Link to="/forget-password" className="forgot-password">نسيت كلمة المرور؟</Link>
               <label className="remember-me">
                 <p>تذكرني</p>
                 <input type="checkbox" className='remember-me-input' />

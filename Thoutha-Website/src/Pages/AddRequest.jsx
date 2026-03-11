@@ -1,12 +1,28 @@
 import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/AddRequest.css";
 
-export default function AddRequest({ isOpen, onClose, onSuccess, specialization }) {
-  const { user } = useContext(AuthContext);
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+};
+
+const getStoredProfile = () => {
+  try { return JSON.parse(localStorage.getItem("doctorFullProfile")) || {}; }
+  catch { return {}; }
+};
+
+export default function AddRequest({ isOpen, onClose, onSuccess, specialization, categoryId }) {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [notes, setNotes] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,36 +34,72 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization 
     setError(null);
     try {
       const token = user?.token || localStorage.getItem("token");
+
+      if (!token || isTokenExpired(token)) {
+        logout();
+        onClose();
+        navigate("/login");
+        return;
+      }
+
+      const dateTime = `${date}T${time}:00`;
+
+      // ── Step 1: Update doctor category FIRST so backend assigns correct category ──
+      if (specialization) {
+        const p = getStoredProfile();
+        if (p.firstName) {
+          try {
+            await fetch("https://thoutha.page/api/doctor/updateDoctor", {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                firstName:      p.firstName,
+                lastName:       p.lastName,
+                email:          p.email,
+                phone:          p.phone,
+                universityName: p.universityName,
+                studyYear:      p.studyYear,
+                cityName:       p.cityName,
+                categoryName:   specialization,
+              }),
+            });
+            localStorage.setItem("doctorFullProfile",
+              JSON.stringify({ ...p, categoryName: specialization }));
+          } catch {
+            // Silent — continue to create request
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────────
+
+      // ── Step 2: Create the request ────────────────────────────────────────────────
+      const body = {
+        description,
+        dateTime,
+        ...(categoryId ? { categoryId } : {}),
+      };
+
       const response = await fetch("https://thoutha.page/api/request/createRequest", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          specialization,
-          date,
-          time,
-          notes,
-        }),
+        body: JSON.stringify(body),
       });
+      const resData = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.message || data?.messageAr || "فشل إرسال الطلب");
+        throw new Error(resData?.message || resData?.messageAr || "فشل إرسال الطلب");
       }
-      const submittedRequest = {
-        name: `${user?.firstName || user?.first_name || ""} ${user?.lastName || user?.last_name || ""}`.trim() || "مجهول",
-        university: user?.faculty || user?.universityName || "",
-        city: user?.city || "",
-        specialization,
-        date,
-        time,
-        notes,
-      };
+      // ─────────────────────────────────────────────────────────────────────────────
+
       setDate("");
       setTime("");
-      setNotes("");
-      if (onSuccess) onSuccess(submittedRequest);
+      setDescription("");
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       setError(err.message || "حدث خطأ، حاول مرة أخرى");
@@ -96,11 +148,11 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization 
           </div>
 
           <div className="add-request-field">
-            <label>ملاحظات</label>
+            <label>الوصف</label>
             <textarea
-              placeholder="اكتب ملاحظاتك هنا..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              placeholder="اكتب وصف الحالة هنا..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               rows={4}
             />
           </div>

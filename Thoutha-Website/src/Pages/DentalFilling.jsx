@@ -1,14 +1,13 @@
 import { useState, useContext } from "react";
 import "../Css/Category.css";
 import "../Css/AddRequest.css";
-import DoctorsList from "./DoctorsList";
 import AddRequest from "./AddRequest";
 import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
 export default function DentalFilling() {
   const [openModal, setOpenModal] = useState(false);
-  const [newRequest, setNewRequest] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
@@ -25,13 +24,13 @@ export default function DentalFilling() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="حشوات الأسنان" newRequest={newRequest} />
-      <DoctorsList categoryName="حشوات الأسنان" />
+      <RequestsList categoryName="حشو الأسنان" categoryId={1} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        onSuccess={(req) => setNewRequest(req)}
-        specialization="حشوات الأسنان"
+        onSuccess={() => setRefreshKey(k => k + 1)}
+        specialization="حشو الأسنان"
+        categoryId={1}
       />
     </>
   );

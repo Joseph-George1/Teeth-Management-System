@@ -79,8 +79,8 @@ export default function Home(){
             <div className="category-icon-1"> 
               <Link to="/dental-implant">
               <div className="circle-icon">
-                <img src="./زراعه اسنان.svg" alt="" />
-              <p className="icon-1-title">زراعه اسنان</p>
+                <img src="./حشو اسنان.svg" alt="" />
+              <p className="icon-1-title">حشو عصب</p>
               </div>
               </Link>
             </div>
@@ -89,7 +89,7 @@ export default function Home(){
               <Link to="/dental-checkup">
               <div className="circle-icon">
                 <img src="./فحص شامل.svg" alt="" />
-              <p className="icon-1-title">فحص شامل</p> 
+              <p className="icon-1-title">تنضيف اسنان</p> 
               </div>
               </Link>
             </div>

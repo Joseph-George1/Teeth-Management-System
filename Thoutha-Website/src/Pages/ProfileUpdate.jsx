@@ -1,12 +1,23 @@
 import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/ProfileUpdate.css";
 
 const SERVER_URL = "https://thoutha.page/api";
 const YEARS = [ "الرابعة", "الخامسة", "خريج"];
 
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+};
+
 export default function ProfileUpdate() {
-  const { user, login } = useContext(AuthContext);
+  const { user, login, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -80,6 +91,11 @@ export default function ProfileUpdate() {
     setSaving(true);
     try {
       const token = user?.token || localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        logout();
+        navigate("/login");
+        return;
+      }
       const response = await fetch(`${SERVER_URL}/doctor/updateDoctor`, {
         method: "PUT",
         headers: {
@@ -103,6 +119,17 @@ export default function ProfileUpdate() {
       }
       // Update stored user with new values
       login({ ...user, ...form, faculty: form.faculty, universityName: form.faculty });
+      // Store full profile so AddRequest can use it for category updates
+      localStorage.setItem("doctorFullProfile", JSON.stringify({
+        firstName:      form.firstName,
+        lastName:       form.lastName,
+        email:          form.email,
+        phone:          form.phone,
+        universityName: form.faculty,
+        studyYear:      form.year,
+        cityName:       form.city,
+        categoryName:   form.specialization,
+      }));
       showToast("success", "تم حفظ البيانات بنجاح ✓");
     } catch (err) {
       showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");

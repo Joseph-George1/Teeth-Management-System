@@ -192,7 +192,7 @@
   border-radius: 8px;
   opacity: 1;
   display: flex;
-  padding-left: 46.59px;
+  padding-left: 30px;
   padding-right: 10px;
   padding-top: 8px;
   gap: 10px;
@@ -204,12 +204,33 @@
   font-size: 16px;
   line-height: 24px;
 }
+.user-info-email {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+.user-name {
+  display: block;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .user-email{
   font-weight: 400;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 11px;
+  line-height: 16px;
   letter-spacing: 0px;
   color: #FFFFFFCC;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 .cursor{
   cursor: pointer;

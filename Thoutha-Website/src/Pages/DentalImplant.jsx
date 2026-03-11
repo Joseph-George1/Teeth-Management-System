@@ -1,23 +1,22 @@
 import { useState, useContext } from "react";
 import "../Css/Category.css";
 import "../Css/AddRequest.css";
-import DoctorsList from "./DoctorsList";
 import AddRequest from "./AddRequest";
 import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
 export default function DentalImplant() {
   const [openModal, setOpenModal] = useState(false);
-  const [newRequest, setNewRequest] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
       <div className="top-page">
         <div className="circle-img">
-          <img src="./زراعه اسنان.svg" alt="img" />
+          <img src="./حشو اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>زراعة الأسنان</p>
+          <p>حشو العصب</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -25,13 +24,13 @@ export default function DentalImplant() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="زراعة الأسنان" newRequest={newRequest} />
-      <DoctorsList categoryName="زراعة الأسنان" />
+      <RequestsList categoryName="حشو العصب" categoryId={2} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        onSuccess={(req) => setNewRequest(req)}
-        specialization="زراعة الأسنان"
+        onSuccess={() => setRefreshKey(k => k + 1)}
+        specialization="حشو العصب"
+        categoryId={2}
       />
     </>
   );

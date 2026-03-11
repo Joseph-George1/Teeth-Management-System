@@ -57,7 +57,7 @@ export default function NavBar() {
 
                     <div className="user-info-email">
                       <span className="user-name">{user?.firstName || user?.first_name} {user?.lastName || user?.last_name}</span>
-                      <p className="user-email">{user?.universityName || user?.faculty || user?.universities}</p>
+                      <p className="user-email">{user?.universityName || user?.faculty || user?.universities || user?.doctorUniversityName}</p>
                     </div>
                   </div>
                 </div>

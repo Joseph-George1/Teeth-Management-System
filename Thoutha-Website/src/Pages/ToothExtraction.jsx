@@ -1,14 +1,13 @@
 import { useState, useContext } from "react";
 import "../Css/Category.css";
 import "../Css/AddRequest.css";
-import DoctorsList from "./DoctorsList";
 import AddRequest from "./AddRequest";
 import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
 export default function ToothExtraction() {
   const [openModal, setOpenModal] = useState(false);
-  const [newRequest, setNewRequest] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
@@ -25,13 +24,13 @@ export default function ToothExtraction() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="خلع الأسنان" newRequest={newRequest} />
-      <DoctorsList categoryName="خلع الأسنان" />
+      <RequestsList categoryName="خلع الأسنان" categoryId={5} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        onSuccess={(req) => setNewRequest(req)}
+        onSuccess={() => setRefreshKey(k => k + 1)}
         specialization="خلع الأسنان"
+        categoryId={5}
       />
     </>
   );

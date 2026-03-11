@@ -54,6 +54,12 @@ export default function DoctorProfile() {
               تحديث الملف الشخصي
             </button>
             <button
+              className="dp-action-btn dp-action-btn--primary"
+              onClick={() => navigate("/forget-password")}
+            >
+              تغيير كلمة المرور
+            </button>
+            <button
               className="dp-action-btn dp-action-btn--danger"
               onClick={() => navigate("/delete-my-account")}
             >
