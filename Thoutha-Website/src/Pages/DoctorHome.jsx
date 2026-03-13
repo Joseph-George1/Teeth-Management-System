@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorHome.css";
 
@@ -19,9 +19,7 @@ const mockAppointments = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DoctorHome() {
-  const { user } = useContext(AuthContext);
-  const [firstName, setFirstName]       = useState("");
-  const [isLoadingName, setIsLoadingName] = useState(true);
+  const { user, authLoading } = useContext(AuthContext);
   const [unreadCount, setUnreadCount]   = useState(4);
   const [appointments, setAppointments]  = useState(mockAppointments);
   const [selectedAppt, setSelectedAppt] = useState(null);
@@ -71,27 +69,6 @@ export default function DoctorHome() {
     setSelectedAppt(null);
   };
 
-  useEffect(() => {
-    const cached = localStorage.getItem("doctorFirstName");
-    if (cached) {
-      setFirstName(cached);
-      setIsLoadingName(false);
-      return;
-    }
-    fetchDoctorProfile()
-      .then(({ firstName: fn, lastName: ln }) => {
-        setFirstName(fn);
-        localStorage.setItem("doctorFirstName", fn);
-        if (ln) localStorage.setItem("doctorLastName", ln);
-      })
-      .catch(() => {
-        const email = localStorage.getItem("userEmail") || "";
-        const fallback = email.split("@")[0] || "دكتور";
-        setFirstName(fallback);
-      })
-      .finally(() => setIsLoadingName(false));
-  }, []);
-
   const handleMenuClick = () => console.log("Menu – open drawer");
   const handleNotificationClick = () => {
     setUnreadCount(0);
@@ -99,7 +76,7 @@ export default function DoctorHome() {
   };
 
   const displayName = [
-    user?.firstName || user?.first_name || firstName,
+    user?.firstName || user?.first_name,
     user?.lastName  || user?.last_name,
   ]
     .filter(Boolean)
@@ -116,7 +93,7 @@ export default function DoctorHome() {
 
         {/* Welcome */}
         <section className="dh-welcome">
-          {isLoadingName ? (
+          {authLoading ? (
             <div className="dh-skeleton dh-skeleton--name" />
           ) : (
             <h1 className="dh-greeting">

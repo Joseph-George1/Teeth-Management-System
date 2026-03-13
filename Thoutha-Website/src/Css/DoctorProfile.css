@@ -70,6 +70,17 @@
   word-break: break-word;
 }
 
+.dp-inline-error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* ── Action buttons ────────────────────────────────────────────────────────── */
 .dp-actions {
   display: flex;

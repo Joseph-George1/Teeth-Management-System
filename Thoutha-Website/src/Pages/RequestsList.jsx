@@ -40,13 +40,26 @@ const getTimePeriod = (req) => {
   return h < 12 ? `${t} صباحاً` : `${t} مساءً`;
 };
 
-const isTokenExpired = (token) => {
+const decodeTokenPayload = (token) => {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 < Date.now();
+    const payloadPart = token?.split(".")?.[1];
+    if (!payloadPart) return null;
+
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+
+    return JSON.parse(atob(padded));
   } catch {
-    return true;
+    return null;
   }
+};
+
+const isTokenExpired = (token) => {
+  const payload = decodeTokenPayload(token);
+  if (!payload) return true;
+  if (!payload.exp) return false;
+
+  return payload.exp * 1000 < Date.now();
 };
 
 const normalizeList = (payload) => {

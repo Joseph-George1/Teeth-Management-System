@@ -3,22 +3,30 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/AddRequest.css";
 
-const isTokenExpired = (token) => {
+const decodeTokenPayload = (token) => {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 < Date.now();
+    const payloadPart = token?.split(".")?.[1];
+    if (!payloadPart) return null;
+
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+
+    return JSON.parse(atob(padded));
   } catch {
-    return true;
+    return null;
   }
 };
 
-const getStoredProfile = () => {
-  try { return JSON.parse(localStorage.getItem("doctorFullProfile")) || {}; }
-  catch { return {}; }
+const isTokenExpired = (token) => {
+  const payload = decodeTokenPayload(token);
+  if (!payload) return true;
+  if (!payload.exp) return false;
+
+  return payload.exp * 1000 < Date.now();
 };
 
 export default function AddRequest({ isOpen, onClose, onSuccess, specialization, categoryId }) {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, refreshUserProfile } = useContext(AuthContext);
   const navigate = useNavigate();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -46,8 +54,13 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
 
       // ── Step 1: Update doctor category FIRST so backend assigns correct category ──
       if (specialization) {
-        const p = getStoredProfile();
-        if (p.firstName) {
+        let currentDoctor = user;
+
+        if (!currentDoctor?.firstName) {
+          currentDoctor = await refreshUserProfile(token).catch(() => user);
+        }
+
+        if (currentDoctor?.firstName) {
           try {
             await fetch("https://thoutha.page/api/doctor/updateDoctor", {
               method: "PUT",
@@ -56,18 +69,17 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
                 Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({
-                firstName:      p.firstName,
-                lastName:       p.lastName,
-                email:          p.email,
-                phone:          p.phone,
-                universityName: p.universityName,
-                studyYear:      p.studyYear,
-                cityName:       p.cityName,
+                firstName:      currentDoctor.firstName || currentDoctor.first_name,
+                lastName:       currentDoctor.lastName || currentDoctor.last_name,
+                email:          currentDoctor.email,
+                phoneNumber:    currentDoctor.phoneNumber || currentDoctor.phone,
+                universityName: currentDoctor.universityName || currentDoctor.faculty,
+                studyYear:      currentDoctor.studyYear || currentDoctor.year,
+                cityName:       currentDoctor.cityName || currentDoctor.city,
                 categoryName:   specialization,
               }),
             });
-            localStorage.setItem("doctorFullProfile",
-              JSON.stringify({ ...p, categoryName: specialization }));
+            await refreshUserProfile(token).catch(() => null);
           } catch {
             // Silent — continue to create request
           }
