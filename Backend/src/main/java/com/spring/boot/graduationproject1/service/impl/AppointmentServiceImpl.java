@@ -11,9 +11,11 @@ import com.spring.boot.graduationproject1.repo.PatientRepo;
 import com.spring.boot.graduationproject1.service.AppointmentService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepo appointmentRepo;
