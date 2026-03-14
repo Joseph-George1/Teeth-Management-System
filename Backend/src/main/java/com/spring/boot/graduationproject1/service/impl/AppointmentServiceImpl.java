@@ -1,19 +1,22 @@
 package com.spring.boot.graduationproject1.service.impl;
 
 import com.spring.boot.graduationproject1.dto.AppointmentDto;
+import com.spring.boot.graduationproject1.dto.DoctorDto;
 import com.spring.boot.graduationproject1.mapper.AppointmentMapper;
 import com.spring.boot.graduationproject1.model.Appointments;
 import com.spring.boot.graduationproject1.model.Doctor;
-import com.spring.boot.graduationproject1.repo.AppointmentRepo;
-import com.spring.boot.graduationproject1.repo.CityRepo;
-import com.spring.boot.graduationproject1.repo.DoctorRepo;
-import com.spring.boot.graduationproject1.repo.PatientRepo;
+import com.spring.boot.graduationproject1.model.Patients;
+import com.spring.boot.graduationproject1.model.Role;
+import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.AppointmentService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
+@Service
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepo appointmentRepo;
@@ -21,14 +24,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final CityRepo cityRepo;
     private final DoctorRepo doctorRepo;
     private final PatientRepo patientRepo;
+    private final RoleRepo roleRepo;
 
     public AppointmentServiceImpl(AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
-                                  CityRepo cityRepo, DoctorRepo doctorRepo, PatientRepo patientRepo) {
+                                  CityRepo cityRepo, DoctorRepo doctorRepo, PatientRepo patientRepo,RoleRepo roleRepo) {
         this.appointmentMapper = appointmentMapper;
         this.appointmentRepo = appointmentRepo;
         this.cityRepo = cityRepo;
         this.doctorRepo = doctorRepo;
         this.patientRepo = patientRepo;
+        this.roleRepo = roleRepo;
     }
 
     @Override
@@ -38,12 +43,36 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto getAppointmentById(Long id) {
-        return null;
+        Optional<Appointments> appointments = appointmentRepo.findById(id);
+        if(appointments.isEmpty()){
+            throw new RuntimeException("Appointment not found");
+        }
+        return appointmentMapper.toDto(appointments.get());
     }
 
     @Override
     public AppointmentDto createAppointment(AppointmentDto appointmentDto) {
-        return null;
+        Doctor doctor = doctorRepo.findById(appointmentDto.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        Patients patient = new Patients();
+        patient.setFirstName(appointmentDto.getPatientFirstName());
+        patient.setLastName(appointmentDto.getPatientLastName());
+        patient.setPhoneNumber(appointmentDto.getPatientPhoneNumber());
+
+        Role patientRole = roleRepo.findByName("ROLE_PATIENT")
+                .orElseThrow(() -> new RuntimeException("Role ROLE_PATIENT not found"));
+        patient.setRole(patientRole);
+
+        patientRepo.save(patient);
+
+        Appointments appointment = new Appointments();
+        appointment.setDoctor(doctor);
+        appointment.setPatient(patient);
+
+        appointmentRepo.save(appointment);
+
+        return appointmentMapper.toDto(appointment);
     }
 
     @Override

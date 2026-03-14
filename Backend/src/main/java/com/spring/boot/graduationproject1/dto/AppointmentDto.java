@@ -19,4 +19,5 @@ public class AppointmentDto {
     private Long patientId;
     private String patientFirstName;
     private String patientLastName;
+    private String patientPhoneNumber;
 }

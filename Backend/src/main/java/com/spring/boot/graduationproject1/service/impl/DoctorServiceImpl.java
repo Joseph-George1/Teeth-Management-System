@@ -89,7 +89,6 @@ public class DoctorServiceImpl implements DoctorService {
     @Override
     public DoctorDto updateDoctor(DoctorDto doctorDto) throws SystemException {
 
-
         String email = SecurityContextHolder
                 .getContext()
                 .getAuthentication()
@@ -114,12 +113,26 @@ public class DoctorServiceImpl implements DoctorService {
             doctor.setPassword(passwordEncoder.encode(doctorDto.getPassword()));
         }
 
+        if (doctorDto.getStudyYear() != null) {
+            doctor.setStudyYear(doctorDto.getStudyYear());
+        }
+
+        if (doctorDto.getCityName() != null) {
+            City city = cityRepo
+                    .findByName(doctorDto.getCityName())
+                    .orElseThrow(() -> new SystemException("No Such City"));
+
+            doctor.setCity(city);
+            doctor.setCityName(city.getName());
+        }
+
         if (doctorDto.getCategoryName() != null) {
             Category category = categoryRepo
                     .findByName(doctorDto.getCategoryName())
                     .orElseThrow(() -> new SystemException("No Such Category"));
 
             doctor.setCategory(category);
+            doctor.setCategoryName(category.getName());
         }
 
         if (doctorDto.getUniversityName() != null) {
@@ -128,12 +141,15 @@ public class DoctorServiceImpl implements DoctorService {
                     .orElseThrow(() -> new SystemException("No Such University"));
 
             doctor.setUniversity(university);
+            doctor.setUniversityName(university.getName());
         }
 
         doctorRepo.save(doctor);
 
         return doctorMapper.toDto(doctor);
     }
+
+
 
     @Override
     public DoctorRepresentDto getDoctorById() throws SystemException{
