@@ -3,9 +3,7 @@ package com.spring.boot.graduationproject1.controller;
 import com.spring.boot.graduationproject1.dto.AppointmentDto;
 import com.spring.boot.graduationproject1.service.AppointmentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,6 +24,16 @@ public class AppointmentController {
     @GetMapping("/getAppointmentsByDoctorId")
     public ResponseEntity<List<AppointmentDto>>getAppointmentsByDoctorId(){
         return ResponseEntity.ok(appointmentService.getAppointmentsByDoctorId());
+    }
+
+    @PostMapping("/createAppointment")
+    public ResponseEntity<AppointmentDto>createAppointment(@RequestBody AppointmentDto appointmentDto){
+        return ResponseEntity.ok(appointmentService.createAppointment(appointmentDto));
+    }
+
+    @GetMapping("/getAppointmentById")
+    public ResponseEntity<AppointmentDto>getAppointmentById(@RequestParam Long id){
+        return ResponseEntity.ok(appointmentService.getAppointmentById(id));
     }
 
 }

@@ -19,6 +19,4 @@ public class City {
 
     @OneToMany(mappedBy = "city")
     private List<Doctor> doctor;
-    @OneToMany(mappedBy = "city")
-    private List<Patients> patients;
 }
