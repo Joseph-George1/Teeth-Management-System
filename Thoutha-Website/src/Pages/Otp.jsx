@@ -24,15 +24,13 @@ export default function Otp() {
   // Validate Egyptian phone number
   const isValidEgyptPhone = (number) => /^\+20\d{10}$/.test(number);
 
-  // إذا جاء الرقم من صفحة التسجيل، ابعت OTP تلقائياً
+  // إذا جاء الرقم من صفحة التسجيل، عيّن الرقم فقط (بدون إرسال OTP تلقائي)
   useEffect(() => {
     const phoneFromState = location.state?.phone;
     if (phoneFromState) {
       const normalized = normalizePhone(phoneFromState);
       setPhone(normalized);
-      sendOtp(normalized);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (e) => {
