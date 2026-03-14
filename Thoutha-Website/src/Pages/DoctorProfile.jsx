@@ -1,11 +1,63 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorProfile.css";
 
 export default function DoctorProfile() {
-  const { user } = useContext(AuthContext);
+  const { user, authLoading, refreshUserProfile } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    refreshUserProfile(token)
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message || "تعذر تحميل بيانات الملف الشخصي");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, navigate, refreshUserProfile]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="dp-loading-screen" dir="rtl">
+        <div className="dp-spinner"></div>
+        <p>جاري تحميل البيانات...</p>
+      </div>
+    );
+  }
+
+  if (error && !user) {
+    return (
+      <div className="dp-error-screen" dir="rtl">
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="dp-retry-btn">
+          إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
 
   const infoItems = [
     { icon: "👤", label: "الاسم الأول",       value: user?.firstName || user?.first_name },
@@ -28,6 +80,7 @@ export default function DoctorProfile() {
 
       <main className="dp-content">
         <div className="dp-card">
+          {error && user ? <p className="dp-inline-error">{error}</p> : null}
 
           {/* Info rows */}
           <div className="dp-info-list">
@@ -52,6 +105,12 @@ export default function DoctorProfile() {
               onClick={() => navigate("/profile-update")}
             >
               تحديث الملف الشخصي
+            </button>
+            <button
+              className="dp-action-btn dp-action-btn--primary"
+              onClick={() => navigate("/forget-password")}
+            >
+              تغيير كلمة المرور
             </button>
             <button
               className="dp-action-btn dp-action-btn--danger"

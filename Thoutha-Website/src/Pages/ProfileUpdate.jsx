@@ -1,12 +1,79 @@
 import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/ProfileUpdate.css";
 
-const SERVER_URL = "https://thoutha.page/api";
-const YEARS = [ "الرابعة", "الخامسة", "خريج"];
+const SERVER_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
+const YEAR_OPTIONS = [
+  { value: "4", label: "الرابعة" },
+  { value: "5", label: "الخامسة" },
+  { value: "خريج", label: "خريج" },
+];
+
+const decodeTokenPayload = (token) => {
+  try {
+    const payloadPart = token?.split(".")?.[1];
+    if (!payloadPart) return null;
+
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+};
+
+const isTokenExpired = (token) => {
+  const payload = decodeTokenPayload(token);
+  if (!payload) return true;
+  if (!payload.exp) return false;
+
+  return payload.exp * 1000 < Date.now();
+};
+
+const normalizeStudyYearValue = (value) => {
+  const normalizedValue = value?.toString().trim() || "";
+
+  if (normalizedValue === "الرابعة") return "4";
+  if (normalizedValue === "الخامسة") return "5";
+
+  return normalizedValue;
+};
+
+const mapUserToForm = (userData) => ({
+  firstName: userData?.firstName || userData?.first_name || "",
+  lastName: userData?.lastName || userData?.last_name || "",
+  email: userData?.email || "",
+  phone: userData?.phone || userData?.phoneNumber || "",
+  faculty: userData?.faculty || userData?.universityName || "",
+  year: normalizeStudyYearValue(userData?.year || userData?.studyYear || ""),
+  city: userData?.city || userData?.cityName || "",
+  specialization: userData?.specialization || userData?.categoryName || "",
+});
+
+const buildUpdatePayload = (formData) => {
+  const payload = {
+    firstName: formData.firstName.trim(),
+    lastName: formData.lastName.trim(),
+    email: formData.email.trim(),
+    phoneNumber: formData.phone.trim(),
+    cityName: formData.city.trim(),
+    studyYear: normalizeStudyYearValue(formData.year),
+    categoryName: formData.specialization.trim(),
+    universityName: formData.faculty.trim(),
+  };
+
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== "")
+  );
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function ProfileUpdate() {
-  const { user, login } = useContext(AuthContext);
+  const { user, logout, refreshUserProfile, applyServerUserData } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -30,16 +97,7 @@ export default function ProfileUpdate() {
   useEffect(() => {
     // Pre-fill from stored user
     if (user) {
-      setForm({
-        firstName:      user.firstName      || user.first_name  || "",
-        lastName:       user.lastName       || user.last_name   || "",
-        email:          user.email          || "",
-        phone:          user.phone          || "",
-        faculty:        user.faculty        || user.universityName || "",
-        year:           user.year           || user.studyYear   || "",
-        city:           user.city           || "",
-        specialization: user.specialization || "",
-      });
+      setForm(mapUserToForm(user));
     }
 
     let cancelled = false;
@@ -77,32 +135,58 @@ export default function ProfileUpdate() {
       showToast("error", "الاسم الأول واسم العائلة مطلوبان.");
       return;
     }
+
     setSaving(true);
     try {
       const token = user?.token || localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        logout();
+        navigate("/login");
+        return;
+      }
+
+      const updatePayload = buildUpdatePayload(form);
+
+      if (Object.keys(updatePayload).length === 0) {
+        showToast("error", "لا توجد بيانات لإرسالها");
+        setSaving(false);
+        return;
+      }
+
       const response = await fetch(`${SERVER_URL}/doctor/updateDoctor`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          firstName:      form.firstName,
-          lastName:       form.lastName,
-          email:          form.email,
-          phone:          form.phone,
-          universityName: form.faculty,
-          studyYear:      form.year,
-          cityName:       form.city,
-          categoryName:   form.specialization,
-        }),
+        body: JSON.stringify(updatePayload),
       });
+
+      const responseData = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.message || data?.messageAr || "فشل حفظ البيانات");
+        throw new Error(responseData?.message || responseData?.messageAr || "فشل حفظ البيانات");
       }
-      // Update stored user with new values
-      login({ ...user, ...form, faculty: form.faculty, universityName: form.faculty });
+
+      let latestServerUser = null;
+
+      if (responseData) {
+        latestServerUser = applyServerUserData(responseData, token);
+        if (latestServerUser) {
+          setForm(mapUserToForm(latestServerUser));
+        }
+      }
+
+      try {
+        await wait(250);
+        latestServerUser = await refreshUserProfile(token);
+        setForm(mapUserToForm(latestServerUser));
+      } catch (refreshError) {
+        if (!latestServerUser) {
+          throw refreshError;
+        }
+      }
+
       showToast("success", "تم حفظ البيانات بنجاح ✓");
     } catch (err) {
       showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
@@ -173,7 +257,9 @@ export default function ProfileUpdate() {
             <Field label="الفرقة الدراسية">
               <select className="dp-select" value={form.year} onChange={handleChange("year")}>
                 <option value="">اختر الفرقة</option>
-                {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                {YEAR_OPTIONS.map((yearOption) => (
+                  <option key={yearOption.value} value={yearOption.value}>{yearOption.label}</option>
+                ))}
               </select>
             </Field>
             <Field label="المحافظة">

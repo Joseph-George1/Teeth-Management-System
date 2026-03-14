@@ -28,6 +28,8 @@ import DeleteAccount from "./Pages/DeleteAccount";
 import DoctorProfile from "./Pages/DoctorProfile";
 import ProfileUpdate from "./Pages/ProfileUpdate";
 import DeleteMyAccount from "./Pages/DeleteMyAccount";
+import ForgetPassword from "./Pages/ForgetPassword";
+import ResetPassword from "./Pages/ResetPassword";
 export default function App() {
   return (
     <>
@@ -58,6 +60,8 @@ export default function App() {
       <Route path="/doctor-profile" element={<DoctorProfile/>}></Route>
       <Route path="/profile-update" element={<ProfileUpdate/>}></Route>
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
+      <Route path="/forget-password" element={<ForgetPassword/>}></Route>
+      <Route path="/reset-password" element={<ResetPassword/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
     </Routes>
     <Footer/>

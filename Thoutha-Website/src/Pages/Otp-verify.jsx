@@ -4,15 +4,23 @@ import "../Css/Otp.css";
 
 const API_VERIFY_OTP = "https://thoutha.page/api/otp/verify";
 const API_SEND_OTP = "https://thoutha.page/api/otp/send";
+const API_VERIFY_RESET_OTP = "https://thoutha.page/api/password-reset/verify-otp";
+const API_REQUEST_RESET = "https://thoutha.page/api/password-reset/request";
 const OTP_LENGTH = 6;
 
 export default function OtpVerify() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isResetFlow = location.state?.flow === "reset";
+
   // جلب الرقم من صفحة الإرسال أو من sessionStorage
   const storedPhone =
-    location.state?.phone || sessionStorage.getItem("otp_phone") || "";
+    location.state?.phone ||
+    (isResetFlow
+      ? sessionStorage.getItem("reset_phone")
+      : sessionStorage.getItem("otp_phone")) ||
+    "";
 
   const phone = storedPhone.trim();
 
@@ -62,14 +70,16 @@ export default function OtpVerify() {
       console.log("Verifying phone:", phone);
       console.log("Verifying OTP:", code);
 
-      const response = await fetch(API_VERIFY_OTP, {
+      const verifyUrl = isResetFlow ? API_VERIFY_RESET_OTP : API_VERIFY_OTP;
+
+      const response = await fetch(verifyUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           phone_number: phone,
-          otp: code, // ✅ التعديل هنا: اسم الحقل أصبح otp
+          otp: code,
         }),
       });
 
@@ -79,14 +89,27 @@ export default function OtpVerify() {
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error(
-            "لا يوجد كود تفعيل نشط لهذا الرقم. تأكد انك ارسلت الكود اولا."
+            isResetFlow
+              ? "لا يوجد كود تحقق نشط لهذا الرقم. يرجى إعادة الطلب."
+              : "لا يوجد كود تفعيل نشط لهذا الرقم. تأكد انك ارسلت الكود اولا."
           );
+        }
+        if (response.status === 410) {
+          throw new Error("انتهت صلاحية الكود. يرجى طلب كود جديد");
+        }
+        if (response.status === 429) {
+          throw new Error("تجاوزت عدد المحاولات المسموح بها. حاول لاحقاً");
         }
         throw new Error(data?.message || "الكود غير صحيح");
       }
 
-      sessionStorage.removeItem("otp_phone");
-      navigate("/otp-done");
+      if (isResetFlow) {
+        sessionStorage.removeItem("reset_phone");
+        navigate("/reset-password", { state: { phone } });
+      } else {
+        sessionStorage.removeItem("otp_phone");
+        navigate("/otp-done");
+      }
 
     } catch (err) {
       setMessage(err.message || "حدث خطأ أثناء التحقق من الكود");
@@ -102,7 +125,9 @@ export default function OtpVerify() {
       setLoading(true);
       setMessage("");
 
-      const response = await fetch(API_SEND_OTP, {
+      const resendUrl = isResetFlow ? API_REQUEST_RESET : API_SEND_OTP;
+
+      const response = await fetch(resendUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,13 +155,19 @@ export default function OtpVerify() {
   return (
     <div className="otp-page">
       <div className="otp-container">
-        <p className="otp-title">كود التفعيل</p>
-        <p className="otp-subtitle">فعل الحساب للمتابعه</p>
+        <p className="otp-title">{isResetFlow ? "كود التحقق" : "كود التفعيل"}</p>
+        <p className="otp-subtitle">
+          {isResetFlow ? "ادخل الكود لإعادة تعيين كلمة المرور" : "فعل الحساب للمتابعه"}
+        </p>
 
         <div className="otp-code">
-          <p className="otp-text">تم ارسال كود التفعيل</p>
+          <p className="otp-text">
+            {isResetFlow ? "تم ارسال كود التحقق" : "تم ارسال كود التفعيل"}
+          </p>
           <p className="otp-text-2">
-            لقد ارسلنا لك كود اكتبه لكي تفعل الحساب الخاص بك
+            {isResetFlow
+              ? "لقد ارسلنا لك كود على الواتساب. ادخله لإعادة تعيين كلمة المرور"
+              : "لقد ارسلنا لك كود اكتبه لكي تفعل الحساب الخاص بك"}
           </p>
           {phone && <p className="otp-text-2">{phone}</p>}
         </div>

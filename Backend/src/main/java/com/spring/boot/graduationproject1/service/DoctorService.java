@@ -5,11 +5,9 @@ import com.spring.boot.graduationproject1.dto.DoctorRepresentDto;
 import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
 import com.spring.boot.graduationproject1.model.Doctor;
 import jakarta.transaction.SystemException;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
 public interface DoctorService {
     List<DoctorSummaryDto> getDoctors();
     List<DoctorSummaryDto> getDoctorsByCityId(Long cityId) throws SystemException;
