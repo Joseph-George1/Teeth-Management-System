@@ -70,7 +70,10 @@
   padding: 12px 28px;
   border-radius: var(--border-radius-1);
   font-weight: 700;
+  font-size: 16px;
+  font-family: 'Cairo', sans-serif;
   border: 2px solid transparent;
+  cursor: pointer;
 }
 
 .forbidden-btn-primary {

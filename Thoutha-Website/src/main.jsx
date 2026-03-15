@@ -5,35 +5,16 @@ import './index.css' ;
 import { BrowserRouter } from 'react-router';
 import { AuthProvider } from './services/AuthContext.jsx';
 import { HelmetProvider } from "react-helmet-async";
+import { showForbiddenPage } from './services/forbiddenState.js';
 
 if (!window.__forbiddenInterceptorInstalled) {
   const originalFetch = window.fetch.bind(window);
-  const redirectToForbidden = () => {
-    if (window.location.pathname === "/forbidden") {
-      return;
-    }
-
-    window.history.replaceState(
-      {
-        ...(window.history.state || {}),
-        redirectedByForbiddenInterceptor: true,
-      },
-      "",
-      "/forbidden"
-    );
-
-    window.dispatchEvent(
-      new PopStateEvent("popstate", {
-        state: window.history.state,
-      })
-    );
-  };
 
   window.fetch = async (...args) => {
     const response = await originalFetch(...args);
 
     if (response.status === 403) {
-      redirectToForbidden();
+      showForbiddenPage();
     }
 
     return response;

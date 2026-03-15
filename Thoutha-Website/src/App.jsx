@@ -1,5 +1,6 @@
 
-import { Route, Routes, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
@@ -32,13 +33,19 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
 import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
+import { isForbiddenVisible, subscribeToForbiddenPage } from "./services/forbiddenState";
 export default function App() {
-  const location = useLocation();
-  const isForbiddenRoute = location.pathname === "/forbidden";
+  const [showForbiddenScreen, setShowForbiddenScreen] = useState(isForbiddenVisible());
+
+  useEffect(() => subscribeToForbiddenPage(setShowForbiddenScreen), []);
+
+  if (showForbiddenScreen) {
+    return <ForbiddenPage />;
+  }
 
   return (
     <>
-    {!isForbiddenRoute && <NavBar/>}
+    <NavBar/>
     <Routes>
       <Route path="/" element={<Home/>}/>
       <Route path="/login" element={<LoginPage/>}/>
@@ -67,11 +74,10 @@ export default function App() {
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="/forget-password" element={<ForgetPassword/>}></Route>
       <Route path="/reset-password" element={<ResetPassword/>}></Route>
-      <Route path="/forbidden" element={<ForbiddenPage/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
       <Route path="/assets" element={<NotFoundPages/>}></Route>
     </Routes>
-    {!isForbiddenRoute && <Footer/>}
+    <Footer/>
     </>
   );
 }
