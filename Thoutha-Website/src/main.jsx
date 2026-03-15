@@ -7,21 +7,18 @@ import { AuthProvider } from './services/AuthContext.jsx';
 import { HelmetProvider } from "react-helmet-async";
 import { showForbiddenPage } from './services/forbiddenState.js';
 
-if (!window.__forbiddenInterceptorInstalled) {
-  const originalFetch = window.fetch.bind(window);
+const originalFetch = window.__originalFetch || window.fetch.bind(window);
+window.__originalFetch = originalFetch;
 
-  window.fetch = async (...args) => {
-    const response = await originalFetch(...args);
+window.fetch = async (...args) => {
+  const response = await originalFetch(...args);
 
-    if (response.status === 403) {
-      showForbiddenPage();
-    }
+  if (response.status === 403) {
+    showForbiddenPage();
+  }
 
-    return response;
-  };
-
-  window.__forbiddenInterceptorInstalled = true;
-}
+  return response;
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

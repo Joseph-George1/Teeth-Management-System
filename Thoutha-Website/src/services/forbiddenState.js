@@ -1,17 +1,8 @@
-const FORBIDDEN_EVENT = "app:forbidden-change";
-
 let forbiddenVisible = false;
+const listeners = new Set();
 
 const notifyForbiddenChange = () => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.dispatchEvent(
-    new CustomEvent(FORBIDDEN_EVENT, {
-      detail: forbiddenVisible,
-    })
-  );
+  listeners.forEach((listener) => listener());
 };
 
 export const showForbiddenPage = () => {
@@ -35,17 +26,9 @@ export const hideForbiddenPage = () => {
 export const isForbiddenVisible = () => forbiddenVisible;
 
 export const subscribeToForbiddenPage = (callback) => {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-
-  const handler = (event) => {
-    callback(Boolean(event.detail));
-  };
-
-  window.addEventListener(FORBIDDEN_EVENT, handler);
+  listeners.add(callback);
 
   return () => {
-    window.removeEventListener(FORBIDDEN_EVENT, handler);
+    listeners.delete(callback);
   };
 };

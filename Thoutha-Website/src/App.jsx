@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Route, Routes } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
@@ -35,9 +35,11 @@ import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
 import { isForbiddenVisible, subscribeToForbiddenPage } from "./services/forbiddenState";
 export default function App() {
-  const [showForbiddenScreen, setShowForbiddenScreen] = useState(isForbiddenVisible());
-
-  useEffect(() => subscribeToForbiddenPage(setShowForbiddenScreen), []);
+  const showForbiddenScreen = useSyncExternalStore(
+    subscribeToForbiddenPage,
+    isForbiddenVisible,
+    isForbiddenVisible
+  );
 
   if (showForbiddenScreen) {
     return <ForbiddenPage />;
