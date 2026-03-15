@@ -1,5 +1,6 @@
 // Context/AuthContext.jsx
 import { createContext, useCallback, useEffect, useState } from "react";
+import { showForbiddenPage } from "./forbiddenState";
 
 export const AuthContext = createContext();
 
@@ -118,7 +119,13 @@ export function AuthProvider({ children }) {
       cache: "no-store",
     });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 403) {
+      showForbiddenPage();
+      logout();
+      throw new Error("تم رفض الوصول من الخادم");
+    }
+
+    if (response.status === 401) {
       logout();
       throw new Error("انتهت صلاحية جلسة تسجيل الدخول");
     }
