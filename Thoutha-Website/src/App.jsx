@@ -1,5 +1,5 @@
 
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
@@ -33,9 +33,12 @@ import ResetPassword from "./Pages/ResetPassword";
 import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
 export default function App() {
+  const location = useLocation();
+  const isForbiddenRoute = location.pathname === "/forbidden";
+
   return (
     <>
-    <NavBar/>
+    {!isForbiddenRoute && <NavBar/>}
     <Routes>
       <Route path="/" element={<Home/>}/>
       <Route path="/login" element={<LoginPage/>}/>
@@ -68,7 +71,7 @@ export default function App() {
       <Route path="*" element={<NotFoundPage/>}/>
       <Route path="/assets" element={<NotFoundPages/>}></Route>
     </Routes>
-    <Footer/>
+    {!isForbiddenRoute && <Footer/>}
     </>
   );
 }

@@ -8,12 +8,32 @@ import { HelmetProvider } from "react-helmet-async";
 
 if (!window.__forbiddenInterceptorInstalled) {
   const originalFetch = window.fetch.bind(window);
+  const redirectToForbidden = () => {
+    if (window.location.pathname === "/forbidden") {
+      return;
+    }
+
+    window.history.replaceState(
+      {
+        ...(window.history.state || {}),
+        redirectedByForbiddenInterceptor: true,
+      },
+      "",
+      "/forbidden"
+    );
+
+    window.dispatchEvent(
+      new PopStateEvent("popstate", {
+        state: window.history.state,
+      })
+    );
+  };
 
   window.fetch = async (...args) => {
     const response = await originalFetch(...args);
 
-    if (response.status === 403 && window.location.pathname !== "/forbidden") {
-      window.location.assign("/forbidden");
+    if (response.status === 403) {
+      redirectToForbidden();
     }
 
     return response;
