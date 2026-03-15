@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
-import { showForbiddenPage } from "../services/forbiddenState";
 import "../Css/ProfileUpdate.css";
 
 const SERVER_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
@@ -71,18 +70,6 @@ const buildUpdatePayload = (formData) => {
 };
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const FORBIDDEN_REQUEST_ERROR = "FORBIDDEN_REQUEST_ERROR";
-
-const fetchJsonWithForbidden = async (url, options) => {
-  const response = await fetch(url, options);
-
-  if (response.status === 403) {
-    showForbiddenPage();
-    throw new Error(FORBIDDEN_REQUEST_ERROR);
-  }
-
-  return response.json();
-};
 
 export default function ProfileUpdate() {
   const { user, logout, refreshUserProfile, applyServerUserData } = useContext(AuthContext);
@@ -115,9 +102,9 @@ export default function ProfileUpdate() {
 
     let cancelled = false;
     Promise.all([
-      fetchJsonWithForbidden(`${SERVER_URL}/cities/getAllCities`),
-      fetchJsonWithForbidden(`${SERVER_URL}/university/getAllUniversities`),
-      fetchJsonWithForbidden(`${SERVER_URL}/category/getCategories`),
+      fetch(`${SERVER_URL}/cities/getAllCities`).then((r) => r.json()),
+      fetch(`${SERVER_URL}/university/getAllUniversities`).then((r) => r.json()),
+      fetch(`${SERVER_URL}/category/getCategories`).then((r) => r.json()),
     ])
       .then(([cityData, uniData, catData]) => {
         if (cancelled) return;
@@ -126,8 +113,8 @@ export default function ProfileUpdate() {
         setCategories(Array.isArray(catData)   ? catData.map((c) => c.name || c) : []);
         setLoading(false);
       })
-      .catch((requestError) => {
-        if (!cancelled && requestError.message !== FORBIDDEN_REQUEST_ERROR) {
+      .catch(() => {
+        if (!cancelled) {
           setError("حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.");
           setLoading(false);
         }
@@ -175,11 +162,6 @@ export default function ProfileUpdate() {
         body: JSON.stringify(updatePayload),
       });
 
-      if (response.status === 403) {
-        showForbiddenPage();
-        return;
-      }
-
       const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -207,9 +189,7 @@ export default function ProfileUpdate() {
 
       showToast("success", "تم حفظ البيانات بنجاح ✓");
     } catch (err) {
-      if (err.message !== FORBIDDEN_REQUEST_ERROR) {
-        showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
-      }
+      showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
     } finally {
       setSaving(false);
     }

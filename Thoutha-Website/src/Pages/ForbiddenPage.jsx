@@ -1,20 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "../Css/ForbiddenPage.css";
-import { hideForbiddenPage } from "../services/forbiddenState";
 
 export default function ForbiddenPage() {
-  const navigate = useNavigate();
-
-  const handleGoHome = () => {
-    hideForbiddenPage();
-    navigate("/");
-  };
-
-  const handleGoToLogin = () => {
-    hideForbiddenPage();
-    navigate("/login");
-  };
-
   return (
     <div className="forbidden-container">
       <div className="forbidden-card">
@@ -29,12 +16,12 @@ export default function ForbiddenPage() {
         </div>
 
         <div className="forbidden-actions">
-          <button type="button" className="forbidden-btn forbidden-btn-primary" onClick={handleGoHome}>
+          <Link to="/" className="forbidden-btn forbidden-btn-primary">
             العودة للرئيسية
-          </button>
-          <button type="button" className="forbidden-btn forbidden-btn-secondary" onClick={handleGoToLogin}>
+          </Link>
+          <Link to="/login" className="forbidden-btn forbidden-btn-secondary">
             تسجيل الدخول
-          </button>
+          </Link>
         </div>
       </div>
     </div>

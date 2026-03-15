@@ -1,6 +1,6 @@
 
-import { useSyncExternalStore } from "react";
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
@@ -33,20 +33,30 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
 import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
-import { isForbiddenVisible, subscribeToForbiddenPage } from "./services/forbiddenState";
+
+function FetchInterceptor() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const original = window.__originalFetch || window.fetch.bind(window);
+    window.__originalFetch = original;
+
+    window.fetch = async (...args) => {
+      const response = await original(...args);
+      if (response.status === 403) {
+        navigate("/forbidden", { replace: true });
+      }
+      return response;
+    };
+  }, [navigate]);
+
+  return null;
+}
+
 export default function App() {
-  const showForbiddenScreen = useSyncExternalStore(
-    subscribeToForbiddenPage,
-    isForbiddenVisible,
-    isForbiddenVisible
-  );
-
-  if (showForbiddenScreen) {
-    return <ForbiddenPage />;
-  }
-
   return (
     <>
+    <FetchInterceptor />
     <NavBar/>
     <Routes>
       <Route path="/" element={<Home/>}/>
@@ -76,6 +86,7 @@ export default function App() {
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="/forget-password" element={<ForgetPassword/>}></Route>
       <Route path="/reset-password" element={<ResetPassword/>}></Route>
+      <Route path="/forbidden" element={<ForbiddenPage/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
       <Route path="/assets" element={<NotFoundPages/>}></Route>
     </Routes>

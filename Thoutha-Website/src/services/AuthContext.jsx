@@ -1,6 +1,5 @@
 // Context/AuthContext.jsx
 import { createContext, useCallback, useEffect, useState } from "react";
-import { showForbiddenPage } from "./forbiddenState";
 
 export const AuthContext = createContext();
 
@@ -120,7 +119,6 @@ export function AuthProvider({ children }) {
     });
 
     if (response.status === 403) {
-      showForbiddenPage();
       logout();
       throw new Error("تم رفض الوصول من الخادم");
     }
