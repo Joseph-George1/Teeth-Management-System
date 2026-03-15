@@ -31,6 +31,7 @@ import DeleteMyAccount from "./Pages/DeleteMyAccount";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
 import NotFoundPages from "./Pages/NotFoundPages";
+import ForbiddenPage from "./Pages/ForbiddenPage";
 export default function App() {
   return (
     <>
@@ -63,6 +64,7 @@ export default function App() {
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="/forget-password" element={<ForgetPassword/>}></Route>
       <Route path="/reset-password" element={<ResetPassword/>}></Route>
+      <Route path="/forbidden" element={<ForbiddenPage/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
       <Route path="/assets" element={<NotFoundPages/>}></Route>
     </Routes>
