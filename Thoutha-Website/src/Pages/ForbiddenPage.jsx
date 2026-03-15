@@ -20,7 +20,7 @@ export default function ForbiddenPage() {
       <div className="forbidden-card">
         <p className="forbidden-status">403</p>
         <h1 className="forbidden-title">الوصول مرفوض</h1>
-        <p className="forbidden-subtitle">السيرفر رفض الطلب (Forbidden)</p>
+        <p className="forbidden-subtitle"> السيرفر رفض الطلب، هذه صفحة مخصصة بطابع تقني بطل لعب يا حبيبي. (Forbidden)</p>
 
         <div className="forbidden-meme" aria-label="Tech meme">
           <p className="meme-line">Me: "I have the token 😎"</p>
