@@ -1,4 +1,3 @@
-
 import { Route, Routes } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
@@ -36,6 +35,7 @@ import UnauthorizedPage from "./Pages/UnauthorizedPage";
 export default function App() {
   return (
     <>
+    <FetchInterceptor />
     <NavBar/>
     <Routes>
       <Route path="/" element={<Home/>}/>
@@ -65,6 +65,7 @@ export default function App() {
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="/forget-password" element={<ForgetPassword/>}></Route>
       <Route path="/reset-password" element={<ResetPassword/>}></Route>
+      <Route path="/forbidden" element={<ForbiddenPage/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
       <Route path="/assets" element={<ForbiddenPage/>}></Route>
       <Route path="/assets/*" element={<ForbiddenPage/>}></Route>
