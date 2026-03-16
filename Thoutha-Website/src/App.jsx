@@ -1,6 +1,5 @@
 
-import { useEffect } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes} from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
@@ -37,7 +36,6 @@ import UnauthorizedPage from "./Pages/UnauthorizedPage";
 export default function App() {
   return (
     <>
-    <FetchInterceptor />
     <NavBar/>
     <Routes>
       <Route path="/" element={<Home/>}/>
