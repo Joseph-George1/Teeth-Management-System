@@ -1,0 +1,115 @@
+:root{
+    --color-1-background:#C4EDFC;
+    --color-2-background:#A2F9CF;
+    --color-3-background:#FFFFFF99;
+    --button-color-1:#1D61E7;
+    --button-color-2:#25B4E5;
+    --text-color-1:#FFFFFF;
+    --text-color-2:#4D81E7;
+    --text-color-3:#6C7278;
+    --text-color-4:#111827;
+    --text-color-5:#D2EBE7;
+    --text-color-6:#101828;
+    --text-color-7:#323232;
+    --text-color-8:#B6B6B6;
+    --border-color:#EDF1F3;
+    --border-radius-1:12px;
+    --button-raduis-1:10px;
+}
+
+*{box-sizing: border-box}
+
+.done-page{
+    font-family: 'Cairo', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: linear-gradient(160deg,var(--color-1-background),var(--text-color-5),var(--color-2-background));
+    padding: 40px 12px;
+}
+
+.done-container{
+    width: 480px;
+    height: 382px;
+    background-color: var(--color-3-background);
+    padding: 36px 36px 28px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(16,24,40,0.08);
+    border-radius: var(--border-radius-1);
+    border: 1px solid var(--text-color-1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.done-subtitle{
+    margin: auto;
+    width: 266px;
+    font-family: Cairo;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 4.1vh;
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--text-color-8);
+}
+
+.done-button{
+    width: 432px;
+    height: 42px;
+    background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+    color: var(--text-color-1);
+    border-radius: var(--button-raduis-1);
+    font-size: 14px;
+    font-family: 'Cairo', sans-serif;
+    border: 1px solid var(--text-color-1);
+    box-shadow: 0px 1px 2px 0px #253EA77A;
+    cursor: pointer;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+
+
+
+/* Responsive styles */
+@media (max-width: 600px) {
+  .done-container {
+    width: 95vw;
+    min-width: 0;
+    height: auto;
+    padding: 24px 8px 18px;
+  }
+  .done-subtitle {
+    width: 90vw;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .done-button {
+    width: 90vw;
+    min-width: 0;
+    height: 40px;
+    font-size: 13px;
+  }
+  .done-page {
+    padding: 24px 4px;
+  }
+}
+
+@media (max-width: 400px) {
+  .done-container {
+    padding: 12px 2px 10px;
+  }
+  .done-subtitle {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .done-button {
+    height: 36px;
+    font-size: 12px;
+  }
+}

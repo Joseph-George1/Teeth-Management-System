@@ -1,0 +1,38 @@
+:root{
+    --color-1-background:#C4EDFC;
+    --color-2-background:#A2F9CF;
+    --color-3-background:#FFFFFF99;
+    --button-color-1:#1D61E7;
+    --button-color-2:#25B4E5;
+    --text-color-1:#FFFFFF;
+    --text-color-2:#4D81E7;
+    --text-color-3:#6C7278;
+    --text-color-4:#111827;
+    --text-color-5:#D2EBE7;
+    --text-color-6:#101828;
+    --border-color:#EDF1F3;
+    --border-radius-1:12px;
+    --button-raduis-1:10px;
+}
+.top-page{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 20px;
+}
+.top-page .circle-img{
+    border-radius: 50%;
+    border: 2px solid var(--button-color-2);
+    text-align: center;
+    padding: 12px ;
+}
+.top-page img{
+    width: 80px;
+    height: 70px;
+}
+.top-page .page-name p{
+    color: var(--text-color-4);
+    font-weight: 500;
+    font-size: 20px;
+}
