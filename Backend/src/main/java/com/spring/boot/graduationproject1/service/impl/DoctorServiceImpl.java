@@ -30,10 +30,13 @@ public class DoctorServiceImpl implements DoctorService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepo roleRepo;
     private final UniversityRepo universityRepo;
+    private final AppointmentRepo appointmentRepo;
+    private final RequestRepo requestRepo;
 
 
     public DoctorServiceImpl(DoctorRepo doctorRepo, CityRepo cityRepo, CategoryRepo categoryRepo,
-                             DoctorMapper doctorMapper, PasswordEncoder passwordEncoder,RoleRepo roleRepo,UniversityRepo universityRepo) {
+                             DoctorMapper doctorMapper, PasswordEncoder passwordEncoder,RoleRepo roleRepo,
+                             UniversityRepo universityRepo, AppointmentRepo appointmentRepo, RequestRepo requestRepo) {
         this.doctorRepo = doctorRepo;
         this.cityRepo = cityRepo;
         this.categoryRepo = categoryRepo;
@@ -41,6 +44,8 @@ public class DoctorServiceImpl implements DoctorService {
         this.passwordEncoder = passwordEncoder;
         this.roleRepo=roleRepo;
         this.universityRepo=universityRepo;
+        this.appointmentRepo = appointmentRepo;
+        this.requestRepo = requestRepo;
     }
 
     @Override
@@ -163,11 +168,22 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public void deleteDoctorByAdmin(long doctorId) {
-        Optional<Doctor>doctor=doctorRepo.findById(doctorId);
-        if(doctor.isEmpty()){
-            throw new RuntimeException("No Such Doctor");
+        Doctor doctor = doctorRepo.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("No Such Doctor"));
+
+        // Delete related appointments first to avoid foreign key violations
+        List<Appointments> appointments = appointmentRepo.findByDoctorId(doctorId);
+        if (!appointments.isEmpty()) {
+            appointmentRepo.deleteAll(appointments);
         }
-        doctorRepo.deleteById(doctorId);
+
+        // Delete related requests
+        List<Requests> requests = requestRepo.findByDoctor(doctor);
+        if (!requests.isEmpty()) {
+            requestRepo.deleteAll(requests);
+        }
+
+        doctorRepo.delete(doctor);
     }
 
     @Override
@@ -177,6 +193,18 @@ public class DoctorServiceImpl implements DoctorService {
 
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        // Delete related appointments first
+        List<Appointments> appointments = appointmentRepo.findByDoctorId(doctor.getId());
+        if (!appointments.isEmpty()) {
+            appointmentRepo.deleteAll(appointments);
+        }
+
+        // Delete related requests
+        List<Requests> requests = requestRepo.findByDoctor(doctor);
+        if (!requests.isEmpty()) {
+            requestRepo.deleteAll(requests);
+        }
 
         doctorRepo.delete(doctor);
     }
