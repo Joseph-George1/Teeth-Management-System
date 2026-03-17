@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RequestDto {
-    // No ID - uses auth token
+    private Long id; // Auto-generated requestId
+    
     private String doctorFirstName;
     private String doctorLastName;
     private String doctorPhoneNumber;

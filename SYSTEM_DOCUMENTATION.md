@@ -72,6 +72,7 @@ Content-Type: application/json
 **Response (200 OK):**
 ```json
 {
+  "id": 5,
   "doctorFirstName": "Mohamed",
   "doctorLastName": "Ahmed",
   "doctorPhoneNumber": "0501234567",
@@ -84,6 +85,8 @@ Content-Type: application/json
 }
 ```
 
+**Use the `id` value (5) as `requestId` when creating appointments!**
+
 ---
 
 #### **GET ALL REQUESTS** (Patients browse all services)
@@ -92,6 +95,31 @@ GET /api/request/getAllRequests
 ```
 
 **Response (200 OK):** List of all available requests from all doctors
+```json
+[
+  {
+    "id": 5,
+    "doctorFirstName": "Mohamed",
+    "doctorLastName": "Ahmed",
+    "doctorPhoneNumber": "0501234567",
+    "categoryName": "Cleaning",
+    "description": "Professional teeth cleaning and whitening",
+    "dateTime": "2026-03-25T09:00:00",
+    "status": "PENDING"
+  },
+  {
+    "id": 6,
+    "doctorFirstName": "Fatima",
+    "doctorLastName": "Hassan",
+    "categoryName": "Root Canal",
+    "description": "Emergency root canal treatment",
+    "dateTime": "2026-03-25T14:00:00",
+    "status": "PENDING"
+  }
+]
+```
+
+**To book an appointment:** Use the `id` from the response as the `requestId` parameter in the appointment booking endpoint.
 
 ---
 
@@ -163,13 +191,40 @@ Authorization: Bearer JWT_TOKEN (Doctor)
 
 ### **APPOINTMENT ENDPOINTS (Patient Books → Doctor Approves)**
 
+#### **WORKFLOW: How to Book an Appointment**
+
+**Step 1:** Patient views available services
+```bash
+curl http://localhost:8080/api/request/getAllRequests
+```
+→ Get list with IDs (use one of these IDs as `requestId`)
+
+**Step 2:** Patient books appointment using the `id` from Step 1 as `requestId`
+```bash
+curl -X POST http://localhost:8080/api/appointment/createAppointment/{requestId} \
+  -H "Content-Type: application/json" \
+  -d '{"patientFirstName":"Ahmed","patientLastName":"Hassan","patientPhoneNumber":"0509876543"}'
+```
+
+**Step 3:** Doctor approves (with the generated appointmentId)
+```bash
+curl -X PUT "http://localhost:8080/api/appointment/updateStatus/{appointmentId}?status=APPROVED" \
+  -H "Authorization: Bearer JWT_TOKEN"
+```
+
+---
+
 #### **CREATE APPOINTMENT** (Patient books for a request - SUPER SIMPLE)
 ```
 POST /api/appointment/createAppointment/{requestId}
 Content-Type: application/json
 ```
 
-**Example:** `POST /api/appointment/createAppointment/1`
+**Parameters:**
+- `{requestId}`: The `id` from GET /api/request/getAllRequests (required)
+
+**Example:** `POST /api/appointment/createAppointment/5`
+(where 5 is the ID obtained from getAllRequests)
 
 **Request Body (3 Fields Only):**
 ```json
