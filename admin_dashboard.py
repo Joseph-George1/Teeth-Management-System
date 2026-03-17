@@ -86,6 +86,23 @@ def _get(path, *, auth=True):
         return None, 503
 
 
+def _put(path, *, data=None):
+    """PUT to the Spring Boot backend. Returns (data, status_code)."""
+    try:
+        r = http.put(
+            f"{BACKEND_URL}{path}",
+            json=data,
+            headers=_auth_header(),
+            timeout=REQUEST_TIMEOUT,
+        )
+        if r.status_code == 200:
+            return r.json() if r.text else {}, 200
+        return None, r.status_code
+    except Exception as exc:
+        app.logger.warning(f"PUT {path} failed: {exc}")
+        return None, 503
+
+
 def _delete(path, *, params=None):
     """DELETE from the Spring Boot backend. Returns status_code."""
     try:
@@ -345,6 +362,66 @@ def api_delete_doctor(doctor_id):
     if status in (200, 204):
         return jsonify({"success": True, "message": f"Doctor {doctor_id} deleted."})
     return jsonify({"success": False, "message": f"Backend returned HTTP {status}."}), 400
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctors/list")
+@login_required
+def api_get_doctors():
+    """Get all doctors with optional filters"""
+    category = request.args.get("category")
+    city = request.args.get("city")
+    
+    # Get all doctors
+    data, status = _get("/api/doctor/getDoctors")
+    if status != 200 or not data:
+        return jsonify({"success": False, "doctors": []}), 200
+    
+    doctors = data if isinstance(data, list) else []
+    
+    # Apply filters if provided
+    if category:
+        doctors = [d for d in doctors if d.get("categoryName", "").lower() == category.lower()]
+    if city:
+        doctors = [d for d in doctors if d.get("cityName", "").lower() == city.lower()]
+    
+    return jsonify({"success": True, "doctors": doctors})
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctor/<int:doctor_id>/view")
+@login_required
+def api_view_doctor(doctor_id):
+    """Get full doctor details"""
+    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
+    if status == 200:
+        return jsonify({"success": True, "doctor": data})
+    return jsonify({"success": False, "message": f"HTTP {status}"}), 400
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctor/<int:doctor_id>/update", methods=["POST"])
+@login_required
+def api_update_doctor(doctor_id):
+    """Update doctor details"""
+    request_data = request.get_json()
+    if not request_data:
+        return jsonify({"success": False, "message": "No data provided"}), 400
+    
+    # Ensure doctorId is set
+    request_data["id"] = doctor_id
+    
+    data, status = _put("/api/doctor/updateDoctor", data=request_data)
+    if status == 200:
+        return jsonify({"success": True, "doctor": data, "message": "Doctor updated successfully"})
+    return jsonify({"success": False, "message": f"Update failed: HTTP {status}"}), 400
+
+
+@app.route(f"{ADMIN_PREFIX}/api/doctor/<int:doctor_id>/delete", methods=["POST"])
+@login_required
+def api_delete_doctor_admin(doctor_id):
+    """Delete doctor by admin"""
+    status = _delete("/api/doctor/deleteByDoctorAdmin", params={"doctorId": doctor_id})
+    if status in (200, 204):
+        return jsonify({"success": True, "message": f"Doctor {doctor_id} deleted successfully"})
+    return jsonify({"success": False, "message": f"Delete failed: HTTP {status}"}), 400
 
 
 # ── Export endpoints ──
@@ -1719,6 +1796,178 @@ function healthColor(status) {
   if (['healthy','ok'].includes(s)) return 'dot-green';
   if (['error','unhealthy','unreachable'].includes(s)) return 'dot-red';
   return 'dot-yellow';
+}
+
+/* ─── Doctor Management Functions ─── */
+
+// Helper to extract doctor name
+function getDoctorName(r) {
+  if (r.doctorFirstName || r.doctorLastName) {
+    return `${r.doctorFirstName || ''} ${r.doctorLastName || ''}`.trim();
+  }
+  return r.doctorName || '—';
+}
+
+// Helper to get health badge color
+function healthColor(status) {
+  switch(status) {
+    case 'healthy':
+    case 'ok': return 'dot-green';
+    case 'error':
+    case 'unhealthy':
+    case 'unreachable': return 'dot-red';
+    case 'error': return 'dot-red';
+    default: return 'dot-grey';
+  }
+}
+
+// Filter doctors table
+function applyDoctorFilters() {
+  const category = document.getElementById('filter-category')?.value?.toLowerCase() || '';
+  const city = document.getElementById('filter-city')?.value?.toLowerCase() || '';
+  const search = document.getElementById('doctor-search')?.value?.toLowerCase() || '';
+  
+  // Filter desktop table
+  const rows = document.querySelectorAll('#doctor-tbody tr');
+  rows.forEach(row => {
+    if (row.textContent.includes('No doctors')) return;
+    
+    const doctorData = row.getAttribute('data-doctor');
+    if (!doctorData) return;
+    
+    try {
+      const doctor = JSON.parse(doctorData);
+      const fullName = `${doctor.firstName || ''} ${doctor.lastName || ''}`.toLowerCase();
+      const catMatch = !category || (doctor.categoryName || '').toLowerCase().includes(category);
+      const cityMatch = !city || (doctor.cityName || '').toLowerCase().includes(city);
+      const searchMatch = !search || fullName.includes(search) || 
+                         (doctor.email || '').toLowerCase().includes(search) ||
+                         (doctor.phoneNumber || '').toLowerCase().includes(search);
+      
+      row.style.display = (catMatch && cityMatch && searchMatch) ? '' : 'none';
+    } catch(e) {
+      console.error('Parse error:', e);
+    }
+  });
+  
+  // Filter mobile cards
+  const cards = document.querySelectorAll('#doctor-cards [data-doctor-card]');
+  cards.forEach(card => {
+    const id = card.getAttribute('data-id');
+    const name = card.querySelector('.card-value strong')?.textContent?.toLowerCase() || '';
+    const catBadge = card.querySelector('.badge')?.textContent?.toLowerCase() || '';
+    const cityText = card.querySelectorAll('.card-value')[2]?.textContent?.toLowerCase() || '';
+    
+    const catMatch = !category || catBadge.includes(category);
+    const cityMatch = !city || cityText.includes(city);
+    const searchMatch = !search || name.includes(search);
+    
+    card.style.display = (catMatch && cityMatch && searchMatch) ? '' : 'none';
+  });
+}
+
+// Clear all doctor filters
+function clearDoctorFilters() {
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-city').value = '';
+  document.getElementById('doctor-search').value = '';
+  applyDoctorFilters();
+  showToast('Filters cleared', 'info');
+}
+
+// Generic table filter
+function filterTable(tableId, searchText) {
+  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+  const search = searchText.toLowerCase();
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    if (row.textContent.toLowerCase().includes(search)) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  
+  // Show/hide "no results" message if needed
+  if (visibleCount === 0 && rows.length > 0) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    let emptyMsg = tbody.querySelector('.no-results-row');
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('tr');
+      emptyMsg.className = 'no-results-row';
+      emptyMsg.innerHTML = `<td colspan="100%" class="text-center text-muted py-4">No results found</td>`;
+      tbody.appendChild(emptyMsg);
+    }
+    emptyMsg.style.display = '';
+  } else {
+    const emptyMsg = document.querySelector(`#${tableId} .no-results-row`);
+    if (emptyMsg) emptyMsg.style.display = 'none';
+  }
+}
+
+// Set current time display
+function setNow() {
+  const el = document.getElementById('current-time');
+  if (el) el.textContent = new Date().toLocaleString();
+}
+
+// Mobile menu toggle
+function toggleMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (sidebar && overlay) {
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+  }
+}
+
+function closeMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (sidebar && overlay) {
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+}
+
+// Switch sections
+function showSection(sectionId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const section = document.getElementById(`section-${sectionId}`);
+  if (section) section.classList.add('active');
+  
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  const navLink = document.querySelector(`[data-section="${sectionId}"]`);
+  if (navLink) navLink.classList.add('active');
+  
+  closeMobileMenu();
+}
+
+// Render charts from analytics data
+function renderCharts(data) {
+  // Update stat cards
+  const stats = [
+    { id: 'total-doctors', key: 'doctors', icon: 'fa-user-doctor', color: '#58a6ff', label: 'Doctors' },
+    { id: 'total-requests', key: 'requests', icon: 'fa-file-medical', color: '#3fb950', label: 'Requests' },
+    { id: 'total-cities', key: 'cities', icon: 'fa-location-dot', color: '#f85149', label: 'Cities' },
+    { id: 'total-categories', key: 'categories', icon: 'fa-tags', color: '#d29922', label: 'Categories' },
+  ];
+  
+  stats.forEach(stat => {
+    const el = document.getElementById(stat.id);
+    if (el) {
+      const value = data.totals?.[stat.key] || 0;
+      el.textContent = value;
+    }
+  });
+  
+  // Update doctor/request counts
+  const dcBadge = document.getElementById('doctors-count');
+  const rcBadge = document.getElementById('requests-count');
+  if (dcBadge) dcBadge.textContent = data.totals?.doctors || 0;
+  if (rcBadge) rcBadge.textContent = data.totals?.requests || 0;
 }
 
 function renderHealthStrip(h) {
