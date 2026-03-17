@@ -4,6 +4,8 @@ import com.spring.boot.graduationproject1.dto.AppointmentDto;
 import com.spring.boot.graduationproject1.model.AppointmentStatus;
 import com.spring.boot.graduationproject1.service.AppointmentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
