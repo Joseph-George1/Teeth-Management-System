@@ -53,4 +53,4 @@ public class Appointments {
 
     @Column(nullable = false)
     private Boolean isHistory = false; // Marks completed/cancelled appointments
-}}
+}
