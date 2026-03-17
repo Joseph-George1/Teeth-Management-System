@@ -150,6 +150,11 @@ public class RequestServiceImpl implements RequestServices {
         return requestMapper.toListDto(requests);
     }
 
-
-
+    @Override
+    public void updateRequestStatus(Long requestId, String status) {
+        Requests request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        request.setStatus(status);
+        requestRepo.save(request);
+    }
 }

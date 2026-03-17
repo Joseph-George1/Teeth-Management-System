@@ -13,4 +13,5 @@ public interface RequestServices {
     void deleteRequest();
     List<RequestDto> getRequestByCategoryId(Long categoryId);
     List<RequestDto> getRequestByDoctorId();
+    void updateRequestStatus(Long requestId, String status);
 }

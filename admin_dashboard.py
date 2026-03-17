@@ -186,6 +186,7 @@ def get_analytics(token):
     requests_raw, _ = _get("/api/request/getAllRequests")
     categories_raw, _ = _get("/api/category/getCategories")
     cities_raw, _ = _get("/api/cities/getAllCities")
+    universities_raw, _ = _get("/api/university/getAllUniversities")
     
     # New: get detailed dashboard stats
     dashboard_raw, _ = _get("/api/admin/dashboard")
@@ -194,6 +195,7 @@ def get_analytics(token):
     reqs       = requests_raw   or []
     categories = categories_raw or []
     cities     = cities_raw     or []
+    universities = universities_raw or []
     dashboard  = dashboard_raw  or {}
 
     # ---- doctors aggregation ----
@@ -212,9 +214,12 @@ def get_analytics(token):
         if dt_str:
             try:
                 # Backend LocalDateTime is usually ISO formatted: "2023-10-27T10:00:00"
-                dt = datetime.fromisoformat(dt_str.replace('Z', '').split('.')[0][:19])
+                # Handle cases with or without fractional seconds or 'Z'
+                dt_clean = dt_str.replace('Z', '').split('.')[0]
+                dt = datetime.fromisoformat(dt_clean[:19])
                 timeline[dt.strftime("%Y-%m")] += 1
-            except Exception:
+            except Exception as e:
+                app.logger.warning(f"Failed to parse date '{dt_str}': {e}")
                 pass
     sorted_timeline = dict(sorted(timeline.items()))
 
@@ -224,6 +229,7 @@ def get_analytics(token):
             "requests":   dashboard.get("totalRequests", len(reqs)),
             "categories": len(categories),
             "cities":     len(cities),
+            "universities": len(universities),
             "appointments": dashboard.get("totalAppointments", 0),
             "pendingAppointments": dashboard.get("pendingAppointments", 0),
             "approvedAppointments": dashboard.get("approvedAppointments", 0),
@@ -1186,7 +1192,7 @@ DASHBOARD_TEMPLATE = """
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-graduation-cap me-1"></i>Universities</small>
           </div>
-          <h4 class="mb-0" id="stat-universities">{{ analytics.doctors_by_university | length }}</h4>
+          <h4 class="mb-0" id="stat-universities">{{ analytics.totals.universities }}</h4>
         </div>
       </div>
     </div>
@@ -1849,7 +1855,7 @@ function renderCharts(data) {
   if (document.getElementById('stat-expired'))
     document.getElementById('stat-expired').textContent = data.totals.expiredAppointments || 0;
   if (document.getElementById('stat-universities'))
-    document.getElementById('stat-universities').textContent = Object.keys(data.doctors_by_university || {}).length;
+    document.getElementById('stat-universities').textContent = data.totals.universities || 0;
 
   // Table counts
   const dc = document.getElementById('doctors-count');

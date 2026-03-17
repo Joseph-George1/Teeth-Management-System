@@ -105,6 +105,19 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointment.setStatus(status);
 
+        // Sync request status
+        Requests request = appointment.getRequest();
+        if (request != null) {
+            if (status == AppointmentStatus.APPROVED) {
+                request.setStatus("APPROVED");
+            } else if (status == AppointmentStatus.CANCELLED) {
+                request.setStatus("CANCELLED");
+            } else if (status == AppointmentStatus.DONE) {
+                request.setStatus("APPROVED"); // Ensure it remains approved if it was done
+            }
+            requestRepo.save(request);
+        }
+
         // If approved, delete all other appointments for the same patient
         if (status == AppointmentStatus.APPROVED) {
             List<Appointments> otherAppointments = appointmentRepo.findByPatientId(appointment.getPatient().getId());

@@ -52,4 +52,12 @@ public class RequestController {
             @RequestBody RequestDto requestDto) {
         return ResponseEntity.ok(requestServices.editRequest(requestId, requestDto));
     }
+
+    @PutMapping("/updateStatus/{requestId}")
+    public ResponseEntity<Void> updateRequestStatus(
+            @PathVariable Long requestId,
+            @RequestParam String status) {
+        requestServices.updateRequestStatus(requestId, status);
+        return ResponseEntity.ok().build();
+    }
 }
