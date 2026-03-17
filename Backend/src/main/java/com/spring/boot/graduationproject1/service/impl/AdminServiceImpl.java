@@ -10,6 +10,7 @@ import com.spring.boot.graduationproject1.model.Admin;
 import com.spring.boot.graduationproject1.model.AppointmentStatus;
 import com.spring.boot.graduationproject1.repo.AdminRepo;
 import com.spring.boot.graduationproject1.repo.AppointmentRepo;
+import com.spring.boot.graduationproject1.repo.DoctorRepo;
 import com.spring.boot.graduationproject1.repo.RequestRepo;
 import com.spring.boot.graduationproject1.service.AdminService;
 import org.springframework.stereotype.Service;
@@ -25,16 +26,19 @@ public class AdminServiceImpl implements AdminService {
     private final AppointmentMapper appointmentMapper;
     private final RequestRepo requestRepo;
     private final RequestMapper requestMapper;
+    private final DoctorRepo doctorRepo;
 
     public AdminServiceImpl(AdminRepo adminRepo, AdminMapper adminMapper, 
                           AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
-                          RequestRepo requestRepo, RequestMapper requestMapper) {
+                          RequestRepo requestRepo, RequestMapper requestMapper,
+                          DoctorRepo doctorRepo) {
         this.adminMapper = adminMapper;
         this.adminRepo = adminRepo;
         this.appointmentRepo = appointmentRepo;
         this.appointmentMapper = appointmentMapper;
         this.requestRepo = requestRepo;
         this.requestMapper = requestMapper;
+        this.doctorRepo = doctorRepo;
     }
 
     @Override
@@ -95,5 +99,10 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Long getRejectedRequestsCount() {
         return requestRepo.countByStatus("REJECTED");
+    }
+
+    @Override
+    public Long getDoctorUniversitiesCount() {
+        return doctorRepo.countDistinctUniversities();
     }
 }

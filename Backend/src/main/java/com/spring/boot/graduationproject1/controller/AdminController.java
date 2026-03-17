@@ -45,6 +45,7 @@ public class AdminController {
         dashboard.put("pendingRequests", adminService.getPendingRequestsCount());
         dashboard.put("approvedRequests", adminService.getApprovedRequestsCount());
         dashboard.put("rejectedRequests", adminService.getRejectedRequestsCount());
+        dashboard.put("doctorUniversitiesCount", adminService.getDoctorUniversitiesCount());
         dashboard.put("expiredAppointments", adminService.getExpiredAppointments().size());
         dashboard.put("allAppointments", adminService.getAllAppointments());
         dashboard.put("allRequests", adminService.getAllRequests());

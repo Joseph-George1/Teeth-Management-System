@@ -199,6 +199,7 @@ def get_analytics(token):
     dashboard  = dashboard_raw  or {}
 
     # ---- doctors aggregation ----
+    app.logger.info(f"Aggregating {len(doctors)} doctors and {len(reqs)} requests")
     doctors_by_category = Counter(d.get("categoryName", "Unknown") for d in doctors)
     doctors_by_city      = Counter(d.get("cityName", "Unknown")     for d in doctors)
     doctors_by_university = Counter(d.get("universityName", "Unknown") for d in doctors)
@@ -217,7 +218,7 @@ def get_analytics(token):
                 # Handle cases with or without fractional seconds or 'Z'
                 dt_clean = dt_str.replace('Z', '').split('.')[0]
                 dt = datetime.fromisoformat(dt_clean[:19])
-                timeline[dt.strftime("%Y-%m")] += 1
+                timeline[dt.strftime("%Y-%m-%d")] += 1
             except Exception as e:
                 app.logger.warning(f"Failed to parse date '{dt_str}': {e}")
                 pass
@@ -237,6 +238,7 @@ def get_analytics(token):
             "pendingRequests": dashboard.get("pendingRequests", 0),
             "approvedRequests": dashboard.get("approvedRequests", 0),
             "rejectedRequests": dashboard.get("rejectedRequests", 0),
+            "doctorUniversities": dashboard.get("doctorUniversitiesCount", 0),
             "expiredAppointments": dashboard.get("expiredAppointments", 0),
         },
         "doctors_by_category":  dict(doctors_by_category.most_common()),
@@ -1182,9 +1184,9 @@ DASHBOARD_TEMPLATE = """
       <div class="col-6 col-md-3">
         <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <small class="text-muted"><i class="fa fa-check me-2"></i>Approved Appts</small>
+            <small class="text-muted"><i class="fa fa-graduation-cap me-2"></i>Doctor Universities</small>
           </div>
-          <h4 class="mb-0 text-success" id="stat-appointments-approved">{{ analytics.totals.approvedAppointments }}</h4>
+          <h4 class="mb-0 text-success" id="stat-doctor-universities">{{ analytics.totals.doctorUniversities }}</h4>
         </div>
       </div>
       <div class="col-6 col-md-3">
@@ -1829,6 +1831,8 @@ function renderCharts(data) {
 
   // Timeline
   [lbl, vals] = kv(data.requests_timeline || {});
+  console.log('Timeline labels:', lbl);
+  console.log('Timeline values:', vals);
   makeLine('chartTimeline', lbl, vals);
 
   // Stat cards
@@ -1850,8 +1854,8 @@ function renderCharts(data) {
     document.getElementById('stat-appointments-total').textContent = data.totals.appointments || 0;
   if (document.getElementById('stat-appointments-pending'))
     document.getElementById('stat-appointments-pending').textContent = data.totals.pendingAppointments || 0;
-  if (document.getElementById('stat-appointments-approved'))
-    document.getElementById('stat-appointments-approved').textContent = data.totals.approvedAppointments || 0;
+  if (document.getElementById('stat-doctor-universities'))
+    document.getElementById('stat-doctor-universities').textContent = data.totals.doctorUniversities || 0;
   if (document.getElementById('stat-expired'))
     document.getElementById('stat-expired').textContent = data.totals.expiredAppointments || 0;
   if (document.getElementById('stat-universities'))

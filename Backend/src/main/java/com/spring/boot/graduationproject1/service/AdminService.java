@@ -19,4 +19,5 @@ public interface AdminService {
     Long getPendingRequestsCount();
     Long getApprovedRequestsCount();
     Long getRejectedRequestsCount();
+    Long getDoctorUniversitiesCount();
 }
