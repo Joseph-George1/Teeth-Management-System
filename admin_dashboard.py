@@ -186,11 +186,15 @@ def get_analytics(token):
     requests_raw, _ = _get("/api/request/getAllRequests")
     categories_raw, _ = _get("/api/category/getCategories")
     cities_raw, _ = _get("/api/cities/getAllCities")
+    
+    # New: get detailed dashboard stats
+    dashboard_raw, _ = _get("/api/admin/dashboard")
 
     doctors    = doctors_raw    or []
     reqs       = requests_raw   or []
     categories = categories_raw or []
     cities     = cities_raw     or []
+    dashboard  = dashboard_raw  or {}
 
     # ---- doctors aggregation ----
     doctors_by_category = Counter(d.get("categoryName", "Unknown") for d in doctors)
@@ -207,7 +211,8 @@ def get_analytics(token):
         dt_str = r.get("dateTime")
         if dt_str:
             try:
-                dt = datetime.fromisoformat(dt_str[:19])
+                # Backend LocalDateTime is usually ISO formatted: "2023-10-27T10:00:00"
+                dt = datetime.fromisoformat(dt_str.replace('Z', '').split('.')[0][:19])
                 timeline[dt.strftime("%Y-%m")] += 1
             except Exception:
                 pass
@@ -216,10 +221,17 @@ def get_analytics(token):
     return {
         "totals": {
             "doctors":    len(doctors),
-            "requests":   len(reqs),
+            "requests":   dashboard.get("totalRequests", len(reqs)),
             "categories": len(categories),
             "cities":     len(cities),
-            "appointments": 0,  # placeholder — Appointments API not yet exposed
+            "appointments": dashboard.get("totalAppointments", 0),
+            "pendingAppointments": dashboard.get("pendingAppointments", 0),
+            "approvedAppointments": dashboard.get("approvedAppointments", 0),
+            "rejectedAppointments": dashboard.get("rejectedAppointments", 0),
+            "pendingRequests": dashboard.get("pendingRequests", 0),
+            "approvedRequests": dashboard.get("approvedRequests", 0),
+            "rejectedRequests": dashboard.get("rejectedRequests", 0),
+            "expiredAppointments": dashboard.get("expiredAppointments", 0),
         },
         "doctors_by_category":  dict(doctors_by_category.most_common()),
         "doctors_by_city":      dict(doctors_by_city.most_common()),
@@ -1107,14 +1119,14 @@ DASHBOARD_TEMPLATE = """
       </div>
     </div>
 
-    <!-- Quick Stats Row -->
+    <!-- Quick Stats Row (Requests) -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-3">
         <div class="quick-stat-card">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-chart-line me-1"></i>Pending Requests</small>
           </div>
-          <h4 class="mb-0" id="stat-pending">{{ analytics.requests_by_status.get('PENDING', 0) }}</h4>
+          <h4 class="mb-0" id="stat-pending">{{ analytics.totals.pendingRequests }}</h4>
         </div>
       </div>
       <div class="col-6 col-md-3">
@@ -1122,7 +1134,7 @@ DASHBOARD_TEMPLATE = """
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-check-circle me-1"></i>Approved</small>
           </div>
-          <h4 class="mb-0 text-success" id="stat-approved">{{ analytics.requests_by_status.get('APPROVED', 0) }}</h4>
+          <h4 class="mb-0 text-success" id="stat-approved">{{ analytics.totals.approvedRequests }}</h4>
         </div>
       </div>
       <div class="col-6 col-md-3">
@@ -1130,7 +1142,43 @@ DASHBOARD_TEMPLATE = """
           <div class="d-flex align-items-center justify-content-between mb-2">
             <small class="text-muted"><i class="fa fa-times-circle me-1"></i>Rejected</small>
           </div>
-          <h4 class="mb-0 text-danger" id="stat-rejected">{{ analytics.requests_by_status.get('REJECTED', 0) }}</h4>
+          <h4 class="mb-0 text-danger" id="stat-rejected">{{ analytics.totals.rejectedRequests }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-clock-rotate-left me-1"></i>Expired</small>
+          </div>
+          <h4 class="mb-0 text-warning" id="stat-expired">{{ analytics.totals.expiredAppointments }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Row (Appointments) -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-calendar-check me-1"></i>Total Appointments</small>
+          </div>
+          <h4 class="mb-0" id="stat-appointments-total">{{ analytics.totals.appointments }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-clock me-1"></i>Pending Appts</small>
+          </div>
+          <h4 class="mb-0" id="stat-appointments-pending">{{ analytics.totals.pendingAppointments }}</h4>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted"><i class="fa fa-check me-2"></i>Approved Appts</small>
+          </div>
+          <h4 class="mb-0 text-success" id="stat-appointments-approved">{{ analytics.totals.approvedAppointments }}</h4>
         </div>
       </div>
       <div class="col-6 col-md-3">
@@ -1782,6 +1830,26 @@ function renderCharts(data) {
   document.getElementById('total-requests').textContent   = data.totals.requests;
   document.getElementById('total-categories').textContent = data.totals.categories;
   document.getElementById('total-cities').textContent     = data.totals.cities;
+
+  // New: Status counts
+  if (document.getElementById('stat-pending')) 
+    document.getElementById('stat-pending').textContent = data.totals.pendingRequests || 0;
+  if (document.getElementById('stat-approved'))
+    document.getElementById('stat-approved').textContent = data.totals.approvedRequests || 0;
+  if (document.getElementById('stat-rejected'))
+    document.getElementById('stat-rejected').textContent = data.totals.rejectedRequests || 0;
+    
+  // New: Appointment stats (if elements exist)
+  if (document.getElementById('stat-appointments-total'))
+    document.getElementById('stat-appointments-total').textContent = data.totals.appointments || 0;
+  if (document.getElementById('stat-appointments-pending'))
+    document.getElementById('stat-appointments-pending').textContent = data.totals.pendingAppointments || 0;
+  if (document.getElementById('stat-appointments-approved'))
+    document.getElementById('stat-appointments-approved').textContent = data.totals.approvedAppointments || 0;
+  if (document.getElementById('stat-expired'))
+    document.getElementById('stat-expired').textContent = data.totals.expiredAppointments || 0;
+  if (document.getElementById('stat-universities'))
+    document.getElementById('stat-universities').textContent = Object.keys(data.doctors_by_university || {}).length;
 
   // Table counts
   const dc = document.getElementById('doctors-count');
