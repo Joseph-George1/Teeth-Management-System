@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/api/university/**",
                                 "/api/request/getRequestByCategoryId")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/appointment/createAppointment").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/appointment/createAppointment/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctorById" ).hasAnyRole("ADMIN","DOCTOR")
                         .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasAnyRole("DOCTOR","ADMIN")
