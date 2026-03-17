@@ -7,6 +7,7 @@ import com.spring.boot.graduationproject1.mapper.AdminMapper;
 import com.spring.boot.graduationproject1.mapper.AppointmentMapper;
 import com.spring.boot.graduationproject1.mapper.RequestMapper;
 import com.spring.boot.graduationproject1.model.Admin;
+import com.spring.boot.graduationproject1.model.AppointmentStatus;
 import com.spring.boot.graduationproject1.repo.AdminRepo;
 import com.spring.boot.graduationproject1.repo.AppointmentRepo;
 import com.spring.boot.graduationproject1.repo.RequestRepo;
@@ -70,5 +71,29 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Long getTotalRequests() {
         return requestRepo.count();
+    }
+    @Override
+    public Long getPendingAppointmentsCount() {
+        return appointmentRepo.countByStatus(AppointmentStatus.PENDING);
+    }
+    @Override
+    public Long getApprovedAppointmentsCount() {
+        return appointmentRepo.countByStatus(AppointmentStatus.APPROVED);
+    }
+    @Override
+    public Long getRejectedAppointmentsCount() {
+        return appointmentRepo.countByStatus(AppointmentStatus.CANCELLED);
+    }
+    @Override
+    public Long getPendingRequestsCount() {
+        return requestRepo.countByStatus("PENDING");
+    }
+    @Override
+    public Long getApprovedRequestsCount() {
+        return requestRepo.countByStatus("APPROVED");
+    }
+    @Override
+    public Long getRejectedRequestsCount() {
+        return requestRepo.countByStatus("REJECTED");
     }
 }

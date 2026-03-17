@@ -39,6 +39,12 @@ public class AdminController {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("totalAppointments", adminService.getTotalAppointments());
         dashboard.put("totalRequests", adminService.getTotalRequests());
+        dashboard.put("pendingAppointments", adminService.getPendingAppointmentsCount());
+        dashboard.put("approvedAppointments", adminService.getApprovedAppointmentsCount());
+        dashboard.put("rejectedAppointments", adminService.getRejectedAppointmentsCount());
+        dashboard.put("pendingRequests", adminService.getPendingRequestsCount());
+        dashboard.put("approvedRequests", adminService.getApprovedRequestsCount());
+        dashboard.put("rejectedRequests", adminService.getRejectedRequestsCount());
         dashboard.put("expiredAppointments", adminService.getExpiredAppointments().size());
         dashboard.put("allAppointments", adminService.getAllAppointments());
         dashboard.put("allRequests", adminService.getAllRequests());

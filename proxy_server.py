@@ -128,8 +128,15 @@ def root():
 
 
 # Health check endpoint
-@app.route('/health', methods=['GET'])
+@app.route('/health', methods=['GET', 'OPTIONS'])
 def health():
+    if request.method == 'OPTIONS':
+        response = Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
+        return response
+        
     try:
         # Check if backend is reachable
         response = requests.get(f"{BACKEND_URL}/api/category/getCategories", timeout=5)

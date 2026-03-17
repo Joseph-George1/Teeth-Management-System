@@ -13,4 +13,10 @@ public interface AdminService {
     List<AppointmentDto> getExpiredAppointments();
     Long getTotalAppointments();
     Long getTotalRequests();
+    Long getPendingAppointmentsCount();
+    Long getApprovedAppointmentsCount();
+    Long getRejectedAppointmentsCount();
+    Long getPendingRequestsCount();
+    Long getApprovedRequestsCount();
+    Long getRejectedRequestsCount();
 }
