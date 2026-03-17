@@ -17,7 +17,8 @@ public class WebConfig {
                         .allowedOrigins(
                                 "http://localhost:5173",
                                 "http://localhost:3000",
-                                "https://www.thoutha.page"
+                                "https://www.thoutha.page",
+                                "https://thoutha.page"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
