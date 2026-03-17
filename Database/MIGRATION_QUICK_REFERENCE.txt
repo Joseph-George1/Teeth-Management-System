@@ -1,0 +1,159 @@
+# Migration Quick Reference - Oracle XE
+
+## 📋 One-Line Commands
+
+### Backup Database
+```bash
+rman target / << EOF
+BACKUP DATABASE PLUS ARCHIVELOG;
+EXIT;
+EOF
+```
+
+### Run Migration Script
+```bash
+sqlplus system/your_password@XE @/path/to/migration_oracle_xe.sql
+```
+
+### Verify Migration
+```bash
+sqlplus system/your_password@XE
+DESC appointments;
+DESC requests;
+SELECT index_name FROM user_indexes WHERE table_name = 'APPOINTMENTS';
+EXIT;
+```
+
+---
+
+## ✅ Checklist
+
+- [ ] **Step 1:** Backup database with RMAN
+- [ ] **Step 2:** Locate migration script: `Database/migration_oracle_xe.sql`
+- [ ] **Step 3:** Run as SYSTEM user: `sqlplus system/password@XE @migration_oracle_xe.sql`
+- [ ] **Step 4:** See "MIGRATION COMPLETED SUCCESSFULLY" message
+- [ ] **Step 5:** Verify schema: `DESC appointments;`
+- [ ] **Step 6:** Compile backend: `mvn clean compile`
+- [ ] **Step 7:** Add @EnableScheduling to application main class
+- [ ] **Step 8:** Test endpoints with curl examples
+
+---
+
+## 🎯 What Gets Added To appointments Table
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| request_id | NUMBER | Link to request (what service) |
+| created_at | TIMESTAMP | When booked (for 7-day expiration) |
+| is_expired | NUMBER(1) | 1=auto-cancelled, 0=active |
+| is_history | NUMBER(1) | 1=done/cancelled, 0=active |
+
+Duration & Notes → Set to NULL (no longer tracked)
+
+---
+
+## 📊 Indexes Created (11 Total)
+
+**Single Column:**
+- idx_appointment_status
+- idx_appointment_doctor
+- idx_appointment_patient
+- idx_appointment_request
+- idx_appointment_created
+- idx_appointment_expired
+- idx_appointment_history
+- idx_request_status
+- idx_request_doctor
+- idx_patient_phone
+
+**Composite:**
+- idx_doctor_pending
+- idx_doctor_history
+
+---
+
+## 🚀 Expected Results
+
+```
+✅ APPOINTMENTS table updated with 4 new columns
+✅ Foreign key created: appointments → requests
+✅ 11 performance indexes created
+✅ Patient auto-creation by phone number (no patientId needed)
+✅ 7-day auto-expiration support enabled
+✅ Appointment history tracking enabled
+```
+
+---
+
+## ⚠️ If Something Goes Wrong
+
+**Script fails?**
+- It won't break - non-existent columns/indexes are skipped
+- Run DESC appointments to check current state
+- Restore from backup if major issues
+
+**Columns don't appear?**
+- Exit and reconnect: `EXIT;` → `sqlplus system/password@XE`
+- Run: `COMMIT;`
+- Check again: `DESC appointments;`
+
+**Need to rollback?**
+- Drop new columns: `ALTER TABLE DROP COLUMN is_expired;`
+- Drop constraint: `ALTER TABLE DROP CONSTRAINT fk_appointment_request;`
+- Restore from backup: RMAN recovery
+
+---
+
+## 📝 Verify Success
+
+After script completes, you should see:
+
+```
+APPOINTMENTS TABLE STRUCTURE
+Name                 Null?    Type
+-----------------    --------  -----
+ID                   NOT NULL  NUMBER
+DOCTOR_ID            NOT NULL  NUMBER
+PATIENT_ID           NOT NULL  NUMBER
+REQUEST_ID                     NUMBER ← NEW
+APPOINTMENT_DATE     NOT NULL  TIMESTAMP(6)
+DURATION_MINUTES              NUMBER ← NOW NULLABLE
+STATUS               NOT NULL  VARCHAR2(50)
+NOTES                         VARCHAR2(500) ← NOW NULLABLE
+CREATED_AT                     TIMESTAMP(6) ← NEW
+IS_EXPIRED                     NUMBER(1) ← NEW
+IS_HISTORY                     NUMBER(1) ← NEW
+```
+
+---
+
+## 🔄 Next: Backend Steps
+
+```bash
+# 1. Compile
+cd Backend && mvn clean compile
+
+# 2. Edit main class
+vi src/main/java/com/spring/boot/graduationproject1/GraduationProject1Application.java
+# Add: @EnableScheduling
+
+# 3. Test patient booking (auto-creates patient)
+curl -X POST http://localhost:8080/api/appointment/createAppointment/1 \
+  -H "Content-Type: application/json" \
+  -d '{"patientFirstName":"Ahmed","patientLastName":"Hassan","patientPhoneNumber":"0509876543"}'
+
+# 4. Test history with JWT (requires token)
+curl http://localhost:8080/api/appointment/history/1 \
+  -H "Authorization: Bearer JWT_TOKEN"
+```
+
+---
+
+## 📞 Support
+
+Check these if stuck:
+1. Oracle logs: `$ORACLE_HOME/diag/`
+2. Migration output (should show "COMPLETED SUCCESSFULLY")
+3. DESC output (verify columns exist)
+4. Foreign key constraints: `SELECT * FROM user_constraints;`
+

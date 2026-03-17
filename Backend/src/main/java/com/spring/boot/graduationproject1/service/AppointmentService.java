@@ -1,14 +1,15 @@
 package com.spring.boot.graduationproject1.service;
 
 import com.spring.boot.graduationproject1.dto.AppointmentDto;
+import com.spring.boot.graduationproject1.model.AppointmentStatus;
 
 import java.util.List;
 
 public interface AppointmentService {
-    List<AppointmentDto>getAllAppointments();
-    AppointmentDto getAppointmentById(Long id);
-    AppointmentDto createAppointment(AppointmentDto appointmentDto);
-    List<AppointmentDto>getAppointmentsByDoctorId();
-
-
+    AppointmentDto createAppointment(Long requestId, AppointmentDto appointmentDto);
+    List<AppointmentDto> getPendingAppointmentsForDoctor();
+    AppointmentDto updateAppointmentStatus(Long appointmentId, AppointmentStatus status);
+    List<AppointmentDto> getAppointmentHistory(Long doctorId);
+    void cancelExpiredAppointments();
+    void deleteAppointment(Long appointmentId);
 }

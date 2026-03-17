@@ -9,13 +9,18 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface AppointmentMapper {
-    @Mapping(source = "doctor.id", target = "doctorId")
     @Mapping(source = "doctor.firstName", target = "doctorFirstName")
     @Mapping(source = "doctor.lastName", target = "doctorLastName")
+    @Mapping(source = "doctor.phoneNumber", target = "doctorPhoneNumber")
+    @Mapping(source = "doctor.cityName", target = "doctorCity")
 
-    @Mapping(source = "patient.id", target = "patientId")
     @Mapping(source = "patient.firstName", target = "patientFirstName")
     @Mapping(source = "patient.lastName", target = "patientLastName")
+    @Mapping(source = "patient.phoneNumber", target = "patientPhoneNumber")
+
+    @Mapping(source = "request.description", target = "requestDescription")
+    @Mapping(source = "request.category.name", target = "categoryName")
+
     AppointmentDto toDto(Appointments appointments);
     Appointments toEntity(AppointmentDto appointmentDto);
     List<AppointmentDto> toListDto(List<Appointments> appointments);

@@ -12,18 +12,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RequestDto {
-
-
+    // No ID - uses auth token
     private String doctorFirstName;
     private String doctorLastName;
     private String doctorPhoneNumber;
     private String doctorCityName;
     private String doctorUniversityName;
 
-
     private String categoryName;
-
-
     private String description;
     private LocalDateTime dateTime;
+    private String status; // PENDING, APPROVED, etc.
 }

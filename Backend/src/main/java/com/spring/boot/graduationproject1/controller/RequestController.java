@@ -45,4 +45,11 @@ public class RequestController {
     public ResponseEntity<List<RequestDto>> getRequestsByDoctorId(){
         return ResponseEntity.ok(requestServices.getRequestByDoctorId());
     }
+
+    @PutMapping("/editRequest/{requestId}")
+    public ResponseEntity<RequestDto> editRequest(
+            @PathVariable Long requestId,
+            @RequestBody RequestDto requestDto) {
+        return ResponseEntity.ok(requestServices.editRequest(requestId, requestDto));
+    }
 }
