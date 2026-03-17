@@ -60,7 +60,6 @@ public class AppointmentServiceImpl implements AppointmentService {
                     newPatient.setFirstName(appointmentDto.getPatientFirstName());
                     newPatient.setLastName(appointmentDto.getPatientLastName());
                     newPatient.setPhoneNumber(appointmentDto.getPatientPhoneNumber());
-                    newPatient.setCityName(""); // Default empty city (can be updated by patient later)
                     Role patientRole = roleRepo.findByName("ROLE_PATIENT")
                             .orElseThrow(() -> new RuntimeException("Role ROLE_PATIENT not found"));
                     newPatient.setRole(patientRole);
