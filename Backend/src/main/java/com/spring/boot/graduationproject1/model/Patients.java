@@ -23,6 +23,8 @@ public class Patients {
     private String lastName;
     @Column(nullable = false)
     private String phoneNumber;
+    @Column(nullable = true)
+    private String cityName;
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
