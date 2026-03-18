@@ -549,13 +549,9 @@ def _export_doctors_excel():
 
 
 def _export_doctors_pdf():
-    """Generate PDF for doctors list - simplified format for Unicode support"""
+    """Generate PDF for doctors list with full Unicode support using xhtml2pdf"""
     try:
-        from reportlab.lib.pagesizes import letter, landscape, A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib import colors
+        from xhtml2pdf import pisa
     except ImportError:
         return None
     
@@ -563,103 +559,123 @@ def _export_doctors_pdf():
     doctors = analytics.get("doctors_list", [])
     
     from io import BytesIO
-    output = BytesIO()
-    doc = SimpleDocTemplate(output, pagesize=landscape(A4), topMargin=0.4*inch, bottomMargin=0.4*inch)
-    story = []
-    
-    # Styles
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#1F497D'),
-        spaceAfter=8,
-        alignment=1,
-        fontName='Helvetica-Bold'
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#666666'),
-        spaceAfter=12,
-        alignment=1,
-    )
-    
-    # Add title
-    story.append(Paragraph("DOCTORS LIST REPORT", title_style))
     from datetime import datetime
-    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}", subtitle_style))
-    story.append(Spacer(1, 0.1*inch))
     
-    # Prepare table data with fewer columns for better rendering
-    data = [["ID", "Name", "Email", "Phone", "Status"]]
+    # Generate HTML content
+    html_content = f"""
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <title>Doctors List Report</title>
+        <style>
+            @page {{
+                size: A4 landscape;
+                margin: 1cm;
+            }}
+            body {{
+                font-family: Arial, sans-serif;
+                direction: rtl;
+                text-align: right;
+            }}
+            .title {{
+                color: #1F497D;
+                font-size: 18pt;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 10pt;
+            }}
+            .subtitle {{
+                color: #666666;
+                font-size: 10pt;
+                text-align: center;
+                margin-bottom: 20pt;
+                font-style: italic;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20pt;
+            }}
+            th {{
+                background-color: #1F497D;
+                color: white;
+                padding: 8pt;
+                text-align: center;
+                font-weight: bold;
+                font-size: 10pt;
+                border: 1px solid #ddd;
+            }}
+            td {{
+                padding: 6pt;
+                text-align: left;
+                font-size: 9pt;
+                border: 1px solid #ddd;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f5f5f5;
+            }}
+            tr:nth-child(odd) {{
+                background-color: white;
+            }}
+            .footer {{
+                position: fixed;
+                bottom: 10pt;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 8pt;
+                color: #999999;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1 class="title">DOCTORS LIST REPORT</h1>
+        <p class="subtitle">Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>City</th>
+                    <th>University</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
     
     for d in doctors:
         full_name = f"{d.get('firstName', '')} {d.get('lastName', '')}".strip()
-        # Only use ASCII-safe data for PDF (reportlab doesn't support Arabic)
-        row = [
-            str(d.get("id", "") or ""),
-            str(full_name or ""),
-            str(d.get("email", "") or ""),
-            str(d.get("phoneNumber", "") or ""),
-            "Active",  # Generic status instead of Arabic
-        ]
-        data.append(row)
+        html_content += f"""
+                <tr>
+                    <td>{d.get('id', '')}</td>
+                    <td>{full_name}</td>
+                    <td>{d.get('email', '')}</td>
+                    <td>{d.get('phoneNumber', '')}</td>
+                    <td>{d.get('categoryName', '')}</td>
+                    <td>{d.get('cityName', '')}</td>
+                    <td>{d.get('universityName', '')}</td>
+                </tr>
+        """
     
-    # Create table
-    col_widths = [0.4*inch, 1.2*inch, 1.5*inch, 1.2*inch, 0.8*inch]
-    table = Table(data, colWidths=col_widths, repeatRows=1)
-    
-    # Professional table styling
-    table.setStyle(TableStyle([
-        # Header
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F497D')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    html_content += """
+            </tbody>
+        </table>
         
-        # Data rows
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#333333')),
-        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
-        
-        # Gridlines
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD')),
-        ('LINEABOVE', (0, 0), (-1, 0), 1.5, colors.HexColor('#1F497D')),
-        ('LINEBELOW', (0, -1), (-1, -1), 1.5, colors.HexColor('#1F497D')),
-        
-        # Padding
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 1), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-    ]))
+        <div class="footer">
+            Teeth Management System - Doctors Report
+        </div>
+    </body>
+    </html>
+    """
     
-    story.append(table)
-    
-    # Footer
-    story.append(Spacer(1, 0.15*inch))
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=7,
-        textColor=colors.HexColor('#999999'),
-        alignment=1,
-    )
-    story.append(Paragraph("Teeth Management System - Doctors Report", footer_style))
-    
-    doc.build(story)
+    # Generate PDF
+    output = BytesIO()
+    pisa.CreatePDF(html_content, dest=output)
     output.seek(0)
     return output.getvalue()
 
@@ -949,13 +965,9 @@ def _export_requests_excel():
 
 
 def _export_requests_pdf():
-    """Generate PDF for requests list - simplified format for Unicode support"""
+    """Generate PDF for requests list with full Unicode support using xhtml2pdf"""
     try:
-        from reportlab.lib.pagesizes import letter, landscape, A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib import colors
+        from xhtml2pdf import pisa
     except ImportError:
         return None
     
@@ -965,105 +977,122 @@ def _export_requests_pdf():
     from io import BytesIO
     from datetime import datetime
     
-    output = BytesIO()
-    doc = SimpleDocTemplate(output, pagesize=landscape(A4), topMargin=0.4*inch, bottomMargin=0.4*inch)
-    story = []
-    
-    # Styles
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#1F497D'),
-        spaceAfter=8,
-        alignment=1,
-        fontName='Helvetica-Bold'
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#666666'),
-        spaceAfter=12,
-        alignment=1,
-    )
-    
-    # Add title
-    story.append(Paragraph("SERVICE REQUESTS REPORT", title_style))
-    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}", subtitle_style))
-    story.append(Spacer(1, 0.1*inch))
-    
-    # Prepare table data with fewer columns for better rendering
-    data = [["ID", "Doctor", "Phone", "Status", "Date"]]
+    # Generate HTML content
+    html_content = f"""
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <title>Service Requests Report</title>
+        <style>
+            @page {{
+                size: A4 landscape;
+                margin: 1cm;
+            }}
+            body {{
+                font-family: Arial, sans-serif;
+                direction: rtl;
+                text-align: right;
+            }}
+            .title {{
+                color: #1F497D;
+                font-size: 18pt;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 10pt;
+            }}
+            .subtitle {{
+                color: #666666;
+                font-size: 10pt;
+                text-align: center;
+                margin-bottom: 20pt;
+                font-style: italic;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20pt;
+            }}
+            th {{
+                background-color: #1F497D;
+                color: white;
+                padding: 8pt;
+                text-align: center;
+                font-weight: bold;
+                font-size: 10pt;
+                border: 1px solid #ddd;
+            }}
+            td {{
+                padding: 6pt;
+                text-align: left;
+                font-size: 9pt;
+                border: 1px solid #ddd;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f5f5f5;
+            }}
+            tr:nth-child(odd) {{
+                background-color: white;
+            }}
+            .footer {{
+                position: fixed;
+                bottom: 10pt;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 8pt;
+                color: #999999;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1 class="title">SERVICE REQUESTS REPORT</h1>
+        <p class="subtitle">Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Doctor</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
     
     for r in requests_list:
         doctor_name = r.get("doctorName", "")
         if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
-        # Only use ASCII-safe data for PDF (reportlab doesn't support Arabic)
-        row = [
-            str(r.get("id", "") or ""),
-            str(doctor_name or ""),
-            str(r.get("doctorPhoneNumber", "") or ""),
-            "Pending",  # Generic status instead of Arabic
-            str(r.get("dateTime", "") or ""),
-        ]
-        data.append(row)
+        html_content += f"""
+                <tr>
+                    <td>{r.get('id', '')}</td>
+                    <td>{doctor_name}</td>
+                    <td>{r.get('doctorPhoneNumber', '')}</td>
+                    <td>{r.get('categoryName', '')}</td>
+                    <td>{r.get('status', '')}</td>
+                    <td>{r.get('dateTime', '')}</td>
+                </tr>
+        """
     
-    # Create table
-    col_widths = [0.4*inch, 1.2*inch, 1.0*inch, 0.9*inch, 1.2*inch]
-    table = Table(data, colWidths=col_widths, repeatRows=1)
-    
-    # Professional table styling
-    table.setStyle(TableStyle([
-        # Header
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F497D')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    html_content += """
+            </tbody>
+        </table>
         
-        # Data rows
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#333333')),
-        ('ALIGN', (0, 1), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
-        
-        # Gridlines
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD')),
-        ('LINEABOVE', (0, 0), (-1, 0), 1.5, colors.HexColor('#1F497D')),
-        ('LINEBELOW', (0, -1), (-1, -1), 1.5, colors.HexColor('#1F497D')),
-        
-        # Padding
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 1), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-    ]))
+        <div class="footer">
+            Teeth Management System - Service Requests Report
+        </div>
+    </body>
+    </html>
+    """
     
-    story.append(table)
-    
-    # Footer
-    story.append(Spacer(1, 0.15*inch))
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=7,
-        textColor=colors.HexColor('#999999'),
-        alignment=1,
-    )
-    story.append(Paragraph("Teeth Management System - Service Requests Report", footer_style))
-    
-    doc.build(story)
+    # Generate PDF
+    output = BytesIO()
+    pisa.CreatePDF(html_content, dest=output)
     output.seek(0)
     return output.getvalue()
 

@@ -15,3 +15,6 @@ bcrypt
 openpyxl
 reportlab
 python-docx
+fpdf2
+weasyprint
+xhtml2pdf
