@@ -594,28 +594,20 @@ def _export_doctors_pdf():
     story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}", subtitle_style))
     story.append(Spacer(1, 0.15*inch))
     
-    # Prepare table data - using safe string conversion for Unicode
+    # Prepare table data - unicode characters handled automatically by Paragraph
     data = [["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Year"]]
     
     for d in doctors:
-        # Safely convert all values to ensure proper Unicode handling
-        def safe_str(val):
-            if val is None:
-                return ""
-            val_str = str(val)
-            # Escape special characters for reportlab
-            return val_str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        
         row = [
-            Paragraph(safe_str(d.get("id", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("firstName", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("lastName", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("email", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("phoneNumber", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("categoryName", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("cityName", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("universityName", "")), styles['Normal']),
-            Paragraph(safe_str(d.get("studyYear", "")), styles['Normal']),
+            Paragraph(str(d.get("id", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("firstName", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("lastName", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("email", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("phoneNumber", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("categoryName", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("cityName", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("universityName", "")) or "", styles['Normal']),
+            Paragraph(str(d.get("studyYear", "")) or "", styles['Normal']),
         ]
         data.append(row)
     
@@ -757,14 +749,30 @@ def _export_doctors_word():
         
         for i, cell_value in enumerate(data):
             cell = row_cells[i]
+            # Clear default text and set proper formatting
             cell.text = cell_value
             
-            # Format cell text
+            # Format cell paragraph
             cell_paragraph = cell.paragraphs[0]
             cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            # Add spacing/padding to paragraph
+            pPr = cell_paragraph._element.get_or_add_pPr()
+            pPr_spacing = OxmlElement('w:spacing')
+            pPr_spacing.set(qn('w:before'), '100')
+            pPr_spacing.set(qn('w:after'), '100')
+            pPr.append(pPr_spacing)
+            
+            # Style text
             for run in cell_paragraph.runs:
                 run.font.size = Pt(10)
                 run.font.color.rgb = RGBColor(51, 51, 51)
+            
+            # Set cell vertical alignment
+            tcPr = cell._element.get_or_add_tcPr()
+            tcVAlign = OxmlElement('w:vAlign')
+            tcVAlign.set(qn('w:val'), 'center')
+            tcPr.append(tcVAlign)
     
     # Set column widths
     col_widths = [Inches(0.5), Inches(0.9), Inches(0.9), Inches(1.2), Inches(0.9), Inches(0.9), Inches(0.8), Inches(1.0), Inches(0.7)]
@@ -998,28 +1006,20 @@ def _export_requests_pdf():
     data = [["ID", "Doctor", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]]
     
     for r in requests_list:
-        # Safely convert all values to ensure proper Unicode handling
-        def safe_str(val):
-            if val is None:
-                return ""
-            val_str = str(val)
-            # Escape special characters for reportlab
-            return val_str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        
         doctor_name = r.get("doctorName", "")
         if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
         row = [
-            Paragraph(safe_str(r.get("id", "")), styles['Normal']),
-            Paragraph(safe_str(doctor_name), styles['Normal']),
-            Paragraph(safe_str(r.get("doctorPhoneNumber", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("doctorCityName", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("doctorUniversityName", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("categoryName", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("status", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("dateTime", "")), styles['Normal']),
-            Paragraph(safe_str(r.get("description", "")), styles['Normal']),
+            Paragraph(str(r.get("id", "")) or "", styles['Normal']),
+            Paragraph(str(doctor_name) or "", styles['Normal']),
+            Paragraph(str(r.get("doctorPhoneNumber", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("doctorCityName", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("doctorUniversityName", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("categoryName", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("status", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("dateTime", "")) or "", styles['Normal']),
+            Paragraph(str(r.get("description", "")) or "", styles['Normal']),
         ]
         data.append(row)
     
@@ -1165,14 +1165,30 @@ def _export_requests_word():
         
         for i, cell_value in enumerate(data):
             cell = row_cells[i]
+            # Clear default text and set proper formatting
             cell.text = cell_value
             
-            # Format cell text
+            # Format cell paragraph
             cell_paragraph = cell.paragraphs[0]
             cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            # Add spacing/padding to paragraph
+            pPr = cell_paragraph._element.get_or_add_pPr()
+            pPr_spacing = OxmlElement('w:spacing')
+            pPr_spacing.set(qn('w:before'), '100')
+            pPr_spacing.set(qn('w:after'), '100')
+            pPr.append(pPr_spacing)
+            
+            # Style text
             for run in cell_paragraph.runs:
                 run.font.size = Pt(10)
                 run.font.color.rgb = RGBColor(51, 51, 51)
+            
+            # Set cell vertical alignment
+            tcPr = cell._element.get_or_add_tcPr()
+            tcVAlign = OxmlElement('w:vAlign')
+            tcVAlign.set(qn('w:val'), 'center')
+            tcPr.append(tcVAlign)
     
     # Set column widths
     col_widths = [Inches(0.5), Inches(1.0), Inches(0.85), Inches(0.75), Inches(0.95), Inches(0.85), Inches(0.75), Inches(1.0), Inches(1.15)]
