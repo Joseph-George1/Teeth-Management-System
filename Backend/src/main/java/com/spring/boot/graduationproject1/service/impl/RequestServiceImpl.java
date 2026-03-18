@@ -73,6 +73,39 @@ public class RequestServiceImpl implements RequestServices {
     }
 
     @Override
+    public RequestDto editRequest(Long requestId, RequestDto requestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        Requests request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        // Verify doctor owns this request
+        if (!request.getDoctor().getId().equals(doctor.getId())) {
+            throw new RuntimeException("You can only edit your own requests");
+        }
+
+        // Only allow editing if status is PENDING (before patients book)
+        if (!request.getStatus().equals("PENDING")) {
+            throw new RuntimeException("Can only edit PENDING requests");
+        }
+
+        // === Doctor can edit description and dateTime ===
+        if (requestDto.getDescription() != null) {
+            request.setDescription(requestDto.getDescription());
+        }
+        if (requestDto.getDateTime() != null) {
+            request.setDateTime(requestDto.getDateTime());
+        }
+
+        requestRepo.save(request);
+        return requestMapper.toDto(request);
+    }
+
+    @Override
     public void deleteRequest() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -117,6 +150,11 @@ public class RequestServiceImpl implements RequestServices {
         return requestMapper.toListDto(requests);
     }
 
-
-
+    @Override
+    public void updateRequestStatus(Long requestId, String status) {
+        Requests request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        request.setStatus(status);
+        requestRepo.save(request);
+    }
 }

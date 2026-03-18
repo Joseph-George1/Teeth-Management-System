@@ -2,62 +2,182 @@ package com.spring.boot.graduationproject1.service.impl;
 
 import com.spring.boot.graduationproject1.dto.AppointmentDto;
 import com.spring.boot.graduationproject1.mapper.AppointmentMapper;
-import com.spring.boot.graduationproject1.model.Appointments;
-import com.spring.boot.graduationproject1.model.Doctor;
-import com.spring.boot.graduationproject1.repo.AppointmentRepo;
-import com.spring.boot.graduationproject1.repo.CityRepo;
-import com.spring.boot.graduationproject1.repo.DoctorRepo;
-import com.spring.boot.graduationproject1.repo.PatientRepo;
+import com.spring.boot.graduationproject1.model.*;
+import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.AppointmentService;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepo appointmentRepo;
     private final AppointmentMapper appointmentMapper;
-    private final CityRepo cityRepo;
     private final DoctorRepo doctorRepo;
     private final PatientRepo patientRepo;
+    private final RequestRepo requestRepo;
+    private final RoleRepo roleRepo;
 
     public AppointmentServiceImpl(AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
-                                  CityRepo cityRepo, DoctorRepo doctorRepo, PatientRepo patientRepo) {
+                                  DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo, RoleRepo roleRepo) {
         this.appointmentMapper = appointmentMapper;
         this.appointmentRepo = appointmentRepo;
-        this.cityRepo = cityRepo;
         this.doctorRepo = doctorRepo;
         this.patientRepo = patientRepo;
+        this.requestRepo = requestRepo;
+        this.roleRepo = roleRepo;
     }
 
     @Override
-    public List<AppointmentDto> getAllAppointments() {
-        return appointmentMapper.toListDto(appointmentRepo.findAll());
+    public AppointmentDto createAppointment(Long requestId, AppointmentDto appointmentDto) {
+        // === STEP 1: Verify request exists and validate it has duration/notes set by doctor ===
+        Requests request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        Doctor doctor = request.getDoctor();
+
+        // === STEP 2: Validate patient input ===
+        if (appointmentDto.getPatientFirstName() == null || appointmentDto.getPatientFirstName().isEmpty()) {
+            throw new RuntimeException("Patient first name is required");
+        }
+        if (appointmentDto.getPatientLastName() == null || appointmentDto.getPatientLastName().isEmpty()) {
+            throw new RuntimeException("Patient last name is required");
+        }
+        if (appointmentDto.getPatientPhoneNumber() == null || appointmentDto.getPatientPhoneNumber().isEmpty()) {
+            throw new RuntimeException("Patient phone number is required");
+        }
+
+        // === STEP 3: Auto-create or get patient by phone number ===
+        Patients patient = patientRepo.findByPhoneNumber(appointmentDto.getPatientPhoneNumber())
+                .orElseGet(() -> {
+                    Patients newPatient = new Patients();
+                    newPatient.setFirstName(appointmentDto.getPatientFirstName());
+                    newPatient.setLastName(appointmentDto.getPatientLastName());
+                    newPatient.setPhoneNumber(appointmentDto.getPatientPhoneNumber());
+                    Role patientRole = roleRepo.findByName("ROLE_PATIENT")
+                            .orElseThrow(() -> new RuntimeException("Role ROLE_PATIENT not found"));
+                    newPatient.setRole(patientRole);
+                    return patientRepo.save(newPatient);
+                });
+
+        // === STEP 4: Create appointment - date/time from REQUEST ===
+        Appointments appointment = new Appointments();
+        appointment.setDoctor(doctor);
+        appointment.setPatient(patient);
+        appointment.setRequest(request);
+        appointment.setAppointmentDate(request.getDateTime()); // Date/time from request
+        appointment.setDurationMinutes(null); // No duration tracking
+        appointment.setStatus(AppointmentStatus.PENDING);
+        appointment.setNotes(null); // No notes tracking
+        appointment.setCreatedAt(LocalDateTime.now());
+        appointment.setIsExpired(false);
+        appointment.setIsHistory(false);
+
+        appointmentRepo.save(appointment);
+        return appointmentMapper.toDto(appointment);
     }
 
     @Override
-    public AppointmentDto getAppointmentById(Long id) {
-        return null;
-    }
-
-    @Override
-    public AppointmentDto createAppointment(AppointmentDto appointmentDto) {
-        return null;
-    }
-
-    @Override
-    public List<AppointmentDto> getAppointmentsByDoctorId() {
+    public List<AppointmentDto> getPendingAppointmentsForDoctor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        List<Appointments> appointments = appointmentRepo.findByDoctorId(doctor.getId());
+        // Get only pending, non-expired, non-history appointments
+        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatusAndIsHistoryFalse(
+                doctor.getId(), AppointmentStatus.PENDING);
 
         return appointmentMapper.toListDto(appointments);
+    }
+
+    @Override
+    public AppointmentDto updateAppointmentStatus(Long appointmentId, AppointmentStatus status) {
+        Appointments appointment = appointmentRepo.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        appointment.setStatus(status);
+
+        // Sync request status
+        Requests request = appointment.getRequest();
+        if (request != null) {
+            if (status == AppointmentStatus.APPROVED) {
+                request.setStatus("APPROVED");
+            } else if (status == AppointmentStatus.CANCELLED) {
+                request.setStatus("CANCELLED");
+            } else if (status == AppointmentStatus.DONE) {
+                request.setStatus("APPROVED"); // Ensure it remains approved if it was done
+            }
+            requestRepo.save(request);
+        }
+
+        // If approved, delete all other appointments for the same patient
+        if (status == AppointmentStatus.APPROVED) {
+            List<Appointments> otherAppointments = appointmentRepo.findByPatientId(appointment.getPatient().getId());
+            otherAppointments.forEach(app -> {
+                if (!app.getId().equals(appointmentId)) {
+                    appointmentRepo.delete(app);
+                }
+            });
+            // Clear duration when approved - doctor decides when it's done
+            appointment.setDurationMinutes(null);
+        }
+
+        // Mark as history when done or cancelled
+        if (status == AppointmentStatus.DONE || status == AppointmentStatus.CANCELLED) {
+            appointment.setIsHistory(true);
+        }
+
+        appointmentRepo.save(appointment);
+        return appointmentMapper.toDto(appointment);
+    }
+
+    @Override
+    public List<AppointmentDto> getAppointmentHistory(Long doctorId) {
+        // Verify doctor is accessing their own history
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        // Only allow doctor to view their own history
+        if (!doctor.getId().equals(doctorId)) {
+            throw new RuntimeException("You can only view your own appointment history");
+        }
+
+        // Get all completed/cancelled appointments (history=true)
+        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndIsHistory(doctorId, true);
+        return appointmentMapper.toListDto(appointments);
+    }
+
+    @Override
+    @Scheduled(fixedDelay = 3600000) // Run every hour
+    public void cancelExpiredAppointments() {
+        // Auto-cancel appointments that are PENDING for more than 7 days
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        List<Appointments> expiredAppointments = appointmentRepo
+                .findByStatusAndIsExpiredFalseAndCreatedAtBefore(AppointmentStatus.PENDING, sevenDaysAgo);
+
+        for (Appointments appointment : expiredAppointments) {
+            appointment.setIsExpired(true);
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointment.setIsHistory(true);
+            appointmentRepo.save(appointment);
+        }
+    }
+
+    @Override
+    public void deleteAppointment(Long appointmentId) {
+        Appointments appointment = appointmentRepo.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointmentRepo.delete(appointment);
     }
 }

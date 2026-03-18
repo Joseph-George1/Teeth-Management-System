@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../Css/Otp.css";
 
@@ -12,17 +12,25 @@ export default function OtpVerify() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isResetFlow = location.state?.flow === "reset";
+  // Determine flow type from sessionStorage (most reliable source)
+  const flowType = sessionStorage.getItem("flow_type");
+  const isResetFlow = flowType === "reset";
 
-  // جلب الرقم من صفحة الإرسال أو من sessionStorage
-  const storedPhone =
-    location.state?.phone ||
-    (isResetFlow
-      ? sessionStorage.getItem("reset_phone")
-      : sessionStorage.getItem("otp_phone")) ||
-    "";
+  // Helper functions for URLs
+  const getVerifyUrl = () => {
+    return isResetFlow ? API_VERIFY_RESET_OTP : API_VERIFY_OTP;
+  };
 
-  const phone = storedPhone.trim();
+  const getResendUrl = () => {
+    return isResetFlow ? API_REQUEST_RESET : API_SEND_OTP;
+  };
+
+  // Get phone from sessionStorage based on flow type
+  const storedPhone = isResetFlow
+    ? sessionStorage.getItem("reset_phone")
+    : sessionStorage.getItem("otp_phone");
+
+  const phone = (storedPhone || location.state?.phone || "").trim();
 
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
   const [loading, setLoading] = useState(false);
@@ -32,29 +40,19 @@ export default function OtpVerify() {
 
   const inputsRef = useRef([]);
 
-  const handleChange = (index, value) => {
-    if (!/^\d?$/.test(value)) return;
-
-    const updated = [...otp];
-    updated[index] = value;
-    setOtp(updated);
-
-    if (value && index < OTP_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus();
-    }
-  };
+  // Log flow type for debugging
+  useEffect(() => {
+    console.log("📱 [OTP-VERIFY] Flow type from sessionStorage:", flowType);
+    console.log("📱 [OTP-VERIFY] Is Reset Flow:", isResetFlow);
+    console.log("📱 [OTP-VERIFY] Phone:", phone);
+  }, [flowType, isResetFlow, phone]);
 
   const handleVerify = async () => {
     const code = otp.join("").trim();
 
     if (!phone) {
       setMessage("ادخل رقم التليفون اولا من صفحة الارسال");
+      console.warn("❌ [OTP-VERIFY] No phone number found");
       return;
     }
 
@@ -67,10 +65,9 @@ export default function OtpVerify() {
       setLoading(true);
       setMessage("");
 
-      console.log("Verifying phone:", phone);
-      console.log("Verifying OTP:", code);
-
-      const verifyUrl = isResetFlow ? API_VERIFY_RESET_OTP : API_VERIFY_OTP;
+      const verifyUrl = getVerifyUrl();
+      console.log(`🔍 [OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verifying phone: ${phone}`);
+      console.log(`🔍 [OTP-VERIFY] Using URL: ${verifyUrl}`);
 
       const response = await fetch(verifyUrl, {
         method: "POST",
@@ -84,7 +81,7 @@ export default function OtpVerify() {
       });
 
       const data = await response.json().catch(() => ({}));
-      console.log("Verify response:", data);
+      console.log(`📝 [OTP-VERIFY] Response:`, data);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -103,29 +100,41 @@ export default function OtpVerify() {
         throw new Error(data?.message || "الكود غير صحيح");
       }
 
+      // ✅ Verification successful - cleanup and navigate
       if (isResetFlow) {
+        console.log("✅ [RESET-VERIFY] OTP verified successfully - clearing reset_phone and flow_type");
         sessionStorage.removeItem("reset_phone");
+        sessionStorage.removeItem("flow_type");
         navigate("/reset-password", { state: { phone } });
       } else {
+        console.log("✅ [SIGNUP-VERIFY] OTP verified successfully - clearing otp_phone and flow_type");
         sessionStorage.removeItem("otp_phone");
+        sessionStorage.removeItem("flow_type");
         navigate("/otp-done");
       }
 
     } catch (err) {
       setMessage(err.message || "حدث خطأ أثناء التحقق من الكود");
+      console.error(`❌ [OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verify Error:`, err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!phone) return;
+    if (!phone) {
+      setMessage("ادخل رقم التليفون اولا من صفحة الارسال");
+      console.warn("❌ [OTP-RESEND] No phone number found");
+      return;
+    }
 
     try {
       setLoading(true);
       setMessage("");
 
-      const resendUrl = isResetFlow ? API_REQUEST_RESET : API_SEND_OTP;
+      const resendUrl = getResendUrl();
+      console.log(`🔄 [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Resending for phone: ${phone}`);
+      console.log(`🔄 [OTP-RESEND] Using URL: ${resendUrl}`);
 
       const response = await fetch(resendUrl, {
         method: "POST",
@@ -138,17 +147,39 @@ export default function OtpVerify() {
       });
 
       const data = await response.json().catch(() => ({}));
+      console.log(`📝 [OTP-RESEND] Response:`, data);
 
       if (!response.ok) {
         throw new Error(data?.message || "فشل إعادة إرسال الكود");
       }
 
-      setMessage("تم إعادة إرسال الكود");
+      // Keep phone and flow_type in sessionStorage (don't clear on resend)
+      setMessage("✅ تم إعادة إرسال الكود بنجاح");
+      console.log(`✅ [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Code resent successfully`);
 
     } catch (err) {
       setMessage(err.message || "حدث خطأ أثناء إعادة الإرسال");
+      console.error(`❌ [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Error:`, err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChange = (index, value) => {
+    if (!/^\d?$/.test(value)) return;
+
+    const updated = [...otp];
+    updated[index] = value;
+    setOtp(updated);
+
+    if (value && index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
     }
   };
 

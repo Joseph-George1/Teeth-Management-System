@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
 
+const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://thoutha.page/api';
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,41 +26,30 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://thoutha.page/api/auth/login/doctor", {
+      const response = await fetch(`${API_BASE_URL}/auth/login/doctor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-      console.log("Server response:", data);
+      const data = await response.json().catch(() => ({}));
 
-      if (response.ok) {
-        // 🔹 استخرج بيانات المستخدم من التوكين بدل data مباشرة
-        const token = data.token;
-        const payload = JSON.parse(atob(token.split('.')[1])); // decode base64
-        console.log("JWT payload:", payload); // debug – remove after fixing
-        const userData = {
-          token,
-          id: payload.id || payload.doctorId || payload.userId || payload.sub,
-          firstName: payload.firstName || payload.first_name,
-          lastName: payload.lastName || payload.last_name,
-          email: payload.sub,
-          role: payload.role,
-        };
-
-        // 🔹 سجل الدخول في الـ context
-        login(userData);
+      if (response.ok && data?.token) {
+        await login(data.token);
         navigate('/doctor-home', { replace: true });
+      } else if (response.ok) {
+        setError('لم يتم استلام رمز الدخول من الخادم');
       } else {
         setError(data.message || 'فشل تسجيل الدخول. يرجى التحقق من البيانات');
       }
 
     } catch (err) {
-      if (err.message.includes('CORS') || err.message.includes('Failed to fetch')) {
+      const message = err?.message || '';
+
+      if (message.includes('CORS') || message.includes('Failed to fetch')) {
         setError('مشكلة في الاتصال بالخادم. يرجى التحقق من الاتصال بالإنترنت');
       } else {
-        setError('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى');
+        setError(message || 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى');
       }
       console.error('Login error:', err);
     } finally {

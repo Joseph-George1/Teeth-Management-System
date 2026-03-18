@@ -17,22 +17,15 @@ public class Patients {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Column(nullable = false)
+    @Column(name = "FIRST_NAME", nullable = false)
     private String firstName;
-    @Column(nullable = false)
+    @Column(name = "SUR_NAME", nullable = false)
     private String lastName;
     @Column(nullable = false)
-    private String surName;
-    @Column(nullable = false)
     private String phoneNumber;
-    @Column(nullable = false)
-    private String cityName;
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
-    @ManyToOne
-    @JoinColumn(name = "city_id", nullable = false)
-    private City city;
     @OneToMany(mappedBy = "patient")
     private List<Appointments> appointments;
 }

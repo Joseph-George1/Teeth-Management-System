@@ -1,105 +1,167 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorHome.css";
 
-// ─── Mock API ─────────────────────────────────────────────────────────────────
-// const fetchDoctorProfile = async () => {
-//   await new Promise((r) => setTimeout(r, 700));
-//   // Replace with: const res = await fetch('/api/doctor/profile'); return res.json();
-//   return { firstName: "أحمد", lastName: "محمد" };
-// };
+// ─── Helper Functions ─────────────────────────────────────────────────────────
+const getDate = (dt) => dt ? dt.split('T')[0] : '';
+const getTime = (dt) => {
+  if (!dt) return '';
+  const parts = dt.split('T');
+  return parts[1] ? parts[1].slice(0, 5) : '';
+};
 
-const mockAppointments = [
-  { id: 1, name: "محمد أشرف",        specialty: "تقويم أسنان",   time: "09:00", period: "صباحاً", phone: "01012345678" },
-  { id: 2, name: "عبد الحليم رمضان", specialty: "حشو عصب",      time: "10:30", period: "صباحاً", phone: "01098765432" },
-  { id: 3, name: "زياد جمال",         specialty: "زراعة أسنان",   time: "12:00", period: "ظهراً",  phone: "01156781234" },
-  { id: 4, name: "سارة عبد الله",    specialty: "تنظيف أسنان",  time: "02:15", period: "مساءً",  phone: "01234567890" },
-  { id: 5, name: "خالد عمر محمود",   specialty: "تركيب كوبري",  time: "04:00", period: "مساءً",  phone: "01087654321" },
-];
+const getTimePeriod = (dt) => {
+  const t = getTime(dt);
+  if (!t) return '';
+  const [h] = t.split(':').map(Number);
+  return h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً';
+};
+
+const normalizeList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.result)) return payload.result;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DoctorHome() {
-  const { user } = useContext(AuthContext);
-  const [firstName, setFirstName]       = useState("");
-  const [isLoadingName, setIsLoadingName] = useState(true);
-  const [unreadCount, setUnreadCount]   = useState(4);
-  const [appointments, setAppointments]  = useState(mockAppointments);
+  const { user, authLoading, isLoggedIn } = useContext(AuthContext);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (!isLoggedIn || authLoading) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    const token = user?.token || localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    fetch("https://thoutha.page/api/appointment/pendingAppointments", { headers })
+      .then((res) => {
+        if (!res.ok) throw new Error("فشل جلب الحجوزات");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) {
+          const normalizedData = normalizeList(data);
+          // عرض فقط الـ PENDING appointments
+          const pendingOnly = normalizedData.filter(appt => appt.status === "PENDING");
+          const processedData = pendingOnly.map((appt, idx) => ({
+            id: appt.id || idx,
+            name: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
+            phone: appt.patientPhoneNumber || "",
+            specialty: appt.categoryName || "",
+            description: appt.requestDescription || "",
+            time: getTime(appt.appointmentDate),
+            period: getTimePeriod(appt.appointmentDate),
+            dateTime: appt.appointmentDate || "",
+            doctorName: `${appt.doctorFirstName || ""} ${appt.doctorLastName || ""}`.trim(),
+            doctorPhone: appt.doctorPhoneNumber || "",
+            doctorCity: appt.doctorCity || "",
+            status: appt.status,
+            ...appt,
+          }));
+          setAppointments(processedData);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || "حدث خطأ أثناء جلب الحجوزات");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [isLoggedIn, authLoading, user]);
 
   const showToast = (msg, type) => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAccept = (e, id) => {
+  const handleAccept = async (e, id) => {
     e.stopPropagation();
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, accepted: true, rejected: false } : a))
-    );
-    setSelectedAppt((prev) => prev?.id === id ? { ...prev, accepted: true, rejected: false } : prev);
-    showToast("تم الإضافة لصفحة المرضى ✓", "success");
+    const appt = appointments.find(a => a.id === id);
+    if (!appt) return;
+
+    const token = user?.token || localStorage.getItem("token");
+    
+    try {
+      const response = await fetch(
+        `https://thoutha.page/api/appointment/updateStatus/${id}?status=APPROVED`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
+
+      const approvedData = await response.json();
+
+      // حفظ البيانات المرجعة من API في localStorage
+      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
+      localStorage.setItem("approvedAppointments", JSON.stringify([...approvedAppointments, approvedData]));
+
+      // حذف من قائمة المعلقة
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      setSelectedAppt(null);
+      
+      showToast("تم إضافة المريض للحجوزات القادمة بنجاح ✓", "success");
+    } catch (err) {
+      showToast(err.message || "فشل القبول", "error");
+    }
   };
 
-  const handleReject = (e, id) => {
+  const handleReject = async (e, id) => {
     e.stopPropagation();
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, rejected: true, accepted: false } : a))
-    );
-    setSelectedAppt((prev) => prev?.id === id ? { ...prev, rejected: true, accepted: false } : prev);
-    showToast("تم رفض الحجز", "error");
+    const appt = appointments.find(a => a.id === id);
+    if (!appt) return;
+
+    const token = user?.token || localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `https://thoutha.page/api/appointment/updateStatus/${id}?status=CANCELLED`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
+
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      setSelectedAppt(null);
+      showToast("تم رفض الحجز", "error");
+    } catch (err) {
+      showToast(err.message || "فشل الرفض", "error");
+    }
   };
 
   const handleDelete = (e, id) => {
     e.stopPropagation();
-    const appt = appointments.find((a) => a.id === id);
-    if (appt?.accepted) {
-      const existing = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
-      const newPatient = {
-        patientName: appt.name,
-        phone: appt.phone,
-        service: appt.specialty,
-        time: `${appt.time} ${appt.period}`,
-        date: new Date().toISOString().split("T")[0],
-        status: "انتظار",
-        statusClass: "pending",
-      };
-      localStorage.setItem("acceptedPatients", JSON.stringify([...existing, newPatient]));
-      showToast("تم إضافة المريض بنجاح ✓", "success");
-    }
     setAppointments((prev) => prev.filter((a) => a.id !== id));
     setSelectedAppt(null);
-  };
-
-  useEffect(() => {
-    const cached = localStorage.getItem("doctorFirstName");
-    if (cached) {
-      setFirstName(cached);
-      setIsLoadingName(false);
-      return;
-    }
-    fetchDoctorProfile()
-      .then(({ firstName: fn, lastName: ln }) => {
-        setFirstName(fn);
-        localStorage.setItem("doctorFirstName", fn);
-        if (ln) localStorage.setItem("doctorLastName", ln);
-      })
-      .catch(() => {
-        const email = localStorage.getItem("userEmail") || "";
-        const fallback = email.split("@")[0] || "دكتور";
-        setFirstName(fallback);
-      })
-      .finally(() => setIsLoadingName(false));
-  }, []);
-
-  const handleMenuClick = () => console.log("Menu – open drawer");
-  const handleNotificationClick = () => {
-    setUnreadCount(0);
-    console.log("Notifications clicked");
+    showToast("تم حذف الحجز", "info");
   };
 
   const displayName = [
-    user?.firstName || user?.first_name || firstName,
+    user?.firstName || user?.first_name,
     user?.lastName  || user?.last_name,
   ]
     .filter(Boolean)
@@ -116,7 +178,7 @@ export default function DoctorHome() {
 
         {/* Welcome */}
         <section className="dh-welcome">
-          {isLoadingName ? (
+          {authLoading ? (
             <div className="dh-skeleton dh-skeleton--name" />
           ) : (
             <h1 className="dh-greeting">
@@ -128,10 +190,14 @@ export default function DoctorHome() {
 
         {/* Appointments */}
         <section className="dh-section">
-          <h2 className="dh-section-title">الحجوزات القادمة اليوم</h2>
+          <h2 className="dh-section-title">الحجوزات المعلقة</h2>
 
-          {appointments.length === 0 ? (
-            <p className="dh-empty">لا توجد حجوزات لهذا اليوم</p>
+          {loading ? (
+            <p className="dh-empty">جاري تحميل الحجوزات...</p>
+          ) : error ? (
+            <p className="dh-empty dh-error">{error}</p>
+          ) : appointments.length === 0 ? (
+            <p className="dh-empty">لا توجد حجوزات معلقة</p>
           ) : (
             <div className="dh-appt-list">
               {appointments.map((appt) => (
@@ -165,8 +231,9 @@ export default function DoctorHome() {
             <div className="dh-sheet-divider" />
             {[
               { icon: "📞", label: "رقم الهاتف",  value: selectedAppt.phone },
-              { icon: "🦷", label: "التخصص",    value: selectedAppt.specialty },
-              { icon: "⏰", label: "الوقت",      value: `${selectedAppt.time} ${selectedAppt.period}` },
+              { icon: "🦷", label: "فئة الخدمة", value: selectedAppt.specialty },
+              { icon: "📝", label: "الوصف", value: selectedAppt.description || "بدون وصف" },
+              { icon: "📅", label: "التاريخ",      value: getDate(selectedAppt.dateTime) },
             ].map(({ icon, label, value }) => (
               <div key={label} className="dh-detail-row">
                 <div className="dh-detail-icon">{icon}</div>
@@ -209,6 +276,7 @@ function AppointmentCard({ appt, onClick, onAccept, onReject, onDelete }) {
           <span className="dh-appt-name">{appt.name}</span>
           <span className="dh-appt-specialty">{appt.specialty}</span>
         </div>
+        {!appt.accepted && !appt.rejected && <span className="dh-card-status dh-card-status--pending">انتظار</span>}
         {appt.accepted && <span className="dh-card-status dh-card-status--accepted">مقبول</span>}
         {appt.rejected && <span className="dh-card-status dh-card-status--rejected">مرفوض</span>}
       </div>

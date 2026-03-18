@@ -40,7 +40,10 @@ public class AuthFilter extends OncePerRequestFilter {
                 (path.startsWith("/api/category")
                         || path.startsWith("/api/cities")
                         || path.startsWith("/api/university")
-                        || path.startsWith("/api/doctor/getDoctorsBy")));
+                        || path.startsWith("/api/doctor/getDoctorsBy")
+                        || path.startsWith("/api/request/getRequestByCategoryId")))
+                || (request.getMethod().equals("POST") &&
+                path.startsWith("/api/appointment/createAppointment"));
     }
 
     @Override

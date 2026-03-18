@@ -48,6 +48,7 @@ public class SecurityConfig {
                                 "/api/university/**",
                                 "/api/request/getRequestByCategoryId")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/appointment/createAppointment/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctorById" ).hasAnyRole("ADMIN","DOCTOR")
                         .requestMatchers(HttpMethod.PUT,"/api/doctor/updateDoctor").hasAnyRole("DOCTOR","ADMIN")
@@ -59,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE,"/api/request/deleteRequest").hasAnyRole("DOCTOR","ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/appointment/getAllAppointments").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,"/api/appointment/getAppointmentsByDoctorId").hasAnyRole("ADMIN","DOCTOR")
+                        .requestMatchers(HttpMethod.GET,"/api/appointment/getAppointmentById").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/api/appointment/getAppointmentsByDoctorId").hasAnyRole("DOCTOR","ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

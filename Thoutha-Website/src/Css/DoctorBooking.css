@@ -455,6 +455,14 @@
   margin-top: 48px;
 }
 
+.dnb-empty.dnb-error {
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
 .dnb-booking-list {
   display: flex;
   flex-direction: column;
@@ -485,6 +493,23 @@
 .dnb-card--rejected {
   border-color: #fecaca;
   background: #fef2f2;
+}
+
+.dnb-card--completed {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  opacity: 0.8;
+}
+
+.dnb-card--cancelled {
+  border-color: #fecaca;
+  background: #fef2f2;
+  opacity: 0.8;
+}
+
+.dnb-card--upcoming {
+  border-color: #bfdbfe;
+  background: #eff6ff;
 }
 
 .dnb-card-top {
@@ -540,6 +565,18 @@
 }
 
 .dnb-status--rejected {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.dnb-status--completed {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.dnb-status--cancelled {
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
@@ -709,6 +746,33 @@
 
 .dnb-close-btn:hover {
   background: #f3f4f6;
+}
+
+.dnb-sheet-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.dnb-sheet-actions button {
+  flex: 1;
+}
+
+.dnb-delete-btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid #fecaca;
+  background: #fef2f2;
+  font-family: "Cairo", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dnb-delete-btn:hover {
+  background: #fee2e2;
 }
 
 @media (max-width: 1024px) {

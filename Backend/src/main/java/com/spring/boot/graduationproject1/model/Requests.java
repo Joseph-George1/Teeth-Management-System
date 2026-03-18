@@ -3,12 +3,17 @@ package com.spring.boot.graduationproject1.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Requests {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -26,4 +31,6 @@ public class Requests {
     private String description;
     private LocalDateTime dateTime;
 
+    @OneToMany(mappedBy = "request")
+    private List<Appointments> appointments;
 }

@@ -1,16 +1,18 @@
 package com.spring.boot.graduationproject1.mapper;
 
-import com.spring.boot.graduationproject1.dto.DoctorDto;
-import com.spring.boot.graduationproject1.dto.DoctorRepresentDto;
-import com.spring.boot.graduationproject1.dto.DoctorSummaryDto;
-import com.spring.boot.graduationproject1.dto.SignUpRequest;
+import com.spring.boot.graduationproject1.dto.*;
 import com.spring.boot.graduationproject1.model.Doctor;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface DoctorMapper {
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "id", ignore = true)
     DoctorDto toDto(Doctor doctor);
     Doctor toEntity(DoctorDto doctorDto);
     List<DoctorDto> toListDto(List<Doctor> doctors);
@@ -20,4 +22,6 @@ public interface DoctorMapper {
     Doctor toEntity(SignUpRequest request);
     DoctorRepresentDto toRepresentDto(Doctor doctor);
     List<DoctorRepresentDto>toRepresentListDto(List<Doctor> doctors);
+
+
 }

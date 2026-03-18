@@ -1,5 +1,5 @@
 
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes} from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
@@ -30,6 +30,9 @@ import ProfileUpdate from "./Pages/ProfileUpdate";
 import DeleteMyAccount from "./Pages/DeleteMyAccount";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
+import NotFoundPages from "./Pages/NotFoundPages";
+import ForbiddenPage from "./Pages/ForbiddenPage";
+import UnauthorizedPage from "./Pages/UnauthorizedPage";
 export default function App() {
   return (
     <>
@@ -62,7 +65,14 @@ export default function App() {
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>
       <Route path="/forget-password" element={<ForgetPassword/>}></Route>
       <Route path="/reset-password" element={<ResetPassword/>}></Route>
+      <Route path="/forbidden" element={<ForbiddenPage/>}></Route>
       <Route path="*" element={<NotFoundPage/>}/>
+      <Route path="/assets" element={<ForbiddenPage/>}></Route>
+      <Route path="/assets/*" element={<ForbiddenPage/>}></Route>
+      <Route path="/javascript" element={<ForbiddenPage/>}></Route>
+      <Route path="/javascript/*" element={<ForbiddenPage/>}></Route>
+      <Route path="/403" element={<ForbiddenPage/>}></Route>
+      <Route path="/401" element={<UnauthorizedPage/>}></Route>
     </Routes>
     <Footer/>
     </>

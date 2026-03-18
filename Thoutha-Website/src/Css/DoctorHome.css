@@ -160,6 +160,14 @@
   padding: 32px 0;
 }
 
+.dh-empty.dh-error {
+  color: #dc2626;
+  background-color: #fee2e2;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
 /* ─── Appointment List ───────────────────────────────────────────────────── */
 .dh-appt-list {
   display: flex;
@@ -266,6 +274,7 @@
 
 .dh-card-status--accepted { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
 .dh-card-status--rejected { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.dh-card-status--pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
 /* Sheet actions */
 .dh-sheet-actions {
