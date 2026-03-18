@@ -2229,19 +2229,6 @@ function closeMobileMenu() {
   }
 }
 
-// Switch sections
-function showSection(sectionId) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const section = document.getElementById(`section-${sectionId}`);
-  if (section) section.classList.add('active');
-  
-  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-  const navLink = document.querySelector(`[data-section="${sectionId}"]`);
-  if (navLink) navLink.classList.add('active');
-  
-  closeMobileMenu();
-}
-
 function renderHealthStrip(h) {
   const services = [
     { name: 'Spring Boot', status: h.backend?.status  },
