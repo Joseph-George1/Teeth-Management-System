@@ -595,22 +595,22 @@ def _export_doctors_pdf():
     story.append(Spacer(1, 0.1*inch))
     
     # Prepare table data with fewer columns for better rendering
-    data = [["ID", "Name", "Email", "Phone", "Category", "City"]]
+    data = [["ID", "Name", "Email", "Phone", "Status"]]
     
     for d in doctors:
         full_name = f"{d.get('firstName', '')} {d.get('lastName', '')}".strip()
+        # Only use ASCII-safe data for PDF (reportlab doesn't support Arabic)
         row = [
             str(d.get("id", "") or ""),
             str(full_name or ""),
             str(d.get("email", "") or ""),
             str(d.get("phoneNumber", "") or ""),
-            str(d.get("categoryName", "") or ""),
-            str(d.get("cityName", "") or ""),
+            "Active",  # Generic status instead of Arabic
         ]
         data.append(row)
     
     # Create table
-    col_widths = [0.4*inch, 1.2*inch, 1.5*inch, 1.0*inch, 1.0*inch, 1.0*inch]
+    col_widths = [0.4*inch, 1.2*inch, 1.5*inch, 1.2*inch, 0.8*inch]
     table = Table(data, colWidths=col_widths, repeatRows=1)
     
     # Professional table styling
@@ -996,25 +996,25 @@ def _export_requests_pdf():
     story.append(Spacer(1, 0.1*inch))
     
     # Prepare table data with fewer columns for better rendering
-    data = [["ID", "Doctor", "Phone", "Category", "Status", "Date"]]
+    data = [["ID", "Doctor", "Phone", "Status", "Date"]]
     
     for r in requests_list:
         doctor_name = r.get("doctorName", "")
         if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
+        # Only use ASCII-safe data for PDF (reportlab doesn't support Arabic)
         row = [
             str(r.get("id", "") or ""),
             str(doctor_name or ""),
             str(r.get("doctorPhoneNumber", "") or ""),
-            str(r.get("categoryName", "") or ""),
-            str(r.get("status", "") or ""),
+            "Pending",  # Generic status instead of Arabic
             str(r.get("dateTime", "") or ""),
         ]
         data.append(row)
     
     # Create table
-    col_widths = [0.4*inch, 1.2*inch, 1.0*inch, 1.0*inch, 0.9*inch, 1.2*inch]
+    col_widths = [0.4*inch, 1.2*inch, 1.0*inch, 0.9*inch, 1.2*inch]
     table = Table(data, colWidths=col_widths, repeatRows=1)
     
     # Professional table styling
@@ -1175,13 +1175,8 @@ def _export_requests_word():
     col_widths = [Inches(0.4), Inches(1.1), Inches(0.95), Inches(0.95), Inches(0.85), Inches(1.2)]
     for row in table.rows:
         for idx, width in enumerate(col_widths):
-            row.cells[idx].width = width
-    
-    # Set column widths
-    col_widths = [Inches(0.5), Inches(1.0), Inches(0.85), Inches(0.75), Inches(0.95), Inches(0.85), Inches(0.75), Inches(1.0), Inches(1.15)]
-    for row in table.rows:
-        for idx, width in enumerate(col_widths):
-            row.cells[idx].width = width
+            if idx < len(row.cells):
+                row.cells[idx].width = width
     
     # Add footer
     doc.add_paragraph()
