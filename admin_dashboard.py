@@ -549,12 +549,12 @@ def _export_doctors_excel():
 
 
 def _export_doctors_pdf():
-    """Generate PDF for doctors list"""
+    """Generate professional PDF for doctors list with Unicode support for Arabic characters"""
     try:
-        from reportlab.lib.pagesizes import letter, A4
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.pagesizes import letter, A4, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
+        from reportlab.lib.units import inch, cm
         from reportlab.lib import colors
     except ImportError:
         return None
@@ -564,25 +564,186 @@ def _export_doctors_pdf():
     
     from io import BytesIO
     output = BytesIO()
-    doc = SimpleDocTemplate(output, pagesize=A4)
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4), topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
     
-    # Title
+    # Styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=16,
+        fontSize=18,
         textColor=colors.HexColor('#003366'),
-        spaceAfter=20,
+        spaceAfter=10,
+        alignment=1,  # CENTER
+        fontName='Helvetica-Bold'
     )
-    story.append(Paragraph("Doctors List Report", title_style))
-    story.append(Spacer(1, 0.2*inch))
     
-    # Table data
-    data = [["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]]
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#555555'),
+        spaceAfter=15,
+        alignment=1,  # CENTER
+    )
+    
+    # Add title
+    story.append(Paragraph("DOCTORS LIST REPORT", title_style))
+    from datetime import datetime
+    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}", subtitle_style))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Prepare table data - using safe string conversion for Unicode
+    data = [["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Year"]]
+    
     for d in doctors:
-        data.append([
+        # Safely convert all values to ensure proper Unicode handling
+        def safe_str(val):
+            if val is None:
+                return ""
+            val_str = str(val)
+            # Escape special characters for reportlab
+            return val_str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        
+        row = [
+            Paragraph(safe_str(d.get("id", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("firstName", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("lastName", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("email", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("phoneNumber", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("categoryName", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("cityName", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("universityName", "")), styles['Normal']),
+            Paragraph(safe_str(d.get("studyYear", "")), styles['Normal']),
+        ]
+        data.append(row)
+    
+    # Create table with better dimensions
+    col_widths = [0.5*inch, 0.85*inch, 0.85*inch, 1.1*inch, 0.8*inch, 0.85*inch, 0.75*inch, 0.95*inch, 0.6*inch]
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+    
+    # Professional table styling
+    table.setStyle(TableStyle([
+        # Header styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F497D')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        
+        # Data rows
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#333333')),
+        ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F2F2')]),
+        
+        # Gridlines
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('LINEABOVE', (0, 0), (-1, 0), 2, colors.HexColor('#1F497D')),
+        ('LINEBELOW', (0, -1), (-1, -1), 2, colors.HexColor('#1F497D')),
+        
+        # Padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+    ]))
+    
+    story.append(table)
+    
+    # Footer
+    story.append(Spacer(1, 0.2*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#999999'),
+        alignment=1,  # CENTER
+    )
+    story.append(Paragraph(f"Teeth Management System - Doctors Report | Page 1", footer_style))
+    
+    doc.build(story)
+    output.seek(0)
+    return output.getvalue()
+
+
+def _export_doctors_word():
+    """Generate professional Word document for doctors list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    doc = Document()
+    
+    # Add title with styling
+    title = doc.add_heading("DOCTORS LIST REPORT", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    title_run = title.runs[0]
+    title_run.font.size = Pt(18)
+    title_run.font.color.rgb = RGBColor(31, 73, 125)
+    
+    # Add timestamp
+    from datetime import datetime
+    timestamp = doc.add_paragraph()
+    timestamp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    ts_run = timestamp.add_run(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}")
+    ts_run.font.size = Pt(10)
+    ts_run.font.italic = True
+    ts_run.font.color.rgb = RGBColor(85, 85, 85)
+    
+    # Add spacing
+    doc.add_paragraph()
+    
+    # Create table with header
+    table = doc.add_table(rows=1, cols=9)
+    table.style = 'Light Grid Accent 1'
+    
+    # Set table width
+    table.autofit = False
+    table.allow_autofit = False
+    
+    # Header styling
+    header_cells = table.rows[0].cells
+    headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]
+    
+    for i, header in enumerate(headers):
+        cell = header_cells[i]
+        cell.text = header
+        
+        # Format header cell
+        cell_paragraph = cell.paragraphs[0]
+        cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        # Style header text
+        for run in cell_paragraph.runs:
+            run.font.bold = True
+            run.font.size = Pt(11)
+            run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Add background color to header
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '1F497D')
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Add data rows
+    for d in doctors:
+        row_cells = table.add_row().cells
+        data = [
             str(d.get("id", "")),
             str(d.get("firstName", "")),
             str(d.get("lastName", "")),
@@ -592,69 +753,33 @@ def _export_doctors_pdf():
             str(d.get("cityName", "")),
             str(d.get("universityName", "")),
             str(d.get("studyYear", "")),
-        ])
+        ]
+        
+        for i, cell_value in enumerate(data):
+            cell = row_cells[i]
+            cell.text = cell_value
+            
+            # Format cell text
+            cell_paragraph = cell.paragraphs[0]
+            cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            for run in cell_paragraph.runs:
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(51, 51, 51)
     
-    # Create table
-    table = Table(data, colWidths=[0.5*inch, 0.8*inch, 0.8*inch, 1*inch, 0.8*inch, 0.8*inch, 0.7*inch, 0.9*inch, 0.7*inch])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
-    ]))
-    story.append(table)
+    # Set column widths
+    col_widths = [Inches(0.5), Inches(0.9), Inches(0.9), Inches(1.2), Inches(0.9), Inches(0.9), Inches(0.8), Inches(1.0), Inches(0.7)]
+    for row in table.rows:
+        for idx, width in enumerate(col_widths):
+            row.cells[idx].width = width
     
-    doc.build(story)
-    output.seek(0)
-    return output.getvalue()
-
-
-def _export_doctors_word():
-    """Generate Word document for doctors list"""
-    try:
-        from docx import Document
-        from docx.shared import Inches, Pt, RGBColor
-        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-    except ImportError:
-        return None
-    
-    analytics = get_analytics(session.get("jwt_token"))
-    doctors = analytics.get("doctors_list", [])
-    
-    doc = Document()
-    
-    # Title
-    title = doc.add_heading("Doctors List Report", 0)
-    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    
-    # Table
-    table = doc.add_table(rows=1, cols=9)
-    table.style = 'Light Grid Accent 1'
-    
-    # Header
-    header_cells = table.rows[0].cells
-    headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]
-    for i, header in enumerate(headers):
-        header_cells[i].text = header
-        header_cells[i].paragraphs[0].runs[0].font.bold = True
-    
-    # Data
-    for d in doctors:
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(d.get("id", ""))
-        row_cells[1].text = str(d.get("firstName", ""))
-        row_cells[2].text = str(d.get("lastName", ""))
-        row_cells[3].text = str(d.get("email", ""))
-        row_cells[4].text = str(d.get("phoneNumber", ""))
-        row_cells[5].text = str(d.get("categoryName", ""))
-        row_cells[6].text = str(d.get("cityName", ""))
-        row_cells[7].text = str(d.get("universityName", ""))
-        row_cells[8].text = str(d.get("studyYear", ""))
+    # Add footer
+    doc.add_paragraph()
+    footer = doc.add_paragraph()
+    footer.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    footer_run = footer.add_run("Teeth Management System - Doctors Report")
+    footer_run.font.size = Pt(8)
+    footer_run.font.italic = True
+    footer_run.font.color.rgb = RGBColor(153, 153, 153)
     
     from io import BytesIO
     output = BytesIO()
@@ -823,12 +948,12 @@ def _export_requests_excel():
 
 
 def _export_requests_pdf():
-    """Generate PDF for requests list"""
+    """Generate professional PDF for requests list with proper encoding"""
     try:
         from reportlab.lib.pagesizes import letter, A4, landscape
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
+        from reportlab.lib.units import inch, cm
         from reportlab.lib import colors
     except ImportError:
         return None
@@ -837,30 +962,196 @@ def _export_requests_pdf():
     requests_list = analytics.get("requests_list", [])
     
     from io import BytesIO
+    from datetime import datetime
+    
     output = BytesIO()
-    doc = SimpleDocTemplate(output, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4), topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
     
-    # Title
+    # Styles
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=16,
+        fontSize=18,
         textColor=colors.HexColor('#003366'),
-        spaceAfter=20,
+        spaceAfter=10,
+        alignment=1,  # CENTER
+        fontName='Helvetica-Bold'
     )
-    story.append(Paragraph("Service Requests List Report", title_style))
-    story.append(Spacer(1, 0.2*inch))
     
-    # Table data
-    data = [["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]]
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#555555'),
+        spaceAfter=15,
+        alignment=1,  # CENTER
+    )
+    
+    # Add title
+    story.append(Paragraph("SERVICE REQUESTS REPORT", title_style))
+    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}", subtitle_style))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Prepare table data - using safe string conversion for Unicode
+    data = [["ID", "Doctor", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]]
+    
+    for r in requests_list:
+        # Safely convert all values to ensure proper Unicode handling
+        def safe_str(val):
+            if val is None:
+                return ""
+            val_str = str(val)
+            # Escape special characters for reportlab
+            return val_str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        row = [
+            Paragraph(safe_str(r.get("id", "")), styles['Normal']),
+            Paragraph(safe_str(doctor_name), styles['Normal']),
+            Paragraph(safe_str(r.get("doctorPhoneNumber", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("doctorCityName", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("doctorUniversityName", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("categoryName", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("status", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("dateTime", "")), styles['Normal']),
+            Paragraph(safe_str(r.get("description", "")), styles['Normal']),
+        ]
+        data.append(row)
+    
+    # Create table with better dimensions
+    col_widths = [0.45*inch, 0.95*inch, 0.75*inch, 0.7*inch, 0.85*inch, 0.75*inch, 0.7*inch, 0.95*inch, 1.1*inch]
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+    
+    # Professional table styling
+    table.setStyle(TableStyle([
+        # Header styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F497D')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        
+        # Data rows
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#333333')),
+        ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F2F2')]),
+        
+        # Gridlines
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('LINEABOVE', (0, 0), (-1, 0), 2, colors.HexColor('#1F497D')),
+        ('LINEBELOW', (0, -1), (-1, -1), 2, colors.HexColor('#1F497D')),
+        
+        # Padding
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+    ]))
+    
+    story.append(table)
+    
+    # Footer
+    story.append(Spacer(1, 0.2*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#999999'),
+        alignment=1,  # CENTER
+    )
+    story.append(Paragraph(f"Teeth Management System - Service Requests Report | Page 1", footer_style))
+    
+    doc.build(story)
+    output.seek(0)
+    return output.getvalue()
+
+
+def _export_requests_word():
+    """Generate professional Word document for requests list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    doc = Document()
+    
+    # Add title with styling
+    title = doc.add_heading("SERVICE REQUESTS REPORT", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    title_run = title.runs[0]
+    title_run.font.size = Pt(18)
+    title_run.font.color.rgb = RGBColor(31, 73, 125)
+    
+    # Add timestamp
+    from datetime import datetime
+    timestamp = doc.add_paragraph()
+    timestamp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    ts_run = timestamp.add_run(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}")
+    ts_run.font.size = Pt(10)
+    ts_run.font.italic = True
+    ts_run.font.color.rgb = RGBColor(85, 85, 85)
+    
+    # Add spacing
+    doc.add_paragraph()
+    
+    # Create table with header
+    table = doc.add_table(rows=1, cols=9)
+    table.style = 'Light Grid Accent 1'
+    
+    # Set table width
+    table.autofit = False
+    table.allow_autofit = False
+    
+    # Header styling
+    header_cells = table.rows[0].cells
+    headers = ["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]
+    
+    for i, header in enumerate(headers):
+        cell = header_cells[i]
+        cell.text = header
+        
+        # Format header cell
+        cell_paragraph = cell.paragraphs[0]
+        cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        # Style header text
+        for run in cell_paragraph.runs:
+            run.font.bold = True
+            run.font.size = Pt(11)
+            run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Add background color to header
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '1F497D')
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Add data rows
     for r in requests_list:
         doctor_name = r.get("doctorName", "")
         if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
-        data.append([
+        row_cells = table.add_row().cells
+        data = [
             str(r.get("id", "")),
             str(doctor_name),
             str(r.get("doctorPhoneNumber", "")),
@@ -870,73 +1161,33 @@ def _export_requests_pdf():
             str(r.get("status", "")),
             str(r.get("dateTime", "")),
             str(r.get("description", "")),
-        ])
-    
-    # Create table
-    table = Table(data, colWidths=[0.5*inch, 1*inch, 0.8*inch, 0.7*inch, 0.9*inch, 0.8*inch, 0.7*inch, 1*inch, 1.2*inch])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 7),
-    ]))
-    story.append(table)
-    
-    doc.build(story)
-    output.seek(0)
-    return output.getvalue()
-
-
-def _export_requests_word():
-    """Generate Word document for requests list"""
-    try:
-        from docx import Document
-        from docx.shared import Inches, Pt, RGBColor
-        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-    except ImportError:
-        return None
-    
-    analytics = get_analytics(session.get("jwt_token"))
-    requests_list = analytics.get("requests_list", [])
-    
-    doc = Document()
-    
-    # Title
-    title = doc.add_heading("Service Requests List Report", 0)
-    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    
-    # Table
-    table = doc.add_table(rows=1, cols=9)
-    table.style = 'Light Grid Accent 1'
-    
-    # Header
-    header_cells = table.rows[0].cells
-    headers = ["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]
-    for i, header in enumerate(headers):
-        header_cells[i].text = header
-        header_cells[i].paragraphs[0].runs[0].font.bold = True
-    
-    # Data
-    for r in requests_list:
-        doctor_name = r.get("doctorName", "")
-        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
-            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        ]
         
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(r.get("id", ""))
-        row_cells[1].text = str(doctor_name)
-        row_cells[2].text = str(r.get("doctorPhoneNumber", ""))
-        row_cells[3].text = str(r.get("doctorCityName", ""))
-        row_cells[4].text = str(r.get("doctorUniversityName", ""))
-        row_cells[5].text = str(r.get("categoryName", ""))
-        row_cells[6].text = str(r.get("status", ""))
-        row_cells[7].text = str(r.get("dateTime", ""))
-        row_cells[8].text = str(r.get("description", ""))
+        for i, cell_value in enumerate(data):
+            cell = row_cells[i]
+            cell.text = cell_value
+            
+            # Format cell text
+            cell_paragraph = cell.paragraphs[0]
+            cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            for run in cell_paragraph.runs:
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(51, 51, 51)
+    
+    # Set column widths
+    col_widths = [Inches(0.5), Inches(1.0), Inches(0.85), Inches(0.75), Inches(0.95), Inches(0.85), Inches(0.75), Inches(1.0), Inches(1.15)]
+    for row in table.rows:
+        for idx, width in enumerate(col_widths):
+            row.cells[idx].width = width
+    
+    # Add footer
+    doc.add_paragraph()
+    footer = doc.add_paragraph()
+    footer.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    footer_run = footer.add_run("Teeth Management System - Service Requests Report")
+    footer_run.font.size = Pt(8)
+    footer_run.font.italic = True
+    footer_run.font.color.rgb = RGBColor(153, 153, 153)
     
     from io import BytesIO
     output = BytesIO()
