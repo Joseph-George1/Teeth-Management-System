@@ -2023,31 +2023,6 @@ function showSection(sectionId) {
   closeMobileMenu();
 }
 
-// Render charts from analytics data
-function renderCharts(data) {
-  // Update stat cards
-  const stats = [
-    { id: 'total-doctors', key: 'doctors', icon: 'fa-user-doctor', color: '#58a6ff', label: 'Doctors' },
-    { id: 'total-requests', key: 'requests', icon: 'fa-file-medical', color: '#3fb950', label: 'Requests' },
-    { id: 'total-cities', key: 'cities', icon: 'fa-location-dot', color: '#f85149', label: 'Cities' },
-    { id: 'total-categories', key: 'categories', icon: 'fa-tags', color: '#d29922', label: 'Categories' },
-  ];
-  
-  stats.forEach(stat => {
-    const el = document.getElementById(stat.id);
-    if (el) {
-      const value = data.totals?.[stat.key] || 0;
-      el.textContent = value;
-    }
-  });
-  
-  // Update doctor/request counts
-  const dcBadge = document.getElementById('doctors-count');
-  const rcBadge = document.getElementById('requests-count');
-  if (dcBadge) dcBadge.textContent = data.totals?.doctors || 0;
-  if (rcBadge) rcBadge.textContent = data.totals?.requests || 0;
-}
-
 function renderHealthStrip(h) {
   const services = [
     { name: 'Spring Boot', status: h.backend?.status  },
@@ -2453,13 +2428,13 @@ function exportRequests() {
 /* ─── Doctor Details Modal ─── */
 async function viewDoctor(id) {
   try {
-    const res = await fetch(`${BASE}/api/doctor/${id}`);
+    const res = await fetch(`${BASE}/api/doctor/${id}/view`);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const data = await res.json();
-    if (data.success && data.data) {
-      showDoctorModal(data.data);
+    if (data.success && data.doctor) {
+      showDoctorModal(data.doctor);
     } else {
       showToast('Failed to load doctor details: ' + (data.message || 'Unknown error'), 'error');
     }
