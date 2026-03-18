@@ -1794,27 +1794,27 @@ DASHBOARD_TEMPLATE = """
             <i class="fa fa-times"></i>
           </button>
           <!-- Export Dropdown -->
-          <div class="btn-group" role="group">
-            <button class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export Options">
+          <div class="btn-group" role="group" id="doctors-export-group">
+            <button class="btn btn-sm btn-success" onclick="toggleDoctorsMenu()" title="Export Options" type="button">
               <i class="fa fa-download me-1"></i>Export Options
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" id="doctors-export-menu">
-              <li><a class="dropdown-item" href="#" onclick="exportDoctors('csv'); return false;">
+            <div class="dropdown-menu" id="doctors-export-menu" style="display:none;">
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('csv');">
                 <i class="fa fa-file-csv me-2 text-success"></i>CSV
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportDoctors('json'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('json');">
                 <i class="fa fa-code me-2 text-info"></i>JSON
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportDoctors('xlsx'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('xlsx');">
                 <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportDoctors('pdf'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('pdf');">
                 <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportDoctors('docx'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('docx');">
                 <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
-              </a></li>
-            </ul>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -1914,27 +1914,27 @@ DASHBOARD_TEMPLATE = """
           <input type="text" id="request-search" class="form-control form-control-sm"
                  style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
           <!-- Export Dropdown -->
-          <div class="btn-group" role="group">
-            <button class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export Options">
+          <div class="btn-group" role="group" id="requests-export-group">
+            <button class="btn btn-sm btn-success" onclick="toggleRequestsMenu()" title="Export Options" type="button">
               <i class="fa fa-download me-1"></i>Export Options
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" id="requests-export-menu">
-              <li><a class="dropdown-item" href="#" onclick="exportRequests('csv'); return false;">
+            <div class="dropdown-menu" id="requests-export-menu" style="display:none;">
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('csv');">
                 <i class="fa fa-file-csv me-2 text-success"></i>CSV
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportRequests('json'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('json');">
                 <i class="fa fa-code me-2 text-info"></i>JSON
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportRequests('xlsx'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('xlsx');">
                 <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportRequests('pdf'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('pdf');">
                 <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
-              </a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportRequests('docx'); return false;">
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('docx');">
                 <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
-              </a></li>
-            </ul>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -2955,6 +2955,37 @@ async function deleteDoctor(id, btn) {
     rcBadge.textContent = requestCards.length || initialData.totals.requests;
   }
 })();
+
+/* ─── Dropdown Toggle Functions ─── */
+function toggleDoctorsMenu() {
+  const menu = document.getElementById('doctors-export-menu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function toggleRequestsMenu() {
+  const menu = document.getElementById('requests-export-menu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(e) {
+  const doctorsGroup = document.getElementById('doctors-export-group');
+  const requestsGroup = document.getElementById('requests-export-group');
+  
+  if (doctorsGroup && !doctorsGroup.contains(e.target)) {
+    const doctorsMenu = document.getElementById('doctors-export-menu');
+    if (doctorsMenu) doctorsMenu.style.display = 'none';
+  }
+  
+  if (requestsGroup && !requestsGroup.contains(e.target)) {
+    const requestsMenu = document.getElementById('requests-export-menu');
+    if (requestsMenu) requestsMenu.style.display = 'none';
+  }
+});
 
 /* ─── Dropdown Toggle Handler ─── */
 document.addEventListener('DOMContentLoaded', function() {
