@@ -1023,16 +1023,16 @@ DASHBOARD_TEMPLATE = """
 <div class="sidebar" id="sidebar">
   <div class="brand"><i class="fa-solid fa-tooth"></i>TMS Admin</div>
   <nav class="nav flex-column mt-2">
-    <a class="nav-link active" data-section="overview" href="#" onclick="return showSection('overview',this); return false;">
+    <a class="nav-link active" data-section="overview" href="#" onclick="return showSection('overview',this)">
       <i class="fa-solid fa-gauge-high"></i>Overview
     </a>
-    <a class="nav-link" data-section="doctors" href="#" onclick="return showSection('doctors',this); return false;">
+    <a class="nav-link" data-section="doctors" href="#" onclick="return showSection('doctors',this)">
       <i class="fa-solid fa-user-doctor"></i>Doctors
     </a>
-    <a class="nav-link" data-section="requests" href="#" onclick="return showSection('requests',this); return false;">
+    <a class="nav-link" data-section="requests" href="#" onclick="return showSection('requests',this)">
       <i class="fa-solid fa-file-medical"></i>Requests
     </a>
-    <a class="nav-link" data-section="health" href="#" onclick="return showSection('health',this); return false;">
+    <a class="nav-link" data-section="health" href="#" onclick="return showSection('health',this)">
       <i class="fa-solid fa-server"></i>Service Health
     </a>
   </nav>
