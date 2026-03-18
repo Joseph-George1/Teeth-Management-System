@@ -58,33 +58,37 @@ TRANSITIONS = {
         "G": {"chatbot": True}  # Trigger chatbot mode for "Something else"
     },
     "Q2A": {
-        "A1": {"category": "Teeth Whitening"},
-        "A2": {"category": "Dental Crowns / Prosthodontics"}
+        "A1": {"category": "Cleaning and Whitening"},
+        "A2": {"category": "Fixed Prosthetics (Crowns and Bridges)"}
     },
     "Q2B": {
         "B1": {"next": "Q3B"},
-        "B2": {"category": "Tooth Extraction"}
+        "B2": {"next": "Q4B"}
     },
     "Q3B": {
-        "B1a": {"category": "Dental Fillings"},
+        "B1a": {"category": "Operative Fillings (Cosmetic and Amalgam)"},
         "B1b": {"category": "Comprehensive Dental Examination"}
+    },
+    "Q4B": {
+        "B2a": {"category": "Endodontic Fillings (Root Canal)"},
+        "B2b": {"category": "Surgery and Extraction"}
     },
     "Q2C": {
         "C1": {"category": "Orthodontics"},
-        "C2": {"category": "Orthodontics"}
+        "C2": {"category": "Pediatric Dentistry"}
     },
     "Q2D": {
         "D1": {"category": "Dental Implants"},
-        "D2": {"category": "Dental Crowns / Prosthodontics"}
+        "D2": {"category": "Removable Prosthetics"}
     },
     "Q2F": {
-        "F1": {"category": "Dental Crowns / Prosthodontics"},
-        "F2": {"category": "Dental Fillings"},
-        "F3": {"category": "Tooth Extraction"}
+        "F1": {"category": "Fixed Prosthetics (Crowns and Bridges)"},
+        "F2": {"category": "Operative Fillings (Cosmetic and Amalgam)"},
+        "F3": {"category": "Surgery and Extraction"}
     },
     "Q2G": {
-        "G1": {"category": "Teeth Whitening"},
-        "G2": {"category": "Tooth Extraction"},
+        "G1": {"category": "Cleaning and Whitening"},
+        "G2": {"category": "Surgery and Extraction"},
         "G3": {"category": "Orthodontics"},
         "G4": {"category": "Dental Implants"},
         "G5": {"category": "Comprehensive Dental Examination"}
@@ -93,24 +97,30 @@ TRANSITIONS = {
 
 # Allowed final categories
 CATEGORIES = [
-    "Teeth Whitening",
-    "Dental Crowns / Prosthodontics",
+    "Operative Fillings (Cosmetic and Amalgam)",
+    "Endodontic Fillings (Root Canal)",
+    "Fixed Prosthetics (Crowns and Bridges)",
+    "Removable Prosthetics",
+    "Dental Implants",
+    "Cleaning and Whitening",
     "Orthodontics",
-    "Dental Fillings",
-    "Tooth Extraction",
-    "Comprehensive Dental Examination",
-    "Dental Implants"
+    "Surgery and Extraction",
+    "Pediatric Dentistry",
+    "Comprehensive Dental Examination"
 ]
 
 # Category translations
 CATEGORY_TRANSLATIONS = {
-    "Teeth Whitening": {"en": "Teeth Whitening", "ar": "تبييض الأسنان"},
-    "Dental Crowns / Prosthodontics": {"en": "Dental Crowns / Prosthodontics", "ar": "تيجان الأسنان / التركيبات"},
+    "Operative Fillings (Cosmetic and Amalgam)": {"en": "Operative Fillings (Cosmetic and Amalgam)", "ar": "حشوات تشغيلية (تجميلية وأملغم)"},
+    "Endodontic Fillings (Root Canal)": {"en": "Endodontic Fillings (Root Canal)", "ar": "حشوات علاج الجذور (حشو العصب)"},
+    "Fixed Prosthetics (Crowns and Bridges)": {"en": "Fixed Prosthetics (Crowns and Bridges)", "ar": "تركيبات ثابتة (تيجان وجسور)"},
+    "Removable Prosthetics": {"en": "Removable Prosthetics", "ar": "تركيبات متحركة"},
+    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الأسنان"},
+    "Cleaning and Whitening": {"en": "Cleaning and Whitening", "ar": "تنظيف وتبييض"},
     "Orthodontics": {"en": "Orthodontics", "ar": "تقويم الأسنان"},
-    "Dental Fillings": {"en": "Dental Fillings", "ar": "حشوات الأسنان"},
-    "Tooth Extraction": {"en": "Tooth Extraction", "ar": "خلع الأسنان"},
-    "Comprehensive Dental Examination": {"en": "Comprehensive Dental Examination", "ar": "فحص شامل للأسنان"},
-    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الأسنان"}
+    "Surgery and Extraction": {"en": "Surgery and Extraction", "ar": "الجراحة والخلع"},
+    "Pediatric Dentistry": {"en": "Pediatric Dentistry", "ar": "طب الأسنان للأطفال"},
+    "Comprehensive Dental Examination": {"en": "Comprehensive Dental Examination", "ar": "فحص شامل للأسنان"}
 }
 
 def validate_transitions():

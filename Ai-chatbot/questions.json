@@ -2,7 +2,7 @@
   "Q0": {
     "id": "Q0",
     "text_en": "Choose your language",
-    "text_ar": "اختر اللغة",
+    "text_ar": " اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
     "options": [
       { "id": "EN", "text_en": "English", "text_ar": "الإنجليزية" },
       { "id": "AR", "text_en": "Arabic", "text_ar": "العربية" }
@@ -47,6 +47,15 @@
     "options": [
       { "id": "B1a", "text_en": "Yes, I can see it", "text_ar": "نعم، أراه" },
       { "id": "B1b", "text_en": "No, nothing visible", "text_ar": "لا، لا شيء مرئي" }
+    ]
+  },
+  "Q4B": {
+    "id": "Q4B",
+    "text_en": "Describe the pain: Is it throbbing, constant, or do you have swelling?",
+    "text_ar": "صف الألم: هل هو نابض، مستمر، أو لديك انتفاخ؟",
+    "options": [
+      { "id": "B2a", "text_en": "Throbbing pain, swelling, or pain at night", "text_ar": "ألم نابض، انتفاخ، أو ألم في الليل" },
+      { "id": "B2b", "text_en": "Sharp pain when biting or other", "text_ar": "ألم حاد عند العض أو غيره" }
     ]
   },
   "Q2C": {
