@@ -1751,7 +1751,7 @@ function setNow() {
 
 /* ─── Charts ─── */
 const charts = {};
-function makeBar(id, labels, data, label='Count') {
+function makeBar(id, labels, data, label = 'Count') {
   const ctx = document.getElementById(id);
   if (!ctx) return;
   if (charts[id]) charts[id].destroy();
