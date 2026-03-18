@@ -411,7 +411,7 @@ def api_get_doctors():
 @login_required
 def api_view_doctor(doctor_id):
     """Get full doctor details"""
-    data, status = _get(f"/api/doctor/getDoctorById?id={doctor_id}")
+    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
     if status == 200:
         return jsonify({"success": True, "doctor": data})
     return jsonify({"success": False, "message": f"HTTP {status}"}), 400
@@ -1386,28 +1386,13 @@ DASHBOARD_TEMPLATE = """
         <div class="d-flex align-items-center gap-2">
           <h6 class="mb-0"><i class="fa-solid fa-file-medical me-2 text-success"></i>All Service Requests
             <span class="badge bg-secondary ms-2" id="requests-count"></span>
-            <span class="badge bg-warning ms-2" id="selected-count" style="display:none;">0 Selected</span>
           </h6>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="d-flex align-items-center gap-2">
           <input type="text" id="request-search" class="form-control form-control-sm"
-                 style="width:180px" placeholder="🔍 Search…" oninput="applyRequestFilters()">
-          <select id="request-status-filter" class="form-select form-select-sm" style="width:140px" onchange="applyRequestFilters()">
-            <option value="">All Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-          <input type="date" id="request-date-from" class="form-control form-control-sm" style="width:130px" onchange="applyRequestFilters()" title="From Date">
-          <input type="date" id="request-date-to" class="form-control form-control-sm" style="width:130px" onchange="applyRequestFilters()" title="To Date">
-          <button class="btn btn-sm btn-outline-secondary" onclick="clearRequestFilters()" title="Clear Filters">
-            <i class="fa fa-times"></i>
-          </button>
+                 style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
           <button class="btn btn-sm btn-success" onclick="exportRequests()" title="Export to CSV">
-            <i class="fa fa-download me-1"></i>Export
-          </button>
-          <button class="btn btn-sm btn-outline-danger" id="bulk-delete-btn" onclick="bulkDeleteRequests()" style="display:none;" title="Delete Selected">
-            <i class="fa fa-trash me-1"></i>Delete
+            <i class="fa fa-download me-1"></i>Export CSV
           </button>
         </div>
       </div>
@@ -1415,20 +1400,13 @@ DASHBOARD_TEMPLATE = """
         <table class="table table-hover table-sm" id="request-table">
           <thead>
             <tr>
-              <th style="width:30px"><input type="checkbox" id="select-all-requests" onchange="toggleSelectAllRequests()" title="Select All"></th>
-              <th onclick="sortTableBy('request-table', 0)" style="cursor:pointer">#</th>
-              <th onclick="sortTableBy('request-table', 1)" style="cursor:pointer">ID <i class="fa fa-sort fa-xs text-muted"></i></th>
-              <th>Doctor</th><th>Phone</th><th>City</th>
-              <th onclick="sortTableBy('request-table', 5)" style="cursor:pointer">Category <i class="fa fa-sort fa-xs text-muted"></i></th>
-              <th onclick="sortTableBy('request-table', 6)" style="cursor:pointer">Status <i class="fa fa-sort fa-xs text-muted"></i></th>
-              <th onclick="sortTableBy('request-table', 7)" style="cursor:pointer">Date <i class="fa fa-sort fa-xs text-muted"></i></th>
-              <th>Actions</th>
+              <th>#</th><th>ID</th><th>Doctor</th><th>Phone</th><th>City</th>
+              <th>Category</th><th>Status</th><th>Date &amp; Time</th><th>Description</th>
             </tr>
           </thead>
           <tbody>
             {% for r in analytics.requests_list %}
-            <tr data-request-id="{{ r.id or '' }}" data-status="{{ r.status or '' }}" data-date="{{ r.dateTime or '' }}">
-              <td><input type="checkbox" class="request-checkbox" value="{{ r.id }}" onchange="updateBulkActions()"></td>
+            <tr>
               <td>{{ loop.index }}</td>
               <td>{{ r.id or '—' }}</td>
               <td>{{ (r.doctorFirstName or '') + ' ' + (r.doctorLastName or '') if r.get('doctorFirstName') else (r.doctorName or '—') }}</td>
@@ -1448,14 +1426,12 @@ DASHBOARD_TEMPLATE = """
                 {% endif %}
               </td>
               <td>{{ r.dateTime or '—' }}</td>
-              <td>
-                <button class="btn btn-outline-primary btn-sm" onclick="viewRequest({{ r.id }})" title="View Details">
-                  <i class="fa fa-eye me-1"></i>View
-                </button>
+              <td class="text-muted" style="max-width:250px;white-space:normal">
+                {{ r.description or '—' }}
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="10" class="text-center text-muted py-4">No requests found</td></tr>
+            <tr><td colspan="9" class="text-center text-muted py-4">No requests found</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -1648,17 +1624,15 @@ function closeMobileMenu() {
 }
 
 function showSection(name, el) {
-  if (event) event.preventDefault();
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const section = document.querySelector('#section-' + name);
-  if (section) section.classList.add('active');
+  document.querySelector('#section-' + name).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  if (el) el.classList.add('active');
+  el.classList.add('active');
   // Close mobile menu when navigating
   if (window.innerWidth <= 768) {
     closeMobileMenu();
   }
-  return false;
+  event.preventDefault();
 }
 
 function filterTable(tableId, query) {
@@ -1979,203 +1953,8 @@ function clearDoctorFilters() {
   showToast('Filters cleared', 'info');
 }
 
-/* ─── Request Filtering ─── */
-function applyRequestFilters() {
-  const search = (document.getElementById('request-search')?.value || '').toLowerCase();
-  const status = (document.getElementById('request-status-filter')?.value || '').toUpperCase();
-  const dateFrom = document.getElementById('request-date-from')?.value || '';
-  const dateTo = document.getElementById('request-date-to')?.value || '';
-  
-  const rows = document.querySelectorAll('#request-table tbody tr');
-  let visibleCount = 0;
-  
-  rows.forEach(row => {
-    if (row.textContent.includes('No requests')) return;
-    const text = row.textContent.toLowerCase();
-    const rowStatus = (row.getAttribute('data-status') || '').toUpperCase();
-    const rowDate = row.getAttribute('data-date') || '';
-    
-    const matchesSearch = !search || text.includes(search);
-    const matchesStatus = !status || rowStatus === status;
-    
-    let matchesDate = true;
-    if (dateFrom || dateTo) {
-      const [rowDateOnly] = rowDate.split('T');
-      if (dateFrom && rowDateOnly < dateFrom) matchesDate = false;
-      if (dateTo && rowDateOnly > dateTo) matchesDate = false;
-    }
-    
-    const shouldShow = matchesSearch && matchesStatus && matchesDate;
-    row.style.display = shouldShow ? '' : 'none';
-    if (shouldShow) visibleCount++;
-  });
-  
-  const count = document.getElementById('requests-count');
-  if (count) count.textContent = visibleCount;
-  
-  // Uncheck all when filtering
-  document.getElementById('select-all-requests').checked = false;
-  document.querySelectorAll('.request-checkbox').forEach(cb => cb.checked = false);
-  updateBulkActions();
-}
-
-function clearRequestFilters() {
-  document.getElementById('request-search').value = '';
-  document.getElementById('request-status-filter').value = '';
-  document.getElementById('request-date-from').value = '';
-  document.getElementById('request-date-to').value = '';
-  applyRequestFilters();
-  showToast('Filters cleared', 'info');
-}
-
-/* ─── Table Sorting ─── */
-let sortState = {};
-function sortTableBy(tableId, colIndex) {
-  const table = document.getElementById(tableId);
-  const tbody = table.querySelector('tbody');
-  const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.textContent.includes('No'));
-  
-  if (rows.length === 0) return;
-  
-  const key = `${tableId}-${colIndex}`;
-  const currentDir = sortState[key] || 'asc';
-  const newDir = currentDir === 'asc' ? 'desc' : 'asc';
-  sortState[key] = newDir;
-  
-  rows.sort((a, b) => {
-    let aVal = a.cells[colIndex]?.textContent.trim() || '';
-    let bVal = b.cells[colIndex]?.textContent.trim() || '';
-    
-    const aNum = parseFloat(aVal);
-    const bNum = parseFloat(bVal);
-    if (!isNaN(aNum) && !isNaN(bNum)) {
-      return newDir === 'asc' ? aNum - bNum : bNum - aNum;
-    }
-    
-    const cmp = aVal.localeCompare(bVal);
-    return newDir === 'asc' ? cmp : -cmp;
-  });
-  
-  rows.forEach(row => tbody.appendChild(row));
-  showToast(`Sorted by column ${newDir === 'asc' ? '↑' : '↓'}`, 'info');
-}
-
-/* ─── Batch Selection ─── */
-function toggleSelectAllRequests() {
-  const isChecked = document.getElementById('select-all-requests').checked;
-  document.querySelectorAll('.request-checkbox:not(:hidden)').forEach(cb => {
-    cb.checked = isChecked;
-  });
-  updateBulkActions();
-}
-
-function updateBulkActions() {
-  const checked = document.querySelectorAll('.request-checkbox:checked').length;
-  const total = document.querySelectorAll('.request-checkbox').length;
-  const btn = document.getElementById('bulk-delete-btn');
-  const badge = document.getElementById('selected-count');
-  
-  if (checked > 0) {
-    btn.style.display = 'block';
-    badge.style.display = 'inline-block';
-    badge.textContent = `${checked} Selected`;
-  } else {
-    btn.style.display = 'none';
-    badge.style.display = 'none';
-  }
-}
-
-async function bulkDeleteRequests() {
-  const checked = Array.from(document.querySelectorAll('.request-checkbox:checked')).map(cb => cb.value);
-  if (checked.length === 0) {
-    showToast('No requests selected', 'warning');
-    return;
-  }
-  
-  if (!confirm(`Delete ${checked.length} request(s)? This cannot be undone.`)) return;
-  
-  let success = 0, failed = [];
-  for (const id of checked) {
-    try {
-      const res = await fetch(`${BASE}/api/doctor/delete/${id}`, { method: 'POST' });
-      if (res.ok) success++;
-      else failed.push(id);
-    } catch(e) {
-      failed.push(id);
-    }
-  }
-  
-  if (success > 0) {
-    showToast(`Deleted ${success} request(s)`, 'success');
-    loadAnalytics(false);
-  }
-  if (failed.length > 0) {
-    showToast(`Failed to delete ${failed.length} request(s)`, 'error');
-  }
-  updateBulkActions();
-}
-
-/* ─── View Request ─── */
-async function viewRequest(id) {
-  try {
-    const res = await fetch(`${BASE}/api/doctor/${id}/view`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data.success && data.doctor) {
-      showRequestModal(data.doctor);
-    } else {
-      showToast('Failed to load request details', 'error');
-    }
-  } catch(e) {
-    console.error('View request error:', e);
-    showToast('Error loading request: ' + e.message, 'error');
-  }
-}
-
-function showRequestModal(doctor) {
-  const modal = document.getElementById('doctor-modal');
-  const content = document.getElementById('doctor-modal-content');
-  
-  if (!modal || !content) {
-    showToast('Modal error: elements not found', 'error');
-    return;
-  }
-  
-  content.innerHTML = `
-    <div class="modal-row">
-      <div class="modal-label">Request ID</div>
-      <div class="modal-value">${doctor.id || '—'}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">Doctor</div>
-      <div class="modal-value">${doctor.firstName || ''} ${doctor.lastName || ''}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">Email</div>
-      <div class="modal-value">${doctor.email || '—'}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">Phone</div>
-      <div class="modal-value">${doctor.phoneNumber || '—'}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">Category</div>
-      <div class="modal-value">${doctor.categoryName || '—'}</div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-label">City</div>
-      <div class="modal-value">${doctor.cityName || '—'}</div>
-    </div>
-  `;
-  
-  modal.classList.add('show');
-  if (autoRefreshEnabled) {
-    stopAutoRefresh();
-    modal.dataset.resumeRefresh = 'true';
-  }
-}
-
-
+// Generic table filter
+function filterTable(tableId, searchText) {
   const rows = document.querySelectorAll(`#${tableId} tbody tr`);
   const search = searchText.toLowerCase();
   let visibleCount = 0;
@@ -2229,6 +2008,19 @@ function closeMobileMenu() {
     sidebar.classList.remove('show');
     overlay.classList.remove('show');
   }
+}
+
+// Switch sections
+function showSection(sectionId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const section = document.getElementById(`section-${sectionId}`);
+  if (section) section.classList.add('active');
+  
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  const navLink = document.querySelector(`[data-section="${sectionId}"]`);
+  if (navLink) navLink.classList.add('active');
+  
+  closeMobileMenu();
 }
 
 function renderHealthStrip(h) {
@@ -2536,12 +2328,7 @@ function rebuildRequestTable(reqs) {
 
 /* ─── Delete doctor ─── */
 async function deleteDoctor(id, btn) {
-  // Get doctor name for better confirmation
-  const row = btn.closest('tr');
-  const doctorName = row ? row.cells[1]?.textContent.trim() : `ID ${id}`;
-  const category = row ? row.cells[2]?.textContent.trim() : 'Unknown';
-  
-  if (!confirm(`Delete "${doctorName}" (${category})? This action cannot be undone.`)) return;
+  if (!confirm(`Delete doctor ID ${id}? This action cannot be undone.`)) return;
   
   const originalHTML = btn.innerHTML;
   btn.disabled = true;
@@ -2569,7 +2356,7 @@ async function deleteDoctor(id, btn) {
       const badge = document.getElementById('doctors-count');
       if (badge) badge.textContent = parseInt(badge.textContent||0) - 1;
       
-      showToast(`${doctorName} deleted successfully`, 'success');
+      showToast(`Doctor ID ${id} deleted successfully`, 'success');
       
       // Trigger a silent refresh after 2 seconds to ensure data consistency
       setTimeout(() => loadAnalytics(true), 2000);
@@ -2585,135 +2372,6 @@ async function deleteDoctor(id, btn) {
   }
 }
 
-/* ─── Help & Keyboard Shortcuts ─── */
-function showHelp() {
-  showToast(`
-    ⌨️ KEYBOARD SHORTCUTS:
-    Ctrl+K: Focus search | Ctrl+R: Refresh | Ctrl+E: Export | Ctrl+Shift+?: Help
-  `, 'info');
-  
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #1c2333; border: 1px solid #30363d; border-radius: 8px;
-    padding: 2rem; width: 90%; max-width: 500px; z-index: 9999;
-    color: #c9d1d9; font-family: monospace; max-height: 80vh; overflow-y: auto;
-  `;
-  
-  modal.innerHTML = `
-    <h5 style="color: #58a6ff; margin-top: 0;"><i class="fa fa-keyboard me-2"></i>Dashboard Shortcuts</h5>
-    <hr style="border-color: #30363d;">
-    <div style="font-size: 0.9rem; line-height: 1.8;">
-      <p><strong>Search:</strong> Ctrl+K / Cmd+K</p>
-      <p><strong>Refresh:</strong> Ctrl+R / Cmd+R</p>
-      <p><strong>Export:</strong> Ctrl+E / Cmd+E</p>
-      <p><strong>Select All:</strong> Click "Select All" checkbox</p>
-      <p><strong>Sort Tables:</strong> Click column headers</p>
-      <p><strong>Filter:</strong> Use filter dropdowns & date inputs</p>
-      <p><strong>View Details:</strong> Click the View button</p>
-      <p><strong>Edit Notes:</strong> Open modal and edit "Admin Notes"</p>
-    </div>
-    <hr style="border-color: #30363d;">
-    <p style="font-size: 0.85rem; color: #8b949e; margin-bottom: 0;">💡 Filters & selections are saved automatically</p>
-    <button class="btn btn-sm btn-secondary mt-3" onclick="this.parentElement.remove()">Close</button>
-  `;
-  
-  document.body.appendChild(modal);
-  setTimeout(() => modal.querySelector('button').focus(), 100);
-}
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('Copied to clipboard', 'success');
-  }).catch(e => {
-    showToast('Copy failed: ' + e.message, 'error');
-  });
-}
-
-// Load filter preferences from localStorage
-function loadFilterPreferences() {
-  const docFilters = JSON.parse(localStorage.getItem('doctor-filters') || '{}');
-  if (docFilters.category) document.getElementById('filter-category').value = docFilters.category;
-  if (docFilters.city) document.getElementById('filter-city').value = docFilters.city;
-  if (docFilters.search) document.getElementById('doctor-search').value = docFilters.search;
-  
-  const reqFilters = JSON.parse(localStorage.getItem('request-filters') || '{}');
-  if (reqFilters.status) document.getElementById('request-status-filter').value = reqFilters.status;
-  if (reqFilters.dateFrom) document.getElementById('request-date-from').value = reqFilters.dateFrom;
-  if (reqFilters.dateTo) document.getElementById('request-date-to').value = reqFilters.dateTo;
-  if (reqFilters.search) document.getElementById('request-search').value = reqFilters.search;
-}
-
-// Save filter preferences to localStorage
-function saveFilterPreferences() {
-  const docFilters = {
-    category: document.getElementById('filter-category')?.value || '',
-    city: document.getElementById('filter-city')?.value || '',
-    search: document.getElementById('doctor-search')?.value || ''
-  };
-  localStorage.setItem('doctor-filters', JSON.stringify(docFilters));
-  
-  const reqFilters = {
-    status: document.getElementById('request-status-filter')?.value || '',
-    dateFrom: document.getElementById('request-date-from')?.value || '',
-    dateTo: document.getElementById('request-date-to')?.value || '',
-    search: document.getElementById('request-search')?.value || ''
-  };
-  localStorage.setItem('request-filters', JSON.stringify(reqFilters));
-}
-
-// Auto-save filter preferences when changed
-function applyDoctorFilters() {
-  saveFilterPreferences();
-  // Original filtering logic from before
-  const searchQuery = document.getElementById('doctor-search').value.toLowerCase();
-  const categoryFilter = document.getElementById('filter-category').value;
-  const cityFilter = document.getElementById('filter-city').value;
-  
-  const rows = document.querySelectorAll('#doctor-table tbody tr');
-  let visibleCount = 0;
-  
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    const cells = row.cells;
-    
-    const category = cells[2]?.textContent.trim() || '';
-    const city = cells[3]?.textContent.trim() || '';
-    
-    const matchesSearch = text.includes(searchQuery);
-    const matchesCategory = !categoryFilter || category === categoryFilter;
-    const matchesCity = !cityFilter || city === cityFilter;
-    
-    const shouldShow = matchesSearch && matchesCategory && matchesCity;
-    row.style.display = shouldShow ? '' : 'none';
-    if (shouldShow) visibleCount++;
-  });
-  
-  const cards = document.querySelectorAll('[data-doctor-card]');
-  let mobileVisibleCount = 0;
-  
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    const categoryBadge = card.querySelector('.badge');
-    const category = categoryBadge ? categoryBadge.textContent.trim() : '';
-    
-    const cityRow = Array.from(card.querySelectorAll('.card-row')).find(row => 
-      row.querySelector('.card-label')?.textContent.includes('City')
-    );
-    const city = cityRow ? cityRow.querySelector('.card-value')?.textContent.trim() : '';
-    
-    const matchesSearch = text.includes(searchQuery);
-    const matchesCategory = !categoryFilter || category === categoryFilter;
-    const matchesCity = !cityFilter || city === cityFilter;
-    
-    const shouldShow = matchesSearch && matchesCategory && matchesCity;
-    card.style.display = shouldShow ? '' : 'none';
-    if (shouldShow) mobileVisibleCount++;
-  });
-  
-  const count = visibleCount > 0 ? visibleCount : mobileVisibleCount;
-  const badge = document.getElementById('doctors-count');
-  if (badge) badge.textContent = count;
-}
-
 /* ─── Init ─── */
 (function init() {
   // Initial chart render from server-side data
@@ -2721,15 +2379,6 @@ function applyDoctorFilters() {
   renderCharts(initialData);
   renderHealthStrip({{ health | tojson }});
   setNow();
-
-  // Load saved filter preferences
-  loadFilterPreferences();
-  
-  // Apply initial filters if any are set
-  const hasFilters = JSON.parse(localStorage.getItem('doctor-filters') || '{}');
-  const hasReqFilters = JSON.parse(localStorage.getItem('request-filters') || '{}');
-  if (Object.keys(hasFilters).length > 0) applyDoctorFilters();
-  if (Object.keys(hasReqFilters).length > 0) applyRequestFilters();
 
   // Start auto-refresh intervals
   startAutoRefresh();
@@ -2751,31 +2400,6 @@ function applyDoctorFilters() {
     }, 250);
   });
   
-  // Keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
-    // Ctrl+K or Cmd+K: Focus search
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      const activeSection = document.querySelector('.section.active');
-      if (activeSection) {
-        const search = activeSection.querySelector('[id$="-search"]');
-        if (search) search.focus();
-      }
-    }
-    // Ctrl+R or Cmd+R: Refresh (in addition to browser)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'r' && document.activeElement !== document.querySelector('input[type="text"]')) {
-      e.preventDefault();
-      refreshAll();
-    }
-    // Ctrl+E or Cmd+E: Export
-    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-      e.preventDefault();
-      const activeSection = document.querySelector('.section.active');
-      if (activeSection.id === 'section-doctors') exportDoctors();
-      else if (activeSection.id === 'section-requests') exportRequests();
-    }
-  });
-  
   // Set initial counts
   const doctorCards = document.querySelectorAll('[data-doctor-card]');
   const requestCards = document.querySelectorAll('[data-request-card]');
@@ -2792,26 +2416,16 @@ function applyDoctorFilters() {
 
 /* ─── Export Functions ─── */
 function exportDoctors() {
-  const filtered = document.querySelectorAll('#doctor-table tbody tr:not([style*="display: none"])').length - 1;
-  let msg = filtered > 0 ? `Export ${filtered} filtered doctors?` : 'Export all doctors?';
-  
-  if (confirm(msg)) {
-    window.location.href = `${BASE}/api/export/doctors`;
-    showToast('Downloading doctors CSV...', 'info');
-  }
+  window.location.href = `${BASE}/api/export/doctors`;
+  showToast('Downloading doctors CSV...', 'info');
 }
 
 function exportRequests() {
-  const filtered = document.querySelectorAll('#request-table tbody tr:not([style*="display: none"])').length - 1;
-  let msg = filtered > 0 ? `Export ${filtered} filtered requests?` : 'Export all requests?';
-  
-  if (confirm(msg)) {
-    window.location.href = `${BASE}/api/export/requests`;
-    showToast('Downloading requests CSV...', 'info');
-  }
+  window.location.href = `${BASE}/api/export/requests`;
+  showToast('Downloading requests CSV...', 'info');
+}
 
 /* ─── Doctor Details Modal ─── */
-/* ─── Enhanced Doctor Modal with Notes ─── */
 async function viewDoctor(id) {
   try {
     const res = await fetch(`${BASE}/api/doctor/${id}/view`);
@@ -2839,9 +2453,6 @@ function showDoctorModal(doctor) {
     showToast('Modal error: elements not found', 'error');
     return;
   }
-  
-  // Load or get stored notes
-  const storedNotes = localStorage.getItem(`doctor-notes-${doctor.id}`) || '';
   
   content.innerHTML = `
     <div class="modal-row">
@@ -2872,12 +2483,6 @@ function showDoctorModal(doctor) {
       <div class="modal-label">Study Year</div>
       <div class="modal-value">${doctor.studyYear || '—'}</div>
     </div>
-    <div class="modal-row" style="border-top: 1px solid #30363d; margin-top: 1rem; padding-top: 1rem;">
-      <div class="modal-label">Admin Notes</div>
-      <textarea id="doctor-notes-${doctor.id}" class="form-control form-control-sm mt-2" 
-                 rows="3" placeholder="Add internal notes..." style="max-width: 100%;">${storedNotes}</textarea>
-      <button class="btn btn-sm btn-primary mt-2" onclick="saveDoctorNotes(${doctor.id})">Save Notes</button>
-    </div>
   `;
   
   modal.classList.add('show');
@@ -2886,15 +2491,6 @@ function showDoctorModal(doctor) {
   if (autoRefreshEnabled) {
     stopAutoRefresh();
     modal.dataset.resumeRefresh = 'true';
-  }
-}
-
-function saveDoctorNotes(doctorId) {
-  const textarea = document.getElementById(`doctor-notes-${doctorId}`);
-  if (textarea) {
-    const notes = textarea.value;
-    localStorage.setItem(`doctor-notes-${doctorId}`, notes);
-    showToast('Notes saved locally', 'success');
   }
 }
 
