@@ -1,7 +1,7 @@
 {
   "Q0": {
     "id": "Q0",
-    "text_en": "Choose your language",
+    "text_en": "Choose your language  اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
     "text_ar": " اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
     "options": [
       { "id": "EN", "text_en": "English", "text_ar": "الإنجليزية" },
