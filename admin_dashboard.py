@@ -664,52 +664,6 @@ def _export_doctors_pdf():
     return output.getvalue()
 
 
-@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
-@login_required
-def export_doctors():
-    """Export doctors list in specified format with UTF-8 encoding"""
-    from flask import Response
-    
-    export_format = request.args.get("format", "csv").lower()
-    
-    if export_format == "csv":
-        content = _export_doctors_csv()
-        # Encode CSV content as UTF-8 bytes
-        content = content.encode('utf-8')
-        mimetype = "text/csv; charset=utf-8"
-        extension = "csv"
-    elif export_format == "json":
-        content = _export_doctors_json()
-        # Encode JSON content as UTF-8 bytes
-        content = content.encode('utf-8')
-        mimetype = "application/json; charset=utf-8"
-        extension = "json"
-    elif export_format == "xlsx":
-        content = _export_doctors_excel()
-        if content is None:
-            return jsonify({"error": "openpyxl not installed"}), 400
-        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        extension = "xlsx"
-    elif export_format == "pdf":
-        content = _export_doctors_pdf()
-        if content is None:
-            return jsonify({"error": "reportlab not installed"}), 400
-        mimetype = "application/pdf"
-        extension = "pdf"
-    elif export_format == "docx":
-        content = _export_doctors_word()
-        if content is None:
-            return jsonify({"error": "python-docx not installed"}), 400
-        mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        extension = "docx"
-    else:
-        return jsonify({"error": "Invalid format"}), 400
-    
-    return Response(
-        content,
-        mimetype=mimetype,
-        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"}
-    )
 
 
 def _export_doctors_word():
