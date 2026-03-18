@@ -1447,7 +1447,45 @@ DASHBOARD_TEMPLATE = """
       .toast { font-size: .85rem; padding: .75rem 1rem; }
       
       /* Better button spacing on mobile */
-      .btn-group { display: flex; gap: 0.25rem; }
+      .btn-group { display: flex; gap: 0.25rem; position: relative; }
+      
+      /* Dropdown Menu Styles */
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: var(--bg-card2);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0;
+        margin-top: 0.25rem;
+        z-index: 1000;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      
+      .dropdown-menu.show {
+        display: block;
+      }
+      
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        color: var(--text-normal, #e6edf3);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+      
+      .dropdown-item:hover {
+        background-color: var(--bg-card, #161b22);
+      }
+      
+      .dropdown-item i {
+        min-width: 1rem;
+      }
       .btn-sm { padding: .35rem .6rem; font-size: .8rem; }
       
       /* Stack columns on mobile */
@@ -2918,6 +2956,43 @@ async function deleteDoctor(id, btn) {
   }
 })();
 
+/* ─── Dropdown Toggle Handler ─── */
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Bootstrap dropdowns
+  const dropdownButtons = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+  dropdownButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const menu = this.nextElementSibling;
+      if (menu && menu.classList.contains('dropdown-menu')) {
+        menu.classList.toggle('show');
+      }
+    });
+  });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdownMenus = document.querySelectorAll('.dropdown-menu');
+    dropdownMenus.forEach(menu => {
+      if (!menu.parentElement.contains(e.target)) {
+        menu.classList.remove('show');
+      }
+    });
+  });
+  
+  // Close dropdowns when clicking on menu items
+  const dropdownItems = document.querySelectorAll('.dropdown-item');
+  dropdownItems.forEach(item => {
+    item.addEventListener('click', function() {
+      const menu = this.closest('.dropdown-menu');
+      if (menu) {
+        menu.classList.remove('show');
+      }
+    });
+  });
+});
+
 /* ─── Export Functions ─── */
 function exportDoctors(format = 'csv') {
   const formatLabels = {
@@ -3065,6 +3140,9 @@ function toggleTheme() {
   showToast(`Switched to ${isLight ? 'light' : 'dark'} mode`, 'success');
 }
 </script>
+
+<!-- Bootstrap JS Bundle (for dropdown, modals, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Refreshing Indicator -->
 <div id="refreshing-indicator" class="refreshing-indicator">
