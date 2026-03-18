@@ -411,7 +411,7 @@ def api_get_doctors():
 @login_required
 def api_view_doctor(doctor_id):
     """Get full doctor details"""
-    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
+    data, status = _get(f"/api/doctor/getDoctorById?id={doctor_id}")
     if status == 200:
         return jsonify({"success": True, "doctor": data})
     return jsonify({"success": False, "message": f"HTTP {status}"}), 400
