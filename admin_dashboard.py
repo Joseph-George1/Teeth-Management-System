@@ -1023,16 +1023,16 @@ DASHBOARD_TEMPLATE = """
 <div class="sidebar" id="sidebar">
   <div class="brand"><i class="fa-solid fa-tooth"></i>TMS Admin</div>
   <nav class="nav flex-column mt-2">
-    <a class="nav-link active" data-section="overview" href="#" onclick="return showSection('overview',this)">
+    <a class="nav-link active" data-section="overview" href="#" onclick="showSection('overview',this)">
       <i class="fa-solid fa-gauge-high"></i>Overview
     </a>
-    <a class="nav-link" data-section="doctors" href="#" onclick="return showSection('doctors',this)">
+    <a class="nav-link" data-section="doctors" href="#" onclick="showSection('doctors',this)">
       <i class="fa-solid fa-user-doctor"></i>Doctors
     </a>
-    <a class="nav-link" data-section="requests" href="#" onclick="return showSection('requests',this)">
+    <a class="nav-link" data-section="requests" href="#" onclick="showSection('requests',this)">
       <i class="fa-solid fa-file-medical"></i>Requests
     </a>
-    <a class="nav-link" data-section="health" href="#" onclick="return showSection('health',this)">
+    <a class="nav-link" data-section="health" href="#" onclick="showSection('health',this)">
       <i class="fa-solid fa-server"></i>Service Health
     </a>
   </nav>
@@ -1648,24 +1648,16 @@ function closeMobileMenu() {
 }
 
 function showSection(name, el) {
-  event.preventDefault();
-  event.stopPropagation();
-  
+  if (event) event.preventDefault();
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const section = document.querySelector('#section-' + name);
-  if (section) {
-    section.classList.add('active');
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  
+  if (section) section.classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   if (el) el.classList.add('active');
-  
   // Close mobile menu when navigating
   if (window.innerWidth <= 768) {
     closeMobileMenu();
   }
-  
   return false;
 }
 
@@ -1761,7 +1753,7 @@ function setNow() {
 
 /* ─── Charts ─── */
 const charts = {};
-function makeBar(id, labels, data, label = 'Count') {
+function makeBar(id, labels, data, label='Count') {
   const ctx = document.getElementById(id);
   if (!ctx) return;
   if (charts[id]) charts[id].destroy();
