@@ -446,10 +446,8 @@ def api_delete_doctor_admin(doctor_id):
 
 # ── Export endpoints ──
 
-@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
-@login_required
-def export_doctors():
-    """Export doctors list as CSV"""
+def _export_doctors_csv():
+    """Generate CSV for doctors list with UTF-8 encoding"""
     import csv
     from io import StringIO
     
@@ -465,6 +463,60 @@ def export_doctors():
     # Write data
     for d in doctors:
         writer.writerow([
+            str(d.get("id", "")),
+            str(d.get("firstName", "")),
+            str(d.get("lastName", "")),
+            str(d.get("email", "")),
+            str(d.get("phoneNumber", "")),
+            str(d.get("categoryName", "")),
+            str(d.get("cityName", "")),
+            str(d.get("universityName", "")),
+            str(d.get("studyYear", "")),
+        ])
+    
+    output.seek(0)
+    # Return UTF-8 encoded with BOM for better Excel compatibility
+    csv_content = output.getvalue()
+    return '\ufeff' + csv_content  # UTF-8 BOM
+
+
+def _export_doctors_json():
+    """Generate JSON for doctors list with UTF-8 encoding"""
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    return json.dumps(doctors, indent=2, default=str, ensure_ascii=False)
+
+
+def _export_doctors_excel():
+    """Generate Excel for doctors list"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Doctors"
+    
+    # Header
+    headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]
+    ws.append(headers)
+    
+    # Style header
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Data
+    for d in doctors:
+        ws.append([
             d.get("id", ""),
             d.get("firstName", ""),
             d.get("lastName", ""),
@@ -476,19 +528,191 @@ def export_doctors():
             d.get("studyYear", ""),
         ])
     
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    from io import BytesIO
+    output = BytesIO()
+    wb.save(output)
     output.seek(0)
+    return output.getvalue()
+
+
+def _export_doctors_pdf():
+    """Generate PDF for doctors list"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=A4)
+    story = []
+    
+    # Title
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#003366'),
+        spaceAfter=20,
+    )
+    story.append(Paragraph("Doctors List Report", title_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Table data
+    data = [["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]]
+    for d in doctors:
+        data.append([
+            str(d.get("id", "")),
+            str(d.get("firstName", "")),
+            str(d.get("lastName", "")),
+            str(d.get("email", "")),
+            str(d.get("phoneNumber", "")),
+            str(d.get("categoryName", "")),
+            str(d.get("cityName", "")),
+            str(d.get("universityName", "")),
+            str(d.get("studyYear", "")),
+        ])
+    
+    # Create table
+    table = Table(data, colWidths=[0.5*inch, 0.8*inch, 0.8*inch, 1*inch, 0.8*inch, 0.8*inch, 0.7*inch, 0.9*inch, 0.7*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+    ]))
+    story.append(table)
+    
+    doc.build(story)
+    output.seek(0)
+    return output.getvalue()
+
+
+def _export_doctors_word():
+    """Generate Word document for doctors list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    doc = Document()
+    
+    # Title
+    title = doc.add_heading("Doctors List Report", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    
+    # Table
+    table = doc.add_table(rows=1, cols=9)
+    table.style = 'Light Grid Accent 1'
+    
+    # Header
+    header_cells = table.rows[0].cells
+    headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]
+    for i, header in enumerate(headers):
+        header_cells[i].text = header
+        header_cells[i].paragraphs[0].runs[0].font.bold = True
+    
+    # Data
+    for d in doctors:
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(d.get("id", ""))
+        row_cells[1].text = str(d.get("firstName", ""))
+        row_cells[2].text = str(d.get("lastName", ""))
+        row_cells[3].text = str(d.get("email", ""))
+        row_cells[4].text = str(d.get("phoneNumber", ""))
+        row_cells[5].text = str(d.get("categoryName", ""))
+        row_cells[6].text = str(d.get("cityName", ""))
+        row_cells[7].text = str(d.get("universityName", ""))
+        row_cells[8].text = str(d.get("studyYear", ""))
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
+@login_required
+def export_doctors():
+    """Export doctors list in specified format with UTF-8 encoding"""
     from flask import Response
+    
+    export_format = request.args.get("format", "csv").lower()
+    
+    if export_format == "csv":
+        content = _export_doctors_csv()
+        # Encode CSV content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "text/csv; charset=utf-8"
+        extension = "csv"
+    elif export_format == "json":
+        content = _export_doctors_json()
+        # Encode JSON content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "application/json; charset=utf-8"
+        extension = "json"
+    elif export_format == "xlsx":
+        content = _export_doctors_excel()
+        if content is None:
+            return jsonify({"error": "openpyxl not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        extension = "xlsx"
+    elif export_format == "pdf":
+        content = _export_doctors_pdf()
+        if content is None:
+            return jsonify({"error": "reportlab not installed"}), 400
+        mimetype = "application/pdf"
+        extension = "pdf"
+    elif export_format == "docx":
+        content = _export_doctors_word()
+        if content is None:
+            return jsonify({"error": "python-docx not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+    else:
+        return jsonify({"error": "Invalid format"}), 400
+    
     return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+        content,
+        mimetype=mimetype,
+        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"}
     )
 
 
-@app.route(f"{ADMIN_PREFIX}/api/export/requests")
-@login_required
-def export_requests():
-    """Export requests list as CSV"""
+def _export_requests_csv():
+    """Generate CSV for requests list with UTF-8 encoding"""
     import csv
     from io import StringIO
     
@@ -509,6 +733,64 @@ def export_requests():
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
         writer.writerow([
+            str(r.get("id", "")),
+            str(doctor_name),
+            str(r.get("doctorPhoneNumber", "")),
+            str(r.get("doctorCityName", "")),
+            str(r.get("doctorUniversityName", "")),
+            str(r.get("categoryName", "")),
+            str(r.get("status", "")),
+            str(r.get("dateTime", "")),
+            str(r.get("description", "")),
+        ])
+    
+    output.seek(0)
+    # Return UTF-8 encoded with BOM for better Excel compatibility
+    csv_content = output.getvalue()
+    return '\ufeff' + csv_content  # UTF-8 BOM
+
+
+def _export_requests_json():
+    """Generate JSON for requests list with UTF-8 encoding"""
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    return json.dumps(requests_list, indent=2, default=str, ensure_ascii=False)
+
+
+def _export_requests_excel():
+    """Generate Excel for requests list"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Requests"
+    
+    # Header
+    headers = ["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]
+    ws.append(headers)
+    
+    # Style header
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Data
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        ws.append([
             r.get("id", ""),
             doctor_name,
             r.get("doctorPhoneNumber", ""),
@@ -520,14 +802,196 @@ def export_requests():
             r.get("description", ""),
         ])
     
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    from io import BytesIO
+    output = BytesIO()
+    wb.save(output)
     output.seek(0)
+    return output.getvalue()
+
+
+def _export_requests_pdf():
+    """Generate PDF for requests list"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc = SimpleDocTemplate(output, pagesize=landscape(A4))
+    story = []
+    
+    # Title
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#003366'),
+        spaceAfter=20,
+    )
+    story.append(Paragraph("Service Requests List Report", title_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Table data
+    data = [["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]]
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        data.append([
+            str(r.get("id", "")),
+            str(doctor_name),
+            str(r.get("doctorPhoneNumber", "")),
+            str(r.get("doctorCityName", "")),
+            str(r.get("doctorUniversityName", "")),
+            str(r.get("categoryName", "")),
+            str(r.get("status", "")),
+            str(r.get("dateTime", "")),
+            str(r.get("description", "")),
+        ])
+    
+    # Create table
+    table = Table(data, colWidths=[0.5*inch, 1*inch, 0.8*inch, 0.7*inch, 0.9*inch, 0.8*inch, 0.7*inch, 1*inch, 1.2*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+    ]))
+    story.append(table)
+    
+    doc.build(story)
+    output.seek(0)
+    return output.getvalue()
+
+
+def _export_requests_word():
+    """Generate Word document for requests list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    doc = Document()
+    
+    # Title
+    title = doc.add_heading("Service Requests List Report", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    
+    # Table
+    table = doc.add_table(rows=1, cols=9)
+    table.style = 'Light Grid Accent 1'
+    
+    # Header
+    header_cells = table.rows[0].cells
+    headers = ["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]
+    for i, header in enumerate(headers):
+        header_cells[i].text = header
+        header_cells[i].paragraphs[0].runs[0].font.bold = True
+    
+    # Data
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(r.get("id", ""))
+        row_cells[1].text = str(doctor_name)
+        row_cells[2].text = str(r.get("doctorPhoneNumber", ""))
+        row_cells[3].text = str(r.get("doctorCityName", ""))
+        row_cells[4].text = str(r.get("doctorUniversityName", ""))
+        row_cells[5].text = str(r.get("categoryName", ""))
+        row_cells[6].text = str(r.get("status", ""))
+        row_cells[7].text = str(r.get("dateTime", ""))
+        row_cells[8].text = str(r.get("description", ""))
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/requests")
+@login_required
+def export_requests():
+    """Export requests list in specified format with UTF-8 encoding"""
     from flask import Response
+    
+    export_format = request.args.get("format", "csv").lower()
+    
+    if export_format == "csv":
+        content = _export_requests_csv()
+        # Encode CSV content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "text/csv; charset=utf-8"
+        extension = "csv"
+    elif export_format == "json":
+        content = _export_requests_json()
+        # Encode JSON content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "application/json; charset=utf-8"
+        extension = "json"
+    elif export_format == "xlsx":
+        content = _export_requests_excel()
+        if content is None:
+            return jsonify({"error": "openpyxl not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        extension = "xlsx"
+    elif export_format == "pdf":
+        content = _export_requests_pdf()
+        if content is None:
+            return jsonify({"error": "reportlab not installed"}), 400
+        mimetype = "application/pdf"
+        extension = "pdf"
+    elif export_format == "docx":
+        content = _export_requests_word()
+        if content is None:
+            return jsonify({"error": "python-docx not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+    else:
+        return jsonify({"error": "Invalid format"}), 400
+    
     return Response(
-        output.getvalue(),
-        mimetype="text/csv; charset=utf-8",
+        content,
+        mimetype=mimetype,
         headers={
-            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            "Content-Type": "text/csv; charset=utf-8"
+            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}",
+            "Content-Type": mimetype
         }
     )
 
@@ -1291,9 +1755,29 @@ DASHBOARD_TEMPLATE = """
           <button class="btn btn-sm btn-outline-secondary" onclick="clearDoctorFilters()" title="Clear Filters">
             <i class="fa fa-times"></i>
           </button>
-          <button class="btn btn-sm btn-success" onclick="exportDoctors()" title="Export to CSV">
-            <i class="fa fa-download me-1"></i>Export CSV
-          </button>
+          <!-- Export Dropdown -->
+          <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export Options">
+              <i class="fa fa-download me-1"></i>Export Options
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="doctors-export-menu">
+              <li><a class="dropdown-item" href="#" onclick="exportDoctors('csv'); return false;">
+                <i class="fa fa-file-csv me-2 text-success"></i>CSV
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportDoctors('json'); return false;">
+                <i class="fa fa-code me-2 text-info"></i>JSON
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportDoctors('xlsx'); return false;">
+                <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportDoctors('pdf'); return false;">
+                <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportDoctors('docx'); return false;">
+                <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
+              </a></li>
+            </ul>
+          </div>
         </div>
       </div>
       <div class="table-responsive">
@@ -1391,9 +1875,29 @@ DASHBOARD_TEMPLATE = """
         <div class="d-flex align-items-center gap-2">
           <input type="text" id="request-search" class="form-control form-control-sm"
                  style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
-          <button class="btn btn-sm btn-success" onclick="exportRequests()" title="Export to CSV">
-            <i class="fa fa-download me-1"></i>Export CSV
-          </button>
+          <!-- Export Dropdown -->
+          <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export Options">
+              <i class="fa fa-download me-1"></i>Export Options
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="requests-export-menu">
+              <li><a class="dropdown-item" href="#" onclick="exportRequests('csv'); return false;">
+                <i class="fa fa-file-csv me-2 text-success"></i>CSV
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportRequests('json'); return false;">
+                <i class="fa fa-code me-2 text-info"></i>JSON
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportRequests('xlsx'); return false;">
+                <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportRequests('pdf'); return false;">
+                <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportRequests('docx'); return false;">
+                <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
+              </a></li>
+            </ul>
+          </div>
         </div>
       </div>
       <div class="table-responsive">
@@ -2415,14 +2919,28 @@ async function deleteDoctor(id, btn) {
 })();
 
 /* ─── Export Functions ─── */
-function exportDoctors() {
-  window.location.href = `${BASE}/api/export/doctors`;
-  showToast('Downloading doctors CSV...', 'info');
+function exportDoctors(format = 'csv') {
+  const formatLabels = {
+    csv: 'CSV',
+    json: 'JSON',
+    xlsx: 'Excel',
+    pdf: 'PDF',
+    docx: 'Word'
+  };
+  window.location.href = `${BASE}/api/export/doctors?format=${format}`;
+  showToast(`Downloading doctors ${formatLabels[format]}...`, 'info');
 }
 
-function exportRequests() {
-  window.location.href = `${BASE}/api/export/requests`;
-  showToast('Downloading requests CSV...', 'info');
+function exportRequests(format = 'csv') {
+  const formatLabels = {
+    csv: 'CSV',
+    json: 'JSON',
+    xlsx: 'Excel',
+    pdf: 'PDF',
+    docx: 'Word'
+  };
+  window.location.href = `${BASE}/api/export/requests?format=${format}`;
+  showToast(`Downloading requests ${formatLabels[format]}...`, 'info');
 }
 
 /* ─── Doctor Details Modal ─── */

@@ -12,3 +12,6 @@ requests
 gunicorn
 oracledb
 bcrypt
+openpyxl
+reportlab
+python-docx
