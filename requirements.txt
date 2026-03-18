@@ -15,4 +15,4 @@ bcrypt
 openpyxl
 reportlab
 python-docx
-xhtml2pdf
+pdfkit

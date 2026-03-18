@@ -549,16 +549,15 @@ def _export_doctors_excel():
 
 
 def _export_doctors_pdf():
-    """Generate PDF for doctors list with full Unicode support using xhtml2pdf"""
+    """Generate PDF for doctors list with full Unicode support using pdfkit"""
     try:
-        from xhtml2pdf import pisa
+        import pdfkit
     except ImportError:
         return None
     
     analytics = get_analytics(session.get("jwt_token"))
     doctors = analytics.get("doctors_list", [])
     
-    from io import BytesIO
     from datetime import datetime
     
     # Generate HTML content
@@ -569,14 +568,11 @@ def _export_doctors_pdf():
         <meta charset="UTF-8">
         <title>Doctors List Report</title>
         <style>
-            @page {{
-                size: A4 landscape;
-                margin: 1cm;
-            }}
             body {{
                 font-family: Arial, sans-serif;
                 direction: rtl;
                 text-align: right;
+                margin: 20px;
             }}
             .title {{
                 color: #1F497D;
@@ -673,11 +669,19 @@ def _export_doctors_pdf():
     </html>
     """
     
-    # Generate PDF
-    output = BytesIO()
-    pisa.CreatePDF(html_content, dest=output)
-    output.seek(0)
-    return output.getvalue()
+    # Generate PDF using pdfkit
+    options = {
+        'page-size': 'A4',
+        'orientation': 'Landscape',
+        'margin-top': '0.4in',
+        'margin-right': '0.4in',
+        'margin-bottom': '0.4in',
+        'margin-left': '0.4in',
+        'encoding': 'UTF-8',
+    }
+    
+    pdf_data = pdfkit.from_string(html_content, False, options=options)
+    return pdf_data
 
 
 
@@ -965,16 +969,15 @@ def _export_requests_excel():
 
 
 def _export_requests_pdf():
-    """Generate PDF for requests list with full Unicode support using xhtml2pdf"""
+    """Generate PDF for requests list with full Unicode support using pdfkit"""
     try:
-        from xhtml2pdf import pisa
+        import pdfkit
     except ImportError:
         return None
     
     analytics = get_analytics(session.get("jwt_token"))
     requests_list = analytics.get("requests_list", [])
     
-    from io import BytesIO
     from datetime import datetime
     
     # Generate HTML content
@@ -985,14 +988,11 @@ def _export_requests_pdf():
         <meta charset="UTF-8">
         <title>Service Requests Report</title>
         <style>
-            @page {{
-                size: A4 landscape;
-                margin: 1cm;
-            }}
             body {{
                 font-family: Arial, sans-serif;
                 direction: rtl;
                 text-align: right;
+                margin: 20px;
             }}
             .title {{
                 color: #1F497D;
@@ -1090,11 +1090,19 @@ def _export_requests_pdf():
     </html>
     """
     
-    # Generate PDF
-    output = BytesIO()
-    pisa.CreatePDF(html_content, dest=output)
-    output.seek(0)
-    return output.getvalue()
+    # Generate PDF using pdfkit
+    options = {
+        'page-size': 'A4',
+        'orientation': 'Landscape',
+        'margin-top': '0.4in',
+        'margin-right': '0.4in',
+        'margin-bottom': '0.4in',
+        'margin-left': '0.4in',
+        'encoding': 'UTF-8',
+    }
+    
+    pdf_data = pdfkit.from_string(html_content, False, options=options)
+    return pdf_data
 
 
 def _export_requests_word():
