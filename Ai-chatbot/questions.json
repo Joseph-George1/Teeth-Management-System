@@ -1,8 +1,8 @@
 {
   "Q0": {
     "id": "Q0",
-    "text_en": "اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
-    "text_ar": " اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
+    "text_en": "Choose your language / Other to talk with Thoutha smart assistant",
+    "text_ar": "اختر اللغة / أخري للتحدث مع مساعد ثوثه الذكي",
     "options": [
       { "id": "EN", "text_en": "English", "text_ar": "الإنجليزية" },
       { "id": "AR", "text_en": "Arabic", "text_ar": "العربية" }
