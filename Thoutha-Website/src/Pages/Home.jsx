@@ -19,7 +19,7 @@ export default function Home(){
         <div className="hero-title-flex">
           <p className="hero-title-1">احجز وسجل </p>
           <p className="hero-title-2">مع افضل الاطباء فى نطاقك</p>
-          <p onClick={() => aboutRef.current.scrollIntoView({ behavior: "smooth" })} className="hero-button"><span>احجز الان</span></p> 
+          <p onClick={() => aboutRef.current.scrollIntoView({ behavior: "smooth" })} className="hero-button"><span>احجز الان</span></p>
         </div>
         <p className="hero-img">
           <img src="./home-img.png" alt="img" />
@@ -72,7 +72,7 @@ export default function Home(){
                 <Link to="/removable-prosthetics">
                   <div className="circle-icon">
                     <img src="./تركيبات اسنان.svg" alt="" />
-                    <p className="icon-1-title">تريكيبات متحركة</p>
+                    <p className="icon-1-title">تركيبات متحركة</p>
                   </div>
                 </Link>
               </div>
@@ -80,7 +80,7 @@ export default function Home(){
                 <Link to="/dental-implant">
                   <div className="circle-icon">
                     <img src="./حشو اسنان.svg" alt="" />
-                    <p className="icon-1-title">زراعة الاسنان</p>
+                    <p className="icon-1-title">زراعة الأسنان</p>
                   </div>
                 </Link>
               </div>
@@ -90,7 +90,7 @@ export default function Home(){
                 <Link to="/cleaning-whitening">
                   <div className="circle-icon">
                     <img src="./تنظيف وتبييض.svg" alt="" />
-                    <p className="icon-1-title">تنظيف وتبييض</p>
+                    <p className="icon-1-title">تنظيف وتبييض الأسنان</p>
                   </div>
                 </Link>
               </div>
@@ -98,7 +98,7 @@ export default function Home(){
                 <Link to="/braces">
                   <div className="circle-icon">
                     <img src="./تقويم اسنان.svg" alt="" />
-                    <p className="icon-1-title">تقويم الاسنان</p>
+                    <p className="icon-1-title">تقويم الأسنان</p>
                   </div>
                 </Link>
               </div>
@@ -116,7 +116,7 @@ export default function Home(){
                 <Link to="/pediatric-dentistry">
                   <div className="circle-icon">
                     <img src="./فحص شامل.svg" alt="" />
-                    <p className="icon-1-title">الاطفال</p>
+                    <p className="icon-1-title">طب أسنان الأطفال</p>
                   </div>
                 </Link>
               </div>

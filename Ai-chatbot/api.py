@@ -112,12 +112,12 @@ CATEGORY_TRANSLATIONS = {
     "Amalgam Filling": {"en": "Amalgam Filling", "ar": "حشو املجم"},
     "Endodontic Fillings (Root Canal)": {"en": "Endodontic Fillings (Root Canal)", "ar": "حشو عصب"},
     "Fixed Prosthetics (Crowns and Bridges)": {"en": "Fixed Prosthetics (Crowns and Bridges)", "ar": "تيجان وجسور"},
-    "Removable Prosthetics": {"en": "Removable Prosthetics", "ar": "تريكيبات متحركة"},
-    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الاسنان"},
-    "Cleaning and Whitening": {"en": "Cleaning and Whitening", "ar": "تنظيف وتبييض"},
-    "Orthodontics": {"en": "Orthodontics", "ar": "تقويم الاسنان"},
+    "Removable Prosthetics": {"en": "Removable Prosthetics", "ar": "تركيبات متحركة"},
+    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الأسنان"},
+    "Cleaning and Whitening": {"en": "Cleaning and Whitening", "ar": "تنظيف وتبييض الأسنان"},
+    "Orthodontics": {"en": "Orthodontics", "ar": "تقويم الأسنان"},
     "Surgery and Extraction": {"en": "Surgery and Extraction", "ar": "الجراحة والخلع"},
-    "Pediatric Dentistry": {"en": "Pediatric Dentistry", "ar": "الاطفال"}
+    "Pediatric Dentistry": {"en": "Pediatric Dentistry", "ar": "طب أسنان الأطفال"}
 }
 
 def validate_transitions():

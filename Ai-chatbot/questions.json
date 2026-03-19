@@ -53,8 +53,8 @@
     "text_en": "Is this for an adult or a child?",
     "text_ar": "هل هذا لشخص بالغ أم طفل؟",
     "options": [
-      { "id": "B1", "text_en": "Adult", "text_ar": "بالغ" },
-      { "id": "B2", "text_en": "Child", "text_ar": "طفل" }
+      { "id": "B1", "text_en": "Adult", "text_ar": "بالغ (تقويم الأسنان)" },
+      { "id": "B2", "text_en": "Child", "text_ar": "طفل (طب أسنان الأطفال)" }
     ]
   },
   "Q2C": {
@@ -62,8 +62,8 @@
     "text_en": "How many teeth are missing? Do you want something permanent?",
     "text_ar": "كم سن مفقود؟ هل تريد شيئًا دائمًا؟",
     "options": [
-      { "id": "C1", "text_en": "Just one tooth, want something permanent", "text_ar": "سن واحد فقط، أريد شيئًا دائمًا" },
-      { "id": "C2", "text_en": "Multiple teeth, or prefer removable", "text_ar": "عدة أسنان، أو أفضل شيئًا قابلًا للإزالة" }
+      { "id": "C1", "text_en": "Just one tooth, want something permanent", "text_ar": "سن واحد فقط، أريد شيئًا دائمًا (زراعة الأسنان)" },
+      { "id": "C2", "text_en": "Multiple teeth, or prefer removable", "text_ar": "عدة أسنان، أو أفضل شيئًا قابلًا للإزالة (تركيبات متحركة)" }
     ]
   },
   "Q2D": {
@@ -81,8 +81,8 @@
     "text_en": "What do you need specifically?",
     "text_ar": "ماذا تحتاج بالتحديد؟",
     "options": [
-      { "id": "E1", "text_en": "Cleaning and Whitening", "text_ar": "تنظيف وتبييض" },
-      { "id": "E2", "text_en": "Tooth Extraction", "text_ar": "خلع أسنان" },
+      { "id": "E1", "text_en": "Cleaning and Whitening", "text_ar": "تنظيف وتبييض الأسنان" },
+      { "id": "E2", "text_en": "Tooth Extraction", "text_ar": "خلع أسنان (الجراحة والخلع)" },
       { "id": "E3", "text_en": "Something else", "text_ar": "شيء آخر" }
     ]
   }
