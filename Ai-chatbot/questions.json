@@ -17,7 +17,7 @@
       { "id": "B", "text_en": "My tooth hurts", "text_ar": "أسناني تؤلمني" },
       { "id": "C", "text_en": "My teeth are crooked", "text_ar": "أسناني معوجة" },
       { "id": "D", "text_en": "I'm missing a tooth", "text_ar": "لدي سن مفقود" },
-      { "id": "E", "text_en": "Just a regular check-up", "text_ar": "فحص عادي فقط" },
+      { "id": "E", "text_en": "Cleaning and Whitening", "text_ar": "تنظيف وتبييض" },
       { "id": "F", "text_en": "My tooth is broken", "text_ar": "سني مكسور" },
       { "id": "G", "text_en": "Something else", "text_ar": "شيء آخر" }
     ]
@@ -46,7 +46,16 @@
     "text_ar": "هل ترى ثقب أو بقعة سوداء على سنك؟",
     "options": [
       { "id": "B1a", "text_en": "Yes, I can see it", "text_ar": "نعم، أراه" },
-      { "id": "B1b", "text_en": "No, nothing visible", "text_ar": "لا، لا شيء مرئي" }
+      { "id": "B1b", "text_en": "No, nothing visible", "text_ar": "لا، لا شيء مرئي (أحتاج تنظيف)" }
+    ]
+  },
+  "Q3C": {
+    "id": "Q3C",
+    "text_en": "What kind of filling do you prefer?",
+    "text_ar": "أي نوع من الحشوات تفضل؟",
+    "options": [
+      { "id": "C1a", "text_en": "Cosmetic (Tooth colored)", "text_ar": "حشو تجميلي (بلون السن)" },
+      { "id": "C1b", "text_en": "Amalgam (Silver/Black)", "text_ar": "حشو املجم (فضي/اسود)" }
     ]
   },
   "Q4B": {
@@ -95,7 +104,7 @@
       { "id": "G2", "text_en": "Pain / need to remove tooth", "text_ar": "ألم / أحتاج خلع سن" },
       { "id": "G3", "text_en": "Straighten teeth", "text_ar": "تقويم أسنان" },
       { "id": "G4", "text_en": "Replace missing tooth", "text_ar": "استبدال سن مفقود" },
-      { "id": "G5", "text_en": "Just a check-up", "text_ar": "فحص فقط" }
+      { "id": "G5", "text_en": "Cleaning and Whitening", "text_ar": "تنظيف وتبييض" }
     ]
   }
 }

@@ -53,7 +53,7 @@ TRANSITIONS = {
         "B": {"next": "Q2B"},
         "C": {"next": "Q2C"},
         "D": {"next": "Q2D"},
-        "E": {"category": "Comprehensive Dental Examination"},
+        "E": {"category": "Cleaning and Whitening"},
         "F": {"next": "Q2F"},
         "G": {"chatbot": True}  # Trigger chatbot mode for "Something else"
     },
@@ -66,8 +66,12 @@ TRANSITIONS = {
         "B2": {"next": "Q4B"}
     },
     "Q3B": {
-        "B1a": {"category": "Operative Fillings (Cosmetic and Amalgam)"},
-        "B1b": {"category": "Comprehensive Dental Examination"}
+        "B1a": {"next": "Q3C"},
+        "B1b": {"category": "Cleaning and Whitening"}
+    },
+    "Q3C": {
+        "C1a": {"category": "Cosmetic Filling"},
+        "C1b": {"category": "Amalgam Filling"}
     },
     "Q4B": {
         "B2a": {"category": "Endodontic Fillings (Root Canal)"},
@@ -83,7 +87,7 @@ TRANSITIONS = {
     },
     "Q2F": {
         "F1": {"category": "Fixed Prosthetics (Crowns and Bridges)"},
-        "F2": {"category": "Operative Fillings (Cosmetic and Amalgam)"},
+        "F2": {"next": "Q3C"},
         "F3": {"category": "Surgery and Extraction"}
     },
     "Q2G": {
@@ -91,13 +95,14 @@ TRANSITIONS = {
         "G2": {"category": "Surgery and Extraction"},
         "G3": {"category": "Orthodontics"},
         "G4": {"category": "Dental Implants"},
-        "G5": {"category": "Comprehensive Dental Examination"}
+        "G5": {"category": "Cleaning and Whitening"}
     }
 }
 
 # Allowed final categories
 CATEGORIES = [
-    "Operative Fillings (Cosmetic and Amalgam)",
+    "Cosmetic Filling",
+    "Amalgam Filling",
     "Endodontic Fillings (Root Canal)",
     "Fixed Prosthetics (Crowns and Bridges)",
     "Removable Prosthetics",
@@ -105,22 +110,21 @@ CATEGORIES = [
     "Cleaning and Whitening",
     "Orthodontics",
     "Surgery and Extraction",
-    "Pediatric Dentistry",
-    "Comprehensive Dental Examination"
+    "Pediatric Dentistry"
 ]
 
 # Category translations
 CATEGORY_TRANSLATIONS = {
-    "Operative Fillings (Cosmetic and Amalgam)": {"en": "Operative Fillings (Cosmetic and Amalgam)", "ar": "حشوات تشغيلية (تجميلية وأملغم)"},
-    "Endodontic Fillings (Root Canal)": {"en": "Endodontic Fillings (Root Canal)", "ar": "حشوات علاج الجذور (حشو العصب)"},
-    "Fixed Prosthetics (Crowns and Bridges)": {"en": "Fixed Prosthetics (Crowns and Bridges)", "ar": "تركيبات ثابتة (تيجان وجسور)"},
-    "Removable Prosthetics": {"en": "Removable Prosthetics", "ar": "تركيبات متحركة"},
-    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الأسنان"},
+    "Cosmetic Filling": {"en": "Cosmetic Filling", "ar": "حشو تجميلي"},
+    "Amalgam Filling": {"en": "Amalgam Filling", "ar": "حشو املجم"},
+    "Endodontic Fillings (Root Canal)": {"en": "Endodontic Fillings (Root Canal)", "ar": "حشو عصب"},
+    "Fixed Prosthetics (Crowns and Bridges)": {"en": "Fixed Prosthetics (Crowns and Bridges)", "ar": "تيجان وجسور"},
+    "Removable Prosthetics": {"en": "Removable Prosthetics", "ar": "تريكيبات متحركة"},
+    "Dental Implants": {"en": "Dental Implants", "ar": "زراعة الاسنان"},
     "Cleaning and Whitening": {"en": "Cleaning and Whitening", "ar": "تنظيف وتبييض"},
-    "Orthodontics": {"en": "Orthodontics", "ar": "تقويم الأسنان"},
+    "Orthodontics": {"en": "Orthodontics", "ar": "تقويم الاسنان"},
     "Surgery and Extraction": {"en": "Surgery and Extraction", "ar": "الجراحة والخلع"},
-    "Pediatric Dentistry": {"en": "Pediatric Dentistry", "ar": "طب الأسنان للأطفال"},
-    "Comprehensive Dental Examination": {"en": "Comprehensive Dental Examination", "ar": "فحص شامل للأسنان"}
+    "Pediatric Dentistry": {"en": "Pediatric Dentistry", "ar": "الاطفال"}
 }
 
 def validate_transitions():
@@ -369,9 +373,9 @@ def answer():
     outcome = trans.get(answer_id)
     
     if not outcome:
-        # No transition found, default to Comprehensive Dental Examination
+        # No transition found, default to Cleaning and Whitening
         session["resolved"] = True
-        session["category"] = "Comprehensive Dental Examination"
+        session["category"] = "Cleaning and Whitening"
         session["reason"] = decision_path_reason(session) + " -> default"
         localized_cat = get_localized_category(session["category"], session.get("language"))
         return jsonify({
@@ -424,10 +428,10 @@ def answer():
         next_q = outcome["next"]
         session["current_question_id"] = next_q
         
-        # Safety: if follow-ups exceed threshold, default to comprehensive exam
+        # Safety: if follow-ups exceed threshold, default to cleaning and whitening
         if len(session["answers"]) >= 4 and not session["resolved"]:
             session["resolved"] = True
-            session["category"] = "Comprehensive Dental Examination"
+            session["category"] = "Cleaning and Whitening"
             session["reason"] = decision_path_reason(session) + " -> fallback after max follow-ups"
             localized_cat = get_localized_category(session["category"], session.get("language"))
             return jsonify({
@@ -444,7 +448,7 @@ def answer():
 
     # Unknown outcome structure
     session["resolved"] = True
-    session["category"] = "Comprehensive Dental Examination"
+    session["category"] = "Cleaning and Whitening"
     session["reason"] = decision_path_reason(session) + " -> unknown outcome"
     localized_cat = get_localized_category(session["category"], session.get("language"))
     return jsonify({
