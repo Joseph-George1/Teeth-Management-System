@@ -1,55 +1,63 @@
--- SQL script to synchronize categories with the 10 required ones
--- We use a safer approach to avoid ORA-02292: integrity constraint violation
+-- Revised SQL script to synchronize categories with the 10 required ones
+-- This script handles duplicates by merging names to IDs (1-10) and updating references.
+-- 1. Create a temporary table for our target list
+DECLARE
+    TYPE cat_rec IS RECORD (id NUMBER, name VARCHAR2(255));
+    TYPE cat_list IS TABLE OF cat_rec;
+    targets cat_list := cat_list(
+        cat_rec(1, 'حشو تجميلي'),
+        cat_rec(2, 'حشو املجم'),
+        cat_rec(3, 'حشو عصب'),
+        cat_rec(4, 'تيجان وجسور'),
+        cat_rec(5, 'تريكيبات متحركة'),
+        cat_rec(6, 'زراعة الاسنان'),
+        cat_rec(7, 'تنظيف وتبييض'),
+        cat_rec(8, 'تقويم الاسنان'),
+        cat_rec(9, 'الجراحة والخلع'),
+        cat_rec(10, 'الاطفال')
+    );
+    existing_id NUMBER;
+BEGIN
+    FOR i IN targets.FIRST .. targets.LAST LOOP
+        -- A. Find if this name exists under a different ID
+        BEGIN
+            SELECT id INTO existing_id FROM CATEGORY WHERE name = targets(i).name AND id != targets(i).id AND ROWNUM = 1;
+            
+            -- B. Update DOCTOR references
+            UPDATE DOCTOR SET category_id = targets(i).id WHERE category_id = existing_id;
+            
+            -- C. Update Requests references
+            UPDATE Requests SET category_id = targets(i).id WHERE category_id = existing_id;
+            
+            -- D. Delete the old redundant category (now it has no children)
+            DELETE FROM CATEGORY WHERE id = existing_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN NULL;
+        END;
 
--- 1. Identify categories that are NOT in the target list
--- Instead of deleting them, we can try to rename them if possible, or just leave them
--- if they are referenced. However, the requirement is to "remove all categories and only include these 10".
+        -- E. Ensure the target ID exists with the target Name
+        -- First, if another record has this target ID but a DIFFERENT name, we might have a conflict
+        -- But our MERGE handles it by updating the name.
+        -- However, if another record has the target NAME but a DIFFERENT ID, we already handled it above.
+        
+        BEGIN
+            -- Ensure the target ID exists
+            INSERT INTO CATEGORY (id, name) VALUES (targets(i).id, targets(i).name);
+        EXCEPTION
+            WHEN DUP_VAL_ON_INDEX THEN
+                -- If ID already exists, update the name
+                UPDATE CATEGORY SET name = targets(i).name WHERE id = targets(i).id;
+        END;
+    END LOOP;
 
--- To handle references, we can't easily delete.
--- Strategy:
--- A. Update existing categories to match the new names where possible.
--- B. Insert new categories if they don't exist.
--- C. If there are extra categories that are NOT in the list, we might have to keep them if they are referenced,
---    but we can mark them as 'OLD_' or similar if we wanted.
---    Or, we can try to delete only those that are NOT referenced.
+    -- 2. Handle any remaining categories that are NOT in the target list (IDs 1-10)
+    -- This includes categories with names NOT in the target list.
+    -- To be safe, we only delete those that are NOT referenced.
+    DELETE FROM CATEGORY
+    WHERE id NOT BETWEEN 1 AND 10
+      AND id NOT IN (SELECT category_id FROM DOCTOR WHERE category_id IS NOT NULL)
+      AND id NOT IN (SELECT category_id FROM Requests WHERE category_id IS NOT NULL);
 
--- First, let's ensure the 10 categories exist.
--- We use MERGE to either update or insert.
-
-MERGE INTO CATEGORY t
-USING (
-    SELECT 1 AS id, 'حشو تجميلي' AS name FROM DUAL UNION ALL
-    SELECT 2 AS id, 'حشو املجم' AS name FROM DUAL UNION ALL
-    SELECT 3 AS id, 'حشو عصب' AS name FROM DUAL UNION ALL
-    SELECT 4 AS id, 'تيجان وجسور' AS name FROM DUAL UNION ALL
-    SELECT 5 AS id, 'تريكيبات متحركة' AS name FROM DUAL UNION ALL
-    SELECT 6 AS id, 'زراعة الاسنان' AS name FROM DUAL UNION ALL
-    SELECT 7 AS id, 'تنظيف وتبييض' AS name FROM DUAL UNION ALL
-    SELECT 8 AS id, 'تقويم الاسنان' AS name FROM DUAL UNION ALL
-    SELECT 9 AS id, 'الجراحة والخلع' AS name FROM DUAL UNION ALL
-    SELECT 10 AS id, 'الاطفال' AS name FROM DUAL
-) s
-ON (t.ID = s.id)
-WHEN MATCHED THEN
-    UPDATE SET t.NAME = s.name
-WHEN NOT MATCHED THEN
-    INSERT (ID, NAME) VALUES (s.id, s.name);
-
--- Now, for categories that are NOT in the list of IDs (1-10)
--- and NOT in our target names.
--- We try to delete only those that are NOT referenced by Doctors or Requests.
-
-DELETE FROM CATEGORY
-WHERE ID NOT BETWEEN 1 AND 10
-  AND NAME NOT IN (
-    'حشو تجميلي', 'حشو املجم', 'حشو عصب', 'تيجان وجسور', 'تريكيبات متحركة',
-    'زراعة الاسنان', 'تنظيف وتبييض', 'تقويم الاسنان', 'الجراحة والخلع', 'الاطفال'
-  )
-  AND ID NOT IN (SELECT category_id FROM DOCTOR WHERE category_id IS NOT NULL)
-  AND ID NOT IN (SELECT category_id FROM Requests WHERE category_id IS NOT NULL);
-
--- For those that ARE referenced but not in our 10, we can't delete them.
--- They will remain in the database but won't be easily accessible from the UI if the UI only fetches 1-10
--- or if the AI chatbot only uses the 10 names.
-
-COMMIT;
+    COMMIT;
+END;
+/
