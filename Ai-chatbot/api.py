@@ -53,49 +53,42 @@ TRANSITIONS = {
         "B": {"next": "Q2B"},
         "C": {"next": "Q2C"},
         "D": {"next": "Q2D"},
-        "E": {"category": "Cleaning and Whitening"},
-        "F": {"next": "Q2F"},
-        "G": {"chatbot": True}  # Trigger chatbot mode for "Something else"
+        "E": {"next": "Q2E"},
+        "F": {"chatbot": True}  # Trigger chatbot mode for "Something else"
     },
     "Q2A": {
-        "A1": {"category": "Cleaning and Whitening"},
-        "A2": {"category": "Fixed Prosthetics (Crowns and Bridges)"}
+        "A1": {"next": "Q3A"},
+        "A2": {"next": "Q4A"}
     },
-    "Q2B": {
-        "B1": {"next": "Q3B"},
-        "B2": {"next": "Q4B"}
-    },
-    "Q3B": {
-        "B1a": {"next": "Q3C"},
-        "B1b": {"category": "Cleaning and Whitening"}
+    "Q3A": {
+        "A1a": {"next": "Q3C"},
+        "A1b": {"chatbot": True}
     },
     "Q3C": {
         "C1a": {"category": "Cosmetic Filling"},
         "C1b": {"category": "Amalgam Filling"}
     },
-    "Q4B": {
-        "B2a": {"category": "Endodontic Fillings (Root Canal)"},
-        "B2b": {"category": "Surgery and Extraction"}
+    "Q4A": {
+        "A2a": {"category": "Endodontic Fillings (Root Canal)"},
+        "A2b": {"chatbot": True}
+    },
+    "Q2B": {
+        "B1": {"category": "Orthodontics"},
+        "B2": {"category": "Pediatric Dentistry"}
     },
     "Q2C": {
-        "C1": {"category": "Orthodontics"},
-        "C2": {"category": "Pediatric Dentistry"}
+        "C1": {"category": "Dental Implants"},
+        "C2": {"category": "Removable Prosthetics"}
     },
     "Q2D": {
-        "D1": {"category": "Dental Implants"},
-        "D2": {"category": "Removable Prosthetics"}
+        "D1": {"category": "Fixed Prosthetics (Crowns and Bridges)"},
+        "D2": {"next": "Q3C"},
+        "D3": {"chatbot": True}
     },
-    "Q2F": {
-        "F1": {"category": "Fixed Prosthetics (Crowns and Bridges)"},
-        "F2": {"next": "Q3C"},
-        "F3": {"category": "Surgery and Extraction"}
-    },
-    "Q2G": {
-        "G1": {"category": "Cleaning and Whitening"},
-        "G2": {"category": "Surgery and Extraction"},
-        "G3": {"category": "Orthodontics"},
-        "G4": {"category": "Dental Implants"},
-        "G5": {"category": "Cleaning and Whitening"}
+    "Q2E": {
+        "E1": {"category": "Cleaning and Whitening"},
+        "E2": {"category": "Surgery and Extraction"},
+        "E3": {"chatbot": True}
     }
 }
 
@@ -246,7 +239,7 @@ def evaluate_answers(answers):
         trans = TRANSITIONS.get(current_q, {})
         outcome = trans.get(aid)
         if not outcome:
-            return ("Comprehensive Dental Examination", " -> ".join(path) + " -> default")
+            return ("Pediatric Dentistry", " -> ".join(path) + " -> default")
         if "category" in outcome:
             return (outcome["category"], " -> ".join(path))
         if "next" in outcome:
@@ -373,9 +366,9 @@ def answer():
     outcome = trans.get(answer_id)
     
     if not outcome:
-        # No transition found, default to Cleaning and Whitening
+        # No transition found, default to Pediatric Dentistry
         session["resolved"] = True
-        session["category"] = "Cleaning and Whitening"
+        session["category"] = "Pediatric Dentistry"
         session["reason"] = decision_path_reason(session) + " -> default"
         localized_cat = get_localized_category(session["category"], session.get("language"))
         return jsonify({
@@ -428,10 +421,10 @@ def answer():
         next_q = outcome["next"]
         session["current_question_id"] = next_q
         
-        # Safety: if follow-ups exceed threshold, default to cleaning and whitening
+        # Safety: if follow-ups exceed threshold, default to Pediatric Dentistry
         if len(session["answers"]) >= 4 and not session["resolved"]:
             session["resolved"] = True
-            session["category"] = "Cleaning and Whitening"
+            session["category"] = "Pediatric Dentistry"
             session["reason"] = decision_path_reason(session) + " -> fallback after max follow-ups"
             localized_cat = get_localized_category(session["category"], session.get("language"))
             return jsonify({
@@ -448,7 +441,7 @@ def answer():
 
     # Unknown outcome structure
     session["resolved"] = True
-    session["category"] = "Cleaning and Whitening"
+    session["category"] = "Pediatric Dentistry"
     session["reason"] = decision_path_reason(session) + " -> unknown outcome"
     localized_cat = get_localized_category(session["category"], session.get("language"))
     return jsonify({

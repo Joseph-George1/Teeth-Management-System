@@ -33,24 +33,6 @@ export default function Home(){
           <div className="category-icons">
             <div className="category-icon">
               <div className="category-icon-1">
-                <Link to="/teeth-whitening">
-                  <div className="circle-icon">
-                    <img src="./تبيض اسنان.svg" alt="" />
-                    <p className="icon-1-title">تنظيف وتبييض</p>
-                  </div>
-                </Link>
-              </div>
-              <div className="category-icon-1">
-                <Link to="/crowns&bridges">
-                  <div className="circle-icon">
-                    <img src="./تركيبات اسنان.svg" alt="" />
-                    <p className="icon-1-title">تيجان وجسور</p>
-                  </div>
-                </Link>
-              </div>
-            </div>
-            <div className="category-icon">
-              <div className="category-icon-1">
                 <Link to="/dental-filling">
                   <div className="circle-icon">
                     <img src="./حشو اسنان.svg" alt="" />
@@ -69,28 +51,28 @@ export default function Home(){
             </div>
             <div className="category-icon">
               <div className="category-icon-1">
-                <Link to="/braces">
+                <Link to="/dental-filling">
                   <div className="circle-icon">
-                    <img src="./تقويم اسنان.svg" alt="" />
-                    <p className="icon-1-title">تقويم الاسنان</p>
+                    <img src="./حشو اسنان.svg" alt="" />
+                    <p className="icon-1-title">حشو عصب</p>
                   </div>
                 </Link>
               </div>
               <div className="category-icon-1">
-                <Link to="/tooth-extraction">
+                <Link to="/crowns&bridges">
                   <div className="circle-icon">
-                    <img src="./خلع اسنان.svg" alt="" />
-                    <p className="icon-1-title">الجراحة والخلع</p>
+                    <img src="./تركيبات اسنان.svg" alt="" />
+                    <p className="icon-1-title">تيجان وجسور</p>
                   </div>
                 </Link>
               </div>
             </div>
             <div className="category-icon">
               <div className="category-icon-1">
-                <Link to="/dental-implant">
+                <Link to="/removable-prosthetics">
                   <div className="circle-icon">
-                    <img src="./حشو اسنان.svg" alt="" />
-                    <p className="icon-1-title">حشو عصب</p>
+                    <img src="./تركيبات اسنان.svg" alt="" />
+                    <p className="icon-1-title">تريكيبات متحركة</p>
                   </div>
                 </Link>
               </div>
@@ -105,18 +87,36 @@ export default function Home(){
             </div>
             <div className="category-icon">
               <div className="category-icon-1">
-                <Link to="/pediatric-dentistry">
+                <Link to="/cleaning-whitening">
                   <div className="circle-icon">
-                    <img src="./فحص شامل.svg" alt="" />
-                    <p className="icon-1-title">الاطفال</p>
+                    <img src="./تنظيف وتبييض.svg" alt="" />
+                    <p className="icon-1-title">تنظيف وتبييض</p>
                   </div>
                 </Link>
               </div>
               <div className="category-icon-1">
-                <Link to="/removable-prosthetics">
+                <Link to="/braces">
                   <div className="circle-icon">
-                    <img src="./تركيبات اسنان.svg" alt="" />
-                    <p className="icon-1-title">تريكيبات متحركة</p>
+                    <img src="./تقويم اسنان.svg" alt="" />
+                    <p className="icon-1-title">تقويم الاسنان</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+            <div className="category-icon">
+              <div className="category-icon-1">
+                <Link to="/surgery-extraction">
+                  <div className="circle-icon">
+                    <img src="./جراحة وخلع.svg" alt="" />
+                    <p className="icon-1-title">الجراحة والخلع</p>
+                  </div>
+                </Link>
+              </div>
+              <div className="category-icon-1">
+                <Link to="/pediatric-dentistry">
+                  <div className="circle-icon">
+                    <img src="./فحص شامل.svg" alt="" />
+                    <p className="icon-1-title">الاطفال</p>
                   </div>
                 </Link>
               </div>
