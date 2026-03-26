@@ -44,6 +44,7 @@ export default function App() {
 
   return (
     <>
+    {/* <NavBar/> */}
     {!hideNavBar && <NavBar/>}
     <Routes>
       {/* <Route path="/" element={<Home/>}></Route> */}
@@ -88,6 +89,7 @@ export default function App() {
       <Route path="/401" element={<UnauthorizedPage/>}></Route>
     </Routes>
     {!hideNavBar && <Footer/>}
+    {/* <Footer/> */}
     </>
   );
 }

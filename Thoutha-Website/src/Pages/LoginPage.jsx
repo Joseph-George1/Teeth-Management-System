@@ -37,7 +37,7 @@ export default function LoginPage() {
       if (response.ok && data?.token) {
         await login(data.token);
         // navigate('/doctor-home', { replace: true });
-        navigate("/", {replace:true})
+        navigate("/", {replace:true});
       } else if (response.ok) {
         setError('لم يتم استلام رمز الدخول من الخادم');
       } else {
