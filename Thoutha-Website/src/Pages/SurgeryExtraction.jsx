@@ -24,12 +24,12 @@ export default function SurgeryExtraction() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="الجراحه والخلع" categoryId={9} refreshKey={refreshKey} />
+      <RequestsList categoryName="الجراحة والخلع" categoryId={9} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="الجراحه والخلع"
+        specialization="الجراحة والخلع"
         categoryId={9}
       />
     </>

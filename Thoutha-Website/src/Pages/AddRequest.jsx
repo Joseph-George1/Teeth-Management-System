@@ -91,8 +91,8 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
       const body = {
         description,
         dateTime,
-        ...(categoryId ? { categoryId } : {}),
-        ...(specialization ? { categoryName: specialization } : {}),
+        categoryId,
+        categoryName: specialization,
       };
 
       const response = await fetch("https://thoutha.page/api/request/createRequest", {
