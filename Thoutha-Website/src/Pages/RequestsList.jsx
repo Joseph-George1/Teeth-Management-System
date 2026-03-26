@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 
 const API_URL = "https://thoutha.page/api/request/getRequestByCategoryId";
+const API_URL_BY_NAME = "https://thoutha.page/api/request/getRequestByCategoryName";
 
 const getName = (req) =>
   `${req?.doctorFirstName || req?.firstName || req?.first_name || req?.patientName || req?.name || ""}
@@ -147,7 +148,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
   };
 
   useEffect(() => {
-    if (!categoryId) return;
+    if (!categoryId && !categoryName) return;
 
     let cancelled = false;
     setLoading(true);
@@ -158,13 +159,42 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       ? { Authorization: `Bearer ${token}` }
       : {};
 
-    fetch(`${API_URL}?categoryId=${categoryId}`, { headers })
-      .then((res) => {
+    // Helper function to attempt fetch with fallback
+    const attemptFetch = async () => {
+      // Try categoryName endpoint first if available
+      if (categoryName) {
+        try {
+          const res = await fetch(`${API_URL_BY_NAME}?categoryName=${encodeURIComponent(categoryName)}`, { headers });
+          if (res.ok) {
+            return await res.json();
+          }
+        } catch (err) {
+          // Fall through to categoryId attempt
+        }
+      }
+      
+      // Fall back to categoryId endpoint
+      if (categoryId) {
+        const res = await fetch(`${API_URL}?categoryId=${categoryId}`, { headers });
         if (!res.ok) throw new Error("فشل تحميل الطلبات");
-        return res.json();
-      })
+        return await res.json();
+      }
+      
+      throw new Error("معرّف الفئة مفقود");
+    };
+
+    attemptFetch()
       .then((data) => {
-        if (!cancelled) setRequests(normalizeList(data));
+        if (!cancelled) {
+          let requests = normalizeList(data);
+          // Extra safety: filter by categoryName on frontend if available
+          if (categoryName && requests.length > 0) {
+            requests = requests.filter(r => 
+              (r?.categoryName === categoryName || r?.category === categoryName)
+            );
+          }
+          setRequests(requests);
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || "حدث خطأ أثناء تحميل الطلبات");
@@ -174,7 +204,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       });
 
     return () => { cancelled = true; };
-  }, [categoryId, refreshKey, user]);
+  }, [categoryId, categoryName, refreshKey, user]);
 
   if (loading) return <p className="requests-status">جاري تحميل الطلبات...</p>;
   if (error)   return <p className="requests-status requests-status--error">{error}</p>;

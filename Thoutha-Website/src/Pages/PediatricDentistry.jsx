@@ -30,7 +30,7 @@ export default function PediatricDentistry() {
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
         specialization="طب أسنان الأطفال"
-        categoryId={11}
+        categoryId={10}
       />
     </>
   );

@@ -24,12 +24,12 @@ export default function DentalFilling() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="حشو تجميلى" categoryId={1} refreshKey={refreshKey} />
+      <RequestsList categoryName="حشو تجميلي" categoryId={1} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="حشو تجميلى"
+        specialization="حشو تجميلي"
         categoryId={1}
       />
     </>
