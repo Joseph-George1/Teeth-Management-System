@@ -1,7 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import "../Css/OtpDone.css";
 
 export default function OtpDone(){
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            navigate('/coming-soon', { replace: true });
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [navigate]);
+
     return(
         <div className="done-page">
             <div className="done-container">
@@ -22,7 +33,7 @@ export default function OtpDone(){
                 <h2 className="done-title">تم التفعيل بنجاح</h2>
                 <p className="done-subtitle">تهانينا! تم التحقق من الحساب اضغط للمتابعة</p>
 
-                <Link to="/login"><button className="done-button">تسجيل الدخول</button></Link>
+                <Link to="/coming-soon"><button className="done-button">المتابعة</button></Link>
             </div>
         </div>
     );

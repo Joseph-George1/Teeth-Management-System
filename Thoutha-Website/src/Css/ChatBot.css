@@ -102,6 +102,12 @@
     justify-items: stretch;
     padding: 0 10px;
     font-family: 'Cairo', sans-serif;
+    margin-top: 10px;
+}
+
+.quick-replies[style*="flex-direction: column"] {
+    display: flex !important;
+    grid-template-columns: unset !important;
 }
 
 .quick-reply-button{
@@ -139,6 +145,46 @@
 .quick-reply-button.result-button{
     max-width: 450px;
     padding: 14px 22px;
+    background-color: var(--color-2) !important;
+    color: white;
+    font-weight: 700;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(83, 202, 249, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px auto;
+}
+
+.quick-reply-button.result-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(83, 202, 249, 0.4);
+    background-color: #46a5cb !important;
+}
+
+.quick-reply-button.result-button:active {
+    transform: translateY(-2px);
+}
+
+.quick-reply-button.restart-button {
+    background-color: transparent;
+    color: var(--color-2);
+    border: 1.5px solid var(--color-2);
+    max-width: 300px;
+    padding: 10px 20px;
+    font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto;
+    border-radius: 999px;
+}
+
+.quick-reply-button.restart-button:hover {
+    background-color: rgba(83, 202, 249, 0.1);
 }
 
 

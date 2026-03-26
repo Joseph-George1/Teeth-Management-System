@@ -71,12 +71,16 @@ export default function NavBar() {
                   <PlusCircle size={20} className="icon-color" /> إضافه حاله جديده
                 </NavLink>
 
-                <NavLink to="/patients" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
-                  <Users size={20} className="icon-color"/> المرضى
+                <NavLink to="/my-requests" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? "active-link" : "notactive-link"}>
+                  <FileText size={20} className="icon-color" /> طلباتي
                 </NavLink>
 
-                <NavLink to="/doctor-booking" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+              <NavLink to="/doctor-booking" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <Calendar size={20} className="icon-color"/> سجل الحجوزات
+                </NavLink>
+
+                <NavLink to="/patients" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                  <Users size={20} className="icon-color"/> المرضى
                 </NavLink>
 
                 <NavLink to="/doctor-profile" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
@@ -123,6 +127,10 @@ export default function NavBar() {
 
                 <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
                   <Shield size={20} className="icon-color"/> سياسة الخصوصية
+                </NavLink>
+
+                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                  <User size={20} className="icon-color"/> حذف الحساب
                 </NavLink>
 
                 <NavLink to="/login" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>

@@ -1,12 +1,11 @@
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
-
-const API_URL = "https://thoutha.page/api/request/getRequestByCategoryId";
+import "../Css/MyRequests.css";
 
 const getName = (req) =>
-  `${req?.doctorFirstName || req?.firstName || req?.first_name || req?.patientName || req?.name || ""}
-   ${req?.doctorLastName  || req?.lastName  || req?.last_name  || ""}`.trim() || "مجهول";
+  `${req?.doctorFirstName || req?.firstName || req?.first_name || req?.name || ""}
+   ${req?.doctorLastName || req?.lastName || req?.last_name || ""}`.trim() || "مجهول";
 
 const getUniversity = (req) =>
   req?.doctorUniversityName || req?.universityName || req?.university || req?.faculty || "";
@@ -47,7 +46,6 @@ const decodeTokenPayload = (token) => {
 
     const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-
     return JSON.parse(atob(padded));
   } catch {
     return null;
@@ -63,17 +61,17 @@ const isTokenExpired = (token) => {
 };
 
 const normalizeList = (payload) => {
-  if (Array.isArray(payload))         return payload;
-  if (Array.isArray(payload?.data))   return payload.data;
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.result)) return payload.result;
-  if (Array.isArray(payload?.content))return payload.content;
+  if (Array.isArray(payload?.content)) return payload.content;
   return [];
 };
 
-export default function RequestsList({ categoryName, categoryId, refreshKey = 0 }) {
+export default function MyRequests() {
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ description: "", dateTime: "" });
   const [editError, setEditError] = useState("");
@@ -147,7 +145,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
   };
 
   useEffect(() => {
-    if (!categoryId) return;
+    if (!isLoggedIn || !user?.id) return;
 
     let cancelled = false;
     setLoading(true);
@@ -158,7 +156,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       ? { Authorization: `Bearer ${token}` }
       : {};
 
-    fetch(`${API_URL}?categoryId=${categoryId}`, { headers })
+    fetch(`https://thoutha.page/api/request/getRequestsByDoctorId?doctorId=${user.id}`, { headers })
       .then((res) => {
         if (!res.ok) throw new Error("فشل تحميل الطلبات");
         return res.json();
@@ -174,23 +172,43 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       });
 
     return () => { cancelled = true; };
-  }, [categoryId, refreshKey, user]);
+  }, [isLoggedIn, user?.id, user?.token]);
 
-  if (loading) return <p className="requests-status">جاري تحميل الطلبات...</p>;
-  if (error)   return <p className="requests-status requests-status--error">{error}</p>;
+  if (!isLoggedIn) {
+    return (
+      <div className="my-requests-container">
+        <p className="requests-status">يرجى تسجيل الدخول لعرض طلباتك</p>
+      </div>
+    );
+  }
+
+  if (loading) return (
+    <div className="my-requests-container">
+      <p className="requests-status">جاري تحميل الطلبات...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="my-requests-container">
+      <p className="requests-status requests-status--error">{error}</p>
+    </div>
+  );
+
   if (requests.length === 0)
-    return <p className="requests-status">لا توجد طلبات لهذه الفئة حتى الآن.</p>;
+    return (
+      <div className="my-requests-container">
+        <h1 className="my-requests-title">طلباتي</h1>
+        <div className="requests-list">
+          <p className="requests-status">لم تضف أي طلبات حتى الآن! عندما تضيف طلبات جديدة ستظهر هنا.</p>
+        </div>
+      </div>
+    );
 
   return (
-    <>
+    <div className="my-requests-container">
+      <h1 className="my-requests-title">طلباتي</h1>
       <div className="requests-list">
         {requests.map((req, i) => {
-          const isOwner = isLoggedIn && user && (
-            (req?.doctorFirstName?.toLowerCase() === user?.firstName?.toLowerCase() &&
-             req?.doctorLastName?.toLowerCase()  === user?.lastName?.toLowerCase())
-          );
-          const isPending = req?.status === "PENDING";
-
           const firstLetters = getName(req)
             .split(' ')
             .slice(0, 2)
@@ -208,10 +226,10 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                   </div>
                   <div className="doctor-info">
                     <h3 className="doctor-name">د. {getName(req)}</h3>
-                    {(req?.specialization || req?.categoryName || categoryName) && (
+                    {(req?.specialization || req?.categoryName) && (
                       <span className="spec-badge">
                         <span className="spec-dot"></span>
-                        {req?.specialization || req?.categoryName || categoryName}
+                        {req?.specialization || req?.categoryName}
                       </span>
                     )}
                   </div>
@@ -305,20 +323,21 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                   </>
                 )}
 
-                {/* Book Button */}
-                {!isLoggedIn && (
+                {/* Actions */}
+                <div className="request-card-actions">
                   <button
-                    className="book-btn"
-                    type="button"
-                    onClick={() => navigate("/booking", { state: { request: req } })}
+                    className="request-card-edit-btn"
+                    onClick={() => handleEditClick(req)}
                   >
-                    <svg className="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none"/>
-                      <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    حجز موعد
+                    تعديل
                   </button>
-                )}
+                  <button
+                    className="request-card-delete-btn"
+                    onClick={() => handleDelete(req?.id)}
+                  >
+                    حذف الطلب
+                  </button>
+                </div>
 
               </div>
 
@@ -331,65 +350,49 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       {editingId && (
         <div className="edit-modal-overlay" onClick={handleCancelEdit}>
           <div className="edit-modal" onClick={(e) => e.stopPropagation()} dir="rtl">
-            <div className="edit-modal-header">
-              <h2>تعديل الطلب</h2>
-              <button className="edit-modal-close" onClick={handleCancelEdit}>
-                ✕
-              </button>
+            <h2 className="edit-modal-title">تعديل الطلب</h2>
+
+            {editError && <div className="edit-modal-error">{editError}</div>}
+
+            <div className="edit-form-group">
+              <label className="edit-form-label">الوصف:</label>
+              <textarea
+                className="edit-form-textarea"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                rows="4"
+              />
             </div>
 
-            <div className="edit-modal-body">
-              {editError && (
-                <p className="edit-modal-error">{editError}</p>
-              )}
-
-              <div className="edit-form-group">
-                <label htmlFor="edit-description">الوصف</label>
-                <textarea
-                  id="edit-description"
-                  className="edit-form-textarea"
-                  value={editFormData.description}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, description: e.target.value })
-                  }
-                  placeholder="أدخل وصف الخدمة"
-                  rows="4"
-                />
-              </div>
-
-              <div className="edit-form-group">
-                <label htmlFor="edit-dateTime">التاريخ والوقت</label>
-                <input
-                  id="edit-dateTime"
-                  type="datetime-local"
-                  className="edit-form-input"
-                  value={editFormData.dateTime}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, dateTime: e.target.value })
-                  }
-                />
-              </div>
+            <div className="edit-form-group">
+              <label className="edit-form-label">موعد الطلب:</label>
+              <input
+                type="datetime-local"
+                className="edit-form-input"
+                value={editFormData.dateTime}
+                onChange={(e) => setEditFormData({...editFormData, dateTime: e.target.value})}
+              />
             </div>
 
-            <div className="edit-modal-footer">
+            <div className="edit-modal-actions">
               <button
-                className="edit-modal-cancel-btn"
+                className="edit-modal-btn edit-modal-btn--save"
+                onClick={handleEditSubmit}
+                disabled={editLoading}
+              >
+                {editLoading ? "جاري الحفظ..." : "حفظ التغييرات"}
+              </button>
+              <button
+                className="edit-modal-btn edit-modal-btn--cancel"
                 onClick={handleCancelEdit}
                 disabled={editLoading}
               >
                 إلغاء
               </button>
-              <button
-                className="edit-modal-submit-btn"
-                onClick={handleEditSubmit}
-                disabled={editLoading}
-              >
-                {editLoading ? "جاري التحديث..." : "حفظ التعديلات"}
-              </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

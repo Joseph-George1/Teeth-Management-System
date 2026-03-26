@@ -25,13 +25,13 @@ export default function Braces() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="تقويم الأسنان" categoryId={6} refreshKey={refreshKey} />
+      <RequestsList categoryName="تقويم الأسنان" categoryId={8} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
         specialization="تقويم الأسنان"
-        categoryId={6}
+        categoryId={8}
       />
     </>
   );

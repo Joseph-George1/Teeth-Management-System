@@ -5,7 +5,7 @@ import AddRequest from "./AddRequest";
 import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
-export default function DentalCheckUp() {
+export default function PediatricDentistry() {
   const [openModal, setOpenModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const { isLoggedIn } = useContext(AuthContext);
@@ -16,7 +16,7 @@ export default function DentalCheckUp() {
           <img src="./فحص شامل.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>تنظيف الأسنان</p>
+          <p>طب أسنان الأطفال</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,13 +24,13 @@ export default function DentalCheckUp() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="تنظيف الأسنان" categoryId={7} refreshKey={refreshKey} />
+      <RequestsList categoryName="طب أسنان الأطفال" categoryId={10} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="تنظيف الأسنان"
-        categoryId={7}
+        specialization="طب أسنان الأطفال"
+        categoryId={11}
       />
     </>
   );

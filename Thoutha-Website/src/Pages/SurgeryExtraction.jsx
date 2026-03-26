@@ -5,7 +5,7 @@ import AddRequest from "./AddRequest";
 import RequestsList from "./RequestsList";
 import { AuthContext } from "../services/AuthContext";
 
-export default function TeethWhitening() {
+export default function SurgeryExtraction() {
   const [openModal, setOpenModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const { isLoggedIn } = useContext(AuthContext);
@@ -13,10 +13,10 @@ export default function TeethWhitening() {
     <>
       <div className="top-page">
         <div className="circle-img">
-          <img src="./تبيض اسنان.svg" alt="img" />
+          <img src="./خلع اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>تنظيف وتبييض الأسنان</p>
+          <p>الجراحه والخلع</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,13 +24,13 @@ export default function TeethWhitening() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="تنظيف وتبييض الأسنان" categoryId={7} refreshKey={refreshKey} />
+      <RequestsList categoryName="الجراحه والخلع" categoryId={9} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="تنظيف وتبييض الأسنان"
-        categoryId={7}
+        specialization="الجراحه والخلع"
+        categoryId={9}
       />
     </>
   );

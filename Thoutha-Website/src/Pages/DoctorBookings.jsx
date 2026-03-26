@@ -99,6 +99,21 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
+      // الحصول على بيانات الحجز المكتمل
+      const completedBooking = bookings.find(b => b.id === appointmentId);
+      
+      if (completedBooking) {
+        // إضافة الحجز المكتمل للمرضى
+        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
+        const newPatient = {
+          ...completedBooking,
+          status: "مكتمل",
+          statusClass: "completed",
+        };
+        acceptedPatients.push(newPatient);
+        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
+      }
+
       // حذف من localStorage
       const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
       const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
@@ -106,7 +121,7 @@ export default function DoctorBookings() {
 
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
-      showToast("تم اكمال الحجز بنجاح ✓", "success");
+      showToast("تم اكمال الحجز وإضافته للمرضى ✓", "success");
     } catch (err) {
       showToast(err.message || "فشل التحديث", "error");
     }
@@ -131,6 +146,21 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
+      // الحصول على بيانات الحجز الملغى
+      const cancelledBooking = bookings.find(b => b.id === appointmentId);
+      
+      if (cancelledBooking) {
+        // إضافة الحجز الملغى للمرضى
+        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
+        const newPatient = {
+          ...cancelledBooking,
+          status: "ملغى",
+          statusClass: "cancelled",
+        };
+        acceptedPatients.push(newPatient);
+        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
+      }
+
       // حذف من localStorage
       const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
       const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
@@ -138,7 +168,7 @@ export default function DoctorBookings() {
 
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
-      showToast("تم الغاء الحجز بنجاح ✓", "success");
+      showToast("تم الغاء الحجز وإضافته للمرضى ✓", "success");
     } catch (err) {
       showToast(err.message || "فشل الالغاء", "error");
     }

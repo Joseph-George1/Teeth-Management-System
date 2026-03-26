@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, replace, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
 
@@ -36,7 +36,8 @@ export default function LoginPage() {
 
       if (response.ok && data?.token) {
         await login(data.token);
-        navigate('/doctor-home', { replace: true });
+        // navigate('/doctor-home', { replace: true });
+        navigate("/", {replace:true})
       } else if (response.ok) {
         setError('لم يتم استلام رمز الدخول من الخادم');
       } else {

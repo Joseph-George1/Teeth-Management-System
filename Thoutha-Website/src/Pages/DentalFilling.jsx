@@ -16,7 +16,7 @@ export default function DentalFilling() {
           <img src="./حشو اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>حشوات الأسنان</p>
+          <p>حشو تجميلي</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,12 +24,12 @@ export default function DentalFilling() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="حشو الأسنان" categoryId={1} refreshKey={refreshKey} />
+      <RequestsList categoryName="حشو تجميلى" categoryId={1} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="حشو الأسنان"
+        specialization="حشو تجميلى"
         categoryId={1}
       />
     </>
