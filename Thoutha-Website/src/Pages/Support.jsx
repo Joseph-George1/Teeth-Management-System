@@ -35,7 +35,7 @@ export default function Support(){
         <p className="support-email">
           menna@thoutha.page
         </p>
-        <p>
+        <p className="support-email">
           joseph@thoutha.page
         </p>
       </section>
