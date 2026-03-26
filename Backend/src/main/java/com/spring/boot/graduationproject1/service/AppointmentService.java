@@ -12,4 +12,7 @@ public interface AppointmentService {
     List<AppointmentDto> getAppointmentHistory(Long doctorId);
     void cancelExpiredAppointments();
     void deleteAppointment(Long appointmentId);
+    List<AppointmentDto> getApprovedAndDoneAppointments();
+    List<AppointmentDto> getApprovedAppointments();
+    List<AppointmentDto> getDoneAppointments();
 }

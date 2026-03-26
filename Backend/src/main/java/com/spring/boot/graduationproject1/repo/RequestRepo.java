@@ -15,4 +15,5 @@ public interface RequestRepo extends JpaRepository<Requests, Long> {
    List<Requests> findByCategoryId(Long categoryId);
    void deleteByDoctor(Doctor doctor);
    Long countByStatus(String status);
+   Optional<Requests> findByIdAndDoctor(Long id, Doctor doctor);
 }

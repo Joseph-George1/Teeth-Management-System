@@ -106,21 +106,21 @@ public class RequestServiceImpl implements RequestServices {
     }
 
     @Override
-    public void deleteRequest() {
+    public void deleteRequest(long requestId) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
+
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        List<Requests> requests = requestRepo.findByDoctor(doctor);
 
-        if (requests.isEmpty()) {
-            throw new RuntimeException("Request not found");
-        }
+        Requests request = requestRepo.findByIdAndDoctor(requestId, doctor)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        requestRepo.deleteAll(requests);
+
+        requestRepo.delete(request);
     }
 
     @Override

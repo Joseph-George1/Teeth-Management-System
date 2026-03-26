@@ -41,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
 
     public AuthServiceImpl(DoctorService doctorService, PasswordEncoder passwordEncoder, TokenHandler tokenHandler,
                            UniversityRepo universityRepo, CategoryRepo categoryRepo, RoleRepo roleRepo, DoctorMapper doctorMapper
-                            ,CityRepo cityRepo,DoctorRepo doctorRepo,AdminMapper adminMapper,AdminRepo adminRepo,AdminService adminService) {
+            ,CityRepo cityRepo,DoctorRepo doctorRepo,AdminMapper adminMapper,AdminRepo adminRepo,AdminService adminService) {
         this.doctorService = doctorService;
         this.passwordEncoder = passwordEncoder;
         this.tokenHandler = tokenHandler;
@@ -107,12 +107,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponseVm signup(SignUpRequest request) throws SystemException {
 
-        // 1️⃣ check email
         if (doctorRepo.findByEmail(request.getEmail()).isPresent()) {
             throw new SystemException("Email already exists");
         }
 
-        // 2️⃣ City
+
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new SystemException("Password and Confirm Password do not match");
+        }
+
+
         City city = cityRepo.findByName(request.getCityName())
                 .orElseGet(() -> {
                     City newCity = new City();
@@ -120,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
                     return cityRepo.save(newCity);
                 });
 
-        // 3️⃣ Category
+
         Category category = categoryRepo.findByName(request.getCategoryName())
                 .orElseGet(() -> {
                     Category newCategory = new Category();
@@ -128,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
                     return categoryRepo.save(newCategory);
                 });
 
-        // 4️⃣ University
+
         University university = universityRepo.findByName(request.getUniversityName())
                 .orElseGet(() -> {
                     University newUniversity = new University();
@@ -136,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
                     return universityRepo.save(newUniversity);
                 });
 
-        // 5️⃣ Role
+
         Role role = roleRepo.findByName("ROLE_DOCTOR")
                 .orElseGet(() -> {
                     Role newRole = new Role();
@@ -144,7 +148,7 @@ public class AuthServiceImpl implements AuthService {
                     return roleRepo.save(newRole);
                 });
 
-        // 6️⃣ Map request → entity
+
         Doctor doctor = doctorMapper.toEntity(request);
 
         doctor.setCity(city);
@@ -153,25 +157,25 @@ public class AuthServiceImpl implements AuthService {
         doctor.setRole(role);
         doctor.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // 7️⃣ Save
+
         Doctor savedDoctor = doctorRepo.save(doctor);
 
-        // 8️⃣ Entity → DTO
+
         DoctorDto doctorDto = doctorMapper.toDto(savedDoctor);
 
-        // 9️⃣ JWT claims
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("firstName", doctorDto.getFirstName());
         claims.put("lastName", doctorDto.getLastName());
 
-        // 🔐 token
+
         String token = tokenHandler.createToken(
                 doctorDto.getEmail(),
                 "ROLE_DOCTOR",
                 claims
         );
 
-        // 🔁 response
+
         return new AuthResponseVm(token);
     }
 

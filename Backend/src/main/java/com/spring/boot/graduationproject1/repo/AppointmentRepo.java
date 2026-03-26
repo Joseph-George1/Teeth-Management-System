@@ -17,4 +17,8 @@ public interface AppointmentRepo extends JpaRepository<Appointments, Long> {
     List<Appointments> findByDoctorIdAndStatusAndIsHistoryFalse(Long doctorId, AppointmentStatus status);
     List<Appointments> findByIsExpired(Boolean isExpired);
     Long countByStatus(AppointmentStatus status);
+    List<Appointments> findByDoctorIdAndStatusIn(Long doctorId, List<AppointmentStatus> statuses);
+    List<Appointments> findByDoctorIdAndStatus(Long doctorId, AppointmentStatus status);
+    List<Appointments> findByDoctorIdAndIsHistoryTrue(Long doctorId);
+    boolean existsByPatientPhoneNumberAndIsHistoryFalseAndIsExpiredFalse(String phoneNumber);
 }
