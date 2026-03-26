@@ -105,6 +105,11 @@ export default function RegisterForm() {
       return;
     }
 
+    if (!email.endsWith('.edu.eg')) {
+      setError('ادخل الايميل الجامعى');
+      return;
+    }
+
     if (!/^\+20\d{10}$/.test(phone)) {
       setError('رقم التليفون يجب أن يكون بصيغة +20 متبوعًا بـ 10 أرقام');
       return;
@@ -192,7 +197,7 @@ export default function RegisterForm() {
           <div className="input-group">
             <input
               type="email"
-              placeholder="ادخل ايميل الجامعة"
+              placeholder="username@university.edu.eg"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

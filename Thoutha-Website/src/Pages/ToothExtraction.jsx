@@ -13,10 +13,10 @@ export default function ToothExtraction() {
     <>
       <div className="top-page">
         <div className="circle-img">
-          <img src="./خلع اسنان.svg" alt="img" />
+          <img src="./حشو اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>خلع الأسنان</p>
+          <p>حشو عصب</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,13 +24,13 @@ export default function ToothExtraction() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="خلع الأسنان" categoryId={5} refreshKey={refreshKey} />
+      <RequestsList categoryName="حشو عصب" categoryId={3} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="خلع الأسنان"
-        categoryId={5}
+        specialization="حشو عصب"
+        categoryId={3}
       />
     </>
   );

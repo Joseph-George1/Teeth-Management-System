@@ -16,7 +16,7 @@ export default function CrownsBridges() {
           <img src="./تركيبات اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>تيجان الأسنان / التركيبات</p>
+          <p>تيجان وجسور</p>
         </div>
       </div>
       {isLoggedIn && (

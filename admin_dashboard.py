@@ -446,10 +446,8 @@ def api_delete_doctor_admin(doctor_id):
 
 # ── Export endpoints ──
 
-@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
-@login_required
-def export_doctors():
-    """Export doctors list as CSV"""
+def _export_doctors_csv():
+    """Generate CSV for doctors list with UTF-8 encoding"""
     import csv
     from io import StringIO
     
@@ -465,6 +463,60 @@ def export_doctors():
     # Write data
     for d in doctors:
         writer.writerow([
+            str(d.get("id", "")),
+            str(d.get("firstName", "")),
+            str(d.get("lastName", "")),
+            str(d.get("email", "")),
+            str(d.get("phoneNumber", "")),
+            str(d.get("categoryName", "")),
+            str(d.get("cityName", "")),
+            str(d.get("universityName", "")),
+            str(d.get("studyYear", "")),
+        ])
+    
+    output.seek(0)
+    # Return UTF-8 encoded with BOM for better Excel compatibility
+    csv_content = output.getvalue()
+    return '\ufeff' + csv_content  # UTF-8 BOM
+
+
+def _export_doctors_json():
+    """Generate JSON for doctors list with UTF-8 encoding"""
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    return json.dumps(doctors, indent=2, default=str, ensure_ascii=False)
+
+
+def _export_doctors_excel():
+    """Generate Excel for doctors list"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Doctors"
+    
+    # Header
+    headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Category", "City", "University", "Study Year"]
+    ws.append(headers)
+    
+    # Style header
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Data
+    for d in doctors:
+        ws.append([
             d.get("id", ""),
             d.get("firstName", ""),
             d.get("lastName", ""),
@@ -476,19 +528,337 @@ def export_doctors():
             d.get("studyYear", ""),
         ])
     
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    from io import BytesIO
+    output = BytesIO()
+    wb.save(output)
     output.seek(0)
+    return output.getvalue()
+
+
+def _export_doctors_pdf():
+    """Generate PDF for doctors list with full Unicode support using pdfkit"""
+    try:
+        import pdfkit
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    from datetime import datetime
+    
+    # Generate HTML content
+    html_content = f"""
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <title>Doctors List Report</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                direction: rtl;
+                text-align: right;
+                margin: 20px;
+            }}
+            .title {{
+                color: #1F497D;
+                font-size: 18pt;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 10pt;
+            }}
+            .subtitle {{
+                color: #666666;
+                font-size: 10pt;
+                text-align: center;
+                margin-bottom: 20pt;
+                font-style: italic;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20pt;
+            }}
+            th {{
+                background-color: #1F497D;
+                color: white;
+                padding: 8pt;
+                text-align: center;
+                font-weight: bold;
+                font-size: 10pt;
+                border: 1px solid #ddd;
+            }}
+            td {{
+                padding: 6pt;
+                text-align: left;
+                font-size: 9pt;
+                border: 1px solid #ddd;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f5f5f5;
+            }}
+            tr:nth-child(odd) {{
+                background-color: white;
+            }}
+            .footer {{
+                position: fixed;
+                bottom: 10pt;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 8pt;
+                color: #999999;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1 class="title">DOCTORS LIST REPORT</h1>
+        <p class="subtitle">Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>City</th>
+                    <th>University</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    for d in doctors:
+        full_name = f"{d.get('firstName', '')} {d.get('lastName', '')}".strip()
+        html_content += f"""
+                <tr>
+                    <td>{d.get('id', '')}</td>
+                    <td>{full_name}</td>
+                    <td>{d.get('email', '')}</td>
+                    <td>{d.get('phoneNumber', '')}</td>
+                    <td>{d.get('categoryName', '')}</td>
+                    <td>{d.get('cityName', '')}</td>
+                    <td>{d.get('universityName', '')}</td>
+                </tr>
+        """
+    
+    html_content += """
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            Teeth Management System - Doctors Report
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Generate PDF using pdfkit
+    options = {
+        'page-size': 'A4',
+        'orientation': 'Landscape',
+        'margin-top': '0.4in',
+        'margin-right': '0.4in',
+        'margin-bottom': '0.4in',
+        'margin-left': '0.4in',
+        'encoding': 'UTF-8',
+    }
+    
+    pdf_data = pdfkit.from_string(html_content, False, options=options)
+    return pdf_data
+
+
+
+
+def _export_doctors_word():
+    """Generate professional Word document for doctors list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    doctors = analytics.get("doctors_list", [])
+    
+    doc = Document()
+    
+    # Add title with styling
+    title = doc.add_heading("DOCTORS LIST REPORT", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    title_run = title.runs[0]
+    title_run.font.size = Pt(18)
+    title_run.font.color.rgb = RGBColor(31, 73, 125)
+    
+    # Add timestamp
+    from datetime import datetime
+    timestamp = doc.add_paragraph()
+    timestamp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    ts_run = timestamp.add_run(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}")
+    ts_run.font.size = Pt(10)
+    ts_run.font.italic = True
+    ts_run.font.color.rgb = RGBColor(85, 85, 85)
+    
+    # Add spacing
+    doc.add_paragraph()
+    
+    # Create table with header (7 columns instead of 9 - more readable)
+    table = doc.add_table(rows=1, cols=7)
+    table.style = 'Light Grid Accent 1'
+    
+    # Set table width to fit page
+    table.autofit = True
+    
+    # Header styling
+    header_cells = table.rows[0].cells
+    headers = ["ID", "Name", "Email", "Phone", "Category", "City", "University"]
+    
+    for i, header in enumerate(headers):
+        cell = header_cells[i]
+        cell.text = header
+        
+        # Format header cell
+        cell_paragraph = cell.paragraphs[0]
+        cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        # Style header text
+        for run in cell_paragraph.runs:
+            run.font.bold = True
+            run.font.size = Pt(11)
+            run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Add background color to header
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '1F497D')
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Add data rows
+    for d in doctors:
+        row_cells = table.add_row().cells
+        full_name = f"{d.get('firstName', '')} {d.get('lastName', '')}".strip()
+        data = [
+            str(d.get("id", "")),
+            full_name,
+            str(d.get("email", "")),
+            str(d.get("phoneNumber", "")),
+            str(d.get("categoryName", "")),
+            str(d.get("cityName", "")),
+            str(d.get("universityName", "")),
+        ]
+        
+        for i, cell_value in enumerate(data):
+            cell = row_cells[i]
+            cell.text = cell_value
+            
+            # Format cell paragraph
+            cell_paragraph = cell.paragraphs[0]
+            cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+            
+            # Allow word wrap
+            cell_paragraph.paragraph_format.wrap_text = True
+            
+            # Style text
+            for run in cell_paragraph.runs:
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(51, 51, 51)
+            
+            # Set cell vertical alignment
+            tcPr = cell._element.get_or_add_tcPr()
+            tcVAlign = OxmlElement('w:vAlign')
+            tcVAlign.set(qn('w:val'), 'center')
+            tcPr.append(tcVAlign)
+    
+    # Set smaller column widths that fit page
+    col_widths = [Inches(0.4), Inches(1.0), Inches(1.3), Inches(0.9), Inches(0.9), Inches(0.8), Inches(1.1)]
+    for row in table.rows:
+        for idx, width in enumerate(col_widths):
+            row.cells[idx].width = width
+    
+    # Add footer
+    doc.add_paragraph()
+    footer = doc.add_paragraph()
+    footer.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    footer_run = footer.add_run("Teeth Management System - Doctors Report")
+    footer_run.font.size = Pt(8)
+    footer_run.font.italic = True
+    footer_run.font.color.rgb = RGBColor(153, 153, 153)
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/doctors")
+@login_required
+def export_doctors():
+    """Export doctors list in specified format with UTF-8 encoding"""
     from flask import Response
+    
+    export_format = request.args.get("format", "csv").lower()
+    
+    if export_format == "csv":
+        content = _export_doctors_csv()
+        # Encode CSV content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "text/csv; charset=utf-8"
+        extension = "csv"
+    elif export_format == "json":
+        content = _export_doctors_json()
+        # Encode JSON content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "application/json; charset=utf-8"
+        extension = "json"
+    elif export_format == "xlsx":
+        content = _export_doctors_excel()
+        if content is None:
+            return jsonify({"error": "openpyxl not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        extension = "xlsx"
+    elif export_format == "pdf":
+        content = _export_doctors_pdf()
+        if content is None:
+            return jsonify({"error": "reportlab not installed"}), 400
+        mimetype = "application/pdf"
+        extension = "pdf"
+    elif export_format == "docx":
+        content = _export_doctors_word()
+        if content is None:
+            return jsonify({"error": "python-docx not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+    else:
+        return jsonify({"error": "Invalid format"}), 400
+    
     return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+        content,
+        mimetype=mimetype,
+        headers={"Content-Disposition": f"attachment; filename=doctors_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"}
     )
 
 
-@app.route(f"{ADMIN_PREFIX}/api/export/requests")
-@login_required
-def export_requests():
-    """Export requests list as CSV"""
+def _export_requests_csv():
+    """Generate CSV for requests list with UTF-8 encoding"""
     import csv
     from io import StringIO
     
@@ -509,6 +879,64 @@ def export_requests():
             doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
         
         writer.writerow([
+            str(r.get("id", "")),
+            str(doctor_name),
+            str(r.get("doctorPhoneNumber", "")),
+            str(r.get("doctorCityName", "")),
+            str(r.get("doctorUniversityName", "")),
+            str(r.get("categoryName", "")),
+            str(r.get("status", "")),
+            str(r.get("dateTime", "")),
+            str(r.get("description", "")),
+        ])
+    
+    output.seek(0)
+    # Return UTF-8 encoded with BOM for better Excel compatibility
+    csv_content = output.getvalue()
+    return '\ufeff' + csv_content  # UTF-8 BOM
+
+
+def _export_requests_json():
+    """Generate JSON for requests list with UTF-8 encoding"""
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    return json.dumps(requests_list, indent=2, default=str, ensure_ascii=False)
+
+
+def _export_requests_excel():
+    """Generate Excel for requests list"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Requests"
+    
+    # Header
+    headers = ["ID", "Doctor Name", "Phone", "City", "University", "Category", "Status", "Date & Time", "Description"]
+    ws.append(headers)
+    
+    # Style header
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Data
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        ws.append([
             r.get("id", ""),
             doctor_name,
             r.get("doctorPhoneNumber", ""),
@@ -520,14 +948,336 @@ def export_requests():
             r.get("description", ""),
         ])
     
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    from io import BytesIO
+    output = BytesIO()
+    wb.save(output)
     output.seek(0)
+    return output.getvalue()
+
+
+def _export_requests_pdf():
+    """Generate PDF for requests list with full Unicode support using pdfkit"""
+    try:
+        import pdfkit
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    from datetime import datetime
+    
+    # Generate HTML content
+    html_content = f"""
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+        <title>Service Requests Report</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                direction: rtl;
+                text-align: right;
+                margin: 20px;
+            }}
+            .title {{
+                color: #1F497D;
+                font-size: 18pt;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 10pt;
+            }}
+            .subtitle {{
+                color: #666666;
+                font-size: 10pt;
+                text-align: center;
+                margin-bottom: 20pt;
+                font-style: italic;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20pt;
+            }}
+            th {{
+                background-color: #1F497D;
+                color: white;
+                padding: 8pt;
+                text-align: center;
+                font-weight: bold;
+                font-size: 10pt;
+                border: 1px solid #ddd;
+            }}
+            td {{
+                padding: 6pt;
+                text-align: left;
+                font-size: 9pt;
+                border: 1px solid #ddd;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f5f5f5;
+            }}
+            tr:nth-child(odd) {{
+                background-color: white;
+            }}
+            .footer {{
+                position: fixed;
+                bottom: 10pt;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 8pt;
+                color: #999999;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1 class="title">SERVICE REQUESTS REPORT</h1>
+        <p class="subtitle">Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Doctor</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        html_content += f"""
+                <tr>
+                    <td>{r.get('id', '')}</td>
+                    <td>{doctor_name}</td>
+                    <td>{r.get('doctorPhoneNumber', '')}</td>
+                    <td>{r.get('categoryName', '')}</td>
+                    <td>{r.get('status', '')}</td>
+                    <td>{r.get('dateTime', '')}</td>
+                </tr>
+        """
+    
+    html_content += """
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            Teeth Management System - Service Requests Report
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Generate PDF using pdfkit
+    options = {
+        'page-size': 'A4',
+        'orientation': 'Landscape',
+        'margin-top': '0.4in',
+        'margin-right': '0.4in',
+        'margin-bottom': '0.4in',
+        'margin-left': '0.4in',
+        'encoding': 'UTF-8',
+    }
+    
+    pdf_data = pdfkit.from_string(html_content, False, options=options)
+    return pdf_data
+
+
+def _export_requests_word():
+    """Generate professional Word document for requests list"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+    except ImportError:
+        return None
+    
+    analytics = get_analytics(session.get("jwt_token"))
+    requests_list = analytics.get("requests_list", [])
+    
+    doc = Document()
+    
+    # Add title with styling
+    title = doc.add_heading("SERVICE REQUESTS REPORT", 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    title_run = title.runs[0]
+    title_run.font.size = Pt(18)
+    title_run.font.color.rgb = RGBColor(31, 73, 125)
+    
+    # Add timestamp
+    from datetime import datetime
+    timestamp = doc.add_paragraph()
+    timestamp.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    ts_run = timestamp.add_run(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}")
+    ts_run.font.size = Pt(10)
+    ts_run.font.italic = True
+    ts_run.font.color.rgb = RGBColor(85, 85, 85)
+    
+    # Add spacing
+    doc.add_paragraph()
+    
+    # Create table with header (reduced columns for readability)
+    table = doc.add_table(rows=1, cols=6)
+    table.style = 'Light Grid Accent 1'
+    
+    # Set table width to fit page
+    table.autofit = True
+    
+    # Header styling
+    header_cells = table.rows[0].cells
+    headers = ["ID", "Doctor", "Phone", "Category", "Status", "Date"]
+    
+    for i, header in enumerate(headers):
+        cell = header_cells[i]
+        cell.text = header
+        
+        # Format header cell
+        cell_paragraph = cell.paragraphs[0]
+        cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        # Style header text
+        for run in cell_paragraph.runs:
+            run.font.bold = True
+            run.font.size = Pt(11)
+            run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # Add background color to header
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '1F497D')
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    # Add data rows
+    for r in requests_list:
+        doctor_name = r.get("doctorName", "")
+        if not doctor_name and (r.get("doctorFirstName") or r.get("doctorLastName")):
+            doctor_name = f"{r.get('doctorFirstName', '')} {r.get('doctorLastName', '')}".strip()
+        
+        row_cells = table.add_row().cells
+        data = [
+            str(r.get("id", "")),
+            str(doctor_name),
+            str(r.get("doctorPhoneNumber", "")),
+            str(r.get("categoryName", "")),
+            str(r.get("status", "")),
+            str(r.get("dateTime", "")),
+        ]
+        
+        for i, cell_value in enumerate(data):
+            cell = row_cells[i]
+            cell.text = cell_value
+            
+            # Format cell paragraph
+            cell_paragraph = cell.paragraphs[0]
+            cell_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+            
+            # Allow word wrap
+            cell_paragraph.paragraph_format.wrap_text = True
+            
+            # Style text
+            for run in cell_paragraph.runs:
+                run.font.size = Pt(10)
+                run.font.color.rgb = RGBColor(51, 51, 51)
+            
+            # Set cell vertical alignment
+            tcPr = cell._element.get_or_add_tcPr()
+            tcVAlign = OxmlElement('w:vAlign')
+            tcVAlign.set(qn('w:val'), 'center')
+            tcPr.append(tcVAlign)
+    
+    # Set smaller column widths that fit page
+    col_widths = [Inches(0.4), Inches(1.1), Inches(0.95), Inches(0.95), Inches(0.85), Inches(1.2)]
+    for row in table.rows:
+        for idx, width in enumerate(col_widths):
+            if idx < len(row.cells):
+                row.cells[idx].width = width
+    
+    # Add footer
+    doc.add_paragraph()
+    footer = doc.add_paragraph()
+    footer.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    footer_run = footer.add_run("Teeth Management System - Service Requests Report")
+    footer_run.font.size = Pt(8)
+    footer_run.font.italic = True
+    footer_run.font.color.rgb = RGBColor(153, 153, 153)
+    
+    from io import BytesIO
+    output = BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+@app.route(f"{ADMIN_PREFIX}/api/export/requests")
+@login_required
+def export_requests():
+    """Export requests list in specified format with UTF-8 encoding"""
     from flask import Response
+    
+    export_format = request.args.get("format", "csv").lower()
+    
+    if export_format == "csv":
+        content = _export_requests_csv()
+        # Encode CSV content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "text/csv; charset=utf-8"
+        extension = "csv"
+    elif export_format == "json":
+        content = _export_requests_json()
+        # Encode JSON content as UTF-8 bytes
+        content = content.encode('utf-8')
+        mimetype = "application/json; charset=utf-8"
+        extension = "json"
+    elif export_format == "xlsx":
+        content = _export_requests_excel()
+        if content is None:
+            return jsonify({"error": "openpyxl not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        extension = "xlsx"
+    elif export_format == "pdf":
+        content = _export_requests_pdf()
+        if content is None:
+            return jsonify({"error": "reportlab not installed"}), 400
+        mimetype = "application/pdf"
+        extension = "pdf"
+    elif export_format == "docx":
+        content = _export_requests_word()
+        if content is None:
+            return jsonify({"error": "python-docx not installed"}), 400
+        mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        extension = "docx"
+    else:
+        return jsonify({"error": "Invalid format"}), 400
+    
     return Response(
-        output.getvalue(),
-        mimetype="text/csv; charset=utf-8",
+        content,
+        mimetype=mimetype,
         headers={
-            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            "Content-Type": "text/csv; charset=utf-8"
+            "Content-Disposition": f"attachment; filename=requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}",
+            "Content-Type": mimetype
         }
     )
 
@@ -983,7 +1733,45 @@ DASHBOARD_TEMPLATE = """
       .toast { font-size: .85rem; padding: .75rem 1rem; }
       
       /* Better button spacing on mobile */
-      .btn-group { display: flex; gap: 0.25rem; }
+      .btn-group { display: flex; gap: 0.25rem; position: relative; }
+      
+      /* Dropdown Menu Styles */
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: var(--bg-card2);
+        border: 1px solid var(--border);
+        border-radius: 0.4rem;
+        padding: 0.5rem 0;
+        margin-top: 0.25rem;
+        z-index: 1000;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      
+      .dropdown-menu.show {
+        display: block;
+      }
+      
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        color: var(--text-normal, #e6edf3);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+      
+      .dropdown-item:hover {
+        background-color: var(--bg-card, #161b22);
+      }
+      
+      .dropdown-item i {
+        min-width: 1rem;
+      }
       .btn-sm { padding: .35rem .6rem; font-size: .8rem; }
       
       /* Stack columns on mobile */
@@ -1291,9 +2079,29 @@ DASHBOARD_TEMPLATE = """
           <button class="btn btn-sm btn-outline-secondary" onclick="clearDoctorFilters()" title="Clear Filters">
             <i class="fa fa-times"></i>
           </button>
-          <button class="btn btn-sm btn-success" onclick="exportDoctors()" title="Export to CSV">
-            <i class="fa fa-download me-1"></i>Export CSV
-          </button>
+          <!-- Export Dropdown -->
+          <div class="btn-group" role="group" id="doctors-export-group">
+            <button class="btn btn-sm btn-success" onclick="toggleDoctorsMenu()" title="Export Options" type="button">
+              <i class="fa fa-download me-1"></i>Export Options
+            </button>
+            <div class="dropdown-menu" id="doctors-export-menu" style="display:none;">
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('csv');">
+                <i class="fa fa-file-csv me-2 text-success"></i>CSV
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('json');">
+                <i class="fa fa-code me-2 text-info"></i>JSON
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('xlsx');">
+                <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('pdf');">
+                <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportDoctors('docx');">
+                <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       <div class="table-responsive">
@@ -1391,9 +2199,29 @@ DASHBOARD_TEMPLATE = """
         <div class="d-flex align-items-center gap-2">
           <input type="text" id="request-search" class="form-control form-control-sm"
                  style="width:200px" placeholder="🔍 Search…" oninput="filterTable('request-table',this.value)">
-          <button class="btn btn-sm btn-success" onclick="exportRequests()" title="Export to CSV">
-            <i class="fa fa-download me-1"></i>Export CSV
-          </button>
+          <!-- Export Dropdown -->
+          <div class="btn-group" role="group" id="requests-export-group">
+            <button class="btn btn-sm btn-success" onclick="toggleRequestsMenu()" title="Export Options" type="button">
+              <i class="fa fa-download me-1"></i>Export Options
+            </button>
+            <div class="dropdown-menu" id="requests-export-menu" style="display:none;">
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('csv');">
+                <i class="fa fa-file-csv me-2 text-success"></i>CSV
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('json');">
+                <i class="fa fa-code me-2 text-info"></i>JSON
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('xlsx');">
+                <i class="fa fa-file-excel me-2 text-success"></i>Excel (XLSX)
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('pdf');">
+                <i class="fa fa-file-pdf me-2 text-danger"></i>PDF (Report)
+              </a>
+              <a class="dropdown-item" href="javascript:void(0);" onclick="exportRequests('docx');">
+                <i class="fa fa-file-word me-2 text-primary"></i>MS Word (DOCX)
+              </a>
+            </div>
+          </div>
         </div>
       </div>
       <div class="table-responsive">
@@ -2023,31 +2851,6 @@ function showSection(sectionId) {
   closeMobileMenu();
 }
 
-// Render charts from analytics data
-function renderCharts(data) {
-  // Update stat cards
-  const stats = [
-    { id: 'total-doctors', key: 'doctors', icon: 'fa-user-doctor', color: '#58a6ff', label: 'Doctors' },
-    { id: 'total-requests', key: 'requests', icon: 'fa-file-medical', color: '#3fb950', label: 'Requests' },
-    { id: 'total-cities', key: 'cities', icon: 'fa-location-dot', color: '#f85149', label: 'Cities' },
-    { id: 'total-categories', key: 'categories', icon: 'fa-tags', color: '#d29922', label: 'Categories' },
-  ];
-  
-  stats.forEach(stat => {
-    const el = document.getElementById(stat.id);
-    if (el) {
-      const value = data.totals?.[stat.key] || 0;
-      el.textContent = value;
-    }
-  });
-  
-  // Update doctor/request counts
-  const dcBadge = document.getElementById('doctors-count');
-  const rcBadge = document.getElementById('requests-count');
-  if (dcBadge) dcBadge.textContent = data.totals?.doctors || 0;
-  if (rcBadge) rcBadge.textContent = data.totals?.requests || 0;
-}
-
 function renderHealthStrip(h) {
   const services = [
     { name: 'Spring Boot', status: h.backend?.status  },
@@ -2439,27 +3242,109 @@ async function deleteDoctor(id, btn) {
   }
 })();
 
-/* ─── Export Functions ─── */
-function exportDoctors() {
-  window.location.href = `${BASE}/api/export/doctors`;
-  showToast('Downloading doctors CSV...', 'info');
+/* ─── Dropdown Toggle Functions ─── */
+function toggleDoctorsMenu() {
+  const menu = document.getElementById('doctors-export-menu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
 }
 
-function exportRequests() {
-  window.location.href = `${BASE}/api/export/requests`;
-  showToast('Downloading requests CSV...', 'info');
+function toggleRequestsMenu() {
+  const menu = document.getElementById('requests-export-menu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(e) {
+  const doctorsGroup = document.getElementById('doctors-export-group');
+  const requestsGroup = document.getElementById('requests-export-group');
+  
+  if (doctorsGroup && !doctorsGroup.contains(e.target)) {
+    const doctorsMenu = document.getElementById('doctors-export-menu');
+    if (doctorsMenu) doctorsMenu.style.display = 'none';
+  }
+  
+  if (requestsGroup && !requestsGroup.contains(e.target)) {
+    const requestsMenu = document.getElementById('requests-export-menu');
+    if (requestsMenu) requestsMenu.style.display = 'none';
+  }
+});
+
+/* ─── Dropdown Toggle Handler ─── */
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Bootstrap dropdowns
+  const dropdownButtons = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+  dropdownButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const menu = this.nextElementSibling;
+      if (menu && menu.classList.contains('dropdown-menu')) {
+        menu.classList.toggle('show');
+      }
+    });
+  });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdownMenus = document.querySelectorAll('.dropdown-menu');
+    dropdownMenus.forEach(menu => {
+      if (!menu.parentElement.contains(e.target)) {
+        menu.classList.remove('show');
+      }
+    });
+  });
+  
+  // Close dropdowns when clicking on menu items
+  const dropdownItems = document.querySelectorAll('.dropdown-item');
+  dropdownItems.forEach(item => {
+    item.addEventListener('click', function() {
+      const menu = this.closest('.dropdown-menu');
+      if (menu) {
+        menu.classList.remove('show');
+      }
+    });
+  });
+});
+
+/* ─── Export Functions ─── */
+function exportDoctors(format = 'csv') {
+  const formatLabels = {
+    csv: 'CSV',
+    json: 'JSON',
+    xlsx: 'Excel',
+    pdf: 'PDF',
+    docx: 'Word'
+  };
+  window.location.href = `${BASE}/api/export/doctors?format=${format}`;
+  showToast(`Downloading doctors ${formatLabels[format]}...`, 'info');
+}
+
+function exportRequests(format = 'csv') {
+  const formatLabels = {
+    csv: 'CSV',
+    json: 'JSON',
+    xlsx: 'Excel',
+    pdf: 'PDF',
+    docx: 'Word'
+  };
+  window.location.href = `${BASE}/api/export/requests?format=${format}`;
+  showToast(`Downloading requests ${formatLabels[format]}...`, 'info');
 }
 
 /* ─── Doctor Details Modal ─── */
 async function viewDoctor(id) {
   try {
-    const res = await fetch(`${BASE}/api/doctor/${id}`);
+    const res = await fetch(`${BASE}/api/doctor/${id}/view`);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const data = await res.json();
-    if (data.success && data.data) {
-      showDoctorModal(data.data);
+    if (data.success && data.doctor) {
+      showDoctorModal(data.doctor);
     } else {
       showToast('Failed to load doctor details: ' + (data.message || 'Unknown error'), 'error');
     }
@@ -2572,6 +3457,9 @@ function toggleTheme() {
   showToast(`Switched to ${isLight ? 'light' : 'dark'} mode`, 'success');
 }
 </script>
+
+<!-- Bootstrap JS Bundle (for dropdown, modals, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Refreshing Indicator -->
 <div id="refreshing-indicator" class="refreshing-indicator">

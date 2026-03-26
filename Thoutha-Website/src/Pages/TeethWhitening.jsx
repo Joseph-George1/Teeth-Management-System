@@ -16,7 +16,7 @@ export default function TeethWhitening() {
           <img src="./تبيض اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>تبييض الأسنان</p>
+          <p>تنظيف وتبييض الأسنان</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,13 +24,13 @@ export default function TeethWhitening() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="تبييض الأسنان" categoryId={3} refreshKey={refreshKey} />
+      <RequestsList categoryName="تنظيف وتبييض الأسنان" categoryId={7} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="تبييض الأسنان"
-        categoryId={3}
+        specialization="تنظيف وتبييض الأسنان"
+        categoryId={7}
       />
     </>
   );

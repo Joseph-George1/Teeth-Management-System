@@ -13,10 +13,10 @@ export default function DentalImplant() {
     <>
       <div className="top-page">
         <div className="circle-img">
-          <img src="./حشو اسنان.svg" alt="img" />
+          <img src="./زراعه اسنان.svg" alt="img" />
         </div>
         <div className="page-name">
-          <p>حشو العصب</p>
+          <p>زراعة الأسنان</p>
         </div>
       </div>
       {isLoggedIn && (
@@ -24,13 +24,13 @@ export default function DentalImplant() {
           + اطلب جديد
         </button>
       )}
-      <RequestsList categoryName="حشو العصب" categoryId={2} refreshKey={refreshKey} />
+      <RequestsList categoryName="زراعة الأسنان" categoryId={6} refreshKey={refreshKey} />
       <AddRequest
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={() => setRefreshKey(k => k + 1)}
-        specialization="حشو العصب"
-        categoryId={2}
+        specialization="زراعة الأسنان"
+        categoryId={6}
       />
     </>
   );

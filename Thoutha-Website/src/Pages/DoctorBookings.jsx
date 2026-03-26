@@ -1,85 +1,219 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorBooking.css";
 
-const initialBookings = [
-  {
-    id: 1,
-    patientName: "زياد جمال",
-    phone: "01012345678",
-    service: "تقويم أسنان",
-    time: "11:30 صباحاً",
-    date: "2025-12-10",
-    status: "قادم",
-  },
-  {
-    id: 2,
-    patientName: "عبد الحليم رمضان",
-    phone: "01098765432",
-    service: "حشو عصب",
-    time: "02:45 مساءً",
-    date: "2025-12-11",
-    status: "قادم",
-  },
-  {
-    id: 3,
-    patientName: "محمد أشرف",
-    phone: "01156781234",
-    service: "تنظيف أسنان",
-    time: "10:15 صباحاً",
-    date: "2025-12-12",
-    status: "قادم",
-  },
-  {
-    id: 4,
-    patientName: "جوزيف جورج",
-    phone: "01234567890",
-    service: "تركيب كوبري",
-    time: "04:30 مساءً",
-    date: "2025-12-13",
-    status: "قادم",
-  },
-];
+// Helper functions
+const getDate = (dt) => dt ? dt.split('T')[0] : '';
+const getTime = (dt) => {
+  if (!dt) return '';
+  const parts = dt.split('T');
+  return parts[1] ? parts[1].slice(0, 5) : '';
+};
+
+const getTimePeriod = (dt) => {
+  const t = getTime(dt);
+  if (!t) return '';
+  const [h] = t.split(':').map(Number);
+  return h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً';
+};
+
+const normalizeList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.result)) return payload.result;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
+};
 
 export default function DoctorBookings() {
-  const [bookings, setBookings] = useState(initialBookings);
+  const { user, authLoading, isLoggedIn } = useContext(AuthContext);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [notificationCount, setNotificationCount] = useState(3);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (!isLoggedIn || authLoading) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    const token = user?.token || localStorage.getItem("token");
+    if (!token) {
+      setError("لم نتمكن من الحصول على بيانات المستخدم");
+      setLoading(false);
+      return;
+    }
+
+    // قراءة البيانات من localStorage بدلاً من API
+    try {
+      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
+      
+      const processedData = approvedAppointments.map((appt) => ({
+        id: appt.id || Math.random(),
+        patientName: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
+        phone: appt.patientPhoneNumber || "",
+        service: appt.categoryName || "",
+        description: appt.requestDescription || "",
+        time: `${getTime(appt.appointmentDate)} ${getTimePeriod(appt.appointmentDate)}`,
+        date: getDate(appt.appointmentDate),
+        status: "مقبول",
+        ...appt,
+      }));
+      
+      if (!cancelled) {
+        setBookings(processedData);
+      }
+    } catch (err) {
+      if (!cancelled) setError("حدث خطأ أثناء قراءة البيانات");
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+
+    return () => { cancelled = true; };
+  }, [isLoggedIn, authLoading, user]);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAccept = (e, id) => {
+  const handleComplete = async (e, appointmentId) => {
     e.stopPropagation();
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "مقبول", accepted: true, rejected: false } : b))
-    );
-    showToast("تم قبول الحجز بنجاح ✓", "success");
+    
+    const token = user?.token || localStorage.getItem("token");
+    
+    try {
+      const response = await fetch(
+        `https://thoutha.page/api/appointment/updateStatus/${appointmentId}?status=DONE`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
+
+      // الحصول على بيانات الحجز المكتمل
+      const completedBooking = bookings.find(b => b.id === appointmentId);
+      
+      if (completedBooking) {
+        // إضافة الحجز المكتمل للمرضى
+        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
+        const newPatient = {
+          ...completedBooking,
+          status: "مكتمل",
+          statusClass: "completed",
+        };
+        acceptedPatients.push(newPatient);
+        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
+      }
+
+      // حذف من localStorage
+      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
+      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
+      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
+
+      setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
+      setSelectedBooking(null);
+      showToast("تم اكمال الحجز وإضافته للمرضى ✓", "success");
+    } catch (err) {
+      showToast(err.message || "فشل التحديث", "error");
+    }
   };
 
-  const handleReject = (e, id) => {
+  const handleCancel = async (e, appointmentId) => {
     e.stopPropagation();
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: "مرفوض", rejected: true, accepted: false } : b))
-    );
-    showToast("تم رفض الحجز", "error");
-  };
+    
+    const token = user?.token || localStorage.getItem("token");
+    
+    try {
+      const response = await fetch(
+        `https://thoutha.page/api/appointment/updateStatus/${appointmentId}?status=CANCELLED`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-  const handleMenuClick = () => {
-    console.log("Menu clicked – open drawer");
-  };
+      if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-  const handleNotificationClick = () => {
-    setNotificationCount(0);
-    console.log("Notifications clicked");
+      // الحصول على بيانات الحجز الملغى
+      const cancelledBooking = bookings.find(b => b.id === appointmentId);
+      
+      if (cancelledBooking) {
+        // إضافة الحجز الملغى للمرضى
+        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
+        const newPatient = {
+          ...cancelledBooking,
+          status: "ملغى",
+          statusClass: "cancelled",
+        };
+        acceptedPatients.push(newPatient);
+        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
+      }
+
+      // حذف من localStorage
+      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
+      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
+      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
+
+      setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
+      setSelectedBooking(null);
+      showToast("تم الغاء الحجز وإضافته للمرضى ✓", "success");
+    } catch (err) {
+      showToast(err.message || "فشل الالغاء", "error");
+    }
   };
 
   const getStatusClass = (booking) => {
-    if (booking.accepted) return "accepted";
-    if (booking.rejected) return "rejected";
+    if (booking.status === "مقبول") return "completed";
+    if (booking.status === "ملغى") return "cancelled";
     return "upcoming";
+  };
+
+  const handleDelete = async (e, appointmentId) => {
+    e.stopPropagation();
+    
+    if (!window.confirm("هل أنت متأكد من حذف هذا الحجز؟")) {
+      return;
+    }
+
+    const token = user?.token || localStorage.getItem("token");
+    
+    try {
+      const response = await fetch(
+        `https://thoutha.page/api/appointment/deleteAppointment/${appointmentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل حذف الحجز");
+
+      // حذف من localStorage
+      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
+      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
+      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
+
+      setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
+      setSelectedBooking(null);
+      showToast("تم حذف الحجز بنجاح ✓", "success");
+    } catch (err) {
+      showToast(err.message || "فشل الحذف", "error");
+    }
   };
 
   return (
@@ -89,16 +223,20 @@ export default function DoctorBookings() {
       )}
 
       <main className="dnb-content">
-        <h1 className="dnb-page-title">حجوزاتي القادمة</h1>
+        <h1 className="dnb-page-title">حجوزاتي</h1>
 
-        {bookings.length === 0 ? (
-          <p className="dnb-empty">لا توجد حجوزات قادمة</p>
+        {loading ? (
+          <p className="dnb-empty">جاري تحميل الحجوزات...</p>
+        ) : error ? (
+          <p className="dnb-empty dnb-error">{error}</p>
+        ) : bookings.length === 0 ? (
+          <p className="dnb-empty">لا توجد حجوزات حالياً</p>
         ) : (
           <div className="dnb-booking-list">
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className={`dnb-booking-card ${booking.accepted ? "dnb-card--accepted" : ""} ${booking.rejected ? "dnb-card--rejected" : ""}`}
+                className={`dnb-booking-card dnb-card--${getStatusClass(booking)}`}
                 onClick={() => setSelectedBooking(booking)}
               >
                 <div className="dnb-card-top">
@@ -130,22 +268,26 @@ export default function DoctorBookings() {
                   </span>
                 </div>
 
-                {!booking.accepted && !booking.rejected && (
-                  <div className="dnb-card-actions" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="dnb-action-btn dnb-action-btn--accept"
-                      onClick={(e) => handleAccept(e, booking.id)}
-                    >
-                      قبول
-                    </button>
-                    <button
-                      className="dnb-action-btn dnb-action-btn--reject"
-                      onClick={(e) => handleReject(e, booking.id)}
-                    >
-                      رفض
-                    </button>
-                  </div>
-                )}
+                <div className="dnb-card-actions" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className="dnb-action-btn dnb-action-btn--accept" 
+                    onClick={(e) => handleComplete(e, booking.id)}
+                  >
+                    مكتمل
+                  </button>
+                  <button 
+                    className="dnb-action-btn dnb-action-btn--reject" 
+                    onClick={(e) => handleCancel(e, booking.id)}
+                  >
+                    ملغي
+                  </button>
+                  <button 
+                    className="dnb-action-btn dnb-action-btn--delete" 
+                    onClick={(e) => handleDelete(e, booking.id)}
+                  >
+                    حذف
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -170,7 +312,8 @@ export default function DoctorBookings() {
               { icon: "📞", label: "رقم الهاتف", value: selectedBooking.phone },
               { icon: "📅", label: "التاريخ", value: selectedBooking.date },
               { icon: "⏰", label: "الوقت", value: selectedBooking.time },
-              { icon: "🦷", label: "التخصص", value: selectedBooking.service },
+              { icon: "🦷", label: "فئة الخدمة", value: selectedBooking.service },
+              ...(selectedBooking.description ? [{ icon: "📝", label: "الوصف", value: selectedBooking.description }] : []),
             ].map(({ icon, label, value }) => (
               <div key={label} className="dnb-detail-row">
                 <div className="dnb-detail-icon">{icon}</div>
@@ -181,9 +324,29 @@ export default function DoctorBookings() {
               </div>
             ))}
 
-            <button className="dnb-close-btn" onClick={() => setSelectedBooking(null)}>
-              إغلاق
-            </button>
+            <div className="dnb-sheet-actions">
+              <button className="dnb-close-btn" onClick={() => setSelectedBooking(null)}>
+                إغلاق
+              </button>
+              <button 
+                className="dnb-action-btn dnb-action-btn--accept" 
+                onClick={(e) => handleComplete(e, selectedBooking.id)}
+              >
+                مكتمل
+              </button>
+              <button 
+                className="dnb-action-btn dnb-action-btn--reject" 
+                onClick={(e) => handleCancel(e, selectedBooking.id)}
+              >
+                ملغي
+              </button>
+              <button 
+                className="dnb-delete-btn" 
+                onClick={(e) => handleDelete(e, selectedBooking.id)}
+              >
+                🗑 حذف
+              </button>
+            </div>
           </div>
         </div>
       )}
