@@ -18,6 +18,8 @@ public class SignUpRequest {
     private String email;
     @NotBlank(message = "doctor.password.required")
     private String password;
+    @NotBlank(message = "doctor.confirm.password.required")
+    private String confirmPassword;
     @NotBlank(message = "doctor.phonenumber.required")
     private String phoneNumber;
     @NotBlank(message = "doctor.city.required")

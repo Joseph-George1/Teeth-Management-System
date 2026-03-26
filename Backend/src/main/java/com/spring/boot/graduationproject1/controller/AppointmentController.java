@@ -53,4 +53,22 @@ public class AppointmentController {
         appointmentService.deleteAppointment(appointmentId);
         return ResponseEntity.noContent().build();
     }
+
+
+    @GetMapping("/getApprovedAndDone")
+    public ResponseEntity<List<AppointmentDto>> getApprovedAndDone() {
+        return ResponseEntity.ok(appointmentService.getApprovedAndDoneAppointments());
+    }
+
+
+    @GetMapping("/getApproved")
+    public ResponseEntity<List<AppointmentDto>> getApproved() {
+        return ResponseEntity.ok(appointmentService.getApprovedAppointments());
+    }
+
+
+    @GetMapping("/getDone")
+    public ResponseEntity<List<AppointmentDto>> getDone() {
+        return ResponseEntity.ok(appointmentService.getDoneAppointments());
+    }
 }

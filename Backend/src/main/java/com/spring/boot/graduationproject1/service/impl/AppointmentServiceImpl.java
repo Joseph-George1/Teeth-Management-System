@@ -53,6 +53,13 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new RuntimeException("Patient phone number is required");
         }
 
+        boolean exists = appointmentRepo.existsByPatientPhoneNumberAndIsHistoryFalseAndIsExpiredFalse(
+                appointmentDto.getPatientPhoneNumber());
+        if (exists) throw new RuntimeException("Patient already has an active appointment");
+
+        // === STEP 4: Auto-create or get patient by phone number ===
+
+
         // === STEP 3: Auto-create or get patient by phone number ===
         Patients patient = patientRepo.findByPhoneNumber(appointmentDto.getPatientPhoneNumber())
                 .orElseGet(() -> {
@@ -179,5 +186,53 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointments appointment = appointmentRepo.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
         appointmentRepo.delete(appointment);
+    }
+
+    @Override
+    public List<AppointmentDto> getApprovedAndDoneAppointments() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatusIn(
+                doctor.getId(),
+                List.of(AppointmentStatus.APPROVED, AppointmentStatus.DONE)
+        );
+
+        return appointmentMapper.toListDto(appointments);
+    }
+
+    @Override
+    public List<AppointmentDto> getApprovedAppointments() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatus(
+                doctor.getId(),
+                AppointmentStatus.APPROVED
+        );
+
+        return appointmentMapper.toListDto(appointments);
+    }
+
+    @Override
+    public List<AppointmentDto> getDoneAppointments() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Doctor doctor = doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatus(
+                doctor.getId(),
+                AppointmentStatus.DONE
+        );
+
+        return appointmentMapper.toListDto(appointments);
     }
 }
