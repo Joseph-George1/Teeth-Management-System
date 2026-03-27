@@ -211,7 +211,9 @@ def get_analytics(token):
     requests_by_category = Counter(r.get("categoryName", "Unknown") for r in reqs)
     
     # ---- appointments aggregation ----
-    appointments_by_status = Counter(a.get("status", "UNKNOWN") for a in appointments)
+    appointments_by_status = Counter(a.get("status", "UNKNOWN").upper() if isinstance(a.get("status"), str) else "UNKNOWN" for a in appointments)
+    app.logger.info(f"Appointments by status: {dict(appointments_by_status)}")
+    app.logger.info(f"Total appointments: {len(appointments)}, Unique statuses: {list(appointments_by_status.keys())}")
 
     # ---- request timeline (by month from dateTime) ----
     timeline: Counter = Counter()
@@ -3882,15 +3884,23 @@ function refreshAppointments() {
     const done = document.getElementById('stat-appointments-done');
     const expired = document.getElementById('stat-appointments-expired');
     
-    if (pending) pending.textContent = apptsByStatus.PENDING || 0;
-    if (approved) approved.textContent = apptsByStatus.APPROVED || 0;
-    if (done) done.textContent = apptsByStatus.DONE || 0;
+    // Handle both uppercase and lowercase status keys from backend
+    const getPendingCount = () => apptsByStatus.PENDING || apptsByStatus.pending || 0;
+    const getApprovedCount = () => apptsByStatus.APPROVED || apptsByStatus.approved || 0;
+    const getDoneCount = () => apptsByStatus.DONE || apptsByStatus.done || 0;
+    
+    if (pending) pending.textContent = getPendingCount();
+    if (approved) approved.textContent = getApprovedCount();
+    if (done) done.textContent = getDoneCount();
     
     // Count expired appointments (those with isExpired=true)
     const expiredCount = (initialData.appointments_list || []).filter(a => a.isExpired === true).length;
     if (expired) expired.textContent = expiredCount;
     
-    console.log('Appointment initialization complete - Pending:', apptsByStatus.PENDING, 'Approved:', apptsByStatus.APPROVED, 'Done:', apptsByStatus.DONE, 'Expired:', expiredCount);
+    console.log('Appointment initialization complete');
+    console.log('Status object keys:', Object.keys(apptsByStatus));
+    console.log('Counts - Pending:', getPendingCount(), 'Approved:', getApprovedCount(), 'Done:', getDoneCount(), 'Expired:', expiredCount);
+    console.log('Full appointments_by_status:', apptsByStatus);
   } else {
     console.log('No appointment data in initial analytics');
     // Still create modal so buttons work
@@ -4001,6 +4011,7 @@ async function viewDoctor(id) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const data = await res.json();
+    console.log('Doctor data:', data);
     if (data.success && data.doctor) {
       showDoctorModal(data.doctor);
     } else {
