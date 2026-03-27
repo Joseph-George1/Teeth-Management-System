@@ -3493,9 +3493,45 @@ async function loadAppointmentsByStatus(status) {
     const res = await fetch(endpoint);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    console.log(`Loaded ${(data.appointments || []).length} ${status} appointments`, data.appointments);
-    rebuildAppointmentTable(data.appointments || []);
-    showToast(`Loaded ${(data.appointments || []).length} ${status} appointments`, 'info');
+    
+    let appointments = data.appointments || [];
+    console.log(`Loaded ${appointments.length} ${status} appointments:`, appointments);
+    
+    // If expired filter returned no results, try fetching all and filtering locally
+    if (status === 'EXPIRED' && appointments.length === 0) {
+      console.log('Expired returned empty, fetching all and filtering locally...');
+      const allRes = await fetch(`${BASE}/api/appointments/all`);
+      if (allRes.ok) {
+        const allData = await allRes.json();
+        appointments = (allData.appointments || []).filter(a => a.isExpired === true);
+        console.log(`Found ${appointments.length} expired appointments locally`);
+      }
+    }
+    
+    // If ALL filter returned empty, try fetching individual statuses
+    if (status === 'ALL' && appointments.length === 0) {
+      console.log('ALL returned empty, fetching individual status lists...');
+      const statuses = ['PENDING', 'APPROVED', 'DONE', 'CANCELLED'];
+      const allAppointments = [];
+      
+      for (let s of statuses) {
+        try {
+          const statusRes = await fetch(`${BASE}/api/appointments/list?status=${s}`);
+          if (statusRes.ok) {
+            const statusData = statusRes.json();
+            allAppointments.push(...(statusData.appointments || []));
+          }
+        } catch(e) {
+          console.warn(`Failed to fetch ${s} appointments:`, e);
+        }
+      }
+      
+      appointments = allAppointments;
+      console.log(`Found ${appointments.length} total appointments`);
+    }
+    
+    rebuildAppointmentTable(appointments);
+    showToast(`Loaded ${appointments.length} ${status} appointments`, 'info');
   } catch(e) {
     showToast('Failed to load appointments: ' + e.message, 'error');
     console.error('Load appointments error:', e);
@@ -3534,7 +3570,7 @@ function rebuildAppointmentTable(appointments) {
           <td>${(a.doctorFirstName||'')+' '+(a.doctorLastName||'')||a.doctorName||'—'}</td>
           <td>${a.doctorPhoneNumber||'—'}</td>
           <td>${statusBadge(a.status, a.isExpired)}</td>
-          <td>${a.appointmentDateTime||a.dateTime||'—'}</td>
+          <td>${a.appointmentDateTime || a.appointmentDate || a.dateTime || '—'}</td>
           <td>
             <div class="btn-group btn-group-sm">
               <button class="btn btn-outline-primary" onclick="viewAppointment(${a.id})" title="View Details"><i class="fa fa-eye"></i></button>
@@ -3573,7 +3609,7 @@ function rebuildAppointmentTable(appointments) {
           </div>
           <div class="card-row">
             <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
-            <span class="card-value">${a.appointmentDateTime||a.dateTime||'—'}</span>
+            <span class="card-value">${a.appointmentDateTime || a.appointmentDate || a.dateTime || '—'}</span>
           </div>
           <div class="d-flex gap-2 mt-3">
             <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewAppointment(${a.id})"><i class="fa fa-eye me-1"></i>View</button>
@@ -3587,18 +3623,45 @@ function rebuildAppointmentTable(appointments) {
 }
 
 async function viewAppointment(id) {
-  console.log(`Fetching appointment details for ID: ${id}`);
+  console.log(`Viewing appointment details for ID: ${id}`);
   try {
-    const res = await fetch(`${BASE}/api/appointments/${id}/view`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    console.log('Appointment details:', data);
-    if (data.success && data.appointment) {
-      showAppointmentModal(data.appointment);
-    } else {
-      showToast('Failed to load appointment details: ' + (data.message || 'Unknown error'), 'error');
-      console.error('Appointment load failed:', data);
+    // First, try to find appointment in currently displayed table
+    const rows = document.querySelectorAll('#appointment-tbody tr');
+    let appointmentData = null;
+    
+    for (let row of rows) {
+      const cellId = row.cells[1]?.textContent?.trim();
+      if (cellId == id) {
+        appointmentData = {
+          id: id,
+          doctorFirstName: row.cells[2]?.textContent?.trim() || '',
+          doctorPhoneNumber: row.cells[3]?.textContent?.trim() || '',
+          status: row.cells[4]?.textContent?.trim() || 'UNKNOWN',
+          appointmentDateTime: row.cells[5]?.textContent?.trim() || '—'
+        };
+        console.log('Found appointment in table:', appointmentData);
+        break;
+      }
     }
+    
+    // If not found in table, fetch from server
+    if (!appointmentData) {
+      console.log('Appointment not in table, fetching from server...');
+      const res = await fetch(`${BASE}/api/appointments/${id}/view`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log('Appointment from server:', data);
+      if (data.success && data.appointment) {
+        appointmentData = data.appointment;
+      } else {
+        showToast('Failed to load appointment details: ' + (data.message || 'Unknown error'), 'error');
+        console.error('Appointment load failed:', data);
+        return;
+      }
+    }
+    
+    // Show modal with the appointment data
+    showAppointmentModal(appointmentData);
   } catch(e) {
     showToast('Error loading appointment: ' + e.message, 'error');
     console.error('View appointment error:', e);
@@ -3641,7 +3704,7 @@ function showAppointmentModal(appt) {
     </div>
     <div class="modal-row">
       <div class="modal-label">Date &amp; Time</div>
-      <div class="modal-value">${appt.appointmentDateTime||appt.dateTime || '—'}</div>
+      <div class="modal-value">${appt.appointmentDateTime || appt.appointmentDate || appt.dateTime || '—'}</div>
     </div>
     <div class="modal-row">
       <div class="modal-label">Description</div>
@@ -3805,8 +3868,11 @@ function refreshAppointments() {
   }
   
   // Load initial appointments data
-  if (initialData.appointments_list && initialData.appointments_list.length > 0) {
-    console.log('Initial appointments loaded:', initialData.appointments_list.length);
+  console.log('Initializing appointments...');
+  if (initialData.appointments_list) {
+    console.log('Initial appointments available:', initialData.appointments_list.length);
+    
+    // Always rebuild table even if empty
     rebuildAppointmentTable(initialData.appointments_list);
     
     // Update appointment stat cards
@@ -3820,14 +3886,14 @@ function refreshAppointments() {
     if (approved) approved.textContent = apptsByStatus.APPROVED || 0;
     if (done) done.textContent = apptsByStatus.DONE || 0;
     
-    // Count expired appointments
+    // Count expired appointments (those with isExpired=true)
     const expiredCount = (initialData.appointments_list || []).filter(a => a.isExpired === true).length;
     if (expired) expired.textContent = expiredCount;
     
-    console.log('Appointment stats - Pending:', apptsByStatus.PENDING, 'Approved:', apptsByStatus.APPROVED, 'Done:', apptsByStatus.DONE, 'Expired:', expiredCount);
+    console.log('Appointment initialization complete - Pending:', apptsByStatus.PENDING, 'Approved:', apptsByStatus.APPROVED, 'Done:', apptsByStatus.DONE, 'Expired:', expiredCount);
   } else {
-    console.log('No initial appointment data available');
-    // Ensure appointment modal exists even if no data
+    console.log('No appointment data in initial analytics');
+    // Still create modal so buttons work
     if (!document.getElementById('appointment-modal')) {
       createAppointmentModal();
     }
