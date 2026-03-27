@@ -267,53 +267,10 @@ def get_analytics(token):
 #  APPOINTMENT HELPERS
 # ─────────────────────────────────────────────
 
-def _get_appointments(status_filter=None):
-    """Get appointments from admin dashboard. Optionally filter by status."""
-    dashboard_data, _ = _get("/api/admin/dashboard")
-    if not dashboard_data:
-        return []
-    
-    all_appointments = dashboard_data.get("allAppointments", [])
-    
-    if not status_filter or status_filter.upper() == "ALL":
-        return all_appointments
-    
-    # Handle special case: EXPIRED is not a status, it's the isExpired field
-    if status_filter.upper() == "EXPIRED":
-        return [a for a in all_appointments if a.get("isExpired") is True]
-    
-    # Filter by status (PENDING, APPROVED, DONE, CANCELLED)
-    return [a for a in all_appointments if a.get("status", "").upper() == status_filter.upper()]
-
-
-def _get_pending_appointments():
-    """Get pending appointments."""
-    return _get_appointments("PENDING")
-
-
-def _get_approved_appointments():
-    """Get approved appointments."""
-    return _get_appointments("APPROVED")
-
-
-def _get_done_appointments():
-    """Get completed appointments."""
-    return _get_appointments("DONE")
-
-
-def _get_cancelled_appointments():
-    """Get cancelled appointments."""
-    return _get_appointments("CANCELLED")
-
-
-def _get_expired_appointments():
-    """Get expired appointments - these have isExpired=true."""
-    return _get_appointments("EXPIRED")
-
-
 def _get_all_appointments():
-    """Get all appointments regardless of status or expiration."""
-    return _get_appointments("ALL")
+    """Get all appointments from backend."""
+    data, status = _get("/api/admin/getAllAppointments")
+    return data if status == 200 and data else []
 
 
 # ─────────────────────────────────────────────
@@ -508,92 +465,29 @@ def api_delete_doctor_admin(doctor_id):
 
 # ── Appointment endpoints ──
 
-@app.route(f"{ADMIN_PREFIX}/api/appointments/list")
-@login_required
-def api_get_appointments():
-    """Get all appointments with optional status filter"""
-    status_filter = request.args.get("status")
-    appointments = _get_appointments(status_filter)
-    return jsonify({"success": True, "appointments": appointments})
-
-
 @app.route(f"{ADMIN_PREFIX}/api/appointments/all")
 @login_required
 def api_get_all_appointments():
-    """Get ALL appointments (no filter)"""
+    """Get ALL appointments"""
     appointments = _get_all_appointments()
     return jsonify({"success": True, "appointments": appointments})
 
 
-@app.route(f"{ADMIN_PREFIX}/api/appointments/pending")
+@app.route(f"{ADMIN_PREFIX}/api/appointments/filter")
 @login_required
-def api_get_pending_appointments():
-    """Get pending appointments"""
-    appointments = _get_pending_appointments()
-    return jsonify({"success": True, "appointments": appointments})
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/approved")
-@login_required
-def api_get_approved_appointments():
-    """Get approved appointments"""
-    appointments = _get_approved_appointments()
-    return jsonify({"success": True, "appointments": appointments})
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/done")
-@login_required
-def api_get_done_appointments():
-    """Get completed appointments"""
-    appointments = _get_done_appointments()
-    return jsonify({"success": True, "appointments": appointments})
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/cancelled")
-@login_required
-def api_get_cancelled_appointments():
-    """Get cancelled appointments"""
-    appointments = _get_cancelled_appointments()
-    return jsonify({"success": True, "appointments": appointments})
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/expired")
-@login_required
-def api_get_expired_appointments_route():
-    """Get expired appointments (isExpired=true)"""
-    appointments = _get_expired_appointments()
-    return jsonify({"success": True, "appointments": appointments})
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/<int:appointment_id>/view")
-@login_required
-def api_view_appointment(appointment_id):
-    """Get full appointment details"""
-    appointments = _get_appointments()
-    appt = next((a for a in appointments if a.get("id") == appointment_id), None)
-    if appt:
-        return jsonify({"success": True, "appointment": appt})
-    return jsonify({"success": False, "message": "Appointment not found"}), 404
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/<int:appointment_id>/approve", methods=["POST"])
-@login_required
-def api_approve_appointment(appointment_id):
-    """Approve an appointment"""
-    data, status = _put(f"/api/appointment/updateStatus/{appointment_id}", data={"status": "APPROVED"})
-    if status == 200:
-        return jsonify({"success": True, "message": f"Appointment {appointment_id} approved"})
-    return jsonify({"success": False, "message": f"Update failed: HTTP {status}"}), 400
-
-
-@app.route(f"{ADMIN_PREFIX}/api/appointments/<int:appointment_id>/reject", methods=["POST"])
-@login_required
-def api_reject_appointment(appointment_id):
-    """Reject an appointment"""
-    data, status = _put(f"/api/appointment/updateStatus/{appointment_id}", data={"status": "REJECTED"})
-    if status == 200:
-        return jsonify({"success": True, "message": f"Appointment {appointment_id} rejected"})
-    return jsonify({"success": False, "message": f"Update failed: HTTP {status}"}), 400
+def api_filter_appointments():
+    """Filter appointments by status (PENDING, APPROVED, DONE, CANCELLED, EXPIRED)"""
+    status_filter = request.args.get("status", "").upper()
+    all_appts = _get_all_appointments()
+    
+    if status_filter == "EXPIRED":
+        filtered = [a for a in all_appts if a.get("isExpired") is True]
+    elif status_filter in ["PENDING", "APPROVED", "DONE", "CANCELLED"]:
+        filtered = [a for a in all_appts if a.get("status") == status_filter]
+    else:
+        filtered = all_appts
+    
+    return jsonify({"success": True, "appointments": filtered})
 
 
 @app.route(f"{ADMIN_PREFIX}/api/appointments/<int:appointment_id>/delete", methods=["POST"])
@@ -3478,60 +3372,25 @@ let currentAppointmentFilter = 'PENDING';
 
 async function loadAppointmentsByStatus(status) {
   currentAppointmentFilter = status;
-  let endpoint = '';
-  
-  // Determine correct endpoint based on status
-  if (status === 'ALL') {
-    endpoint = `${BASE}/api/appointments/all`;
-  } else if (status === 'EXPIRED') {
-    endpoint = `${BASE}/api/appointments/expired`;
-  } else {
-    endpoint = `${BASE}/api/appointments/list?status=${status}`;
-  }
-  
-  console.log(`Loading ${status} appointments from: ${endpoint}`);
+  console.log(`Loading ${status} appointments...`);
   
   try {
-    const res = await fetch(endpoint);
+    // Fetch all appointments from backend
+    const res = await fetch(`${BASE}/api/appointments/all`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     
     let appointments = data.appointments || [];
-    console.log(`Loaded ${appointments.length} ${status} appointments:`, appointments);
+    console.log(`Fetched ${appointments.length} total appointments`);
     
-    // If expired filter returned no results, try fetching all and filtering locally
-    if (status === 'EXPIRED' && appointments.length === 0) {
-      console.log('Expired returned empty, fetching all and filtering locally...');
-      const allRes = await fetch(`${BASE}/api/appointments/all`);
-      if (allRes.ok) {
-        const allData = await allRes.json();
-        appointments = (allData.appointments || []).filter(a => a.isExpired === true);
-        console.log(`Found ${appointments.length} expired appointments locally`);
-      }
+    // Filter by status locally
+    if (status === 'EXPIRED') {
+      appointments = appointments.filter(a => a.isExpired === true);
+    } else if (status !== 'ALL') {
+      appointments = appointments.filter(a => a.status === status);
     }
     
-    // If ALL filter returned empty, try fetching individual statuses
-    if (status === 'ALL' && appointments.length === 0) {
-      console.log('ALL returned empty, fetching individual status lists...');
-      const statuses = ['PENDING', 'APPROVED', 'DONE', 'CANCELLED'];
-      const allAppointments = [];
-      
-      for (let s of statuses) {
-        try {
-          const statusRes = await fetch(`${BASE}/api/appointments/list?status=${s}`);
-          if (statusRes.ok) {
-            const statusData = statusRes.json();
-            allAppointments.push(...(statusData.appointments || []));
-          }
-        } catch(e) {
-          console.warn(`Failed to fetch ${s} appointments:`, e);
-        }
-      }
-      
-      appointments = allAppointments;
-      console.log(`Found ${appointments.length} total appointments`);
-    }
-    
+    console.log(`After filtering by '${status}': ${appointments.length} appointments`);
     rebuildAppointmentTable(appointments);
     showToast(`Loaded ${appointments.length} ${status} appointments`, 'info');
   } catch(e) {
@@ -3576,8 +3435,6 @@ function rebuildAppointmentTable(appointments) {
           <td>
             <div class="btn-group btn-group-sm">
               <button class="btn btn-outline-primary" onclick="viewAppointment(${a.id})" title="View Details"><i class="fa fa-eye"></i></button>
-              ${a.status?.toUpperCase() === 'PENDING' ? `<button class="btn btn-outline-success" onclick="approveAppointment(${a.id},this)" title="Approve"><i class="fa fa-check"></i></button>` : ''}
-              ${a.status?.toUpperCase() === 'PENDING' ? `<button class="btn btn-outline-warning" onclick="rejectAppointment(${a.id},this)" title="Reject"><i class="fa fa-times"></i></button>` : ''}
               <button class="btn btn-outline-danger" onclick="deleteAppointment(${a.id},this)" title="Delete"><i class="fa fa-trash"></i></button>
             </div>
           </td>
@@ -3615,7 +3472,6 @@ function rebuildAppointmentTable(appointments) {
           </div>
           <div class="d-flex gap-2 mt-3">
             <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewAppointment(${a.id})"><i class="fa fa-eye me-1"></i>View</button>
-            ${a.status?.toUpperCase() === 'PENDING' ? `<button class="btn btn-sm btn-outline-success flex-fill" onclick="approveAppointment(${a.id},this)"><i class="fa fa-check me-1"></i>Approve</button>` : ''}
             <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteAppointment(${a.id},this)"><i class="fa fa-trash me-1"></i>Delete</button>
           </div>
         </div>
@@ -3743,55 +3599,13 @@ function closeAppointmentModal() {
 }
 
 async function approveAppointment(id, btn) {
-  if (!confirm(`Approve appointment ID ${id}?`)) return;
-  
-  const originalHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
-  
-  try {
-    const res = await fetch(`${BASE}/api/appointments/${id}/approve`, { method: 'POST' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data.success) {
-      showToast(`Appointment ${id} approved`, 'success');
-      setTimeout(() => loadAppointmentsByStatus(currentAppointmentFilter), 1500);
-    } else {
-      showToast('Approval failed: ' + data.message, 'error');
-      btn.disabled = false;
-      btn.innerHTML = originalHTML;
-    }
-  } catch(e) {
-    showToast('Request error: ' + e.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-  }
+  // Backend admin endpoint for approve does not exist
+  showToast('Admin approval not supported - doctor must approve through their app', 'warning');
 }
 
 async function rejectAppointment(id, btn) {
-  if (!confirm(`Reject appointment ID ${id}?`)) return;
-  
-  const originalHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
-  
-  try {
-    const res = await fetch(`${BASE}/api/appointments/${id}/reject`, { method: 'POST' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data.success) {
-      showToast(`Appointment ${id} rejected`, 'success');
-      setTimeout(() => loadAppointmentsByStatus(currentAppointmentFilter), 1500);
-    } else {
-      showToast('Rejection failed: ' + data.message, 'error');
-      btn.disabled = false;
-      btn.innerHTML = originalHTML;
-    }
-  } catch(e) {
-    showToast('Request error: ' + e.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-  }
+  // Backend admin endpoint for reject does not exist
+  showToast('Admin rejection not supported - doctor must reject through their app', 'warning');
 }
 
 async function deleteAppointment(id, btn) {
@@ -3822,10 +3636,6 @@ async function deleteAppointment(id, btn) {
     btn.disabled = false;
     btn.innerHTML = originalHTML;
   }
-}
-
-function refreshAppointments() {
-  loadAppointmentsByStatus(currentAppointmentFilter);
 }
 
 /* ─── Init ─── */
