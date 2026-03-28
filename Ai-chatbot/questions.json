@@ -1,8 +1,8 @@
 {
   "Q0": {
     "id": "Q0",
-    "text_en": "Choose your language / Other to talk with Thoutha smart assistant",
-    "text_ar": "اختار اللغة / حاجة تانية عشان تتكلم مع مساعد ثوثة الذكي",
+    "text_en": "Choose your language",
+    "text_ar": "اختار اللغة",
     "options": [
       { "id": "EN", "text_en": "English", "text_ar": "انجليزي" },
       { "id": "AR", "text_en": "Arabic", "text_ar": "عربي" }
@@ -39,13 +39,23 @@
       { "id": "A1b", "text_en": "No, nothing visible", "text_ar": "لأ، مفيش حاجة باينة" }
     ]
   },
+  "Q3B": {
+    "id": "Q3B",
+    "text_en": "When does the tooth hurt the most?",
+    "text_ar": "امتى السنة بتوجعك أكتر حاجة؟",
+    "options": [
+      { "id": "B1a", "text_en": "With cold or hot drinks", "text_ar": "مع المشروبات الساقعة أو السخنة" },
+      { "id": "B1b", "text_en": "When biting down", "text_ar": "وقت العض" },
+      { "id": "B1c", "text_en": "Constant pain or something else", "text_ar": "وجع مستمر أو حاجة تانية" }
+    ]
+  },
   "Q4A": {
     "id": "Q4A",
     "text_en": "Describe the pain further:",
     "text_ar": "أوصف الألم أكتر:",
     "options": [
       { "id": "A2a", "text_en": "Throbbing pain, swelling, or pain at night", "text_ar": "وجع بينبض، ورم، أو وجع بالليل" },
-      { "id": "A2b", "text_en": "Sharp pain when biting or other", "text_ar": "وجع جامد وأنا بعض أو حاجة تانية" }
+      { "id": "A2b", "text_en": "Sharp pain when biting down", "text_ar": "وجع جامد وأنا بعض" }
     ]
   },
   "Q2B": {
@@ -53,17 +63,18 @@
     "text_en": "Is this for an adult or a child?",
     "text_ar": "ده لكبير ولا لطفل؟",
     "options": [
-      { "id": "B1", "text_en": "Adult", "text_ar": "كبير (تقويم أسنان)" },
-      { "id": "B2", "text_en": "Child", "text_ar": "طفل (طب أسنان أطفال)" }
+      { "id": "B1", "text_en": "Adult", "text_ar": "كبير" },
+      { "id": "B2", "text_en": "Child", "text_ar": "طفل" }
     ]
   },
   "Q2C": {
     "id": "Q2C",
-    "text_en": "How many teeth are missing? Do you want something permanent?",
-    "text_ar": "كم سنة ناقصة؟ عايز حاجة دايمة؟",
+    "text_en": "How many teeth are currently missing?",
+    "text_ar": "كم سنة ناقصة عندك؟",
     "options": [
-      { "id": "C1", "text_en": "Just one tooth, want something permanent", "text_ar": "سنة واحدة بس، عايز حاجة دايمة (زراعة أسنان)" },
-      { "id": "C2", "text_en": "Multiple teeth, or prefer removable", "text_ar": "كذا سنة، أو بفضل حاجة متحركة (تركيبات متحركة)" }
+      { "id": "C1", "text_en": "Just one tooth", "text_ar": "سنة واحدة بس" },
+      { "id": "C2", "text_en": "A few teeth next to each other", "text_ar": "كذا سنة جنب بعض" },
+      { "id": "C3", "text_en": "Many teeth, or all of my teeth", "text_ar": "أسنان كتير أو كلهم" }
     ]
   },
   "Q2D": {
@@ -71,8 +82,8 @@
     "text_en": "How bad is the damage?",
     "text_ar": "مدى الضرر قد ايه؟",
     "options": [
-      { "id": "D1", "text_en": "Can probably be fixed with a cap", "text_ar": "غالبا تتصلح بطربوش" },
-      { "id": "D2", "text_en": "Just a small hole", "text_ar": "مجرد خرم صغير" },
+      { "id": "D1", "text_en": "Large break — most of the tooth structure is damaged", "text_ar": "كسر كبير أغلب السنة متضررة" },
+      { "id": "D2", "text_en": "Just a small hole or minor chip", "text_ar": "مجرد خرم صغير أو حتة صغيرة" },
       { "id": "D3", "text_en": "Something else", "text_ar": "حاجة تانية" }
     ]
   },
@@ -81,18 +92,27 @@
     "text_en": "What do you need specifically?",
     "text_ar": "محتاج ايه بالظبط؟",
     "options": [
-      { "id": "E1", "text_en": "Cleaning and Whitening", "text_ar": "تنضيف وتبييض أسنان" },
-      { "id": "E2", "text_en": "Tooth Extraction", "text_ar": "خلع أسنان (الجراحة والخلع)" },
+      { "id": "E1", "text_en": "Cleaning and Whitening", "text_ar": "تنظيف وتبييض أسنان" },
+      { "id": "E2", "text_en": "Tooth Extraction", "text_ar": "خلع أسنان" },
       { "id": "E3", "text_en": "Something else", "text_ar": "حاجة تانية" }
     ]
   },
   "Q3C": {
     "id": "Q3C",
-    "text_en": "Which part of the tooth is damaged?",
-    "text_ar": "إيه الجزء اللي بايظ في السنة؟",
+    "text_en": "Where is the hole or dark spot located?",
+    "text_ar": "الخرم أو البقعة دي مكانها فين؟",
     "options": [
-      { "id": "C1a", "text_en": "A front tooth (needs to look good)", "text_ar": "سنة قدامية (لازم شكلها يبقى حلو)" },
-      { "id": "C1b", "text_en": "A back tooth (needs to be strong)", "text_ar": "ضرس ورا (لازم يبقى قوي)" }
+      { "id": "C1a", "text_en": "On a front tooth (shows when I smile)", "text_ar": "في سنة قدامية (بتبان وأنا بضحك)" },
+      { "id": "C1b", "text_en": "On a back tooth (used for chewing)", "text_ar": "في ضرس ورا (بمضغ عليه)" }
+    ]
+  },
+  "Q3D": {
+    "id": "Q3D",
+    "text_en": "Is the broken tooth visible when you smile?",
+    "text_ar": "هل السنة المكسورة بتبان وأنت بتضحك؟",
+    "options": [
+      { "id": "D2a", "text_en": "Yes, it's a front tooth", "text_ar": "أيوة، سنة قدامية" },
+      { "id": "D2b", "text_en": "No, it's hidden in the back", "text_ar": "لأ، مستخبية ورا" }
     ]
   }
 }
