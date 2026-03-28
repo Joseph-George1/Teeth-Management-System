@@ -17,7 +17,11 @@
   --button-raduis-1: 10px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 .booking-wrapper {
   min-height: 100vh;
@@ -28,7 +32,6 @@
   padding: 20px 16px;
 }
 
-/* ── Main Card ── */
 .card1 {
   background: #fff;
   border-radius: 20px;
@@ -50,7 +53,6 @@
   }
 }
 
-/* ── Card Top Strip ── */
 .card-top1 {
   background: linear-gradient(100deg, var(--button-color-1), var(--button-color-2));
   padding: 16px 20px 14px;
@@ -101,12 +103,10 @@
   white-space: nowrap;
 }
 
-/* ── Card Body ── */
 .card-body1 {
   padding: 16px 20px 20px;
 }
 
-/* ── Info Rows ── */
 .info-rows {
   background: linear-gradient(135deg, rgba(196, 237, 252, 0.25), rgba(162, 249, 207, 0.15));
   border: 1px solid rgba(196, 237, 252, 0.7);
@@ -169,7 +169,6 @@
   color: var(--button-color-1);
 }
 
-/* ── Divider ── */
 .divider1 {
   font-size: 11px;
   font-weight: 700;
@@ -188,7 +187,6 @@
   background: var(--border-color);
 }
 
-/* ── Form ── */
 .form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -260,7 +258,6 @@ input::placeholder {
   font-size: 12px;
 }
 
-/* ── Button ── */
 .btn-confirm {
   width: 100%;
   margin-top: 14px;
@@ -307,7 +304,6 @@ input::placeholder {
   cursor: not-allowed;
 }
 
-/* ── Success State ── */
 .success-view {
   display: none;
   text-align: center;
@@ -412,7 +408,6 @@ input::placeholder {
   transform: scale(0.98);
 }
 
-/* ── Animations ── */
 @keyframes fadeUp {
   from {
     opacity: 0;

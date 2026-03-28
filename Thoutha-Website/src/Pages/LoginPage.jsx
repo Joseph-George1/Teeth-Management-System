@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, replace, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
@@ -9,10 +9,24 @@ const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://thoutha.page/api';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
+
+  // تحميل البيانات المحفوظة عند دخول الصفحة
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+    
+    if (wasRemembered && savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,6 +49,17 @@ export default function LoginPage() {
       const data = await response.json().catch(() => ({}));
 
       if (response.ok && data?.token) {
+        // حفظ البيانات إذا كان المستخدم اختار تذكره
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+          localStorage.setItem('rememberedPassword', password);
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem('rememberedPassword');
+          localStorage.removeItem('rememberMe');
+        }
+        
         await login(data.token);
         // navigate('/doctor-home', { replace: true });
         navigate("/", {replace:true});
@@ -131,7 +156,13 @@ export default function LoginPage() {
               <Link to="/forget-password" className="forgot-password">نسيت كلمة المرور؟</Link>
               <label className="remember-me">
                 <p>تذكرني</p>
-                <input type="checkbox" className='remember-me-input' />
+                <input 
+                  type="checkbox" 
+                  className='remember-me-input'
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                />
               </label>
             </div>
 

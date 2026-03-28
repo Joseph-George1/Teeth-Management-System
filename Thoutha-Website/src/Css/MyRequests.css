@@ -1,6 +1,4 @@
-/* MyRequests.css - Styling for doctor's submitted requests page */
-
-.my-requests-container {
+.my-requests-title {
   min-height: 85vh;
   padding: 40px 20px;
   display: flex;
@@ -20,7 +18,6 @@
   margin-right: auto;
 }
 
-/* ── Requests List Container ── */
 .requests-list {
   display: flex;
   flex-direction: column;
@@ -30,7 +27,6 @@
   max-width: 100%;
 }
 
-/* ── Card Container ── */
 .card {
   width: 100%;
   background: rgba(255, 255, 255, 0.78);
@@ -66,7 +62,6 @@
     0 30px 65px rgba(37, 180, 229, 0.17);
 }
 
-/* ── Header ── */
 .card-header {
   background: linear-gradient(125deg, var(--color-1-background, #C4EDFC) 0%, var(--color-2-background, #A2F9CF) 100%);
   padding: 22px 22px 20px;
@@ -102,7 +97,6 @@
   pointer-events: none;
 }
 
-/* ── Status Badge ── */
 .status-badge {
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(162, 249, 207, 0.8);
@@ -210,7 +204,6 @@
   flex-shrink: 0;
 }
 
-/* ── Body ── */
 .card-body {
   padding: 20px 22px 22px;
   display: flex;
@@ -320,7 +313,6 @@
   background: linear-gradient(to left, transparent, var(--border-color, #EDF1F3) 30%, var(--border-color, #EDF1F3) 70%, transparent);
 }
 
-/* ── Note Box ── */
 .note-box {
   border: 1px solid var(--border-color, #EDF1F3);
   border-right: 3.5px solid var(--button-color-2, #25B4E5);
@@ -567,7 +559,7 @@
   cursor: not-allowed;
 }
 
-/* ── Responsive Design ── */
+
 @media (max-width: 1024px) {
   .requests-list {
     width: 70%;

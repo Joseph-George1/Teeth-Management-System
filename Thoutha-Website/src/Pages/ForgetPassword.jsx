@@ -36,7 +36,8 @@ export default function ForgetPassword() {
       setLoading(true);
       setError("");
 
-      console.log("🔑 [RESET FLOW] Requesting password reset for:", normalizedPhone);
+      // Commented out to prevent user data leak
+      // console.log("[RESET FLOW] Requesting password reset for:", normalizedPhone);
 
       const response = await fetch(API_REQUEST_RESET, {
         method: "POST",
@@ -64,14 +65,15 @@ export default function ForgetPassword() {
       sessionStorage.setItem("flow_type", "reset");
       sessionStorage.setItem("reset_phone", normalizedPhone);
 
-      console.log("✅ [RESET] Stored in sessionStorage - flow_type: reset, reset_phone:", normalizedPhone);
+      // Commented out to prevent user data leak
+      // console.log("[RESET] Stored in sessionStorage - flow_type: reset, reset_phone:", normalizedPhone);
 
       navigate("/otp-verify", {
         state: { phone: normalizedPhone },
       });
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء إرسال الكود");
-      console.error("❌ [RESET] Error:", err);
+      console.error("[RESET] Error:", err);
     } finally {
       setLoading(false);
     }

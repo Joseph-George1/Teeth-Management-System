@@ -1,215 +1,187 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorBooking.css";
 
+// Helper functions
+const getDate = (dt) => dt ? dt.split('T')[0] : '';
+const getTime = (dt) => {
+  if (!dt) return '';
+  const parts = dt.split('T');
+  return parts[1] ? parts[1].slice(0, 5) : '';
+};
+
+const getTimePeriod = (dt) => {
+  const t = getTime(dt);
+  if (!t) return '';
+  const [h] = t.split(':').map(Number);
+  return h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً';
+};
+
+const normalizeList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.result)) return payload.result;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
+};
+
 export default function Patient() {
-  const [bookings, setBookings] = useState([]);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { user, authLoading, isLoggedIn } = useContext(AuthContext);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   useEffect(() => {
-    // التحميل الأولي والاستماع للتغييرات
-    const loadBookings = () => {
-      const accepted = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
-      setBookings(accepted);
-    };
-    
-    loadBookings();
-    
-    // الاستماع لتغييرات localStorage من نافذة أخرى أو tab آخر
-    window.addEventListener("storage", loadBookings);
-    // أيضاً يمكن فحص localStorage بشكل دوري
-    const interval = setInterval(loadBookings, 500);
-    
-    return () => {
-      window.removeEventListener("storage", loadBookings);
-      clearInterval(interval);
-    };
-  }, []);
+    if (!isLoggedIn || authLoading) return;
 
-  const openDetails = (booking) => setSelectedBooking(booking);
-  const closeDetails = () => setSelectedBooking(null);
+    let cancelled = false;
+    setLoading(true);
+    setError("");
 
-  const handleDeleteAll = () => {
-    setShowDeleteConfirm(true);
-  };
+    const token = user?.token || localStorage.getItem("token");
+    if (!token) {
+      setError("لم نتمكن من الحصول على بيانات المستخدم");
+      setLoading(false);
+      return;
+    }
 
-  const confirmDeleteAll = () => {
-    localStorage.setItem("acceptedPatients", JSON.stringify([]));
-    setBookings([]);
-    setSelectedBooking(null);
-    setShowDeleteConfirm(false);
-  };
+    // جلب المرضى المكتملين من API
+    fetch("https://thoutha.page/api/appointment/getDone", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("فشل جلب بيانات المرضى");
+        return res.json();
+      })
+      .then(data => {
+        if (!cancelled) {
+          const normalizedData = normalizeList(data);
+          
+          const processedData = normalizedData.map((appt) => ({
+            id: appt.id,
+            firstName: appt.patientFirstName || "",
+            lastName: appt.patientLastName || "",
+            patientName: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
+            phone: appt.patientPhoneNumber || "",
+            service: appt.categoryName || "",
+            specialty: appt.categoryName || "",
+            description: appt.requestDescription || "",
+            time: `${getTime(appt.appointmentDate)} ${getTimePeriod(appt.appointmentDate)}`,
+            date: getDate(appt.appointmentDate),
+            status: "مكتمل",
+            ...appt,
+          }));
+          
+          setPatients(processedData);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) setError(err.message || "حدث خطأ أثناء جلب البيانات");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  const cancelDeleteAll = () => {
-    setShowDeleteConfirm(false);
-  };
+    return () => { cancelled = true; };
+  }, [isLoggedIn, authLoading, user]);
 
-  const getStatusClass = (booking) => {
-    if (booking.statusClass) return booking.statusClass;
-    if (booking.status === "مكتمل") return "completed";
-    if (booking.status === "ملغي" || booking.status === "ملغى") return "cancelled";
-    if (booking.status === "انتظار") return "pending";
-    return "pending";
-  };
+  const openDetails = (patient) => setSelectedPatient(patient);
+  const closeDetails = () => setSelectedPatient(null);
 
   return (
     <div className="doctor-booking-page" dir="rtl">
       <main className="doctor-booking-content">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-          <h1 className="page-title">جميع المرضى</h1>
-          {bookings.length > 0 && (
-            <button
-              onClick={handleDeleteAll}
-              style={{
-                padding: "10px 20px",
-                background: "linear-gradient(90deg, #ef4444, #dc2626)",
-                color: "white",
-                border: "none",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: "700",
-                fontFamily: "'Cairo', sans-serif",
-                cursor: "pointer",
-                transition: "transform 0.2s ease",
-              }}
-              onMouseEnter={(e) => e.target.style.transform = "translateY(-2px)"}
-              onMouseLeave={(e) => e.target.style.transform = "translateY(0)"}
-            >
-              حذف جميع المرضى
-            </button>
-          )}
-        </div>
+        <h1 className="page-title">المرضى المكتملين</h1>
 
-        <div className="booking-list">
-          {bookings.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#999" }}>
-              <p style={{ fontSize: "18px", fontWeight: "600" }}>لا توجد مرضى حالياً</p>
-              <p style={{ fontSize: "14px", marginTop: "10px" }}>سيظهر المرضى هنا عندما تكمل حجوزات من سجل الحجوزات</p>
-            </div>
-          ) : (
-            bookings.map((booking, index) => (
+        {loading ? (
+          <p className="dnb-empty">جاري تحميل بيانات المرضى...</p>
+        ) : error ? (
+          <p className="dnb-empty dnb-error">{error}</p>
+        ) : patients.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 20px", color: "#999" }}>
+            <p style={{ fontSize: "18px", fontWeight: "600" }}>لا توجد مرضى مكتملين حالياً</p>
+            <p style={{ fontSize: "14px", marginTop: "10px" }}>سيظهر المرضى هنا عندما تكمل حجوزات من سجل الحجوزات</p>
+          </div>
+        ) : (
+          <div className="booking-list">
+            {patients.map((patient) => (
               <div
-                key={index}
+                key={patient.id}
                 className="booking-card"
-                onClick={() => openDetails(booking)}
+                onClick={() => openDetails(patient)}
               >
                 <div className="booking-card-right">
                   <span 
-                    className={`status-badge ${getStatusClass(booking)}`}
-                    style={(booking.status === "مكتمل" || booking.status === "ملغى") ? { color: "white" } : {}}
+                    className="status-badge completed"
+                    style={{ color: "white" }}
                   >
-                    {booking.status}
+                    مكتمل
                   </span>
                   <div className="booking-name-wrapper">
-                    <h3 className="booking-name">{booking.patientName}</h3>
+                    <h3 className="booking-name">{patient.patientName}</h3>
                   </div>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
-      {selectedBooking && (
+      {selectedPatient && (
         <div className="bottom-sheet-overlay" onClick={closeDetails}>
           <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle"></div>
             <div className="sheet-header">
-              <h2 className="sheet-patient-name">{selectedBooking.patientName}</h2>
+              <h2 className="sheet-patient-name">{selectedPatient.patientName}</h2>
             </div>
             <div className="sheet-divider"></div>
-            <div className="detail-row">
-              <div className="detail-icon">📞</div>
-              <div className="detail-text">
-                <span className="detail-label">رقم الهاتف</span>
-                <span className="detail-value">{selectedBooking.phone}</span>
-              </div>
-            </div>
-            <div className="detail-row">
-              <div className="detail-icon">📅</div>
-              <div className="detail-text">
-                <span className="detail-label">التاريخ</span>
-                <span className="detail-value">{selectedBooking.date}</span>
-              </div>
-            </div>
-            <div className="detail-row">
-              <div className="detail-icon">⏰</div>
-              <div className="detail-text">
-                <span className="detail-label">الوقت</span>
-                <span className="detail-value">{selectedBooking.time}</span>
-              </div>
-            </div>
-            <div className="detail-row">
-              <div className="detail-icon">🦷</div>
-              <div className="detail-text">
-                <span className="detail-label">التخصص</span>
-                <span className="detail-value">{selectedBooking.service}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteConfirm && (
-        <div className="bottom-sheet-overlay" onClick={cancelDeleteAll}>
-          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-handle"></div>
-            <div className="sheet-header">
-              <h2 style={{ color: "#333", textAlign: "center", fontSize: "18px", fontWeight: "700" }}>
-                حذف جميع المرضى
-              </h2>
-            </div>
-            <div className="sheet-divider"></div>
-            <div style={{ textAlign: "center", padding: "20px", color: "#666" }}>
-              <p style={{ fontSize: "16px", marginBottom: "20px" }}>
-                هل أنت متأكد من حذف جميع المرضى؟ لا يمكن التراجع عن هذا الإجراء.
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: "10px", padding: "20px" }}>
-              <button
-                onClick={confirmDeleteAll}
-                style={{
-                  flex: 1,
-                  padding: "12px 20px",
-                  background: "linear-gradient(90deg, #ef4444, #dc2626)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  fontFamily: "'Cairo', sans-serif",
-                  cursor: "pointer",
-                  transition: "transform 0.2s ease",
-                }}
-                onMouseEnter={(e) => e.target.style.transform = "scale(0.98)"}
-                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
-              >
-                تأكيد الحذف
-              </button>
-              <button
-                onClick={cancelDeleteAll}
-                style={{
-                  flex: 1,
-                  padding: "12px 20px",
-                  background: "#e5e7eb",
-                  color: "#333",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  fontFamily: "'Cairo', sans-serif",
-                  cursor: "pointer",
-                  transition: "transform 0.2s ease",
-                }}
-                onMouseEnter={(e) => e.target.style.transform = "scale(0.98)"}
-                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
-              >
-                إلغاء
-              </button>
-            </div>
+            {[
+              { icon: "user", label: "الاسم الأول", value: selectedPatient.firstName },
+              { icon: "user", label: "الاسم الأخير", value: selectedPatient.lastName },
+              { icon: "phone", label: "رقم الهاتف", value: selectedPatient.phone },
+              { icon: "tooth", label: "التخصص", value: selectedPatient.specialty },
+            ].map(({ icon, label, value }) => {
+              const iconSVGs = {
+                user: <svg viewBox="0 0 24 24" className="detail-icon-svg" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+                phone: <svg viewBox="0 0 24 24" className="detail-icon-svg" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+                tooth: <svg viewBox="0 0 24 24" className="detail-icon-svg" aria-hidden="true"><path d="M12 2C12 2 10 4 10 8c0 2 1 4 2 5v5c0 1.1.9 2 2 2s2-.9 2-2v-5c1-1 2-3 2-5 0-4-2-6-2-6z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="8" r="1.5" fill="currentColor" /></svg>,
+              };
+              return (
+                <div key={label} className="detail-row">
+                  <div className="detail-icon" aria-hidden="true">{iconSVGs[icon]}</div>
+                  <div className="detail-text">
+                    <span className="detail-label">{label}</span>
+                    <span className="detail-value">{value}</span>
+                  </div>
+                </div>
+              );
+            })}
+            <button 
+              onClick={closeDetails}
+              style={{
+                width: "100%",
+                marginTop: "20px",
+                padding: "12px 20px",
+                background: "#f3f4f6",
+                color: "#333",
+                border: "1px solid #e5e7eb",
+                borderRadius: "10px",
+                fontSize: "15px",
+                fontWeight: "700",
+                fontFamily: "'Cairo', sans-serif",
+                cursor: "pointer",
+                transition: "background 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#e5e7eb"}
+              onMouseLeave={(e) => e.target.style.background = "#f3f4f6"}
+            >
+              إغلاق
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
+          

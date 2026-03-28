@@ -1,34 +1,36 @@
-:root{
-    --color-1-background:#C4EDFC;
-    --color-2-background:#A2F9CF;
-    --color-3-background:#FFFFFF99;
-    --button-color-1:#1D61E7;
-    --button-color-2:#25B4E5;
-    --text-color-1:#FFFFFF;
-    --text-color-2:#4D81E7;
-    --text-color-3:#6C7278;
-    --text-color-4:#111827;
-    --text-color-5:#D2EBE7;
-    --text-color-6:#101828;
-    --text-color-7:#323232;
-    --text-color-8:#B6B6B6;
-    --border-color:#EDF1F3;
-    --border-radius-1:12px;
-    --button-raduis-1:10px;
+:root {
+  --color-1-background: #C4EDFC;
+  --color-2-background: #A2F9CF;
+  --color-3-background: #FFFFFF99;
+  --button-color-1: #1D61E7;
+  --button-color-2: #25B4E5;
+  --text-color-1: #FFFFFF;
+  --text-color-2: #4D81E7;
+  --text-color-3: #6C7278;
+  --text-color-4: #111827;
+  --text-color-5: #D2EBE7;
+  --text-color-6: #101828;
+  --text-color-7: #323232;
+  --text-color-8: #B6B6B6;
+  --border-color: #EDF1F3;
+  --border-radius-1: 12px;
+  --button-raduis-1: 10px;
 }
 
 * {
   box-sizing: border-box;
 }
-.otp-page{
-    font-family: 'Cairo', sans-serif;
-    background-image: linear-gradient(160deg,var(--color-1-background),var(--text-color-5),var(--color-2-background));
-    height: 658.8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+.otp-page  {
+  font-family: 'Cairo', sans-serif;
+  background-image: linear-gradient(160deg, var(--color-1-background), var(--text-color-5), var(--color-2-background));
+  height: 658.8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.otp-container{
+
+.otp-container {
     background-color: var(--color-3-background);
     width: 480px;
     height: 468.1875px;

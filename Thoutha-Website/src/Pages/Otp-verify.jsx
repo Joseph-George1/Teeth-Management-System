@@ -42,9 +42,12 @@ export default function OtpVerify() {
 
   // Log flow type for debugging
   useEffect(() => {
-    console.log("📱 [OTP-VERIFY] Flow type from sessionStorage:", flowType);
-    console.log("📱 [OTP-VERIFY] Is Reset Flow:", isResetFlow);
-    console.log("📱 [OTP-VERIFY] Phone:", phone);
+    // Commented out to prevent user data leak
+    // console.log("[OTP-VERIFY] Flow type from sessionStorage:", flowType);
+    // Commented out to prevent user data leak
+    // console.log("[OTP-VERIFY] Is Reset Flow:", isResetFlow);
+    // Commented out to prevent user data leak
+    // console.log("[OTP-VERIFY] Phone:", phone);
   }, [flowType, isResetFlow, phone]);
 
   const handleVerify = async () => {
@@ -52,7 +55,8 @@ export default function OtpVerify() {
 
     if (!phone) {
       setMessage("ادخل رقم التليفون اولا من صفحة الارسال");
-      console.warn("❌ [OTP-VERIFY] No phone number found");
+      // Commented out to prevent user data leak
+      // console.warn("[OTP-VERIFY] No phone number found");
       return;
     }
 
@@ -66,8 +70,10 @@ export default function OtpVerify() {
       setMessage("");
 
       const verifyUrl = getVerifyUrl();
-      console.log(`🔍 [OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verifying phone: ${phone}`);
-      console.log(`🔍 [OTP-VERIFY] Using URL: ${verifyUrl}`);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verifying phone: ${phone}`);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-VERIFY] Using URL: ${verifyUrl}`);
 
       const response = await fetch(verifyUrl, {
         method: "POST",
@@ -81,7 +87,8 @@ export default function OtpVerify() {
       });
 
       const data = await response.json().catch(() => ({}));
-      console.log(`📝 [OTP-VERIFY] Response:`, data);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-VERIFY] Response:`, data);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -102,12 +109,14 @@ export default function OtpVerify() {
 
       // ✅ Verification successful - cleanup and navigate
       if (isResetFlow) {
-        console.log("✅ [RESET-VERIFY] OTP verified successfully - clearing reset_phone and flow_type");
+        // Commented out to prevent user data leak
+        // console.log("[RESET-VERIFY] OTP verified successfully - clearing reset_phone and flow_type");
         sessionStorage.removeItem("reset_phone");
         sessionStorage.removeItem("flow_type");
         navigate("/reset-password", { state: { phone } });
       } else {
-        console.log("✅ [SIGNUP-VERIFY] OTP verified successfully - clearing otp_phone and flow_type");
+        // Commented out to prevent user data leak
+        // console.log("[SIGNUP-VERIFY] OTP verified successfully - clearing otp_phone and flow_type");
         sessionStorage.removeItem("otp_phone");
         sessionStorage.removeItem("flow_type");
         navigate("/otp-done");
@@ -115,7 +124,8 @@ export default function OtpVerify() {
 
     } catch (err) {
       setMessage(err.message || "حدث خطأ أثناء التحقق من الكود");
-      console.error(`❌ [OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verify Error:`, err);
+      // Commented out to prevent user data leak
+      // console.error(`[OTP-VERIFY] ${isResetFlow ? "RESET" : "SIGNUP"} - Verify Error:`, err);
     } finally {
       setLoading(false);
     }
@@ -124,7 +134,8 @@ export default function OtpVerify() {
   const handleResend = async () => {
     if (!phone) {
       setMessage("ادخل رقم التليفون اولا من صفحة الارسال");
-      console.warn("❌ [OTP-RESEND] No phone number found");
+      // Commented out to prevent user data leak
+      // console.warn("[OTP-RESEND] No phone number found");
       return;
     }
 
@@ -133,8 +144,10 @@ export default function OtpVerify() {
       setMessage("");
 
       const resendUrl = getResendUrl();
-      console.log(`🔄 [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Resending for phone: ${phone}`);
-      console.log(`🔄 [OTP-RESEND] Using URL: ${resendUrl}`);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Resending for phone: ${phone}`);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-RESEND] Using URL: ${resendUrl}`);
 
       const response = await fetch(resendUrl, {
         method: "POST",
@@ -147,7 +160,8 @@ export default function OtpVerify() {
       });
 
       const data = await response.json().catch(() => ({}));
-      console.log(`📝 [OTP-RESEND] Response:`, data);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-RESEND] Response:`, data);
 
       if (!response.ok) {
         throw new Error(data?.message || "فشل إعادة إرسال الكود");
@@ -155,11 +169,12 @@ export default function OtpVerify() {
 
       // Keep phone and flow_type in sessionStorage (don't clear on resend)
       setMessage("✅ تم إعادة إرسال الكود بنجاح");
-      console.log(`✅ [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Code resent successfully`);
+      // Commented out to prevent user data leak
+      // console.log(`[OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Code resent successfully`);
 
     } catch (err) {
       setMessage(err.message || "حدث خطأ أثناء إعادة الإرسال");
-      console.error(`❌ [OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Error:`, err);
+      console.error(`[OTP-RESEND] ${isResetFlow ? "RESET" : "SIGNUP"} - Error:`, err);
     } finally {
       setLoading(false);
     }
