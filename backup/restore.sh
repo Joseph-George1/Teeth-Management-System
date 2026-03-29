@@ -20,10 +20,15 @@ WEBUI_PATH="/var/www/html"
 SSL_PATH="/etc/ssl"
 JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 TOMCAT_PATH="/opt/tomcat"
-BACKEND_PATH="/var/apps/teeth-management/backend"
-FRONTEND_PATH="/var/apps/teeth-management/frontend"
-CONFIG_PATH="/etc/teeth-management"
-LOG_PATH="/var/log/teeth-management"
+
+# Source code - Single directory for GitHub sync
+SOURCE_ROOT_PATH="$HOME/Teeth-Management-System"
+BACKEND_PATH="${SOURCE_ROOT_PATH}/Backend"
+FRONTEND_PATH="${SOURCE_ROOT_PATH}/Thoutha-Website"
+AI_CHATBOT_PATH="${SOURCE_ROOT_PATH}/Ai-chatbot"
+NOTIFICATIONS_PATH="${SOURCE_ROOT_PATH}/Notifications"
+OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
+LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
 DB_USER="sys"
@@ -35,7 +40,7 @@ ORACLE_HOME="/opt/oracle/product/21c/dbhomeXE"
 
 # Backup configuration
 BACKUP_SOURCE_PATH="${1:-.}"  # First argument is backup location
-RESTORE_LOG_DIR="/var/log/teeth-management/restore"
+RESTORE_LOG_DIR="${LOG_PATH}/restore"
 RESTORE_LOG="${RESTORE_LOG_DIR}/restore_$(date +"%Y%m%d_%H%M%S").log"
 MISMATCH_REPORT="${RESTORE_LOG_DIR}/version_mismatches_$(date +"%Y%m%d_%H%M%S").txt"
 
@@ -295,11 +300,8 @@ restore_directories() {
         "webui_files_*.tar.gz:$WEBUI_PATH:web UI files"
         "ssl_certificates_*.tar.gz:$SSL_PATH:SSL certificates"
         "java_installation_*.tar.gz:$JAVA_HOME:Java installation"
+        "teeth_management_source_*.tar.gz:/home/ubuntu:Teeth Management source code"
         "tomcat_installation_*.tar.gz:$TOMCAT_PATH:Tomcat installation"
-        "backend_application_*.tar.gz:$BACKEND_PATH:Backend application"
-        "frontend_application_*.tar.gz:$FRONTEND_PATH:Frontend application"
-        "application_config_*.tar.gz:$CONFIG_PATH:Application configuration"
-        "application_logs_*.tar.gz:$LOG_PATH:Application logs"
     )
     
     for file_spec in "${backup_files[@]}"; do

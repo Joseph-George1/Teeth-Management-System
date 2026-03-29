@@ -20,10 +20,15 @@ WEBUI_PATH="/var/www/html"
 SSL_PATH="/etc/ssl"
 JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 TOMCAT_PATH="/opt/tomcat"
-BACKEND_PATH="/var/apps/teeth-management/backend"
-FRONTEND_PATH="/var/apps/teeth-management/frontend"
-CONFIG_PATH="/etc/teeth-management"
-LOG_PATH="/var/log/teeth-management"
+
+# Source code - Single directory for GitHub sync
+SOURCE_ROOT_PATH="$HOME/Teeth-Management-System"
+BACKEND_PATH="${SOURCE_ROOT_PATH}/Backend"
+FRONTEND_PATH="${SOURCE_ROOT_PATH}/Thoutha-Website"
+AI_CHATBOT_PATH="${SOURCE_ROOT_PATH}/Ai-chatbot"
+NOTIFICATIONS_PATH="${SOURCE_ROOT_PATH}/Notifications"
+OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
+LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
 DB_USER="sys"
@@ -343,11 +348,8 @@ backup_directories() {
         "$WEBUI_PATH:webui_files"
         "$SSL_PATH:ssl_certificates"
         "$JAVA_HOME:java_installation"
+        "/home/ubuntu/Teeth-Management-System:teeth_management_source"
         "$TOMCAT_PATH:tomcat_installation"
-        "$BACKEND_PATH:backend_application"
-        "$FRONTEND_PATH:frontend_application"
-        "$CONFIG_PATH:application_config"
-        "$LOG_PATH:application_logs"
     )
     
     for dir_spec in "${dirs_to_backup[@]}"; do

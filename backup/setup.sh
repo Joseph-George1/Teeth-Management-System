@@ -214,8 +214,6 @@ BACKUP_PATHS=(
     "/backup/files"
     "/backup/database"
     "/backup/logs"
-    "/var/log/teeth-management"
-    "/var/log/teeth-management/restore"
 )
 
 for path in "${BACKUP_PATHS[@]}"; do
@@ -229,19 +227,22 @@ for path in "${BACKUP_PATHS[@]}"; do
 done
 
 # ============================================================================
-# CREATE APPLICATION DIRECTORIES
+# CREATE BACKUP DIRECTORIES
 # ============================================================================
 
-print_header "Step 8: Creating Application Directories"
+print_header "Step 8: Creating Backup Infrastructure Directories"
 
-APP_PATHS=(
-    "/var/apps/teeth-management"
-    "/var/apps/teeth-management/backend"
-    "/var/apps/teeth-management/frontend"
-    "/etc/teeth-management"
+# Create backup root directory structure
+BACKUP_ROOT="/backup"
+BACKUP_PATHS=(
+    "$BACKUP_ROOT"
+    "$BACKUP_ROOT/metadata"
+    "$BACKUP_ROOT/database"
+    "$BACKUP_ROOT/files"
+    "$BACKUP_ROOT/logs"
 )
 
-for path in "${APP_PATHS[@]}"; do
+for path in "${BACKUP_PATHS[@]}"; do
     if [ ! -d "$path" ]; then
         print_warning "Creating: $path"
         mkdir -p "$path"
@@ -250,6 +251,15 @@ for path in "${APP_PATHS[@]}"; do
         print_success "Exists: $path"
     fi
 done
+
+# Ensure /home/ubuntu/Teeth-Management-System/logs exists for astart
+if [ ! -d "$HOME/Teeth-Management-System/logs" ]; then
+    print_warning "Creating: $HOME/Teeth-Management-System/logs"
+    mkdir -p "$HOME/Teeth-Management-System/logs"
+    chmod 755 "$HOME/Teeth-Management-System/logs"
+else
+    print_success "Exists: $HOME/Teeth-Management-System/logs"
+fi
 
 # ============================================================================
 # CONFIGURE ORACLE DATABASE
