@@ -1,0 +1,58 @@
+{
+  "_comment": "Controller server inventory. Edit this file to add/remove managed nodes.",
+  "_version": "2.0",
+  "servers": [
+    {
+      "id": "web-01",
+      "host": "10.0.1.10",
+      "description": "Primary web application server (Apache + PHP)",
+      "ssh_user": "ubuntu",
+      "ssh_port": 22,
+      "ssh_key": "/opt/backup-platform/keys/web-01.pem",
+      "enabled": true,
+      "tags": ["web", "apache", "php"],
+      "services": ["apache2"],
+      "backup_schedule": "0 2 * * *",
+      "notes": "Production web server. Backup window: 02:00 UTC"
+    },
+    {
+      "id": "db-01",
+      "host": "10.0.1.20",
+      "description": "Oracle XE 21c database server",
+      "ssh_user": "ubuntu",
+      "ssh_port": 22,
+      "ssh_key": "/opt/backup-platform/keys/db-01.pem",
+      "enabled": true,
+      "tags": ["database", "oracle", "xe"],
+      "services": ["oracle-xe-21c"],
+      "backup_schedule": "0 1 * * *",
+      "notes": "DB server. expdp export included. Backup window: 01:00 UTC"
+    },
+    {
+      "id": "app-01",
+      "host": "10.0.1.30",
+      "description": "Application server (Apache + Oracle XE)",
+      "ssh_user": "ubuntu",
+      "ssh_port": 22,
+      "ssh_key": "/opt/backup-platform/keys/app-01.pem",
+      "enabled": true,
+      "tags": ["app", "apache", "oracle"],
+      "services": ["apache2", "oracle-xe-21c"],
+      "backup_schedule": "0 3 * * *",
+      "notes": "Combined app + DB server. Full stack backup."
+    },
+    {
+      "id": "staging-01",
+      "host": "10.0.2.10",
+      "description": "Staging / pre-prod server",
+      "ssh_user": "ubuntu",
+      "ssh_port": 22,
+      "ssh_key": "/opt/backup-platform/keys/staging-01.pem",
+      "enabled": false,
+      "tags": ["staging"],
+      "services": ["apache2"],
+      "backup_schedule": "0 4 * * 0",
+      "notes": "Disabled — staging only backed up on demand."
+    }
+  ]
+}
