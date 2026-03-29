@@ -108,12 +108,6 @@ export default function DoctorHome() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      const approvedData = await response.json();
-
-      // حفظ البيانات المرجعة من API في localStorage
-      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
-      localStorage.setItem("approvedAppointments", JSON.stringify([...approvedAppointments, approvedData]));
-
       // حذف من قائمة المعلقة
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       setSelectedAppt(null);
@@ -197,7 +191,22 @@ export default function DoctorHome() {
           ) : error ? (
             <p className="dh-empty dh-error">{error}</p>
           ) : appointments.length === 0 ? (
-            <p className="dh-empty">لا توجد حجوزات معلقة</p>
+            <div className="dh-empty-state-instructions">
+              <h3 className="dh-instructions-title">لا توجد حجوزات حالياً</h3>
+              <p className="dh-instructions-text">عند قيام أي مريض بحجز موعد، سيظهر هنا اسمه ورقم هاتفه.</p>
+              <p className="dh-instructions-text">يمكنك التواصل معه للتأكيد، ثم:</p>
+              
+              <div className="dh-instructions-section">
+                <p className="dh-instructions-item">• اضغط "قبول" لإضافة الحجز إلى سجل الحجوزات كـ حالة مؤكدة.</p>
+                <p className="dh-instructions-item">• اضغط "حذف" لإلغاء الحجز وإزالته نهائياً.</p>
+              </div>
+
+              <p className="dh-instructions-section-title">داخل سجل الحجوزات:</p>
+              <div className="dh-instructions-section">
+                <p className="dh-instructions-item">• بعد حضور المريض وإتمام الحالة، اضغط "مكتمل" ليتم نقلها إلى صفحة المرضى كحالة مكتملة.</p>
+                <p className="dh-instructions-item">• في حال عدم حضور المريض، اضغط "ملغى".</p>
+              </div>
+            </div>
           ) : (
             <div className="dh-appt-list">
               {appointments.map((appt) => (
@@ -230,19 +239,27 @@ export default function DoctorHome() {
             </div>
             <div className="dh-sheet-divider" />
             {[
-              { icon: "📞", label: "رقم الهاتف",  value: selectedAppt.phone },
-              { icon: "🦷", label: "فئة الخدمة", value: selectedAppt.specialty },
-              { icon: "📝", label: "الوصف", value: selectedAppt.description || "بدون وصف" },
-              { icon: "📅", label: "التاريخ",      value: getDate(selectedAppt.dateTime) },
-            ].map(({ icon, label, value }) => (
-              <div key={label} className="dh-detail-row">
-                <div className="dh-detail-icon">{icon}</div>
-                <div className="dh-detail-text">
-                  <span className="dh-detail-label">{label}</span>
-                  <span className="dh-detail-value">{value}</span>
+              { icon: "phone", label: "رقم الهاتف",  value: selectedAppt.phone },
+              { icon: "tooth", label: "فئة الخدمة", value: selectedAppt.specialty },
+              { icon: "note", label: "الوصف", value: selectedAppt.description || "بدون وصف" },
+              { icon: "calendar", label: "التاريخ",      value: getDate(selectedAppt.dateTime) },
+            ].map(({ icon, label, value }) => {
+              const iconSVGs = {
+                phone: <svg viewBox="0 0 24 24" className="dh-icon-svg" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+                tooth: <svg viewBox="0 0 24 24" className="dh-icon-svg" aria-hidden="true"><path d="M12 2C12 2 10 4 10 8c0 2 1 4 2 5v5c0 1.1.9 2 2 2s2-.9 2-2v-5c1-1 2-3 2-5 0-4-2-6-2-6z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="8" r="1.5" fill="currentColor" /></svg>,
+                note: <svg viewBox="0 0 24 24" className="dh-icon-svg" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>,
+                calendar: <svg viewBox="0 0 24 24" className="dh-icon-svg" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+              };
+              return (
+                <div key={label} className="dh-detail-row">
+                  <div className="dh-detail-icon" aria-hidden="true">{iconSVGs[icon]}</div>
+                  <div className="dh-detail-text">
+                    <span className="dh-detail-label">{label}</span>
+                    <span className="dh-detail-value">{value}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <button className="dh-close-btn" onClick={() => setSelectedAppt(null)}>إغلاق</button>
             {!selectedAppt.accepted && !selectedAppt.rejected && (
               <div className="dh-sheet-actions">

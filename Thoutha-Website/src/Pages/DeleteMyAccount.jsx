@@ -20,7 +20,8 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
         throw new Error("لم يتم العثور على جلسة تسجيل الدخول");
       }
 
-      console.log("token being sent:", token);
+      // Commented out to prevent user data leak
+      // console.log("token being sent:", token);
 
       const response = await fetch(
         "https://thoutha.page/api/doctor/deleteDoctor",
@@ -32,11 +33,13 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
         }
       );
 
-      console.log("deleteDoctor status:", response.status);
+      // Commented out to prevent user data leak
+      // console.log("deleteDoctor status:", response.status);
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        console.log("deleteDoctor error body:", data);
+        // Commented out to prevent user data leak
+        // console.log("deleteDoctor error body:", data);
 
         throw new Error(
           data?.message ||

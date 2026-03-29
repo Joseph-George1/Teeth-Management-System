@@ -1,7 +1,5 @@
 
-
 .support-container {
-  
   font-family: "Cairo", sans-serif;
   width: 100%;
   max-width: 1100px;
@@ -9,7 +7,6 @@
   direction: rtl;
   color: #101828;
   line-height: 1.9;
-
   margin-right: 0;
   margin-left: auto;
 }
@@ -73,14 +70,14 @@
 }
 
 .support-form button {
-   font-family: 'Cairo', sans-serif;
+  font-family: 'Cairo', sans-serif;
   margin-top: 8px;
   padding: 12px;
-background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
+  background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
   color: #ffffff;
-      border: 1px solid var(--text-color-1);
-    box-shadow: 0px 1px 2px 0px #253EA77A;
+  border: 1px solid #1D61E7;
+  box-shadow: 0px 1px 2px 0px #253EA77A;
   border-radius: 6px;
   font-size: 15px;
   font-weight: 600;
@@ -89,6 +86,52 @@ background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
 
 .support-form button:hover {
   opacity: 0.9;
+}
+
+.support-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Toast Messages ===== */
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-message {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideInUp 0.4s ease-out;
+  z-index: 9999;
+  max-width: 90%;
+  text-align: center;
+}
+
+.toast-success {
+  background-color: #10b981;
+  color: #ffffff;
+  border: 1px solid #059669;
+}
+
+.toast-error {
+  background-color: #ef4444;
+  color: #ffffff;
+  border: 1px solid #dc2626;
 }
 
 /* ===== Responsive ===== */

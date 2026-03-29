@@ -1,22 +1,22 @@
 .not-found-container {
-    font-family: 'Cairo', sans-serif;
-    background: linear-gradient(135deg, #C4EDFC 0%, #A2F9CF 50%, #E8F5E9 100%);
-    min-height: calc(100vh - 80px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
+  font-family: 'Cairo', sans-serif;
+  background: linear-gradient(135deg, #C4EDFC 0%, #A2F9CF 50%, #E8F5E9 100%);
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
 }
 
 .not-found-content {
-    background-color: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 60px 40px;
-    max-width: 600px;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.6s ease-out;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 60px 40px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.6s ease-out;
 }
 
 @keyframes slideUp {
@@ -31,7 +31,7 @@
 }
 
 .not-found-header {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .not-found-code {
