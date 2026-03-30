@@ -228,28 +228,98 @@ EOF
         export ORACLE_HOME="${ORACLE_HOME}"
         export PATH="$ORACLE_HOME/bin:$PATH"
         export ORACLE_SID="$DB_ORACLE_SID"
-        
+
+        # Pre-checks before export
+        log_info "Performing Oracle export pre-checks..."
+
+        # Check if password is set
+        if [ "$DB_PASSWORD" = "YOUR_DB_PASSWORD_HERE" ]; then
+            log_error "Database password not configured. Please set DB_PASSWORD in the script."
+            return 1
+        fi
+
+        # Check if Oracle is running
+        if ! pgrep -f smon.*$DB_ORACLE_SID > /dev/null; then
+            log_error "Oracle database is not running. Please start Oracle XE first."
+            log_info "To start Oracle: sudo systemctl start oracle-xe-21c"
+            return 1
+        fi
+
+        # Test database connectivity
+        log_info "Testing database connectivity..."
+        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' &>> "$BACKUP_LOG"
+SET HEADING OFF
+SET FEEDBACK OFF
+SELECT 'DB_CONNECTION_OK' FROM dual;
+EXIT;
+EOF
+        then
+            log_error "Cannot connect to Oracle database. Check credentials and database status."
+            return 1
+        fi
+
+        # Check DATA_PUMP_DIR configuration
+        log_info "Checking DATA_PUMP_DIR configuration..."
+        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' &>> "$BACKUP_LOG"
+SET HEADING OFF
+SET FEEDBACK OFF
+SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+EXIT;
+EOF
+        then
+            log_error "Cannot query DATA_PUMP_DIR. Check database privileges."
+            return 1
+        fi
+
+        # Check available space in DATA_PUMP_DIR
+        local datapump_dir=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null | grep -v "^$" | tail -1
+SET HEADING OFF
+SET FEEDBACK OFF
+SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+EXIT;
+EOF
+)
+        datapump_dir=$(echo "$datapump_dir" | tr -d '[:space:]')
+
+        if [ -n "$datapump_dir" ] && [ -d "$datapump_dir" ]; then
+            local available_space=$(df "$datapump_dir" | tail -1 | awk '{print $4}')
+            log_info "DATA_PUMP_DIR available space: $((available_space * 1024)) bytes"
+            if [ "$available_space" -lt 1048576 ]; then  # Less than 1GB
+                log_warning "Low disk space in DATA_PUMP_DIR: $((available_space * 1024)) bytes"
+            fi
+        fi
+
         log_info "Executing: ${EXPORT_PATH}/expdp sys/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
-        
-        "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
+
+        # Execute export with detailed error capture
+        if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
               logfile="tms_export_${TIMESTAMP}.log" \
               directory="DATA_PUMP_DIR" \
               parallel=4 \
               exclude=statistics \
               flashback_time="TO_TIMESTAMP(SYSDATE,'DD-MM-YYYY HH24:MI:SS')" \
-              &>> "$BACKUP_LOG"
-        
-        if [ $? -eq 0 ]; then
+              2>&1 | tee -a "$BACKUP_LOG"; then
+
             log_success "Oracle Data Pump export completed successfully"
-            
+
             # Move export files to backup directory
             mv /opt/oracle/admin/xe/dpdump/tms_full_${TIMESTAMP}*.dmp "$DB_BACKUP_DIR/" 2>/dev/null || true
             mv /opt/oracle/admin/xe/dpdump/tms_export_${TIMESTAMP}.log "$DB_BACKUP_DIR/" 2>/dev/null || true
         else
             log_error "Oracle Data Pump export failed"
+            log_error "Check the export log: /opt/oracle/admin/xe/dpdump/tms_export_${TIMESTAMP}.log"
+            log_error "Common issues:"
+            log_error "  1. Incorrect password - update DB_PASSWORD in script"
+            log_error "  2. Insufficient privileges - ensure sys user has SYSDBA"
+            log_error "  3. Low disk space in DATA_PUMP_DIR"
+            log_error "  4. Oracle database not running"
             return 1
         fi
+    else
+        log_error "expdp not found at ${EXPORT_PATH}/expdp. Please ensure Oracle XE is properly installed and ORACLE_HOME is correct."
+        return 1
+    fi
     else
         log_error "expdp not found at ${EXPORT_PATH}/expdp. Please ensure Oracle XE is properly installed and ORACLE_HOME is correct."
         return 1
