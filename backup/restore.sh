@@ -31,12 +31,13 @@ OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
 LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
-DB_USER="sys"
-DB_PASSWORD="${DB_PASSWORD:-change_me}"  # Set via environment variable
+DB_USER="system"  # From application.properties
+DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
 DB_ORACLE_SID="XE"
 ORACLE_HOME="/opt/oracle/product/21c/dbhomeXE"
+IMPORT_PATH="${ORACLE_HOME}/bin"
 
 # Backup configuration
 BACKUP_SOURCE_PATH="${1:-.}"  # First argument is backup location
@@ -460,9 +461,9 @@ restore_oracle_database() {
     
     local dmp_basename=$(basename "$main_dmp" | sed 's/_[0-9]*\.dmp/.dmp/')
     
-    log_info "Executing: impdp sys/*** full=y dumpfile=$dmp_basename logfile=tms_import.log"
+    log_info "Executing: ${IMPORT_PATH}/impdp ${DB_USER}/*** full=y dumpfile=$dmp_basename logfile=tms_import.log"
     
-    if impdp "sys/${DB_PASSWORD}@${DB_ORACLE_SID}" \
+    if "${IMPORT_PATH}/impdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" \
              full=y \
              dumpfile="$dmp_basename" \
              logfile="tms_import.log" \
@@ -509,6 +510,7 @@ SELECT 'TABLESPACES_OK: ' || COUNT(*) || ' tablespaces found' FROM dba_tablespac
 EXIT;
 EOF
 
+    # Note: Verification uses sys for dba privileges, but import uses system user
     if sqlplus -S "sys/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" < "$verify_script" &>> "$RESTORE_LOG"; then
         rm "$verify_script"
         return 0

@@ -44,15 +44,18 @@
 |-----------|--------|--------------|----------------|-----------------|-------------------|
 | **Full Database Export** | Oracle XE Instance (SID: XE) | `/backup/database/tms_full_TIMESTAMP_*.dmp` | `expdp` (Data Pump) | `impdp` (Data Pump) | Full schema, tables, indexes, constraints |
 | **Export Log** | Oracle XE Instance | `/backup/database/tms_export_TIMESTAMP.log` | expdp output | Reference during restore | Success/failure details, row counts |
-| **Password Hashes** | Oracle users table | Included in DMP file | expdp (full=y) | impdp (full=y) | **PRESERVED UNCHANGED** - No hash modifications |
-| **User Data** | All tables | Included in DMP file | expdp (full=y) | impdp (full=y) | All dental records, appointments, user info |
-| **Statistics** | Table statistics | **EXCLUDED** from backup | expdp exclude=statistics | Regenerated on restore | Fresh statistics computed post-restore |
+| **Password Hashes** | Oracle users table | Included in DMP file | expdp full=y | impdp full=y | **PRESERVED UNCHANGED** - No hash modifications |
+| **User Data** | All tables | Included in DMP file | expdp full=y | impdp full=y | All dental records, appointments, user info |
+| **Database Constraints** | Oracle expdp | Included | impdp | Foreign keys, unique constraints restored |
+| **Database Indexes** | Oracle expdp | Included | impdp | Index structures recreated on restore |
 
 **Oracle Configuration:**
 - **Instance**: XE (Oracle 21c)
-- **User**: sys (with SYSDBA privileges)
+- **User**: system (from application.properties)
 - **Home**: `/opt/oracle/product/21c/dbhomeXE`
 - **Data Pump Dir**: `/opt/oracle/admin/xe/dpdump`
+- **Export Command**: `/opt/oracle/product/21c/dbhomeXE/bin/expdp`
+- **Import Command**: `/opt/oracle/product/21c/dbhomeXE/bin/impdp`
 - **Backup Retention**: Full backup of entire database instance
 
 ---
@@ -107,8 +110,8 @@ Teeth-Management-System/
 │   ├── config/          # Configuration files
 │   ├── models/          # Database models
 │   ├── routes/          # API endpoints
-│   ├── services/        # Business logic
-│   ├── security/        # Authentication
+│   ├── services/         # Business logic
+│   ├── security/         # Authentication
 │   ├── utils/           # Utilities
 │   └── requirements.txt # Python dependencies
 │
@@ -189,11 +192,10 @@ Inside source code backup, `/logs/` contains:
    - Tomcat (if applicable)
    - System configuration (with review)
 5. **Restore Database** → Oracle Data Pump import
-6. **Restore Logs** → Extracted as part of source code
-7. **Rebuild Frontend** → `cd Thoutha-Website && npm install && npm run build`
-8. **Deploy Frontend** → `astart -u` (git pull + build + copy to `/var/www/html`)
-9. **Restart Services** → `astart -w` (whole system)
-10. **Verify** → Check logs and test endpoints
+6. **Rebuild Frontend** → `cd Thoutha-Website && npm install && npm run build`
+7. **Deploy Frontend** → `astart -u` (git pull + build + copy to `/var/www/html`)
+8. **Restart Services** → `astart -w` (whole system)
+9. **Verify** → Check logs and test endpoints
 
 ---
 

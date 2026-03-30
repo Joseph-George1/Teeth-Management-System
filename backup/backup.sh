@@ -31,12 +31,13 @@ OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
 LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
-DB_USER="sys"
-DB_PASSWORD="${DB_PASSWORD:-change_me}"  # Set via environment variable
+DB_USER="system"  # From application.properties
+DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
 DB_ORACLE_SID="XE"
 ORACLE_HOME="/opt/oracle/product/21c/dbhomeXE"
+EXPORT_PATH="${ORACLE_HOME}/bin"
 
 # Backup configuration
 BACKUP_ROOT_PATH="/backup"
@@ -223,14 +224,14 @@ EOF
     log_info "Using Oracle Data Pump for database export..."
     
     # Use expdp command-line tool (preferred for full database backup)
-    if command -v expdp &> /dev/null; then
+    if [ -f "${EXPORT_PATH}/expdp" ]; then
         export ORACLE_HOME="${ORACLE_HOME}"
         export PATH="$ORACLE_HOME/bin:$PATH"
         export ORACLE_SID="$DB_ORACLE_SID"
         
-        log_info "Executing: expdp sys/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
+        log_info "Executing: ${EXPORT_PATH}/expdp system/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
         
-        expdp "sys/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
+        "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
               logfile="tms_export_${TIMESTAMP}.log" \
               directory="DATA_PUMP_DIR" \
@@ -250,7 +251,7 @@ EOF
             return 1
         fi
     else
-        log_error "expdp not found. Please ensure Oracle XE is properly installed."
+        log_error "expdp not found at ${EXPORT_PATH}/expdp. Please ensure Oracle XE is properly installed and ORACLE_HOME is correct."
         return 1
     fi
     
