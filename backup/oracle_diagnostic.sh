@@ -191,7 +191,7 @@ EOF
 
 echo "Running export command: ${ORACLE_HOME}/bin/expdp / as sysdba tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
 
-if sudo -u oracle "${ORACLE_HOME}/bin/expdp" / as sysdba \
+if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${DB_ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${ORACLE_HOME}/bin/expdp" / as sysdba \
      tables=test_backup_table \
      dumpfile=test_export.dmp \
      logfile=test_export.log \
