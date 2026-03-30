@@ -463,7 +463,7 @@ restore_oracle_database() {
     
     log_info "Executing: ${IMPORT_PATH}/impdp / as sysdba full=y dumpfile=$dmp_basename logfile=tms_import.log"
     
-    if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${DB_ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${IMPORT_PATH}/impdp" "/ as sysdba" \
+    if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${DB_ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${IMPORT_PATH}/impdp" '/ as sysdba' \
              full=y \
              dumpfile="$dmp_basename" \
              logfile="tms_import.log" \

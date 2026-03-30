@@ -23,7 +23,7 @@ export PATH="$ORACLE_HOME/bin:$PATH"
 export ORACLE_SID="$DB_ORACLE_SID"
 
 # Test the exact export command from backup.sh
-if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${EXPORT_PATH}/expdp" "/ as sysdba" \
+if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${EXPORT_PATH}/expdp" '/ as sysdba' \
      full=y \
      dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
      logfile="tms_export_${TIMESTAMP}.log" \
