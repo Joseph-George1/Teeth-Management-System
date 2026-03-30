@@ -289,10 +289,10 @@ EOF
             fi
         fi
 
-        log_info "Executing: ${EXPORT_PATH}/expdp \"sys/*** as sysdba\" full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
+        log_info "Executing: ${EXPORT_PATH}/expdp / as sysdba full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time=\"TO_TIMESTAMP(SYSDATE,'DD-MM-YYYY HH24:MI:SS')\""
 
-        # Execute export with detailed error capture
-        if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" full=y \
+        # Execute export with detailed error capture (run as oracle user with OS authentication)
+        if sudo -u oracle "${EXPORT_PATH}/expdp" / as sysdba full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
               logfile="tms_export_${TIMESTAMP}.log" \
               directory="DATA_PUMP_DIR" \
