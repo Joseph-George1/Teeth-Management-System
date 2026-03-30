@@ -292,12 +292,7 @@ EOF
         log_info "Executing: ${EXPORT_PATH}/expdp / as sysdba full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time=\"TO_TIMESTAMP(SYSDATE,'DD-MM-YYYY HH24:MI:SS')\""
 
         # Execute export with detailed error capture (run as oracle user with OS authentication)
-        if sudo -u oracle bash << EOFBASH 2>&1 | tee -a "$BACKUP_LOG"
-export ORACLE_HOME='${ORACLE_HOME}'
-export ORACLE_SID='${DB_ORACLE_SID}'
-'${EXPORT_PATH}/expdp' '/ as sysdba' full=y dumpfile='tms_full_${TIMESTAMP}_%U.dmp' logfile='tms_export_${TIMESTAMP}.log' directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time='TO_TIMESTAMP(SYSDATE,"DD-MM-YYYY HH24:MI:SS")'
-EOFBASH
-; then
+        if sudo -u oracle bash -c "export ORACLE_HOME='${ORACLE_HOME}'; export ORACLE_SID='${DB_ORACLE_SID}'; '${EXPORT_PATH}/expdp' '/ as sysdba' full=y dumpfile='tms_full_${TIMESTAMP}_%U.dmp' logfile='tms_export_${TIMESTAMP}.log' directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time='TO_TIMESTAMP(SYSDATE,\"DD-MM-YYYY HH24:MI:SS\")'" 2>&1 | tee -a "$BACKUP_LOG"; then
 
             log_success "Oracle Data Pump export completed successfully"
 

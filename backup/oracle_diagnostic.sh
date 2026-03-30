@@ -191,12 +191,7 @@ EOF
 
 echo "Running export command: ${ORACLE_HOME}/bin/expdp / as sysdba tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
 
-if sudo -u oracle bash << EOFBASH 2>&1 | tee /tmp/export_output.log
-export ORACLE_HOME='${ORACLE_HOME}'
-export ORACLE_SID='${DB_ORACLE_SID}'
-'${ORACLE_HOME}/bin/expdp' '/ as sysdba' tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR
-EOFBASH
-if grep -q "successfully completed" /tmp/export_output.log; then
+if sudo -u oracle bash -c "export ORACLE_HOME='${ORACLE_HOME}'; export ORACLE_SID='${DB_ORACLE_SID}'; '${ORACLE_HOME}/bin/expdp' '/ as sysdba' tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR" 2>&1 | tee /tmp/export_output.log | grep -q "successfully completed"; then
     echo -e "${GREEN}✓ Small export test successful${NC}"
     
     # Clean up test table
