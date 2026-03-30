@@ -23,7 +23,7 @@ export PATH="$ORACLE_HOME/bin:$PATH"
 export ORACLE_SID="$DB_ORACLE_SID"
 
 # Test the exact export command from backup.sh
-if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
+if "${EXPORT_PATH}/expdp" ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} \
      full=y \
      dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
      logfile="tms_export_${TIMESTAMP}.log" \

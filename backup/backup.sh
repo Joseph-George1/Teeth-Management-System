@@ -289,10 +289,10 @@ EOF
             fi
         fi
 
-        log_info "Executing: ${EXPORT_PATH}/expdp \"sys/*** as sysdba\" full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
+        log_info "Executing: ${EXPORT_PATH}/expdp sys/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
 
         # Execute export with detailed error capture
-        if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" full=y \
+        if "${EXPORT_PATH}/expdp" ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
               logfile="tms_export_${TIMESTAMP}.log" \
               directory="DATA_PUMP_DIR" \

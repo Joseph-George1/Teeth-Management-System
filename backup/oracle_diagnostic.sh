@@ -113,19 +113,21 @@ fi
 echo ""
 echo -e "${YELLOW}5. Checking DATA_PUMP_DIR Configuration:${NC}"
 
-# Test DATA_PUMP_DIR access
-DATAPUMP_TEST=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>&1 | grep -E "(directory_path|ORA-|SP2-)"
+# Query the database for DATA_PUMP_DIR with detailed debugging
+DATAPUMP_RESULT=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>&1
 SET HEADING OFF
 SET FEEDBACK OFF
-SELECT 'DIR_PATH:' || directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+SET PAGESIZE 0
+SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
 EXIT;
 EOF
 )
 
-if echo "$DATAPUMP_TEST" | grep -q "DIR_PATH:"; then
-    DATAPUMP_DIR=$(echo "$DATAPUMP_TEST" | grep "DIR_PATH:" | sed 's/DIR_PATH://' | tr -d '[:space:]')
+# Clean up the result
+DATAPUMP_DIR=$(echo "$DATAPUMP_RESULT" | grep -v "^$" | tail -1 | tr -d '[:space:]')
+
+if [ -n "$DATAPUMP_DIR" ] && [ "$DATAPUMP_DIR" != "0" ]; then
     echo -e "${GREEN}✓ DATA_PUMP_DIR configured: $DATAPUMP_DIR${NC}"
-    
     if [ -d "$DATAPUMP_DIR" ]; then
         echo -e "${GREEN}✓ DATA_PUMP_DIR directory exists${NC}"
         AVAILABLE_SPACE=$(df "$DATAPUMP_DIR" | tail -1 | awk '{print $4}')
@@ -136,11 +138,16 @@ if echo "$DATAPUMP_TEST" | grep -q "DIR_PATH:"; then
     else
         echo -e "${RED}✗ DATA_PUMP_DIR directory does not exist: $DATAPUMP_DIR${NC}"
     fi
-elif echo "$DATAPUMP_TEST" | grep -q "ORA-\|SP2-"; then
-    echo -e "${RED}✗ DATA_PUMP_DIR query failed:${NC}"
-    echo "$DATAPUMP_TEST" | grep -E "ORA-|SP2-"
 else
-    echo -e "${RED}✗ DATA_PUMP_DIR not configured in database${NC}"
+    echo -e "${YELLOW}Checking if directory exists on filesystem...${NC}"
+    if [ -d "/opt/oracle/admin/XE/dpdump" ]; then
+        echo -e "${GREEN}✓ DATA_PUMP_DIR directory exists at /opt/oracle/admin/XE/dpdump${NC}"
+        AVAILABLE_SPACE=$(df "/opt/oracle/admin/XE/dpdump" | tail -1 | awk '{print $4}')
+        echo -e "${BLUE}Available space: $((AVAILABLE_SPACE * 1024)) bytes ($((AVAILABLE_SPACE / 1024 / 1024)) GB)${NC}"
+    else
+        echo -e "${RED}✗ DATA_PUMP_DIR not found in database query${NC}"
+        echo -e "${YELLOW}Run: sudo ./oracle_setup_datapump.sh${NC}"
+    fi
 fi
 
 # Check user privileges
@@ -182,9 +189,9 @@ COMMIT;
 EXIT;
 EOF
 
-echo "Running export command: ${ORACLE_HOME}/bin/expdp \"${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba\" tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
+echo "Running export command: ${ORACLE_HOME}/bin/expdp ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
 
-if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
+if "${ORACLE_HOME}/bin/expdp" ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} \
      tables=test_backup_table \
      dumpfile=test_export.dmp \
      logfile=test_export.log \
