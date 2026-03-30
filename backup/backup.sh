@@ -31,7 +31,7 @@ OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
 LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
-DB_USER="system"  # From application.properties
+DB_USER="sys"  # SYSDBA privileges required for full database export
 DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
@@ -229,7 +229,7 @@ EOF
         export PATH="$ORACLE_HOME/bin:$PATH"
         export ORACLE_SID="$DB_ORACLE_SID"
         
-        log_info "Executing: ${EXPORT_PATH}/expdp system/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
+        log_info "Executing: ${EXPORT_PATH}/expdp sys/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
         
         "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \

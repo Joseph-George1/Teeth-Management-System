@@ -31,7 +31,7 @@ OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
 LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
-DB_USER="system"  # From application.properties
+DB_USER="sys"  # SYSDBA privileges required for full database import
 DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
@@ -461,7 +461,7 @@ restore_oracle_database() {
     
     local dmp_basename=$(basename "$main_dmp" | sed 's/_[0-9]*\.dmp/.dmp/')
     
-    log_info "Executing: ${IMPORT_PATH}/impdp ${DB_USER}/*** full=y dumpfile=$dmp_basename logfile=tms_import.log"
+    log_info "Executing: ${IMPORT_PATH}/impdp sys/*** full=y dumpfile=$dmp_basename logfile=tms_import.log"
     
     if "${IMPORT_PATH}/impdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" \
              full=y \
