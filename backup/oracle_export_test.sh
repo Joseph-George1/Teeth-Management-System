@@ -23,15 +23,9 @@ export PATH="$ORACLE_HOME/bin:$PATH"
 export ORACLE_SID="$DB_ORACLE_SID"
 
 # Test the exact export command from backup.sh
-if sudo -u oracle env ORACLE_HOME="${ORACLE_HOME}" ORACLE_SID="${ORACLE_SID}" PATH="${ORACLE_HOME}/bin:\$PATH" "${EXPORT_PATH}/expdp" '/ as sysdba' \
-     full=y \
-     dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
-     logfile="tms_export_${TIMESTAMP}.log" \
-     directory="DATA_PUMP_DIR" \
-     parallel=4 \
-     exclude=statistics \
-     flashback_time="TO_TIMESTAMP(SYSDATE,'DD-MM-YYYY HH24:MI:SS')" \
-     2>&1 | head -20; then
+EXPORT_CMD="ORACLE_HOME='${ORACLE_HOME}' ORACLE_SID='${ORACLE_SID}' '${EXPORT_PATH}/expdp' '/ as sysdba' full=y dumpfile='tms_full_${TIMESTAMP}_%U.dmp' logfile='tms_export_${TIMESTAMP}.log' directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time='TO_TIMESTAMP(SYSDATE,\"DD-MM-YYYY HH24:MI:SS\")'"
+
+if sudo -u oracle sh -c "$EXPORT_CMD" 2>&1 | head -20; then
     echo ""
     echo "Export command executed successfully"
     echo "Check /opt/oracle/admin/XE/dpdump/ for dump files and logs"
