@@ -168,16 +168,21 @@ fi
 echo ""
 echo -e "${YELLOW}7. Testing Small Export:${NC}"
 
-# Create a test table first
+# Drop test table if it exists, then create it
 echo "Creating test table..."
 "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE test_backup_table';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
 CREATE TABLE test_backup_table (id NUMBER, name VARCHAR2(50));
 INSERT INTO test_backup_table VALUES (1, 'test');
 COMMIT;
 EXIT;
 EOF
 
-echo "Running export command: ${ORACLE_HOME}/bin/expdp ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
+echo "Running export command: ${ORACLE_HOME}/bin/expdp \"${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba\" tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
 
 if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
      tables=test_backup_table \
