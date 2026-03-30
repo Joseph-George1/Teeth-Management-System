@@ -112,18 +112,20 @@ fi
 # Check DATA_PUMP_DIR
 echo ""
 echo -e "${YELLOW}5. Checking DATA_PUMP_DIR Configuration:${NC}"
-DATAPUMP_DIR=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null | grep -v "^$" | tail -1
+
+# Test DATA_PUMP_DIR access
+DATAPUMP_TEST=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>&1 | grep -E "(directory_path|ORA-|SP2-)"
 SET HEADING OFF
 SET FEEDBACK OFF
-SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
+SELECT 'DIR_PATH:' || directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
 EXIT;
 EOF
 )
 
-DATAPUMP_DIR=$(echo "$DATAPUMP_DIR" | tr -d '[:space:]')
-
-if [ -n "$DATAPUMP_DIR" ]; then
+if echo "$DATAPUMP_TEST" | grep -q "DIR_PATH:"; then
+    DATAPUMP_DIR=$(echo "$DATAPUMP_TEST" | grep "DIR_PATH:" | sed 's/DIR_PATH://' | tr -d '[:space:]')
     echo -e "${GREEN}✓ DATA_PUMP_DIR configured: $DATAPUMP_DIR${NC}"
+    
     if [ -d "$DATAPUMP_DIR" ]; then
         echo -e "${GREEN}✓ DATA_PUMP_DIR directory exists${NC}"
         AVAILABLE_SPACE=$(df "$DATAPUMP_DIR" | tail -1 | awk '{print $4}')
@@ -132,8 +134,11 @@ if [ -n "$DATAPUMP_DIR" ]; then
             echo -e "${RED}✗ WARNING: Low disk space (< 1GB) in DATA_PUMP_DIR${NC}"
         fi
     else
-        echo -e "${RED}✗ DATA_PUMP_DIR directory does not exist${NC}"
+        echo -e "${RED}✗ DATA_PUMP_DIR directory does not exist: $DATAPUMP_DIR${NC}"
     fi
+elif echo "$DATAPUMP_TEST" | grep -q "ORA-\|SP2-"; then
+    echo -e "${RED}✗ DATA_PUMP_DIR query failed:${NC}"
+    echo "$DATAPUMP_TEST" | grep -E "ORA-|SP2-"
 else
     echo -e "${RED}✗ DATA_PUMP_DIR not configured in database${NC}"
 fi
@@ -141,32 +146,30 @@ fi
 # Check user privileges
 echo ""
 echo -e "${YELLOW}6. Checking User Privileges:${NC}"
-PRIVILEGES=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null | grep -v "^$" | head -5
+
+# Since we're connecting as SYSDBA, we know the user has SYSDBA privileges
+# Test by trying to query DBA views
+PRIVILEGE_TEST=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null | grep -v "^$" | head -1
 SET HEADING OFF
 SET FEEDBACK OFF
-SELECT granted_role FROM dba_role_privs WHERE grantee = UPPER('$DB_USER') AND granted_role = 'DBA'
-UNION ALL
-SELECT privilege FROM dba_sys_privs WHERE grantee = UPPER('$DB_USER') AND privilege LIKE '%EXPORT%'
-UNION ALL
-SELECT 'SYSDBA' FROM v$pwfile_users WHERE username = UPPER('$DB_USER');
+SELECT 'DBA_ACCESS_OK' FROM dba_users WHERE rownum = 1;
 EXIT;
 EOF
 )
 
-if echo "$PRIVILEGES" | grep -q "SYSDBA\|DBA\|EXPORT"; then
-    echo -e "${GREEN}✓ User has sufficient privileges for export${NC}"
+if [ "$PRIVILEGE_TEST" = "DBA_ACCESS_OK" ]; then
+    echo -e "${GREEN}✓ User has SYSDBA privileges (can access DBA views)${NC}"
 else
-    echo -e "${RED}✗ User may not have sufficient privileges for full export${NC}"
-    echo -e "${YELLOW}Required: SYSDBA privilege or EXP_FULL_DATABASE role${NC}"
+    echo -e "${RED}✗ User may not have sufficient DBA privileges${NC}"
+    echo -e "${YELLOW}SYSDBA access test failed${NC}"
 fi
 
 # Test small export with SYSDBA
 echo ""
 echo -e "${YELLOW}7. Testing Small Export:${NC}"
-TEST_DUMP_DIR="/tmp/oracle_test_$$"
-mkdir -p "$TEST_DUMP_DIR"
 
 # Create a test table first
+echo "Creating test table..."
 "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null
 CREATE TABLE test_backup_table (id NUMBER, name VARCHAR2(50));
 INSERT INTO test_backup_table VALUES (1, 'test');
@@ -174,12 +177,14 @@ COMMIT;
 EXIT;
 EOF
 
+echo "Running export command: ${ORACLE_HOME}/bin/expdp ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
+
 if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
      tables=test_backup_table \
      dumpfile=test_export.dmp \
      logfile=test_export.log \
      directory=DATA_PUMP_DIR \
-     2>/dev/null | grep -q "successfully completed"; then
+     2>&1 | tee /tmp/export_output.log | grep -q "successfully completed"; then
     echo -e "${GREEN}✓ Small export test successful${NC}"
     
     # Clean up test table
@@ -190,10 +195,10 @@ EOF
     
 else
     echo -e "${RED}✗ Small export test failed${NC}"
+    echo -e "${YELLOW}Export command output:${NC}"
+    cat /tmp/export_output.log 2>/dev/null || echo "No output captured"
     echo -e "${YELLOW}Check export log: /opt/oracle/admin/XE/dpdump/test_export.log${NC}"
 fi
-
-rm -rf "$TEST_DUMP_DIR"
 
 echo ""
 echo -e "${BLUE}============================================================${NC}"
