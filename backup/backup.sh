@@ -247,7 +247,7 @@ EOF
 
         # Test database connectivity
         log_info "Testing database connectivity..."
-        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' &>> "$BACKUP_LOG"
+        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' &>> "$BACKUP_LOG"
 SET HEADING OFF
 SET FEEDBACK OFF
 SELECT 'DB_CONNECTION_OK' FROM dual;
@@ -260,7 +260,7 @@ EOF
 
         # Check DATA_PUMP_DIR configuration
         log_info "Checking DATA_PUMP_DIR configuration..."
-        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' &>> "$BACKUP_LOG"
+        if ! "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' &>> "$BACKUP_LOG"
 SET HEADING OFF
 SET FEEDBACK OFF
 SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
@@ -272,7 +272,7 @@ EOF
         fi
 
         # Check available space in DATA_PUMP_DIR
-        local datapump_dir=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null | grep -v "^$" | tail -1
+        local datapump_dir=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null | grep -v "^$" | tail -1
 SET HEADING OFF
 SET FEEDBACK OFF
 SELECT directory_path FROM dba_directories WHERE directory_name = 'DATA_PUMP_DIR';
@@ -289,10 +289,10 @@ EOF
             fi
         fi
 
-        log_info "Executing: ${EXPORT_PATH}/expdp sys/*** full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
+        log_info "Executing: ${EXPORT_PATH}/expdp sys/*** as sysdba full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log parallel=4"
 
         # Execute export with detailed error capture
-        if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" full=y \
+        if "${EXPORT_PATH}/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" full=y \
               dumpfile="tms_full_${TIMESTAMP}_%U.dmp" \
               logfile="tms_export_${TIMESTAMP}.log" \
               directory="DATA_PUMP_DIR" \

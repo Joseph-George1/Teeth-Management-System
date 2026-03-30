@@ -68,28 +68,45 @@ else
     echo -e "${GREEN}✓ Password is configured${NC}"
 fi
 
-# Test database connection
+# Test database connection with SYSDBA
 echo ""
-echo -e "${YELLOW}4. Testing Database Connection:${NC}"
+echo -e "${YELLOW}4. Testing Database Connection (SYSDBA):${NC}"
 export ORACLE_HOME="${ORACLE_HOME}"
 export PATH="$ORACLE_HOME/bin:$PATH"
 export ORACLE_SID="$DB_ORACLE_SID"
 
-if "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null
+if "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null
 SET HEADING OFF
 SET FEEDBACK OFF
 SELECT 'CONNECTION_OK: ' || instance_name || ' (' || status || ')' FROM v$instance;
 EXIT;
 EOF
 then
-    echo -e "${GREEN}✓ Database connection successful${NC}"
+    echo -e "${GREEN}✓ SYSDBA connection successful${NC}"
 else
-    echo -e "${RED}✗ Database connection failed${NC}"
-    echo -e "${YELLOW}Possible issues:${NC}"
-    echo "  - Incorrect password"
-    echo "  - Wrong username (try 'sys' or 'system')"
-    echo "  - Database not accepting connections"
-    exit 1
+    echo -e "${RED}✗ SYSDBA connection failed${NC}"
+    echo -e "${YELLOW}Testing regular connection...${NC}"
+    
+    # Try regular connection
+    if "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null
+SET HEADING OFF
+SET FEEDBACK OFF
+SELECT 'CONNECTION_OK: ' || instance_name || ' (' || status || ')' FROM v$instance;
+EXIT;
+EOF
+    then
+        echo -e "${YELLOW}✓ Regular connection successful (but SYSDBA required for backup)${NC}"
+        echo -e "${RED}✗ SYSDBA privileges required for backup operations${NC}"
+        echo -e "${YELLOW}Use 'sys' user with 'as sysdba' for backup/restore${NC}"
+        exit 1
+    else
+        echo -e "${RED}✗ Database connection failed${NC}"
+        echo -e "${YELLOW}Possible issues:${NC}"
+        echo "  - Incorrect password"
+        echo "  - Wrong username (try 'sys' or 'system')"
+        echo "  - Database not accepting connections"
+        exit 1
+    fi
 fi
 
 # Check DATA_PUMP_DIR
@@ -124,7 +141,7 @@ fi
 # Check user privileges
 echo ""
 echo -e "${YELLOW}6. Checking User Privileges:${NC}"
-PRIVILEGES=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" << 'EOF' 2>/dev/null | grep -v "^$" | head -5
+PRIVILEGES=$("${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null | grep -v "^$" | head -5
 SET HEADING OFF
 SET FEEDBACK OFF
 SELECT granted_role FROM dba_role_privs WHERE grantee = UPPER('$DB_USER') AND granted_role = 'DBA'
@@ -143,23 +160,37 @@ else
     echo -e "${YELLOW}Required: SYSDBA privilege or EXP_FULL_DATABASE role${NC}"
 fi
 
-# Test small export
+# Test small export with SYSDBA
 echo ""
 echo -e "${YELLOW}7. Testing Small Export:${NC}"
 TEST_DUMP_DIR="/tmp/oracle_test_$$"
 mkdir -p "$TEST_DUMP_DIR"
 
-if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" \
-     tables=dual \
+# Create a test table first
+"${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null
+CREATE TABLE test_backup_table (id NUMBER, name VARCHAR2(50));
+INSERT INTO test_backup_table VALUES (1, 'test');
+COMMIT;
+EXIT;
+EOF
+
+if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
+     tables=test_backup_table \
      dumpfile=test_export.dmp \
      logfile=test_export.log \
      directory=DATA_PUMP_DIR \
      2>/dev/null | grep -q "successfully completed"; then
     echo -e "${GREEN}✓ Small export test successful${NC}"
-    rm -f /opt/oracle/admin/xe/dpdump/test_export.*
+    
+    # Clean up test table
+    "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" << 'EOF' 2>/dev/null
+DROP TABLE test_backup_table;
+EXIT;
+EOF
+    
 else
     echo -e "${RED}✗ Small export test failed${NC}"
-    echo -e "${YELLOW}Check export log: /opt/oracle/admin/xe/dpdump/test_export.log${NC}"
+    echo -e "${YELLOW}Check export log: /opt/oracle/admin/XE/dpdump/test_export.log${NC}"
 fi
 
 rm -rf "$TEST_DUMP_DIR"

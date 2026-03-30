@@ -461,9 +461,9 @@ restore_oracle_database() {
     
     local dmp_basename=$(basename "$main_dmp" | sed 's/_[0-9]*\.dmp/.dmp/')
     
-    log_info "Executing: ${IMPORT_PATH}/impdp sys/*** full=y dumpfile=$dmp_basename logfile=tms_import.log"
+    log_info "Executing: ${IMPORT_PATH}/impdp sys/*** as sysdba full=y dumpfile=$dmp_basename logfile=tms_import.log"
     
-    if "${IMPORT_PATH}/impdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID}" \
+    if "${IMPORT_PATH}/impdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
              full=y \
              dumpfile="$dmp_basename" \
              logfile="tms_import.log" \
