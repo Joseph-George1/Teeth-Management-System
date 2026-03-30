@@ -189,9 +189,9 @@ COMMIT;
 EXIT;
 EOF
 
-echo "Running export command: ${ORACLE_HOME}/bin/expdp ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
+echo "Running export command: ${ORACLE_HOME}/bin/expdp \"${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba\" tables=test_backup_table dumpfile=test_export.dmp logfile=test_export.log directory=DATA_PUMP_DIR"
 
-if "${ORACLE_HOME}/bin/expdp" ${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} \
+if "${ORACLE_HOME}/bin/expdp" "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" \
      tables=test_backup_table \
      dumpfile=test_export.dmp \
      logfile=test_export.log \
