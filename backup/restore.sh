@@ -463,12 +463,7 @@ restore_oracle_database() {
     
     log_info "Executing: ${IMPORT_PATH}/impdp / as sysdba full=y dumpfile=$dmp_basename logfile=tms_import.log"
     
-    if sudo -u oracle bash << EOFBASH 2>&1 | tee -a "$import_log"
-export ORACLE_HOME='${ORACLE_HOME}'
-export ORACLE_SID='${DB_ORACLE_SID}'
-'${IMPORT_PATH}/impdp' '/ as sysdba' full=y dumpfile='${dmp_basename}' logfile=tms_import.log directory=DATA_PUMP_DIR
-EOFBASH
-; then
+    if sudo -u oracle bash -c "export ORACLE_HOME='${ORACLE_HOME}'; export ORACLE_SID='${DB_ORACLE_SID}'; ${IMPORT_PATH}/impdp '/ as sysdba' full=y dumpfile='${dmp_basename}' logfile=tms_import.log directory=DATA_PUMP_DIR" 2>&1 | tee -a "$import_log"; then
         
         log_success "Oracle Data Pump import completed successfully"
         
