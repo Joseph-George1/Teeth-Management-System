@@ -32,7 +32,7 @@ LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
 DB_USER="sys"  # SYSDBA privileges required for full database import
-DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
+DB_PASSWORD="password"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
 DB_ORACLE_SID="XE"
@@ -121,10 +121,22 @@ get_current_version() {
 # Check if versions match
 check_version_match() {
     local component="$1"
-    local required_version="$2"
+    local version_file="$2"
+    
+    if [ -z "$version_file" ] || [ ! -f "$version_file" ]; then
+        log_warning "Version file not provided for component $component - skipping version check"
+        return 0
+    fi
+    
+    local required_version=$(get_backup_version "$component" "$version_file")
     local current_version=$(get_current_version "$component")
     
     log_info "Checking $component: Required=$required_version, Current=$current_version"
+    
+    if [ -z "$required_version" ]; then
+        log_warning "$component version not found in backup metadata - skipping check"
+        return 0
+    fi
     
     if [ "$required_version" = "$current_version" ]; then
         log_success "$component version matches"
@@ -230,7 +242,7 @@ verify_and_match_versions() {
     for component in "${components[@]}"; do
         log_info "Processing component: $component"
         
-        if ! check_version_match "$component" ""; then
+        if ! check_version_match "$component" "$version_file"; then
             # Component version mismatch - need to handle
             log_warning "Version mismatch for $component"
         fi
@@ -506,7 +518,7 @@ EXIT;
 EOF
 
     # Note: Verification uses sys for dba privileges, but import uses system user
-    if sqlplus -S "sys/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" < "$verify_script" &>> "$RESTORE_LOG"; then
+    if "${ORACLE_HOME}/bin/sqlplus" -S "${DB_USER}/${DB_PASSWORD}@${DB_ORACLE_SID} as sysdba" < "$verify_script" &>> "$RESTORE_LOG"; then
         rm "$verify_script"
         return 0
     else
@@ -564,6 +576,40 @@ pre_restore_checks() {
 }
 
 # ============================================================================
+# BACKUP ARCHIVE EXTRACTION
+# ============================================================================
+
+# Extract backup archive if provided as .tar.gz
+extract_backup_archive() {
+    log_info "Checking for backup archive..."
+    
+    # Look for .tar.gz file in backup source
+    local archive_file=$(find "$BACKUP_SOURCE_PATH" -maxdepth 1 -name "tms_backup_*.tar.gz" | head -1)
+    
+    if [ -n "$archive_file" ]; then
+        log_info "Found backup archive: $archive_file"
+        log_info "Extracting archive to temporary location..."
+        
+        local temp_extract_dir="/tmp/tms_restore_$$"
+        mkdir -p "$temp_extract_dir"
+        
+        if tar -xzf "$archive_file" -C "$temp_extract_dir" 2>> "$RESTORE_LOG"; then
+            log_success "Archive extracted successfully"
+            # Update BACKUP_SOURCE_PATH to point to extracted content
+            BACKUP_SOURCE_PATH="$temp_extract_dir"
+            log_info "Using extracted backup from: $BACKUP_SOURCE_PATH"
+            return 0
+        else
+            log_error "Failed to extract backup archive"
+            return 1
+        fi
+    else
+        log_info "No .tar.gz archive found, using backup source as-is"
+        return 0
+    fi
+}
+
+# ============================================================================
 # MAIN RESTORE EXECUTION
 # ============================================================================
 
@@ -571,6 +617,13 @@ main() {
     log_info "======== TEETH MANAGEMENT SYSTEM RESTORE START ========"
     log_info "Backup Source: $BACKUP_SOURCE_PATH"
     log_info "Restore Log: $RESTORE_LOG"
+    
+    # Step 0: Extract backup archive if present
+    log_info "Step 0: Extracting backup archive if available..."
+    if ! extract_backup_archive; then
+        log_error "Failed to extract backup archive"
+        return 1
+    fi
     
     # Step 1: Pre-restore checks
     if ! pre_restore_checks; then

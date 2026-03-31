@@ -32,7 +32,7 @@ LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
 # Database - Oracle XE Configuration
 DB_USER="sys"  # SYSDBA privileges required for full database export
-DB_PASSWORD="YOUR_DB_PASSWORD_HERE"  # TODO: Replace with actual database password
+DB_PASSWORD="password"  # TODO: Replace with actual database password
 DB_HOST="localhost"
 DB_PORT="1521"
 DB_ORACLE_SID="XE"
@@ -70,7 +70,9 @@ log_error() {
 log_success() {
     echo "[SUCCESS] [$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$BACKUP_LOG"
 }
-
+log_warning() {
+    echo "[WARNING] [$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$BACKUP_LOG"
+}
 # ============================================================================
 # VERSION CAPTURE FUNCTIONS
 # ============================================================================
@@ -289,19 +291,47 @@ EOF
             fi
         fi
 
-        log_info "Executing: ${EXPORT_PATH}/expdp / as sysdba full=y dumpfile=tms_full_${TIMESTAMP}_%U.dmp logfile=tms_export_${TIMESTAMP}.log directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time=\"TO_TIMESTAMP(SYSDATE,'DD-MM-YYYY HH24:MI:SS')\""
+        # Create parameter file for expdp (more reliable than command-line args)
+        local EXPDP_PARFILE="/tmp/expdp_${TIMESTAMP}.par"
+        cat > "$EXPDP_PARFILE" << EXPDP_EOF
+FULL=Y
+DUMPFILE=${TIMESTAMP}_%U.dmp
+LOGFILE=expdp_${TIMESTAMP}.log
+DIRECTORY=DATA_PUMP_DIR
+JOB_NAME=tms_full_export_${TIMESTAMP}
+COMPRESSION=METADATA_ONLY
+EXPDP_EOF
 
-        # Execute export with detailed error capture (run as oracle user with OS authentication)
-        if sudo -u oracle bash -c "export ORACLE_HOME='${ORACLE_HOME}'; export ORACLE_SID='${DB_ORACLE_SID}'; ${EXPORT_PATH}/expdp '/ as sysdba' full=y dumpfile='tms_full_${TIMESTAMP}_%U.dmp' logfile='tms_export_${TIMESTAMP}.log' directory=DATA_PUMP_DIR parallel=4 exclude=statistics flashback_time='TO_TIMESTAMP(SYSDATE,\"DD-MM-YYYY HH24:MI:SS\")' " 2>&1 | tee -a "$BACKUP_LOG"; then
+        log_info "Created expdp parameter file: $EXPDP_PARFILE"
+        log_info "Executing: ${EXPORT_PATH}/expdp / parfile=$EXPDP_PARFILE"
+
+        # Execute export with parameter file (run as oracle user with OS authentication)
+        if sudo -u oracle bash -c "export ORACLE_HOME='${ORACLE_HOME}'; export ORACLE_SID='${DB_ORACLE_SID}'; export PATH=\${ORACLE_HOME}/bin:\$PATH; ${EXPORT_PATH}/expdp / parfile='$EXPDP_PARFILE'" 2>&1 | tee -a "$BACKUP_LOG"; then
 
             log_success "Oracle Data Pump export completed successfully"
 
-            # Move export files to backup directory
-            mv /opt/oracle/admin/xe/dpdump/tms_full_${TIMESTAMP}*.dmp "$DB_BACKUP_DIR/" 2>/dev/null || true
-            mv /opt/oracle/admin/xe/dpdump/tms_export_${TIMESTAMP}.log "$DB_BACKUP_DIR/" 2>/dev/null || true
+            # Find and move the dump files to backup directory
+            log_info "Locating dump files..."
+            local datapump_location="/opt/oracle/admin/XE/dpdump"
+            if [ ! -d "$datapump_location" ]; then
+                datapump_location="/opt/oracle/admin/xe/dpdump"
+            fi
+            
+            log_info "Searching for dump files in: $datapump_location"
+            
+            # Find all .dmp files matching this timestamp and move them
+            if find "$datapump_location" -maxdepth 1 -name "${TIMESTAMP}_*.dmp" -type f 2>/dev/null | head -1 | grep -q .; then
+                log_info "Found dump files with pattern: ${TIMESTAMP}_*.dmp"
+                sudo find "$datapump_location" -maxdepth 1 -name "${TIMESTAMP}_*.dmp" -type f -exec mv {} "$DB_BACKUP_DIR"/ \;
+                sudo find "$datapump_location" -maxdepth 1 -name "expdp_${TIMESTAMP}.log" -type f -exec mv {} "$DB_BACKUP_DIR"/ \;
+                sudo chown -R $(id -u):$(id -g) "$DB_BACKUP_DIR"/ 2>/dev/null || true
+                log_success "Dump files moved to backup directory"
+            else
+                log_warning "No dump files found with pattern ${TIMESTAMP}_*.dmp in $datapump_location"
+            fi
         else
             log_error "Oracle Data Pump export failed"
-            log_error "Check the export log: /opt/oracle/admin/xe/dpdump/tms_export_${TIMESTAMP}.log"
+            log_error "Check the export log in $datapump_location"
             log_error "Common issues:"
             log_error "  1. Incorrect password - update DB_PASSWORD in script"
             log_error "  2. Insufficient privileges - ensure sys user has SYSDBA"
@@ -309,10 +339,9 @@ EOF
             log_error "  4. Oracle database not running"
             return 1
         fi
-    else
-        log_error "expdp not found at ${EXPORT_PATH}/expdp. Please ensure Oracle XE is properly installed and ORACLE_HOME is correct."
-        return 1
-    fi
+        
+        # Cleanup parameter file
+        rm -f "$EXPDP_PARFILE"
     else
         log_error "expdp not found at ${EXPORT_PATH}/expdp. Please ensure Oracle XE is properly installed and ORACLE_HOME is correct."
         return 1
@@ -496,6 +525,36 @@ generate_checksums() {
 }
 
 # ============================================================================
+# BACKUP ARCHIVE CREATION
+# ============================================================================
+
+# Create consolidated backup archive
+create_backup_archive() {
+    log_info "Creating consolidated backup archive..."
+    
+    local archive_file="${BACKUP_ROOT_PATH}/tms_backup_${TIMESTAMP}.tar.gz"
+    
+    log_info "Archiving all backup files to: $archive_file"
+    
+    cd "$BACKUP_ROOT_PATH" || return 1
+    
+    if tar -czf "$archive_file" \
+        metadata/ \
+        database/ \
+        files/ \
+        logs/ \
+        2>> "$BACKUP_LOG"; then
+        
+        log_success "Backup archive created successfully: $archive_file"
+        log_info "Archive size: $(du -sh "$archive_file" | cut -f1)"
+        return 0
+    else
+        log_error "Failed to create backup archive"
+        return 1
+    fi
+}
+
+# ============================================================================
 # MAIN BACKUP EXECUTION
 # ============================================================================
 
@@ -543,6 +602,12 @@ main() {
     # Step 7: Generate checksums
     if ! generate_checksums; then
         log_error "Failed to generate checksums"
+        return 1
+    fi
+    
+    # Step 8: Create consolidated backup archive
+    if ! create_backup_archive; then
+        log_error "Failed to create backup archive"
         return 1
     fi
     
