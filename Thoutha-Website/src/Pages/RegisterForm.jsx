@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Helmet } from "react-helmet-async";
 import '../Css/RegisterForm.css';
 
 const SERVER_URL = 'https://thoutha.page/api'; 
@@ -15,6 +16,7 @@ export default function RegisterForm() {
   const [faculty, setFaculty] = useState('');
   const [year, setYear] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -100,8 +102,13 @@ export default function RegisterForm() {
     e.preventDefault();
     setError('');
 
-    if (!firstName || !lastName || !email || !phone || !city || !faculty || !year || !password || !category) {
+    if (!firstName || !lastName || !email || !phone || !city || !faculty || !year || !password || !confirmPassword || !category) {
       setError('يرجى ملء جميع الحقول');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('كلمات المرور غير متطابقة');
       return;
     }
 
@@ -123,6 +130,7 @@ export default function RegisterForm() {
         lastName: lastName,
         email: email,
         password: password,
+        confirmPassword: confirmPassword,
         phoneNumber: phone,
         cityName: city,
         studyYear: year,
@@ -130,7 +138,8 @@ export default function RegisterForm() {
         universityName: faculty,
       };
 
-      console.log('Signup payload:', signupPayload);
+      // Commented out to prevent user data leak
+      // console.log('Signup payload:', signupPayload);
 
       const response = await fetch(`${SERVER_URL}/auth/signup`, {
         method: 'POST',
@@ -139,7 +148,7 @@ export default function RegisterForm() {
       });
 
       const data = await response.json();
-      console.log('Signup response:', data);
+      // console.log('Signup response:', data);
 
       if (!response.ok) {
         if (Array.isArray(data) && data.length > 0) {
@@ -164,6 +173,13 @@ export default function RegisterForm() {
   };
 
   return (
+    <>
+    <Helmet>
+      <meta
+        name="description"
+        content="منصة ثوثة بتربط مرضى الأسنان بطلاب كليات طب الأسنان لعلاج الحالات مجانًا تحت الإشراف المباشر لأعضاء هيئة التدريس بالكلية، مع فرصة تعليمية عملية للطلاب"
+          />
+    </Helmet>
     <div className="signup-page">
       <div className="signup-container">
         <p className="signup-title">انشاء حساب</p>
@@ -280,7 +296,16 @@ export default function RegisterForm() {
             </select>
           </div>
 
-          <div className="input-group">
+          <div className="input-group password-row">
+            <input
+              type="password"
+              placeholder="تأكيد كلمة المرور"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="input-field-2"
+              autoComplete="new-password"
+            />
             <input
               type="password"
               placeholder="كلمة المرور"
@@ -304,5 +329,6 @@ export default function RegisterForm() {
         </div>
       </div>
     </div>
+    </>
   );
 }

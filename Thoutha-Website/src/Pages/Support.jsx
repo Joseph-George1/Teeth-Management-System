@@ -1,6 +1,41 @@
+import { useRef, useState } from "react";
+import emailjs from "emailjs-com";
 import "../Css/Support.css";
 
 export default function Support(){
+  const form = useRef();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const sendEmail = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    emailjs
+      .sendForm(
+        "service_p5uu6l9",
+        "template_5pfgkta",
+        form.current,
+        "9YDoDCKMIYGrPnenI"
+      )
+      .then(
+        () => {
+          setLoading(false);
+          setSuccess(true);
+          form.current.reset();
+          setTimeout(() => setSuccess(false), 3000);
+        },
+        (error) => {
+          setLoading(false);
+          setError("حدث خطأ أثناء إرسال الرسالة ❌");
+          console.error("EmailJS Error:", error);
+          setTimeout(() => setError(""), 3000);
+        }
+      );
+  };
+
   return (
     <div className="support-container">
       <h1 className="support-title">الدعم الفني – منصة ثوثة</h1>
@@ -33,39 +68,53 @@ export default function Support(){
           يمكنك التواصل معنا عبر البريد الإلكتروني:
         </p>
         <p className="support-email">
-          menna@thoutha.page
-        </p>
-        <p>
-          joseph@thoutha.page
+          support@thoutha.page
         </p>
       </section>
-{/* 
+
       <section className="support-section">
         <h2>نموذج التواصل</h2>
 
-        <form className="support-form">
+        <form ref={form} onSubmit={sendEmail} className="support-form">
           <input
             type="text"
+            name="name"
             placeholder="الاسم"
             required
           />
 
           <input
             type="email"
+            name="email"
             placeholder="البريد الإلكتروني"
             required
           />
 
           <textarea
+            name="message"
             placeholder="اكتب رسالتك هنا"
             rows="5"
             required
           ></textarea>
 
-          <button type="submit">إرسال</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "جاري الإرسال..." : "إرسال"}
+          </button>
+
+          {success && (
+            <div className="toast-message toast-success">
+              تم إرسال رسالتك بنجاح ✅
+            </div>
+          )}
+
+          {error && (
+            <div className="toast-message toast-error">
+              {error}
+            </div>
+          )}
         </form>
-      </section> */}
+      </section>
     </div>
   );
-};
+}
 

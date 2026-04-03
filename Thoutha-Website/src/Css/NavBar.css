@@ -13,7 +13,6 @@
   --border-radius-1: 12px;
 }
 
-/* ---------------- NAVBAR CONTAINER ---------------- */
 .navbar-container {
   width: 100%;
   background: var(--color-3-background);
@@ -24,12 +23,10 @@
   padding: 12px 25px;
 }
 
-/* For login & signup pages where background is gradient */
 .gradient-bg .navbar-container {
   background: #ffffffdd !important;
 }
 
-/* ---------------- LEFT SIDE (LOGO + NAME) ---------------- */
 .logo-box {
   display: flex;
   align-items: center;
@@ -43,7 +40,6 @@
   color: var(--text-color-4);
 }
 
-/* ---------------- DESKTOP NAV LINKS ---------------- */
 .nav-links {
   list-style: none;
   display: flex;
@@ -60,32 +56,32 @@
   transition: 0.3s ease;
 }
 
-/* Active oval background */
- .notactive-link {
+.notactive-link {
   font-family: 'Cairo', sans-serif;
   display: flex;
   align-items: center;
   font-weight: 600;
-  color: #1E2939 ;
+  color: #1E2939;
 }
-.active-link{
-    font-family: 'Cairo', sans-serif;
+
+.active-link {
+  font-family: 'Cairo', sans-serif;
   background: linear-gradient(180deg, #84e4f3 0%, #8decb4 100%);
   color: var(--text-color-1) !important;
-    padding: 8px 18px;
-      font-weight: 600;
-      display: flex;
-      border-radius: 16px;
+  padding: 8px 18px;
+  font-weight: 600;
+  display: flex;
+  border-radius: 16px;
   align-items: center;
 }
 
-/* ---------------- MOBILE MENU ICON ---------------- */
 .menu-icon {
-  background:none;
+  background: none;
   border: none;
   text-align: left;
   cursor: pointer;
 }
+
 .menu-icon1 {
   background: linear-gradient(180deg, #84E5F3 0%, #8DECB4 100%);
   width: 100%;
@@ -94,6 +90,7 @@
   text-align: left;
   color: var(--text-color-1);
 }
+
 .menu-icon2 {
   background: linear-gradient(180deg, #84E5F3 0%, #8DECB4 100%);
   width: 100%;
@@ -111,7 +108,8 @@
   color: var(--text-color-1);
   padding-top: 40px;
 }
-  .menu-icon3 span{
+
+.menu-icon3 span {
   font-weight: 700;
   font-size: 20px;
   line-height: 30px;
@@ -123,7 +121,7 @@
   left: 137px;
 }
 
-.mobile-login-btn{
+.mobile-login-btn {
   border: none;
   font-family: 'Cairo', sans-serif;
   font-weight: 400;
@@ -136,17 +134,17 @@
   gap: 10px;
 }
 
-.lucide-x{
+.lucide-x {
   position: relative;
   top: -14px;
   right: -25px;
 }
-.icon-color{
+
+.icon-color {
   color: #84E5F3;
   margin-left: 5px;
 }
 
-/* ---------------- MOBILE MENU ---------------- */
 .mobile-menu {
   display: flex;
   flex-direction: column;
@@ -155,10 +153,11 @@
   height: 182.5vh;
   position: absolute;
   top: 0px;
-  left: 0px; 
+  left: 0px;
   z-index: 900;
 }
-.mobile-menu2{
+
+.mobile-menu2 {
   display: flex;
   flex-direction: column;
   gap: 25px;
@@ -171,8 +170,6 @@
   margin: 0px 18px 0px 18px;
 }
 
-
-/* ---------------- OVERLAY ---------------- */
 .overlay {
   position: fixed;
   top: 0;
@@ -183,8 +180,7 @@
   z-index: 900;
 }
 
-/* user info */
-.user-info-circle{
+.user-info-circle {
   width: 232px;
   height: 72px;
   background-color: #FFFFFF33;
@@ -196,7 +192,6 @@
   padding-right: 10px;
   padding-top: 8px;
   gap: 10px;
-
 }
 .user-info {
   color: var(--text-color-1);
@@ -204,6 +199,7 @@
   font-size: 16px;
   line-height: 24px;
 }
+
 .user-info-email {
   display: flex;
   flex-direction: column;
@@ -211,6 +207,7 @@
   gap: 2px;
   overflow: hidden;
 }
+
 .user-name {
   display: block;
   color: #ffffff;
@@ -221,7 +218,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.user-email{
+
+.user-email {
   font-weight: 400;
   font-size: 11px;
   line-height: 16px;
@@ -232,24 +230,27 @@
   text-overflow: ellipsis;
   margin: 0;
 }
-.cursor{
+
+.cursor {
   cursor: pointer;
 }
 
-/* ---------------- RESPONSIVE ---------------- */
 @media (max-width: 850px) {
   .nav-links,
   .login-btn {
     display: none;
   }
 
-  .menu-icon,.menu-icon2 {
+  .menu-icon,
+  .menu-icon2 {
     display: block;
   }
 
-  .mobile-menu ,.mobile-menu2 {
+  .mobile-menu,
+  .mobile-menu2 {
     display: flex;
   }
+
   .mobile-menu a {
     font-size: 0.95rem;
   }

@@ -188,8 +188,9 @@ def get_analytics(token):
     cities_raw, _ = _get("/api/cities/getAllCities")
     universities_raw, _ = _get("/api/university/getAllUniversities")
     
-    # New: get detailed dashboard stats
+    # New: get detailed dashboard stats and appointments
     dashboard_raw, _ = _get("/api/admin/dashboard")
+    all_appts_data = dashboard_raw.get("allAppointments", []) if dashboard_raw else []
 
     doctors    = doctors_raw    or []
     reqs       = requests_raw   or []
@@ -197,9 +198,10 @@ def get_analytics(token):
     cities     = cities_raw     or []
     universities = universities_raw or []
     dashboard  = dashboard_raw  or {}
+    appointments = all_appts_data or []
 
     # ---- doctors aggregation ----
-    app.logger.info(f"Aggregating {len(doctors)} doctors and {len(reqs)} requests")
+    app.logger.info(f"Aggregating {len(doctors)} doctors, {len(reqs)} requests, and {len(appointments)} appointments")
     doctors_by_category = Counter(d.get("categoryName", "Unknown") for d in doctors)
     doctors_by_city      = Counter(d.get("cityName", "Unknown")     for d in doctors)
     doctors_by_university = Counter(d.get("universityName", "Unknown") for d in doctors)
@@ -207,6 +209,11 @@ def get_analytics(token):
     # ---- requests aggregation ----
     requests_by_status   = Counter(r.get("status", "UNKNOWN") for r in reqs)
     requests_by_category = Counter(r.get("categoryName", "Unknown") for r in reqs)
+    
+    # ---- appointments aggregation ----
+    appointments_by_status = Counter(a.get("status", "UNKNOWN").upper() if isinstance(a.get("status"), str) else "UNKNOWN" for a in appointments)
+    app.logger.info(f"Appointments by status: {dict(appointments_by_status)}")
+    app.logger.info(f"Total appointments: {len(appointments)}, Unique statuses: {list(appointments_by_status.keys())}")
 
     # ---- request timeline (by month from dateTime) ----
     timeline: Counter = Counter()
@@ -251,7 +258,19 @@ def get_analytics(token):
         "cities":     [c.get("name", "") for c in cities],
         "doctors_list": doctors,
         "requests_list": reqs,
+        "appointments_list": appointments,
+        "appointments_by_status": dict(appointments_by_status),
     }
+
+
+# ─────────────────────────────────────────────
+#  APPOINTMENT HELPERS
+# ─────────────────────────────────────────────
+
+def _get_all_appointments():
+    """Get all appointments from backend."""
+    data, status = _get("/api/admin/getAllAppointments")
+    return data if status == 200 and data else []
 
 
 # ─────────────────────────────────────────────
@@ -442,6 +461,59 @@ def api_delete_doctor_admin(doctor_id):
     if status in (200, 204):
         return jsonify({"success": True, "message": f"Doctor {doctor_id} deleted successfully"})
     return jsonify({"success": False, "message": f"Delete failed: HTTP {status}"}), 400
+
+
+# ── Appointment endpoints ──
+
+@app.route(f"{ADMIN_PREFIX}/api/appointments/all")
+@login_required
+def api_get_all_appointments():
+    """Get ALL appointments"""
+    appointments = _get_all_appointments()
+    return jsonify({"success": True, "appointments": appointments})
+
+
+@app.route(f"{ADMIN_PREFIX}/api/appointments/filter")
+@login_required
+def api_filter_appointments():
+    """Filter appointments by status (PENDING, APPROVED, DONE, CANCELLED, EXPIRED)"""
+    status_filter = request.args.get("status", "").upper()
+    all_appts = _get_all_appointments()
+    
+    if status_filter == "EXPIRED":
+        filtered = [a for a in all_appts if a.get("isExpired") is True]
+    elif status_filter in ["PENDING", "APPROVED", "DONE", "CANCELLED"]:
+        filtered = [a for a in all_appts if a.get("status") == status_filter]
+    else:
+        filtered = all_appts
+    
+    return jsonify({"success": True, "appointments": filtered})
+
+
+@app.route(f"{ADMIN_PREFIX}/api/appointments/<int:appointment_id>/delete", methods=["POST"])
+@login_required
+def api_delete_appointment(appointment_id):
+    """Delete an appointment"""
+    status = _delete(f"/api/appointment/deleteAppointment/{appointment_id}")
+    if status in (200, 204):
+        return jsonify({"success": True, "message": f"Appointment {appointment_id} deleted"})
+    return jsonify({"success": False, "message": f"Delete failed: HTTP {status}"}), 400
+
+
+# ── Request update endpoints ──
+
+@app.route(f"{ADMIN_PREFIX}/api/requests/<int:request_id>/updateStatus", methods=["POST"])
+@login_required
+def api_update_request_status(request_id):
+    """Update request status (PENDING, APPROVED, REJECTED)"""
+    new_status = request.json.get("status", "").upper()
+    if new_status not in ["PENDING", "APPROVED", "REJECTED"]:
+        return jsonify({"success": False, "message": "Invalid status"}), 400
+    
+    status = _put(f"/api/request/updateStatus/{request_id}", data={"status": new_status})
+    if status == 200:
+        return jsonify({"success": True, "message": f"Request {request_id} updated to {new_status}"})
+    return jsonify({"success": False, "message": f"Update failed: HTTP {status}"}), 400
 
 
 # ── Export endpoints ──
@@ -1820,6 +1892,9 @@ DASHBOARD_TEMPLATE = """
     <a class="nav-link" data-section="requests" href="#" onclick="showSection('requests',this)">
       <i class="fa-solid fa-file-medical"></i>Requests
     </a>
+    <a class="nav-link" data-section="appointments" href="#" onclick="showSection('appointments',this)">
+      <i class="fa-solid fa-calendar-check"></i>Appointments
+    </a>
     <a class="nav-link" data-section="health" href="#" onclick="showSection('health',this)">
       <i class="fa-solid fa-server"></i>Service Health
     </a>
@@ -2322,6 +2397,98 @@ DASHBOARD_TEMPLATE = """
       </div>
     </div>
   </div><!-- /requests -->
+
+  <!-- ── APPOINTMENTS SECTION ── -->
+  <div id="section-appointments" class="section">
+    <div class="row g-3 mb-3">
+      <!-- Pending Appointments -->
+      <div class="col-md-6">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <small class="text-muted">Pending Appointments</small>
+              <h4><span id="stat-appointments-pending">0</span></h4>
+            </div>
+            <i class="fa-solid fa-hourglass-half stat-icon text-warning" style="font-size:2rem;"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Approved Appointments -->
+      <div class="col-md-6">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <small class="text-muted">Approved Appointments</small>
+              <h4><span id="stat-appointments-approved">0</span></h4>
+            </div>
+            <i class="fa-solid fa-check-circle stat-icon text-success" style="font-size:2rem;"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Completed Appointments -->
+      <div class="col-md-6">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <small class="text-muted">Completed Appointments</small>
+              <h4><span id="stat-appointments-done">0</span></h4>
+            </div>
+            <i class="fa-solid fa-clipboard-check stat-icon text-info" style="font-size:2rem;"></i>
+          </div>
+        </div>
+      </div>
+      <!-- Expired Appointments -->
+      <div class="col-md-6">
+        <div class="quick-stat-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <small class="text-muted">Expired Appointments</small>
+              <h4><span id="stat-appointments-expired">0</span></h4>
+            </div>
+            <i class="fa-solid fa-calendar-xmark stat-icon text-danger" style="font-size:2rem;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appointments Tabs/Filters -->
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="card-header d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary" onclick="loadAppointmentsByStatus('PENDING')">Pending</button>
+            <button class="btn btn-sm btn-success" onclick="loadAppointmentsByStatus('APPROVED')">Approved</button>
+            <button class="btn btn-sm btn-info" onclick="loadAppointmentsByStatus('DONE')">Completed</button>
+            <button class="btn btn-sm btn-danger" onclick="loadAppointmentsByStatus('EXPIRED')">Expired</button>
+            <button class="btn btn-sm btn-secondary" onclick="loadAppointmentsByStatus('ALL')">All</button>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" onclick="refreshAppointments()">
+            <i class="fa fa-refresh me-1"></i>Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="table-responsive">
+      <table class="table table-hover table-sm" id="appointment-table">
+        <thead>
+          <tr>
+            <th>#</th><th>ID</th><th>Doctor</th><th>Phone</th><th>Status</th>
+            <th>Date &amp; Time</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appointment-tbody">
+          <tr><td colspan="7" class="text-center text-muted py-4">Loading appointments...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Cards View -->
+    <div id="appointment-cards" class="d-md-none">
+      <!-- Mobile cards populated by JS -->
+    </div>
+  </div><!-- /appointments -->
 
   <!-- ── HEALTH SECTION ── -->
   <div id="section-health" class="section">
@@ -3200,6 +3367,277 @@ async function deleteDoctor(id, btn) {
   }
 }
 
+/* ─── Appointment Management ─── */
+let currentAppointmentFilter = 'PENDING';
+
+async function loadAppointmentsByStatus(status) {
+  currentAppointmentFilter = status;
+  console.log(`Loading ${status} appointments...`);
+  
+  try {
+    // Fetch all appointments from backend
+    const res = await fetch(`${BASE}/api/appointments/all`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    let appointments = data.appointments || [];
+    console.log(`Fetched ${appointments.length} total appointments`);
+    
+    // Filter by status locally
+    if (status === 'EXPIRED') {
+      appointments = appointments.filter(a => a.isExpired === true);
+    } else if (status !== 'ALL') {
+      appointments = appointments.filter(a => a.status === status);
+    }
+    
+    console.log(`After filtering by '${status}': ${appointments.length} appointments`);
+    rebuildAppointmentTable(appointments);
+    showToast(`Loaded ${appointments.length} ${status} appointments`, 'info');
+  } catch(e) {
+    showToast('Failed to load appointments: ' + e.message, 'error');
+    console.error('Load appointments error:', e);
+  }
+}
+
+function rebuildAppointmentTable(appointments) {
+  const tbody = document.getElementById('appointment-tbody');
+  const cardsContainer = document.getElementById('appointment-cards');
+  
+  const statusBadge = (s, isExpired) => {
+    // If appointment is expired, show expired badge
+    if (isExpired === true) {
+      return '<span class="badge badge-rejected">⏱️ Expired</span>';
+    }
+    // Otherwise show status badge
+    switch((s||'').toUpperCase()) {
+      case 'PENDING':  return '<span class="badge badge-pending">⏳ Pending</span>';
+      case 'APPROVED': return '<span class="badge badge-approved">✅ Approved</span>';
+      case 'REJECTED': return '<span class="badge badge-rejected">❌ Rejected</span>';
+      case 'DONE':     return '<span class="badge badge-approved">✅ Done</span>';
+      case 'CANCELLED': return '<span class="badge badge-rejected">🚫 Cancelled</span>';
+      default:         return `<span class="badge badge-unknown">${s||'UNKNOWN'}</span>`;
+    }
+  };
+  
+  // Rebuild desktop table
+  if (tbody) {
+    if (!appointments.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No appointments found</td></tr>';
+    } else {
+      tbody.innerHTML = appointments.map((a,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${a.id||'—'}</td>
+          <td>${(a.doctorFirstName||'')+' '+(a.doctorLastName||'')||a.doctorName||'—'}</td>
+          <td>${a.doctorPhoneNumber||'—'}</td>
+          <td>${statusBadge(a.status, a.isExpired)}</td>
+          <td>${a.appointmentDateTime || a.appointmentDate || a.dateTime || '—'}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-primary" onclick="viewAppointment(${a.id})" title="View Details"><i class="fa fa-eye"></i></button>
+              <button class="btn btn-outline-danger" onclick="deleteAppointment(${a.id},this)" title="Delete"><i class="fa fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+  
+  // Rebuild mobile cards
+  if (cardsContainer) {
+    if (!appointments.length) {
+      cardsContainer.innerHTML = '<div class="text-center text-muted py-4">No appointments found</div>';
+    } else {
+      cardsContainer.innerHTML = appointments.map(a => `
+        <div class="data-item-card" data-appointment-card>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-hashtag me-1"></i>ID</span>
+            <span class="card-value"><strong>${a.id||'—'}</strong></span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-user-doctor me-1"></i>Doctor</span>
+            <span class="card-value">${(a.doctorFirstName||'')+' '+(a.doctorLastName||'')||a.doctorName||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-phone me-1"></i>Phone</span>
+            <span class="card-value">${a.doctorPhoneNumber||'—'}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-clock me-1"></i>Status</span>
+            <span class="card-value">${statusBadge(a.status, a.isExpired)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label"><i class="fa fa-calendar me-1"></i>Date & Time</span>
+            <span class="card-value">${a.appointmentDateTime || a.appointmentDate || a.dateTime || '—'}</span>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewAppointment(${a.id})"><i class="fa fa-eye me-1"></i>View</button>
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteAppointment(${a.id},this)"><i class="fa fa-trash me-1"></i>Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+async function viewAppointment(id) {
+  console.log(`Viewing appointment details for ID: ${id}`);
+  try {
+    // First, try to find appointment in currently displayed table
+    const rows = document.querySelectorAll('#appointment-tbody tr');
+    let appointmentData = null;
+    
+    for (let row of rows) {
+      const cellId = row.cells[1]?.textContent?.trim();
+      if (cellId == id) {
+        appointmentData = {
+          id: id,
+          doctorFirstName: row.cells[2]?.textContent?.trim() || '',
+          doctorPhoneNumber: row.cells[3]?.textContent?.trim() || '',
+          status: row.cells[4]?.textContent?.trim() || 'UNKNOWN',
+          appointmentDateTime: row.cells[5]?.textContent?.trim() || '—'
+        };
+        console.log('Found appointment in table:', appointmentData);
+        break;
+      }
+    }
+    
+    // If not found in table, fetch from server
+    if (!appointmentData) {
+      console.log('Appointment not in table, fetching from server...');
+      const res = await fetch(`${BASE}/api/appointments/${id}/view`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log('Appointment from server:', data);
+      if (data.success && data.appointment) {
+        appointmentData = data.appointment;
+      } else {
+        showToast('Failed to load appointment details: ' + (data.message || 'Unknown error'), 'error');
+        console.error('Appointment load failed:', data);
+        return;
+      }
+    }
+    
+    // Show modal with the appointment data
+    showAppointmentModal(appointmentData);
+  } catch(e) {
+    showToast('Error loading appointment: ' + e.message, 'error');
+    console.error('View appointment error:', e);
+  }
+}
+
+function showAppointmentModal(appt) {
+  // Ensure modal exists
+  let modal = document.getElementById('appointment-modal');
+  if (!modal) {
+    console.log('Creating appointment modal...');
+    modal = createAppointmentModal();
+  }
+  
+  const content = document.getElementById('appointment-modal-content');
+  if (!content) {
+    console.error('Modal content element not found!');
+    showToast('Modal error: content element not found', 'error');
+    return;
+  }
+  
+  console.log('Populating appointment modal with:', appt);
+  
+  content.innerHTML = `
+    <div class="modal-row">
+      <div class="modal-label">ID</div>
+      <div class="modal-value">${appt.id || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Doctor</div>
+      <div class="modal-value">${(appt.doctorFirstName||'')+' '+(appt.doctorLastName||'')||appt.doctorName||'—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Phone</div>
+      <div class="modal-value">${appt.doctorPhoneNumber || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Status</div>
+      <div class="modal-value"><span class="badge badge-${appt.status?.toLowerCase() || 'unknown'}">${appt.status || 'UNKNOWN'}</span></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Date &amp; Time</div>
+      <div class="modal-value">${appt.appointmentDateTime || appt.appointmentDate || appt.dateTime || '—'}</div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Description</div>
+      <div class="modal-value">${appt.description || '—'}</div>
+    </div>
+  `;
+  
+  modal.classList.add('show');
+}
+
+function createAppointmentModal() {
+  const modal = document.createElement('div');
+  modal.id = 'appointment-modal';
+  modal.className = 'modal-overlay';
+  modal.onclick = function(e) { if(e.target === this) closeAppointmentModal(); };
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5><i class="fa fa-calendar-check me-2"></i>Appointment Details</h5>
+        <button class="modal-close" onclick="closeAppointmentModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="appointment-modal-content">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function closeAppointmentModal() {
+  const modal = document.getElementById('appointment-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+async function approveAppointment(id, btn) {
+  // Backend admin endpoint for approve does not exist
+  showToast('Admin approval not supported - doctor must approve through their app', 'warning');
+}
+
+async function rejectAppointment(id, btn) {
+  // Backend admin endpoint for reject does not exist
+  showToast('Admin rejection not supported - doctor must reject through their app', 'warning');
+}
+
+async function deleteAppointment(id, btn) {
+  if (!confirm(`Delete appointment ID ${id}? This action cannot be undone.`)) return;
+  
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  
+  try {
+    const res = await fetch(`${BASE}/api/appointments/${id}/delete`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.success) {
+      const tableRow = btn.closest('tr');
+      if (tableRow) tableRow.remove();
+      const mobileCard = btn.closest('[data-appointment-card]');
+      if (mobileCard) mobileCard.remove();
+      showToast(`Appointment ${id} deleted successfully`, 'success');
+      setTimeout(() => loadAppointmentsByStatus(currentAppointmentFilter), 1500);
+    } else {
+      showToast('Delete failed: ' + data.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  } catch(e) {
+    showToast('Request error: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
 /* ─── Init ─── */
 (function init() {
   // Initial chart render from server-side data
@@ -3239,6 +3677,46 @@ async function deleteDoctor(id, btn) {
   }
   if (rcBadge && !rcBadge.textContent) {
     rcBadge.textContent = requestCards.length || initialData.totals.requests;
+  }
+  
+  // Load initial appointments data
+  console.log('Initializing appointments...');
+  if (initialData.appointments_list) {
+    console.log('Initial appointments available:', initialData.appointments_list.length);
+    
+    // Always rebuild table even if empty
+    rebuildAppointmentTable(initialData.appointments_list);
+    
+    // Update appointment stat cards
+    const apptsByStatus = initialData.appointments_by_status || {};
+    const pending = document.getElementById('stat-appointments-pending');
+    const approved = document.getElementById('stat-appointments-approved');
+    const done = document.getElementById('stat-appointments-done');
+    const expired = document.getElementById('stat-appointments-expired');
+    
+    // Handle both uppercase and lowercase status keys from backend
+    const getPendingCount = () => apptsByStatus.PENDING || apptsByStatus.pending || 0;
+    const getApprovedCount = () => apptsByStatus.APPROVED || apptsByStatus.approved || 0;
+    const getDoneCount = () => apptsByStatus.DONE || apptsByStatus.done || 0;
+    
+    if (pending) pending.textContent = getPendingCount();
+    if (approved) approved.textContent = getApprovedCount();
+    if (done) done.textContent = getDoneCount();
+    
+    // Count expired appointments (those with isExpired=true)
+    const expiredCount = (initialData.appointments_list || []).filter(a => a.isExpired === true).length;
+    if (expired) expired.textContent = expiredCount;
+    
+    console.log('Appointment initialization complete');
+    console.log('Status object keys:', Object.keys(apptsByStatus));
+    console.log('Counts - Pending:', getPendingCount(), 'Approved:', getApprovedCount(), 'Done:', getDoneCount(), 'Expired:', expiredCount);
+    console.log('Full appointments_by_status:', apptsByStatus);
+  } else {
+    console.log('No appointment data in initial analytics');
+    // Still create modal so buttons work
+    if (!document.getElementById('appointment-modal')) {
+      createAppointmentModal();
+    }
   }
 })();
 
@@ -3343,6 +3821,7 @@ async function viewDoctor(id) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
     const data = await res.json();
+    console.log('Doctor data:', data);
     if (data.success && data.doctor) {
       showDoctorModal(data.doctor);
     } else {

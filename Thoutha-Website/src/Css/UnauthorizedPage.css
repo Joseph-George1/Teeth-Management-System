@@ -1,22 +1,22 @@
 .unauthorized-container {
-    font-family: 'Cairo', sans-serif;
-    background: linear-gradient(135deg, #FFF5E6 0%, #FFE8CC 50%, #FFF0DB 100%);
-    min-height: calc(100vh - 80px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
+  font-family: 'Cairo', sans-serif;
+  background: linear-gradient(135deg, #FFF5E6 0%, #FFE8CC 50%, #FFF0DB 100%);
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
 }
 
 .unauthorized-content {
-    background-color: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 60px 40px;
-    max-width: 600px;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.6s ease-out;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 60px 40px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.6s ease-out;
 }
 
 @keyframes slideUp {
@@ -31,7 +31,7 @@
 }
 
 .unauthorized-header {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .unauthorized-code {

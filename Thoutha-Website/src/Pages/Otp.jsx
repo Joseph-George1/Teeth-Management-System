@@ -49,7 +49,7 @@ export default function Otp() {
       setLoading(true);
       setError("");
 
-      console.log("📲 [SIGNUP FLOW] Sending OTP to:", normalizedPhone);
+      // console.log("[SIGNUP FLOW] Sending OTP to:", normalizedPhone);
 
       const response = await fetch(API_SEND_OTP, {
         method: "POST",
@@ -60,10 +60,10 @@ export default function Otp() {
           phone_number: normalizedPhone,
         }),
       });
-      console.log("📡 Status:", response.status);
+      // console.log("Status:", response.status);
 
       const data = await response.json().catch(() => ({}));
-      console.log("[SIGNUP] Send OTP response:", data);
+      // console.log("[SIGNUP] Send OTP response:", data);
 
       if (!response.ok) {
         throw new Error(data?.message || "فشل إرسال الكود");
@@ -73,7 +73,7 @@ export default function Otp() {
       sessionStorage.setItem("flow_type", "signup");
       sessionStorage.setItem("otp_phone", normalizedPhone);
 
-      console.log("✅ [SIGNUP] Stored in sessionStorage - flow_type: signup, otp_phone:", normalizedPhone);
+      // console.log("[SIGNUP] Stored in sessionStorage - flow_type: signup, otp_phone:", normalizedPhone);
 
       // Navigate to OTP verification page
       navigate("/otp-verify", {
@@ -82,7 +82,7 @@ export default function Otp() {
 
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء إرسال الكود");
-      console.error("❌ [SIGNUP] Error sending OTP:", err);
+      console.error("[SIGNUP] Error sending OTP:", err);
     } finally {
       setLoading(false);
     }

@@ -47,30 +47,39 @@ export default function DoctorBookings() {
       return;
     }
 
-    // قراءة البيانات من localStorage بدلاً من API
-    try {
-      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
-      
-      const processedData = approvedAppointments.map((appt) => ({
-        id: appt.id || Math.random(),
-        patientName: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
-        phone: appt.patientPhoneNumber || "",
-        service: appt.categoryName || "",
-        description: appt.requestDescription || "",
-        time: `${getTime(appt.appointmentDate)} ${getTimePeriod(appt.appointmentDate)}`,
-        date: getDate(appt.appointmentDate),
-        status: "مقبول",
-        ...appt,
-      }));
-      
-      if (!cancelled) {
-        setBookings(processedData);
-      }
-    } catch (err) {
-      if (!cancelled) setError("حدث خطأ أثناء قراءة البيانات");
-    } finally {
-      if (!cancelled) setLoading(false);
-    }
+    // جلب الحجوزات المقبولة من API
+    fetch("https://thoutha.page/api/appointment/getApproved", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("فشل جلب الحجوزات");
+        return res.json();
+      })
+      .then(data => {
+        if (!cancelled) {
+          const normalizedData = normalizeList(data);
+          
+          const processedData = normalizedData.map((appt) => ({
+            id: appt.id,
+            patientName: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
+            phone: appt.patientPhoneNumber || "",
+            service: appt.categoryName || "",
+            description: appt.requestDescription || "",
+            time: `${getTime(appt.appointmentDate)} ${getTimePeriod(appt.appointmentDate)}`,
+            date: getDate(appt.appointmentDate),
+            status: "مقبول",
+            ...appt,
+          }));
+          
+          setBookings(processedData);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) setError(err.message || "حدث خطأ أثناء جلب الحجوزات");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => { cancelled = true; };
   }, [isLoggedIn, authLoading, user]);
@@ -99,29 +108,10 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      // الحصول على بيانات الحجز المكتمل
-      const completedBooking = bookings.find(b => b.id === appointmentId);
-      
-      if (completedBooking) {
-        // إضافة الحجز المكتمل للمرضى
-        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
-        const newPatient = {
-          ...completedBooking,
-          status: "مكتمل",
-          statusClass: "completed",
-        };
-        acceptedPatients.push(newPatient);
-        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
-      }
-
-      // حذف من localStorage
-      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
-      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
-      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
-
+      // حذف من قائمة الحجوزات المقبولة
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
-      showToast("تم اكمال الحجز وإضافته للمرضى ✓", "success");
+      showToast("تم اكمال الحجز وإضافته للمرضى كحالة مكتملة ✓", "success");
     } catch (err) {
       showToast(err.message || "فشل التحديث", "error");
     }
@@ -146,29 +136,10 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      // الحصول على بيانات الحجز الملغى
-      const cancelledBooking = bookings.find(b => b.id === appointmentId);
-      
-      if (cancelledBooking) {
-        // إضافة الحجز الملغى للمرضى
-        const acceptedPatients = JSON.parse(localStorage.getItem("acceptedPatients") || "[]");
-        const newPatient = {
-          ...cancelledBooking,
-          status: "ملغى",
-          statusClass: "cancelled",
-        };
-        acceptedPatients.push(newPatient);
-        localStorage.setItem("acceptedPatients", JSON.stringify(acceptedPatients));
-      }
-
-      // حذف من localStorage
-      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
-      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
-      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
-
+      // حذف من قائمة الحجوزات المقبولة
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
-      showToast("تم الغاء الحجز وإضافته للمرضى ✓", "success");
+      showToast("تم الغاء الحالة وحذفها من الحجوزات ✓", "success");
     } catch (err) {
       showToast(err.message || "فشل الالغاء", "error");
     }
@@ -189,31 +160,6 @@ export default function DoctorBookings() {
 
     const token = user?.token || localStorage.getItem("token");
     
-    try {
-      const response = await fetch(
-        `https://thoutha.page/api/appointment/deleteAppointment/${appointmentId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("فشل حذف الحجز");
-
-      // حذف من localStorage
-      const approvedAppointments = JSON.parse(localStorage.getItem("approvedAppointments") || "[]");
-      const updated = approvedAppointments.filter(appt => appt.id !== appointmentId);
-      localStorage.setItem("approvedAppointments", JSON.stringify(updated));
-
-      setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
-      setSelectedBooking(null);
-      showToast("تم حذف الحجز بنجاح ✓", "success");
-    } catch (err) {
-      showToast(err.message || "فشل الحذف", "error");
-    }
   };
 
   return (
@@ -230,7 +176,11 @@ export default function DoctorBookings() {
         ) : error ? (
           <p className="dnb-empty dnb-error">{error}</p>
         ) : bookings.length === 0 ? (
-          <p className="dnb-empty">لا توجد حجوزات حالياً</p>
+          <div className="dnb-empty-state">
+            <h3 className="dnb-empty-title">لا توجد حجوزات حالياً</h3>
+            <p className="dnb-empty-text">الحجوزات التي تقبلها ستظهر هنا</p>
+            <p className="dnb-empty-text">بعد قبول حجز من صفحة "الحجوزات المعلقة" سيظهر هنا</p>
+          </div>
         ) : (
           <div className="dnb-booking-list">
             {bookings.map((booking) => (
@@ -281,12 +231,6 @@ export default function DoctorBookings() {
                   >
                     ملغي
                   </button>
-                  <button 
-                    className="dnb-action-btn dnb-action-btn--delete" 
-                    onClick={(e) => handleDelete(e, booking.id)}
-                  >
-                    حذف
-                  </button>
                 </div>
               </div>
             ))}
@@ -309,20 +253,29 @@ export default function DoctorBookings() {
             <div className="dnb-sheet-divider" />
 
             {[
-              { icon: "📞", label: "رقم الهاتف", value: selectedBooking.phone },
-              { icon: "📅", label: "التاريخ", value: selectedBooking.date },
-              { icon: "⏰", label: "الوقت", value: selectedBooking.time },
-              { icon: "🦷", label: "فئة الخدمة", value: selectedBooking.service },
-              ...(selectedBooking.description ? [{ icon: "📝", label: "الوصف", value: selectedBooking.description }] : []),
-            ].map(({ icon, label, value }) => (
-              <div key={label} className="dnb-detail-row">
-                <div className="dnb-detail-icon">{icon}</div>
-                <div className="dnb-detail-text">
-                  <span className="dnb-detail-label">{label}</span>
-                  <span className="dnb-detail-value">{value}</span>
+              { icon: "phone", label: "رقم الهاتف", value: selectedBooking.phone },
+              { icon: "calendar", label: "التاريخ", value: selectedBooking.date },
+              { icon: "clock", label: "الوقت", value: selectedBooking.time },
+              { icon: "tooth", label: "فئة الخدمة", value: selectedBooking.service },
+              ...(selectedBooking.description ? [{ icon: "note", label: "الوصف", value: selectedBooking.description }] : []),
+            ].map(({ icon, label, value }) => {
+              const iconSVGs = {
+                phone: <svg viewBox="0 0 24 24" className="dnb-icon-svg" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+                tooth: <svg viewBox="0 0 24 24" className="dnb-icon-svg" aria-hidden="true"><path d="M12 2C12 2 10 4 10 8c0 2 1 4 2 5v5c0 1.1.9 2 2 2s2-.9 2-2v-5c1-1 2-3 2-5 0-4-2-6-2-6z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="8" r="1.5" fill="currentColor" /></svg>,
+                note: <svg viewBox="0 0 24 24" className="dnb-icon-svg" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>,
+                calendar: <svg viewBox="0 0 24 24" className="dnb-icon-svg" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>,
+                clock: <svg viewBox="0 0 24 24" className="dnb-icon-svg" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" /><polyline points="12 6 12 12 16 14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+              };
+              return (
+                <div key={label} className="dnb-detail-row">
+                  <div className="dnb-detail-icon" aria-hidden="true">{iconSVGs[icon]}</div>
+                  <div className="dnb-detail-text">
+                    <span className="dnb-detail-label">{label}</span>
+                    <span className="dnb-detail-value">{value}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="dnb-sheet-actions">
               <button className="dnb-close-btn" onClick={() => setSelectedBooking(null)}>
@@ -339,12 +292,6 @@ export default function DoctorBookings() {
                 onClick={(e) => handleCancel(e, selectedBooking.id)}
               >
                 ملغي
-              </button>
-              <button 
-                className="dnb-delete-btn" 
-                onClick={(e) => handleDelete(e, selectedBooking.id)}
-              >
-                🗑 حذف
               </button>
             </div>
           </div>

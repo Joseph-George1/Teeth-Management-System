@@ -72,6 +72,7 @@ export default function MyRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ description: "", dateTime: "" });
   const [editError, setEditError] = useState("");
@@ -81,15 +82,17 @@ export default function MyRequests() {
 
   const handleDelete = (reqId) => {
     const token = user?.token || localStorage.getItem("token");
-    fetch(`https://thoutha.page/api/request/deleteRequest`, {
+    fetch(`https://thoutha.page/api/request/deleteRequest/${reqId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("فشل حذف الطلب");
         setRequests((prev) => prev.filter((r) => r?.id !== reqId));
+        setSuccess("تم حذف الطلب بنجاح ✓");
+        setTimeout(() => setSuccess(""), 3000);
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => setError(err.message || "حدث خطأ أثناء الحذف"));
   };
 
   const handleEditClick = (req) => {
@@ -207,6 +210,21 @@ export default function MyRequests() {
   return (
     <div className="my-requests-container">
       <h1 className="my-requests-title">طلباتي</h1>
+      {success && (
+        <div style={{ 
+          padding: '12px 16px', 
+          marginBottom: '16px', 
+          backgroundColor: '#dcfce7', 
+          border: '1px solid #86efac',
+          borderRadius: '8px', 
+          color: '#166534', 
+          fontSize: '14px',
+          fontWeight: '600',
+          textAlign: 'center'
+        }}>
+          {success}
+        </div>
+      )}
       <div className="requests-list">
         {requests.map((req, i) => {
           const firstLetters = getName(req)

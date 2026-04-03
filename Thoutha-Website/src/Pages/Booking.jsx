@@ -17,6 +17,7 @@ export default function Booking() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [confirmed, setConfirmed] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [apiError, setApiError] = useState(null);
 
     const handleInputChange = (e) => {
         const { id, value } = e.target;
@@ -27,6 +28,7 @@ export default function Booking() {
         };
         setFormData(prev => ({ ...prev, [fieldMap[id]]: value }));
         setFieldErrors(prev => ({ ...prev, [id]: false }));
+        setApiError(null);
     };
 
     const handleConfirm = async () => {
@@ -50,6 +52,8 @@ export default function Booking() {
             setFieldErrors(errors);
             return;
         }
+
+        setApiError(null);
 
         if (!requestData?.id) {
             return;
@@ -80,7 +84,19 @@ export default function Booking() {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'فشل الحجز');
+                let errorMessage = errorData.message || 'فشل الحجز';
+                
+                // إذا كانت 400 أو الرسالة تحتوي على مؤشرات حجز مسبق
+                if (response.status === 400 || 
+                    errorMessage.toLowerCase().includes('موجود') || 
+                    errorMessage.toLowerCase().includes('مسبق') ||
+                    errorMessage.toLowerCase().includes('already') ||
+                    errorMessage.toLowerCase().includes('exists')) {
+                    errorMessage = `تم الحجز المسبق مع د. ${requestData?.doctorFirstName} ${requestData?.doctorLastName}`;
+                }
+                
+                setApiError(errorMessage);
+                throw new Error(errorMessage);
             }
 
             setConfirmed(true);
@@ -99,6 +115,7 @@ export default function Booking() {
             patientPhoneNumber: ''
         });
         setFieldErrors({});
+        setApiError(null);
         navigate('/');
     };
 
@@ -253,6 +270,12 @@ export default function Booking() {
                                 />
                             </div>
                         </div>
+
+                        {apiError && (
+                            <div className="error-message" style={{ marginBottom: '16px', padding: '12px 14px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', fontSize: '14px', fontWeight: '600' }}>
+                                {apiError}
+                            </div>
+                        )}
 
                         <button className="btn-confirm" onClick={handleConfirm} disabled={loading}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '6px' }}>

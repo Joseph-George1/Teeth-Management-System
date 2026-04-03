@@ -20,4 +20,5 @@ The commands you need to type in the terminal to run the project :
 - npm install react-router-dom
 - npm install react-router-dom@7.12.0
 - npm install react-helmet-async
+- npm install emailjs-com
 - npm run dev
