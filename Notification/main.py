@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from config import get_db_session, init_firebase
 from routes.notification_routes import router as notification_router
+from routes.patient_routes import router as patient_router
 from utils.logger import setup_logger
 
 # Initialize logging
@@ -69,8 +70,24 @@ async def startup_event():
         # Initialize APScheduler
         scheduler = BackgroundScheduler()
         scheduler.add_job(process_notifications, 'interval', seconds=2)
+        
+        # Add job to cleanup expired patient tokens (every hour)
+        def cleanup_patient_tokens():
+            """Background task to cleanup expired patient tokens"""
+            try:
+                from services.patient_token_service import PatientTokenService
+                db = next(get_db_session())
+                token_service = PatientTokenService(db)
+                deleted = token_service.cleanup_expired_tokens()
+                db.close()
+            except Exception as e:
+                logger.error(f"Patient token cleanup error: {e}")
+        
+        scheduler.add_job(cleanup_patient_tokens, 'interval', hours=1)
+        
         scheduler.start()
         logger.info("Background notification queue processor started (runs every 2 seconds)")
+        logger.info("Patient token cleanup started (runs every hour)")
         
         # Shutdown handler
         atexit.register(lambda: scheduler.shutdown())
@@ -112,6 +129,9 @@ def health_check():
 
 # Include notification routes
 app.include_router(notification_router)
+
+# Include patient routes (no auth required)
+app.include_router(patient_router)
 
 # Root endpoint
 @app.get("/")

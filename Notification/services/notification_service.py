@@ -1,9 +1,11 @@
 """Main notification service orchestrator"""
 import logging
 from typing import Optional, Dict, List
+from datetime import datetime
 from sqlalchemy.orm import Session
 from services.queue_service import QueueService
 from services.email_service import EmailService
+from services.patient_token_service import PatientTokenService
 from utils.idempotency import generate_idempotency_key
 
 logger = logging.getLogger(__name__)
@@ -15,6 +17,7 @@ class NotificationService:
         self.db = db
         self.queue_service = QueueService(db)
         self.email_service = EmailService()
+        self.patient_token_service = PatientTokenService(db)
     
     def notify_appointment_confirmed(self, appointment_id: int, 
                                     patient_id: int, patient_name: str,
@@ -61,6 +64,25 @@ class NotificationService:
                 patient_payload
             )
             results["patient"] = "queued"
+            
+            # === AUTO-GENERATE TEMPORARY TOKEN FOR PATIENT ===
+            # Patient gets a 6-digit code via SMS to view appointment without login
+            try:
+                patient_token = self.patient_token_service.generate_token(
+                    patient_id=patient_id,
+                    patient_first_name=patient_name.split()[0] if patient_name else "Patient",
+                    patient_last_name=patient_name.split()[-1] if patient_name and len(patient_name.split()) > 1 else "",
+                    appointment_id=appointment_id,
+                    clinic_name="Clinic",
+                    clinic_location=location,
+                    expires_in_hours=24
+                )
+                results["patient_token"] = patient_token.token
+                logger.info(f"Generated temp token {patient_token.token} for patient {patient_id}")
+                # TODO: Send token via SMS: send_sms(patient_phone, f"Your appointment token: {patient_token.token}")
+            except Exception as e:
+                logger.error(f"Failed to generate patient token: {e}")
+                results["patient_token"] = None
             
             # === Notify DOCTOR: Show that someone has been appointed with them ===
             doctor_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_doctor")
