@@ -18,7 +18,8 @@ class NotificationService:
     
     def notify_appointment_confirmed(self, appointment_id: int, 
                                     patient_id: int, patient_name: str,
-                                    doctor_id: int, doctor_name: str) -> Dict:
+                                    doctor_id: int, doctor_name: str,
+                                    category: str = "General", location: str = "Clinic") -> Dict:
         """
         Notify both patient and doctor about appointment confirmation
         
@@ -28,6 +29,8 @@ class NotificationService:
             patient_name: Name of the patient (provided by Java backend)
             doctor_id: ID of the doctor
             doctor_name: Name of the doctor (provided by Java backend)
+            category: Medical category/specialty of the doctor
+            location: City or location of the clinic
         
         Returns:
             Dictionary with notification status for patient and doctor
@@ -35,24 +38,30 @@ class NotificationService:
         results = {"patient": None, "doctor": None}
         
         try:
-            # Notify patient
+            # === Notify PATIENT: Show doctor name, category, and location ===
             patient_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_patient")
+            patient_title = f"{doctor_name} - {category}"
+            patient_body = f"Your appointment at {location}"
             patient_payload = {
                 "appointment_id": appointment_id,
                 "doctor_name": doctor_name,
+                "category": category,
+                "location": location,
                 "type": "APPOINTMENT_CONFIRMED"
             }
             self.queue_service.enqueue(
                 patient_id, 
-                "Appointment Confirmed",
-                f"Your appointment with {doctor_name} has been confirmed",
+                patient_title,
+                patient_body,
                 patient_key,
                 patient_payload
             )
             results["patient"] = "queued"
             
-            # Notify doctor
+            # === Notify DOCTOR: Show that someone has been appointed with them ===
             doctor_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_doctor")
+            doctor_title = "New Appointment"
+            doctor_body = f"You have a new appointment with {patient_name}"
             doctor_payload = {
                 "appointment_id": appointment_id,
                 "patient_name": patient_name,
@@ -60,14 +69,14 @@ class NotificationService:
             }
             self.queue_service.enqueue(
                 doctor_id,
-                "New Appointment",
-                f"You have a new appointment with {patient_name}",
+                doctor_title,
+                doctor_body,
                 doctor_key,
                 doctor_payload
             )
             results["doctor"] = "queued"
             
-            logger.info(f"Appointment {appointment_id} confirmation notifications queued")
+            logger.info(f"Appointment {appointment_id} confirmation notifications queued - Patient: {patient_name}, Doctor: {doctor_name}")
             return results
             
         except Exception as e:

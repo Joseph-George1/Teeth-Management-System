@@ -25,15 +25,20 @@ public class NotificationClientServiceImpl implements NotificationClientService 
     }
 
     @Override
-    public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, 
-                                                           Long doctorId, String idempotencyKey) {
+    public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName,
+                                                           Long doctorId, String doctorName, String category, 
+                                                           String location, String idempotencyKey) {
         try {
             String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
             
             Map<String, Object> payload = new HashMap<>();
             payload.put("appointment_id", appointmentId);
             payload.put("patient_id", patientId);
+            payload.put("patient_name", patientName);
             payload.put("doctor_id", doctorId);
+            payload.put("doctor_name", doctorName);
+            payload.put("category", category);
+            payload.put("location", location);
             payload.put("idempotency_key", idempotencyKey);
             
             HttpHeaders headers = new HttpHeaders();

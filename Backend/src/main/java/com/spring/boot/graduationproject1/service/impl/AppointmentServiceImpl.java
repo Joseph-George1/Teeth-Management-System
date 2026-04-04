@@ -105,10 +105,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         // === STEP 5: Send appointment confirmation to Python notification service ===
         try {
             String idempotencyKey = UUID.randomUUID().toString();
+            String patientName = patient.getFirstName() + " " + patient.getLastName();
+            String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
+            String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
+            String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
             notificationClientService.sendAppointmentConfirmation(
                     appointment.getId(),
                     patient.getId(),
+                    patientName,
                     doctor.getId(),
+                    doctorName,
+                    category,
+                    location,
                     idempotencyKey
             );
             logger.info("Appointment notification sent to microservice for appointment ID: {}", appointment.getId());

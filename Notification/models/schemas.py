@@ -69,6 +69,8 @@ class AppointmentNotificationRequest(BaseModel):
     patient_name: str = Field(..., description="Name of the patient")
     doctor_id: int = Field(..., description="ID of the doctor")
     doctor_name: str = Field(..., description="Name of the doctor")
+    category: str = Field(..., description="Medical category/specialty")
+    location: str = Field(..., description="City or location of the clinic")
     
     class Config:
         json_schema_extra = {
@@ -78,7 +80,9 @@ class AppointmentNotificationRequest(BaseModel):
                 "patient_id": 501,
                 "patient_name": "Ahmed Hassan",
                 "doctor_id": 201,
-                "doctor_name": "Dr. Fatima Al-Mansouri"
+                "doctor_name": "Dr. Sarah Ahmed",
+                "category": "Orthodontics",
+                "location": "Cairo"
             }
         }
 
