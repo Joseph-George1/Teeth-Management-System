@@ -29,8 +29,8 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "1521")
 DB_NAME = os.getenv("DB_NAME", "orclpdb")
 
-# Build Oracle connection string
-DATABASE_URL = f"oracle://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Build Oracle connection string using oracledb driver
+DATABASE_URL = f"oracle+oracledb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 logger.info(f"Database connection: {DB_HOST}:{DB_PORT}/{DB_NAME}")
 

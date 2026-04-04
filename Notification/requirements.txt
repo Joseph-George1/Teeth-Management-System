@@ -1,7 +1,7 @@
 FastAPI==0.104.1
 uvicorn[standard]==0.24.0
 sqlalchemy==2.0.23
-cx-Oracle==8.3.0
+oracledb==2.0.1
 firebase-admin==6.2.0
 python-dotenv==1.0.0
 pydantic==2.4.2
