@@ -12,32 +12,32 @@ from datetime import datetime
 Base = declarative_base()
 
 # =========================================================================
-# TABLE 0: User (Read-only mapping from main backend)
-# Purpose: Map email addresses to user IDs for filtering notifications
-# Features: Used to filter notifications by authenticated user
+# TABLE 0: Doctor (Read-only mapping from main backend)
+# Purpose: Map email addresses to doctor IDs for filtering notifications
+# Features: Used to filter doctor notifications by authenticated user
 # =========================================================================
-class User(Base):
+class Doctor(Base):
     """
-    Read-only mapping of users from main backend database
+    Read-only mapping of doctors from DOCTOR table
     
     Allows us to:
-      1. Look up user_id from email (from JWT token)
-      2. Filter notifications to show only that user's messages
-      3. Prevent information leak where one user sees all notifications
+      1. Look up doctor_id from email (from JWT token)
+      2. Filter notifications to show only that doctor's messages
+      3. Prevent information leak where one doctor sees all notifications
     """
-    __tablename__ = "USERS"
+    __tablename__ = "DOCTOR"
     
-    # Assuming Oracle USERS table has at minimum: id, email
+    # Assuming DOCTOR table has: ID, EMAIL at minimum
     id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     
-    # Optional fields that might exist in the backend database
+    # Optional fields that might exist in the DOCTOR table
     first_name = Column(String(100))
     last_name = Column(String(100))
-    role = Column(String(50))  # DOCTOR, PATIENT, ADMIN, etc.
+    specialization = Column(String(100))
     
     __table_args__ = (
-        Index('IDX_USER_EMAIL', 'email'),
+        Index('IDX_DOCTOR_EMAIL', 'email'),
     )
 
 # =========================================================================

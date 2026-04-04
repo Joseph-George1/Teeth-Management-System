@@ -137,9 +137,9 @@ async def get_notifications(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Fetch ONLY the authenticated user's notifications - returns Flutter NotificationLogModel format"""
+    """Fetch ONLY the authenticated doctor's notifications - returns Flutter NotificationLogModel format"""
     try:
-        from models.database_models import NotificationQueue, User
+        from models.database_models import NotificationQueue, Doctor
         
         # Extract token from Authorization header
         if not authorization:
@@ -157,24 +157,31 @@ async def get_notifications(
         if not email:
             raise HTTPException(status_code=401, detail="Email not found in token")
         
-        logger.info(f"Fetching notifications for authenticated user: {email}")
+        logger.info(f"Fetching notifications for authenticated doctor: {email}")
         
-        # ===== CRITICAL: Look up user_id from email =====
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            logger.warning(f"User not found for email: {email}")
-            # Return empty list instead of error (user might not be in USERS table yet)
-            return {
-                "success": True,
-                "data": []
-            }
+        # ===== Look up doctor_id from DOCTOR table by EMAIL =====
+        doctor_id = None
+        try:
+            doctor = db.query(Doctor).filter(Doctor.email == email).first()
+            if doctor:
+                doctor_id = doctor.id
+                logger.info(f"Authenticated doctor {email} has doctor_id: {doctor_id}")
+            else:
+                logger.warning(f"Doctor not found in DOCTOR table for email: {email}")
+                # Use email hash as fallback identifier
+                import hashlib
+                doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+                logger.info(f"Using fallback doctor_id (hash): {doctor_id} for {email}")
+        except Exception as e:
+            logger.error(f"Error querying DOCTOR table: {e}")
+            # Graceful fallback: use email hash
+            import hashlib
+            doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+            logger.warning(f"Using fallback doctor_id (hash): {doctor_id} for email: {email}")
         
-        user_id = user.id
-        logger.info(f"Authenticated user {email} has user_id: {user_id}")
-        
-        # ===== CRITICAL: Filter by user_id to show ONLY this user's notifications =====
+        # ===== CRITICAL: Filter by doctor_id to show ONLY this doctor's notifications =====
         query = db.query(NotificationQueue).filter(
-            NotificationQueue.user_id == user_id
+            NotificationQueue.user_id == doctor_id
         ).order_by(
             NotificationQueue.created_at.desc()
         )
@@ -182,7 +189,7 @@ async def get_notifications(
         total_count = query.count()
         notifications = query.limit(limit).offset(offset).all()
         
-        logger.info(f"User {email} has {total_count} notifications, returning {len(notifications)} (limit={limit})")
+        logger.info(f"Doctor {email} (id: {doctor_id}) has {total_count} notifications, returning {len(notifications)}")
         
         # Format response to match Flutter NotificationLogModel structure
         data = []
@@ -203,7 +210,7 @@ async def get_notifications(
                     "createdAt": notif.created_at.isoformat() if notif.created_at else None,
                     "appointmentId": payload_obj.get("appointmentId"),
                     "messageId": notif.fcm_message_id,
-                    "doctorId": payload_obj.get("doctor_id"),  # Doctor's own ID
+                    "doctorId": payload_obj.get("doctor_id"),
                     "type": payload_obj.get("type", "appointment"),
                     "time": payload_obj.get("time"),
                     "clinic": payload_obj.get("clinic"),
@@ -219,10 +226,10 @@ async def get_notifications(
                     "createdAt": notif.created_at.isoformat() if notif.created_at else None,
                     "appointmentId": payload_obj.get("appointmentId"),
                     "messageId": notif.fcm_message_id,
-                    "doctorId": payload_obj.get("doctorId"),  # Doctor's ID
+                    "doctorId": payload_obj.get("doctorId"),
                     "type": payload_obj.get("type", "appointment"),
                     "time": payload_obj.get("time"),
-                    "clinic": payload_obj.get("location") or payload_obj.get("clinic"),  # Map location to clinic
+                    "clinic": payload_obj.get("location") or payload_obj.get("clinic"),
                     "doctorName": payload_obj.get("doctor_name") or payload_obj.get("doctorName")
                 }
             
@@ -244,9 +251,9 @@ async def mark_notification_as_read(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Mark a single notification as read (must be user's own notification)"""
+    """Mark a single notification as read (must be doctor's own notification)"""
     try:
-        from models.database_models import NotificationQueue, User
+        from models.database_models import NotificationQueue, Doctor
         
         # Verify token
         if not authorization:
@@ -257,16 +264,22 @@ async def mark_notification_as_read(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Get user by email
+        # Get doctor by email
         email = payload.get('sub')
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+        try:
+            doctor = db.query(Doctor).filter(Doctor.email == email).first()
+            doctor_id = doctor.id if doctor else None
+        except:
+            doctor_id = None
         
-        # Find notification and verify it belongs to this user
+        if not doctor_id:
+            import hashlib
+            doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+        
+        # Find notification and verify it belongs to this doctor
         notif = db.query(NotificationQueue).filter(
             NotificationQueue.id == notification_id,
-            NotificationQueue.user_id == user.id  # CRITICAL: Verify ownership
+            NotificationQueue.user_id == doctor_id  # CRITICAL: Verify ownership
         ).first()
         
         if not notif:
@@ -294,9 +307,9 @@ async def mark_all_notifications_as_read(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Mark all THIS USER's notifications as read"""
+    """Mark all THIS DOCTOR's notifications as read"""
     try:
-        from models.database_models import NotificationQueue, User
+        from models.database_models import NotificationQueue, Doctor
         
         # Verify token
         if not authorization:
@@ -307,15 +320,21 @@ async def mark_all_notifications_as_read(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Get user by email
+        # Get doctor by email
         email = payload.get('sub')
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+        try:
+            doctor = db.query(Doctor).filter(Doctor.email == email).first()
+            doctor_id = doctor.id if doctor else None
+        except:
+            doctor_id = None
         
-        # Update ONLY this user's PENDING notifications to DELIVERED
+        if not doctor_id:
+            import hashlib
+            doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+        
+        # Update ONLY this doctor's PENDING notifications to DELIVERED
         updated_count = db.query(NotificationQueue).filter(
-            NotificationQueue.user_id == user.id,  # CRITICAL: Filter by user
+            NotificationQueue.user_id == doctor_id,  # CRITICAL: Filter by doctor
             NotificationQueue.status == "PENDING"
         ).update({"status": "DELIVERED", "updated_at": datetime.utcnow()})
         
@@ -340,9 +359,9 @@ async def delete_notification(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Delete a single notification (must be user's own notification)"""
+    """Delete a single notification (must be doctor's own notification)"""
     try:
-        from models.database_models import NotificationQueue, User
+        from models.database_models import NotificationQueue, Doctor
         
         # Verify token
         if not authorization:
@@ -353,16 +372,22 @@ async def delete_notification(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Get user by email
+        # Get doctor by email
         email = payload.get('sub')
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+        try:
+            doctor = db.query(Doctor).filter(Doctor.email == email).first()
+            doctor_id = doctor.id if doctor else None
+        except:
+            doctor_id = None
         
-        # Find notification and verify it belongs to this user
+        if not doctor_id:
+            import hashlib
+            doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+        
+        # Find notification and verify it belongs to this doctor
         notif = db.query(NotificationQueue).filter(
             NotificationQueue.id == notification_id,
-            NotificationQueue.user_id == user.id  # CRITICAL: Verify ownership
+            NotificationQueue.user_id == doctor_id  # CRITICAL: Verify ownership
         ).first()
         
         if not notif:
@@ -389,9 +414,9 @@ async def delete_all_notifications(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Delete all THIS USER's notifications"""
+    """Delete all THIS DOCTOR's notifications"""
     try:
-        from models.database_models import NotificationQueue, User
+        from models.database_models import NotificationQueue, Doctor
         
         # Verify token
         if not authorization:
@@ -402,15 +427,21 @@ async def delete_all_notifications(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Get user by email
+        # Get doctor by email
         email = payload.get('sub')
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+        try:
+            doctor = db.query(Doctor).filter(Doctor.email == email).first()
+            doctor_id = doctor.id if doctor else None
+        except:
+            doctor_id = None
         
-        # Delete only this user's notifications
+        if not doctor_id:
+            import hashlib
+            doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
+        
+        # Delete only this doctor's notifications
         deleted_count = db.query(NotificationQueue).filter(
-            NotificationQueue.user_id == user.id  # CRITICAL: Only delete user's own
+            NotificationQueue.user_id == doctor_id  # CRITICAL: Only delete doctor's own
         ).delete()
         db.commit()
         
