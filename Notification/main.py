@@ -85,7 +85,7 @@ def health_check():
         )
 
 # Include notification routes
-app.include_router(notification_router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(notification_router)
 
 # Root endpoint
 @app.get("/")
