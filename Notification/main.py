@@ -15,6 +15,7 @@ import logging
 import sys
 import os
 from datetime import datetime
+from sqlalchemy import text
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
@@ -63,7 +64,7 @@ def health_check():
     try:
         # Quick DB test
         db = next(get_db_session())
-        db.execute("SELECT 1 FROM DUAL")  # Oracle test query
+        db.execute(text("SELECT 1 FROM DUAL"))  # Oracle test query
         db.close()
         
         logger.debug("Health check passed")
