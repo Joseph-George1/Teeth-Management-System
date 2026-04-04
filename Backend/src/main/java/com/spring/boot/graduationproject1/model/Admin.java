@@ -8,7 +8,10 @@ import lombok.*;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Admin extends User {
+public class Admin {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long id;
     @Column(nullable = false)
     public String email;
     @Column(nullable = false)
@@ -17,14 +20,5 @@ public class Admin extends User {
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
-    
-    @Override
-    public String getUserType() {
-        return "ADMIN";
-    }
-    
-    @Override
-    public String getIdentifier() {
-        return this.email;
-    }
+
 }

@@ -5,6 +5,7 @@ import com.spring.boot.graduationproject1.mapper.AppointmentMapper;
 import com.spring.boot.graduationproject1.model.*;
 import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.AppointmentService;
+import com.spring.boot.graduationproject1.service.NotificationService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,15 +24,20 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepo patientRepo;
     private final RequestRepo requestRepo;
     private final RoleRepo roleRepo;
+    private final NotificationService notificationService;
+    private final UserRepo userRepo;
 
     public AppointmentServiceImpl(AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
-                                  DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo, RoleRepo roleRepo) {
+                                  DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo,
+                                  RoleRepo roleRepo,NotificationService notificationService, UserRepo userRepo) {
         this.appointmentMapper = appointmentMapper;
         this.appointmentRepo = appointmentRepo;
         this.doctorRepo = doctorRepo;
         this.patientRepo = patientRepo;
         this.requestRepo = requestRepo;
         this.roleRepo = roleRepo;
+        this.notificationService = notificationService;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -87,6 +93,17 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setIsHistory(false);
 
         appointmentRepo.save(appointment);
+
+
+        userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
+            notificationService.notifyUser(
+            user,
+            "New Appointment",
+            "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
+            );
+        });
+
+
         return appointmentMapper.toDto(appointment);
     }
 
@@ -136,10 +153,23 @@ public class AppointmentServiceImpl implements AppointmentService {
             // Clear duration when approved - doctor decides when it's done
             appointment.setDurationMinutes(null);
         }
-
+        User patientUser = userRepo.findByEmail(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
+                .orElseThrow(() -> new RuntimeException("User not found for patient"));
+        notificationService.notifyUser(
+                patientUser,
+                "Appointment Approved",
+                "Your appointment has been approved."
+        );
         // Mark as history when done or cancelled
         if (status == AppointmentStatus.DONE || status == AppointmentStatus.CANCELLED) {
             appointment.setIsHistory(true);
+            User doctorUser = userRepo.findByEmail(appointment.getDoctor().getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found for doctor"));
+            notificationService.notifyUser(
+                    doctorUser,
+                    "Appointment " + status.name(),
+                    "Appointment with " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName() + " is " + status.name().toLowerCase()
+            );
         }
 
         appointmentRepo.save(appointment);

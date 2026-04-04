@@ -30,9 +30,9 @@ public class RequestController {
         return ResponseEntity.ok(requestServices.createRequest(requestDto));
     }
 
-    @DeleteMapping("/deleteRequest/{requestId}")
-    public ResponseEntity<Void> deleteRequest(@PathVariable Long requestId){
-        requestServices.deleteRequest(requestId);
+    @DeleteMapping("/deleteRequest")
+    public ResponseEntity<Void> deleteRequest(Long id){
+        requestServices.deleteRequest(id);
         return ResponseEntity.noContent().build();
     }
 
