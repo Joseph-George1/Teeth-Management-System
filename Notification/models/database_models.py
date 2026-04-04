@@ -27,14 +27,9 @@ class Doctor(Base):
     """
     __tablename__ = "DOCTOR"
     
-    # Assuming DOCTOR table has: ID, EMAIL at minimum
+    # DOCTOR table only has ID and EMAIL columns
     id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    
-    # Optional fields that might exist in the DOCTOR table
-    first_name = Column(String(100))
-    last_name = Column(String(100))
-    specialization = Column(String(100))
     
     __table_args__ = (
         Index('IDX_DOCTOR_EMAIL', 'email'),
