@@ -126,6 +126,58 @@ async def handle_firebase_webhook(
         logger.error(f"Error processing firebase webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("")
+async def get_notifications(
+    user_id: int = None,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """Fetch notifications for a user (most recent first)"""
+    try:
+        from models.database_models import NotificationQueue
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+        
+        # Query notifications for user, ordered by most recent first
+        query = db.query(NotificationQueue).filter(
+            NotificationQueue.user_id == user_id
+        ).order_by(
+            NotificationQueue.created_at.desc()
+        )
+        
+        total_count = query.count()
+        notifications = query.limit(limit).offset(offset).all()
+        
+        # Format response
+        data = []
+        for notif in notifications:
+            import json
+            payload = json.loads(notif.payload) if notif.payload else {}
+            data.append({
+                "id": notif.id,
+                "title": payload.get("title", "Notification"),
+                "body": payload.get("body", ""),
+                "status": notif.status,
+                "created_at": notif.created_at.isoformat() if notif.created_at else None,
+                "updated_at": notif.updated_at.isoformat() if notif.updated_at else None,
+                "payload": payload
+            })
+        
+        return {
+            "success": True,
+            "data": data,
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching notifications: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""
