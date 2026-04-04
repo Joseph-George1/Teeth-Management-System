@@ -38,6 +38,15 @@ class FirebaseService:
             Exception: If Firebase initialization fails
         """
         try:
+            # Check if Firebase app is already initialized
+            try:
+                firebase_admin.get_app()
+                logger.info("✓ Firebase Admin SDK already initialized")
+                return True
+            except ValueError:
+                # App not initialized yet, proceed with initialization
+                pass
+            
             service_account_path = settings.firebase_service_account_path
             
             # Check if service account file exists
