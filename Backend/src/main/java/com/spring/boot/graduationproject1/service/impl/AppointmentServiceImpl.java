@@ -97,10 +97,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
             notificationService.notifyUser(
-                    user,
-                    "New Appointment",
-                    "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
+            user,
+            "New Appointment",
+            "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
             );
+        });
 
 
         return appointmentMapper.toDto(appointment);
