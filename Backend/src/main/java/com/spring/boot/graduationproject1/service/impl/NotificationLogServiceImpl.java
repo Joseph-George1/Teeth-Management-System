@@ -38,7 +38,7 @@ public class NotificationLogServiceImpl implements INotificationLogService {
     ) {
         NotificationLog log = new NotificationLog();
         log.setRecipientUserId(recipientUserId);
-        log.setRecipientUserType(NotificationLog.DeliveryStatus.valueOf(recipientUserType.toUpperCase()));
+        log.setRecipientUserType(com.spring.boot.graduationproject1.model.UserType.valueOf(recipientUserType.toUpperCase()));
         log.setTitle(title);
         log.setBody(body);
         log.setNotificationType(NotificationLog.NotificationType.valueOf(notificationType.toUpperCase()));

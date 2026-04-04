@@ -47,7 +47,7 @@ public class DeviceToken {
      */
     @Column(name = "USER_TYPE", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private UserType userType;
+    private com.spring.boot.graduationproject1.model.UserType userType;
     
     /**
      * Device platform: ANDROID, IOS, WEB
@@ -90,14 +90,6 @@ public class DeviceToken {
     @Column(name = "DEACTIVATED_AT")
     private LocalDateTime deactivatedAt;
     
-    /**
-     * Enum for user types
-     */
-    public enum UserType {
-        PATIENT,
-        DOCTOR,
-        ADMIN
-    }
     
     /**
      * Enum for device platforms

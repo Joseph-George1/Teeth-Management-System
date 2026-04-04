@@ -41,7 +41,7 @@ public class NotificationLog {
      */
     @Column(name = "RECIPIENT_USER_TYPE", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private DeviceToken.UserType recipientUserType;
+    private UserType recipientUserType;
     
     /**
      * Notification title

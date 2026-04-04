@@ -41,7 +41,7 @@ public class NotificationPreference {
      */
     @Column(name = "USER_TYPE", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private DeviceToken.UserType userType;
+    private UserType userType;
     
     /**
      * Whether push notifications are globally enabled

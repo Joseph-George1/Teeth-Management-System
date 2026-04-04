@@ -34,7 +34,7 @@ public class NotificationPreferenceServiceImpl implements INotificationPreferenc
     private NotificationPreferenceDto createDefaultPreferences(Long userId, String userType) {
         NotificationPreference preference = new NotificationPreference();
         preference.setUserId(userId);
-        preference.setUserType(NotificationPreference.UserType.valueOf(userType.toUpperCase()));
+        preference.setUserType(com.spring.boot.graduationproject1.model.UserType.valueOf(userType.toUpperCase()));
         preference.setPushNotificationsEnabled(true);
         preference.setAppointmentConfirmedEnabled(true);
         preference.setAppointmentCancelledEnabled(true);
