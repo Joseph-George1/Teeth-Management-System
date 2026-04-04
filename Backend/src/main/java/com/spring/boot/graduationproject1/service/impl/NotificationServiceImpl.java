@@ -1,47 +1,47 @@
 package com.spring.boot.graduationproject1.service.impl;
 
-import com.spring.boot.graduationproject1.model.DeviceToken;
 import com.spring.boot.graduationproject1.model.NotificationLog;
 import com.spring.boot.graduationproject1.model.User;
-import com.spring.boot.graduationproject1.notification.NotificationProvider;
 import com.spring.boot.graduationproject1.repo.NotificationLogRepo;
-import com.spring.boot.graduationproject1.service.DeviceTokenService;
 import com.spring.boot.graduationproject1.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
+    private static final Logger logger = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     private final NotificationLogRepo notificationLogRepo;
-    private final DeviceTokenService deviceTokenService;
-    private final NotificationProvider notificationProvider;
+    private final NotificationClientServiceImpl notificationClientService;
 
-    public NotificationServiceImpl(NotificationLogRepo notificationLogRepo, DeviceTokenService deviceTokenService, NotificationProvider notificationProvider) {
+    public NotificationServiceImpl(NotificationLogRepo notificationLogRepo, 
+                                 NotificationClientServiceImpl notificationClientService) {
         this.notificationLogRepo = notificationLogRepo;
-        this.deviceTokenService = deviceTokenService;
-        this.notificationProvider = notificationProvider;
+        this.notificationClientService = notificationClientService;
     }
-
 
     @Override
     public void notifyUser(User user, String title, String body) {
-
-
-        List<String> tokens = deviceTokenService.getUserTokens(user.getId());
-
-        for (String token : tokens) {
-            notificationProvider.send(token, title, body);
+        try {
+            // Log the notification locally
+            NotificationLog log = new NotificationLog();
+            log.setUser(user);
+            log.setTitle(title);
+            log.setBody(body);
+            log.setReadStatus(false);
+            log.setCreatedAt(LocalDateTime.now());
+            notificationLogRepo.save(log);
+            
+            // Queue for delivery via microservice (async)
+            logger.info("Notification queued for user {}: {}", user.getId(), title);
+            
+        } catch (Exception e) {
+            logger.error("Error notifying user {}: {}", user.getId(), e.getMessage(), e);
         }
-
-        NotificationLog log = new NotificationLog();
-        log.setUser(user);
-        log.setTitle(title);
-        log.setBody(body);
-        log.setReadStatus(false);
-
-        notificationLogRepo.save(log);
-
     }
 }

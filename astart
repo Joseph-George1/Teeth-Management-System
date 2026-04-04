@@ -63,7 +63,7 @@ NOTIFICATION_PORT="${NOTIFICATION_PORT:-9000}"
 core_path="$HOME/Teeth-Management-System/Ai-chatbot"
 webui_path="$HOME/Teeth-Management-System/Thoutha-Website"
 backend_path="$HOME/Teeth-Management-System/Backend"
-notification_path="$HOME/Teeth-Management-System/Notifications"
+notification_path="$HOME/Teeth-Management-System/Notification"
 LOG_DIR="$HOME/Teeth-Management-System/logs"
 PROCESS_LOG_DIR="$LOG_DIR/process_logs"
 PID_DIR="$LOG_DIR/pids"
@@ -644,7 +644,7 @@ restart_service() {
     if [ -z "$service" ]; then
         echo -e "${RED}ERROR: No service specified${NC}"
         echo "Usage: $0 -r <service_name>"
-        echo "Available services: backend, loginreg, ai_api, web_ui, ai_chatbot_web, ai_chatbot_api"
+        echo "Available services: backend, loginreg, ai_api, web_ui, ai_chatbot_web, ai_chatbot_api, notification_service"
         return 1
     fi
     
@@ -680,6 +680,9 @@ restart_service() {
             ;;
         ai_chatbot_web)
             ai_chatbot_with_web
+            ;;
+        notification_service)
+            notification_service_start
             ;;
         *)
             echo -e "${RED}ERROR: Unknown service: $service${NC}"

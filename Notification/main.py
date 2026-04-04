@@ -1,0 +1,115 @@
+"""
+Teeth Management Notification Service
+FastAPI microservice for Firebase Cloud Messaging (FCM) notifications
+with support for templates, multi-language, idempotency, and delivery tracking
+
+Location: Notification/main.py
+Port: 9000
+Created: April 4, 2026
+"""
+
+from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+import logging
+import sys
+import os
+from datetime import datetime
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(__file__))
+
+from config import get_db_session, init_firebase
+from routes.notification_routes import router as notification_router
+from utils.logger import setup_logger
+
+# Initialize logging
+logger = setup_logger(__name__)
+
+# Create FastAPI app
+app = FastAPI(
+    title="Teeth Management Notification Service",
+    version="1.0.0",
+    description="Advanced notification service with FCM, templates, multi-language, and delivery tracking"
+)
+
+# Enable CORS (for Java backend calling from different port)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize Firebase on startup
+@app.on_event("startup")
+async def startup_event():
+    try:
+        init_firebase()
+        logger.info("Firebase initialized successfully on startup")
+    except Exception as e:
+        logger.error(f"Failed to initialize Firebase: {e}")
+        logger.error("Exiting - Firebase credentials required to proceed")
+        sys.exit(1)
+
+# Health check endpoint (for cron monitoring)
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint for monitoring
+    Called by cron script every 5 minutes to ensure service is running
+    """
+    try:
+        # Quick DB test
+        db = next(get_db_session())
+        db.execute("SELECT 1 FROM DUAL")  # Oracle test query
+        db.close()
+        
+        logger.debug("Health check passed")
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "firebase": "initialized",
+            "database": "connected"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "error": str(e)
+            }
+        )
+
+# Include notification routes
+app.include_router(notification_router, prefix="/api/notifications", tags=["notifications"])
+
+# Root endpoint
+@app.get("/")
+def root():
+    """Root endpoint - service info"""
+    return {
+        "service": "Teeth Management Notification Service",
+        "version": "1.0.0",
+        "environment": "production",
+        "endpoints": {
+            "health": "/health",
+            "notifications": "/api/notifications/*"
+        },
+        "documentation": "/docs"
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    logger.info("Starting Notification Service on port 9000")
+    
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=9000,
+        log_level="info",
+        workers=1  # Single instance per requirements
+    )
