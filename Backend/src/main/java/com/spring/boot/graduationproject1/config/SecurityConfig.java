@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/api/category/**",
                                 "/api/cities/**",
                                 "/api/university/**",
-                                "/api/request/getRequestByCategoryId")
+                                "/api/request/getRequestByCategoryId",
+                                "/api/user/saveToken")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/appointment/createAppointment/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/doctor/getDoctors").hasRole("ADMIN")
