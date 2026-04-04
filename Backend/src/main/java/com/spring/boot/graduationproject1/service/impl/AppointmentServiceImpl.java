@@ -153,23 +153,26 @@ public class AppointmentServiceImpl implements AppointmentService {
             // Clear duration when approved - doctor decides when it's done
             appointment.setDurationMinutes(null);
         }
-        User patientUser = userRepo.findByEmail(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
-                .orElseThrow(() -> new RuntimeException("User not found for patient"));
-        notificationService.notifyUser(
-                patientUser,
-                "Appointment Approved",
-                "Your appointment has been approved."
-        );
+
         // Mark as history when done or cancelled
         if (status == AppointmentStatus.DONE || status == AppointmentStatus.CANCELLED) {
             appointment.setIsHistory(true);
+        }
+
+        // Notify doctor about appointment status change (gracefully handle errors)
+        try {
             User doctorUser = userRepo.findByEmail(appointment.getDoctor().getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found for doctor"));
-            notificationService.notifyUser(
-                    doctorUser,
-                    "Appointment " + status.name(),
-                    "Appointment with " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName() + " is " + status.name().toLowerCase()
-            );
+                    .orElse(null);
+            if (doctorUser != null) {
+                notificationService.notifyUser(
+                        doctorUser,
+                        "Appointment " + status.name(),
+                        "Appointment with " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName() + " is " + status.name().toLowerCase()
+                );
+            }
+        } catch (Exception e) {
+            logger.warn("Could not send notification for appointment {}: {}", appointmentId, e.getMessage());
+            // Don't fail the appointment update if notification fails
         }
 
         appointmentRepo.save(appointment);
