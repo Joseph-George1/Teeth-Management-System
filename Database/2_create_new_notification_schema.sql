@@ -8,76 +8,20 @@
 -- Date: April 4, 2026
 -- =====================================================================
 
--- =====================================================================
--- TABLE 1: DEVICE_TOKENS (Enhanced from DEVICE_TOKEN)
--- Purpose: Store FCM tokens for mobile devices with platform tracking
--- Features: Soft-delete via is_active, multi-platform support
--- =====================================================================
-CREATE TABLE DEVICE_TOKENS (
-    ID NUMBER(19) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    
-    TOKEN VARCHAR2(500) NOT NULL UNIQUE,
-    USER_ID NUMBER(19) NOT NULL,
-    
-    -- New fields for advanced tracking
-    PLATFORM VARCHAR2(20),                    -- 'ANDROID', 'IOS', 'WEB', 'WINDOWS'
-    DEVICE_NAME VARCHAR2(255),                -- 'iPhone 13', 'Samsung Galaxy S21'
-    USER_TYPE VARCHAR2(20),                   -- 'PATIENT', 'DOCTOR', 'ADMIN'
-    
-    -- Soft delete + status tracking
-    IS_ACTIVE NUMBER(1) DEFAULT 1,            -- 0=inactive, 1=active
-    LAST_USED_AT TIMESTAMP(6),                -- Track last successful send
-    DEACTIVATED_AT TIMESTAMP(6),              -- When soft-deleted (logout)
-    
-    CREATED_AT TIMESTAMP(6) DEFAULT SYSDATE,
-    UPDATED_AT TIMESTAMP(6) DEFAULT SYSDATE,
-    
-    CONSTRAINT FK_DEVICE_TOKENS_USER FOREIGN KEY (USER_ID) REFERENCES USERS(ID)
-);
+SET ECHO ON;
+SET FEEDBACK ON;
 
--- Indexes for performance
-CREATE INDEX IDX_DEVICE_TOKENS_TOKEN ON DEVICE_TOKENS(TOKEN);
-CREATE INDEX IDX_DEVICE_TOKENS_USER ON DEVICE_TOKENS(USER_ID, USER_TYPE);
-CREATE INDEX IDX_DEVICE_TOKENS_ACTIVE ON DEVICE_TOKENS(USER_ID, IS_ACTIVE);
-CREATE INDEX IDX_DEVICE_TOKENS_PLATFORM ON DEVICE_TOKENS(PLATFORM, IS_ACTIVE);
-
--- =====================================================================
--- TABLE 2: NOTIFICATION_TEMPLATES (New)
--- Purpose: Reusable notification templates with variable substitution
--- Features: en/ar content, variable schemas, category grouping
--- =====================================================================
 CREATE TABLE NOTIFICATION_TEMPLATES (
     ID NUMBER(19) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    
-    NAME VARCHAR2(100) NOT NULL UNIQUE,       -- 'appointment_confirmed', 'reminder_1h'
-    CATEGORY VARCHAR2(50),                    -- 'appointment', 'reminder', 'cancellation'
-    
-    -- Template content with {{variable}} placeholders (Jinja2 style)
-    CONTENT_EN CLOB,                          -- English template
-    CONTENT_AR CLOB,                          -- Arabic template
-    
-    -- JSON array of expected variables: ["patientName", "appointmentDate"]
+    NAME VARCHAR2(100) NOT NULL UNIQUE,
+    CATEGORY VARCHAR2(50),
+    CONTENT_EN CLOB,
+    CONTENT_AR CLOB,
     VARIABLES_SCHEMA CLOB,
-    
     CREATED_AT TIMESTAMP(6) DEFAULT SYSDATE,
     UPDATED_AT TIMESTAMP(6) DEFAULT SYSDATE,
-    
     CONSTRAINT CHK_TEMPLATE_NAME CHECK (LENGTH(NAME) > 0)
 );
-
-CREATE INDEX IDX_NOTIFICATION_TEMPLATES_NAME ON NOTIFICATION_TEMPLATES(NAME);
-CREATE INDEX IDX_NOTIFICATION_TEMPLATES_CATEGORY ON NOTIFICATION_TEMPLATES(CATEGORY);
-
--- =====================================================================
--- TABLE 3: NOTIFICATION_QUEUE (New)
--- Purpose: Queue for notifications awaiting delivery
--- Features: Idempotency keys prevent duplicates, retry tracking, persistence
--- =====================================================================
-CREATE TABLE NOTIFICATION_QUEUE (
-    ID NUMBER(19) GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    
-    -- Idempotency key: ensures exactly-once delivery
-    -- Same request always gets same key, unique constraint prevents duplicates
     IDEMPOTENCY_KEY VARCHAR2(255) NOT NULL UNIQUE,
     
     USER_ID NUMBER(19) NOT NULL,
