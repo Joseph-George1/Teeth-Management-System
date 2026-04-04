@@ -66,7 +66,9 @@ class AppointmentNotificationRequest(BaseModel):
     idempotency_key: str = Field(..., description="Unique key for idempotency")
     appointment_id: int = Field(..., description="ID of the appointment")
     patient_id: int = Field(..., description="ID of the patient")
+    patient_name: str = Field(..., description="Name of the patient")
     doctor_id: int = Field(..., description="ID of the doctor")
+    doctor_name: str = Field(..., description="Name of the doctor")
     
     class Config:
         json_schema_extra = {
@@ -74,7 +76,41 @@ class AppointmentNotificationRequest(BaseModel):
                 "idempotency_key": "appt-123-abc",
                 "appointment_id": 1001,
                 "patient_id": 501,
-                "doctor_id": 201
+                "patient_name": "Ahmed Hassan",
+                "doctor_id": 201,
+                "doctor_name": "Dr. Fatima Al-Mansouri"
+            }
+        }
+
+class TreatmentPlanNotificationRequest(BaseModel):
+    """Request to notify about treatment plan update"""
+    patient_id: int = Field(..., description="ID of the patient")
+    patient_name: str = Field(..., description="Name of the patient")
+    treatment_plan_id: int = Field(..., description="ID of the treatment plan")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "patient_id": 501,
+                "patient_name": "Ahmed Hassan",
+                "treatment_plan_id": 3001
+            }
+        }
+
+class PaymentNotificationRequest(BaseModel):
+    """Request to notify about payment receipt"""
+    patient_id: int = Field(..., description="ID of the patient")
+    patient_name: str = Field(..., description="Name of the patient")
+    amount: str = Field(..., description="Payment amount")
+    currency: str = Field(default="SAR", description="Currency code")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "patient_id": 501,
+                "patient_name": "Ahmed Hassan",
+                "amount": "500",
+                "currency": "SAR"
             }
         }
 

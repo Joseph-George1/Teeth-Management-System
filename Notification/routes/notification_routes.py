@@ -1,9 +1,11 @@
 """API routes for notification microservice"""
 import logging
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from models.schemas import (
     AppointmentNotificationRequest,
+    TreatmentPlanNotificationRequest,
+    PaymentNotificationRequest,
     NotificationStatusResponse,
     WebhookPayload
 )
@@ -18,7 +20,6 @@ router = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 @router.post("/appointment-confirmed")
 async def notify_appointment_confirmed(
     request: AppointmentNotificationRequest,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """Queue appointment confirmation notification"""
@@ -27,9 +28,11 @@ async def notify_appointment_confirmed(
         
         notification_service = NotificationService(db)
         result = notification_service.notify_appointment_confirmed(
-            request.appointment_id,
-            request.patient_id,
-            request.doctor_id
+            appointment_id=request.appointment_id,
+            patient_id=request.patient_id,
+            patient_name=request.patient_name,
+            doctor_id=request.doctor_id,
+            doctor_name=request.doctor_name
         )
         
         return {
@@ -43,16 +46,16 @@ async def notify_appointment_confirmed(
 
 @router.post("/treatment-plan-update")
 async def notify_treatment_plan_update(
-    patient_id: int,
-    treatment_plan_id: int,
+    request: TreatmentPlanNotificationRequest,
     db: Session = Depends(get_db)
 ):
     """Notify patient about treatment plan update"""
     try:
         notification_service = NotificationService(db)
         status = notification_service.notify_treatment_plan_update(
-            patient_id,
-            treatment_plan_id
+            patient_id=request.patient_id,
+            patient_name=request.patient_name,
+            treatment_plan_id=request.treatment_plan_id
         )
         
         return {
@@ -66,16 +69,17 @@ async def notify_treatment_plan_update(
 
 @router.post("/payment-received")
 async def notify_payment_received(
-    patient_id: int,
-    amount: str,
+    request: PaymentNotificationRequest,
     db: Session = Depends(get_db)
 ):
     """Notify patient about payment receipt"""
     try:
         notification_service = NotificationService(db)
         status = notification_service.notify_payment_received(
-            patient_id,
-            amount
+            patient_id=request.patient_id,
+            patient_name=request.patient_name,
+            amount=request.amount,
+            currency=request.currency
         )
         
         return {
@@ -120,7 +124,7 @@ async def handle_firebase_webhook(
         logger.error(f"Error processing firebase webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/health-check")
+@router.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "notification-microservice"}
