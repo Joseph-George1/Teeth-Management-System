@@ -61,7 +61,7 @@ class PatientTokenService:
                 appointment_time=appointment_time,
                 created_at=datetime.utcnow(),
                 expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours),
-                is_used=False
+                is_used=0
             )
             
             self.db.add(token)
@@ -182,7 +182,7 @@ class PatientTokenService:
                 return False
             
             # Mark as used to prevent further access
-            token.is_used = True
+            token.is_used = 1
             self.db.commit()
             
             logger.info(f"Revoked token {token_string}")
@@ -228,7 +228,7 @@ class PatientTokenService:
             tokens = self.db.query(PatientTempToken).filter(
                 and_(
                     PatientTempToken.patient_id == patient_id,
-                    PatientTempToken.is_used == False,
+                    PatientTempToken.is_used == 0,
                     PatientTempToken.expires_at > now
                 )
             ).all()

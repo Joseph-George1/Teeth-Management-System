@@ -1,64 +1,44 @@
--- Patient Temporary Token Table
--- Allows patients to access their appointment notifications without permanent login
--- Created: April 5, 2026
+-- 1. DROP EXISTING ZOMBIE OBJECTS
+DROP VIEW active_patient_tokens;
+DROP VIEW patient_token_stats;
+DROP SEQUENCE seq_patient_token_id;
+DROP TABLE PATIENT_TEMP_TOKEN CASCADE CONSTRAINTS;
 
+-- 2. CREATE TABLE (COMPACTED TO AVOID BUFFER BREAKS)
 CREATE TABLE PATIENT_TEMP_TOKEN (
-    id INTEGER PRIMARY KEY,
-    token VARCHAR2(50) NOT NULL UNIQUE,
-    
-    -- Patient Information
-    patient_id INTEGER NOT NULL,
-    patient_first_name VARCHAR2(100),
-    patient_last_name VARCHAR2(100),
+    id NUMBER(19) PRIMARY KEY,
+    token VARCHAR2(255) NOT NULL,
+    patient_id NUMBER(19),
+    patient_first_name VARCHAR2(255),
+    patient_last_name VARCHAR2(255),
     patient_email VARCHAR2(255),
-    patient_phone VARCHAR2(20),
-    
-    -- Appointment Reference
-    appointment_id INTEGER NOT NULL,
+    patient_phone VARCHAR2(255),
+    appointment_id NUMBER(19),
     clinic_name VARCHAR2(255),
     clinic_location VARCHAR2(255),
-    appointment_date TIMESTAMP,
-    
-    -- Token Lifecycle
-    created_at TIMESTAMP DEFAULT SYSDATE,
-    expires_at TIMESTAMP NOT NULL,
-    
-    -- Usage Tracking
+    appointment_time TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
     is_used NUMBER(1) DEFAULT 0,
     used_at TIMESTAMP,
-    
-    -- Access Tracking
     accessed_at TIMESTAMP,
-    access_count INTEGER DEFAULT 0,
-    
-    -- Indexes for fast lookups and cleanup
-    CONSTRAINT pk_patient_token PRIMARY KEY (id)
+    access_count NUMBER(10) DEFAULT 0
 );
 
--- Create indexes for common queries
-CREATE INDEX IDX_PATIENT_TOKEN ON PATIENT_TEMP_TOKEN(token);
-CREATE INDEX IDX_PATIENT_ID ON PATIENT_TEMP_TOKEN(patient_id);
-CREATE INDEX IDX_APPOINTMENT_ID ON PATIENT_TEMP_TOKEN(appointment_id);
-CREATE INDEX IDX_TOKEN_EXPIRY ON PATIENT_TEMP_TOKEN(expires_at);
-CREATE INDEX IDX_TOKEN_STATUS ON PATIENT_TEMP_TOKEN(is_used, expires_at);
-CREATE INDEX IDX_PATIENT_APPOINTMENT ON PATIENT_TEMP_TOKEN(patient_id, appointment_id);
-
--- Optional: Sequence for ID generation
+-- 3. RECREATE SEQUENCE
 CREATE SEQUENCE seq_patient_token_id START WITH 1 INCREMENT BY 1;
 
--- Optional: View for active tokens
-CREATE VIEW active_patient_tokens AS
-SELECT * FROM PATIENT_TEMP_TOKEN
-WHERE is_used = 0 AND expires_at > SYSDATE
-ORDER BY created_at DESC;
+-- 4. RECREATE INDEXES
+CREATE INDEX IDX_PAT_TOKEN ON PATIENT_TEMP_TOKEN(token);
+CREATE INDEX IDX_PAT_ID ON PATIENT_TEMP_TOKEN(patient_id);
+CREATE INDEX IDX_APP_ID ON PATIENT_TEMP_TOKEN(appointment_id);
+CREATE INDEX IDX_TOK_EXP ON PATIENT_TEMP_TOKEN(expires_at);
 
--- Optional: View for usage statistics
-CREATE VIEW patient_token_stats AS
-SELECT 
-    patient_id,
-    COUNT(*) as total_tokens,
-    SUM(CASE WHEN is_used = 0 AND expires_at > SYSDATE THEN 1 ELSE 0 END) as active_tokens,
-    SUM(CASE WHEN is_used = 1 THEN 1 ELSE 0 END) as used_tokens,
-    MAX(created_at) as last_token_generated
-FROM PATIENT_TEMP_TOKEN
-GROUP BY patient_id;
+-- 5. RECREATE VIEWS
+CREATE VIEW active_patient_tokens AS 
+SELECT * FROM PATIENT_TEMP_TOKEN WHERE is_used = 0 AND expires_at > CURRENT_TIMESTAMP;
+
+CREATE VIEW patient_token_stats AS 
+SELECT patient_id, COUNT(*) as total_tokens FROM PATIENT_TEMP_TOKEN GROUP BY patient_id;
+
+COMMIT;

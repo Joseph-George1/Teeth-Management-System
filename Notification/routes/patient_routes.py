@@ -46,7 +46,7 @@ async def get_patient_token(
             token = db.query(PatientTempToken).filter(
                 and_(
                     PatientTempToken.patient_phone == phone,
-                    PatientTempToken.is_used == False,
+                    PatientTempToken.is_used == 0,
                     PatientTempToken.expires_at > datetime.utcnow()
                 )
             ).order_by(
@@ -66,7 +66,7 @@ async def get_patient_token(
             token = db.query(PatientTempToken).filter(
                 and_(
                     PatientTempToken.appointment_id == appointment_id,
-                    PatientTempToken.is_used == False,
+                    PatientTempToken.is_used == 0,
                     PatientTempToken.expires_at > datetime.utcnow()
                 )
             ).order_by(
