@@ -16,6 +16,7 @@ import sys
 import os
 from datetime import datetime
 from sqlalchemy import text
+from models.schemas import DeviceTokenRequest
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
@@ -104,17 +105,17 @@ def root():
 
 # Device token registration endpoint
 @app.post("/api/v1/device-tokens/register")
-def register_device_token(payload: dict):
+def register_device_token(request: DeviceTokenRequest):
     """Register Firebase device token for a user (from Flutter/Java backend)"""
     try:
-        user_id = payload.get("user_id")
-        fcm_token = payload.get("fcmToken")
-        device_type = payload.get("deviceType", "ANDROID")
-        device_model = payload.get("deviceModel", "Unknown")
-        os_version = payload.get("osVersion", "Unknown")
+        user_id = request.user_id
+        fcm_token = request.fcmToken
+        device_type = request.deviceType
+        device_model = request.deviceModel
+        os_version = request.osVersion
         
-        if not user_id or not fcm_token:
-            raise HTTPException(status_code=400, detail="user_id and fcmToken required")
+        if not fcm_token:
+            raise HTTPException(status_code=400, detail="fcmToken is required")
         
         logger.info(f"Device token registered for user {user_id}: {fcm_token[:20]}... ({device_type} - {device_model})")
         
@@ -126,6 +127,8 @@ def register_device_token(payload: dict):
             "device_model": device_model,
             "os_version": os_version
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error registering device token: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -135,6 +135,25 @@ class WebhookPayload(BaseModel):
             }
         }
 
+class DeviceTokenRequest(BaseModel):
+    """Request to register a device token for FCM"""
+    user_id: Optional[int] = Field(None, description="ID of the user (optional)")
+    fcmToken: str = Field(..., description="Firebase Cloud Messaging device token")
+    deviceType: str = Field(default="ANDROID", description="Device type (ANDROID, iOS, WEB)")
+    deviceModel: Optional[str] = Field(default="Unknown", description="Device model name")
+    osVersion: Optional[str] = Field(default="Unknown", description="OS version")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": 501,
+                "fcmToken": "d-o1a3WbSauKMigqcovr4b:APA91bGLfNkOZMrKJXnkkTv5eI_pb39xHsT8jLyNOoJVC2jmavWkgWylFBkUD5LS4cv",
+                "deviceType": "ANDROID",
+                "deviceModel": "Samsung Galaxy S21",
+                "osVersion": "33"
+            }
+        }
+
 # =========================================================================
 # RESPONSE DTOs (to client/Java backend)
 # =========================================================================
