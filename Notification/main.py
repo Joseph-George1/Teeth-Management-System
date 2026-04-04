@@ -17,6 +17,8 @@ import os
 from datetime import datetime
 from sqlalchemy import text
 from models.schemas import DeviceTokenRequest
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
@@ -50,6 +52,29 @@ async def startup_event():
     try:
         init_firebase()
         logger.info("Firebase initialized successfully on startup")
+        
+        # Start background queue processor
+        from services.queue_service import QueueService
+        
+        def process_notifications():
+            """Background task to process notification queue"""
+            try:
+                db = next(get_db_session())
+                queue_service = QueueService(db)
+                queue_service.process_queue(db)
+                db.close()
+            except Exception as e:
+                logger.error(f"Background queue processor error: {e}")
+        
+        # Initialize APScheduler
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(process_notifications, 'interval', seconds=2)
+        scheduler.start()
+        logger.info("Background notification queue processor started (runs every 2 seconds)")
+        
+        # Shutdown handler
+        atexit.register(lambda: scheduler.shutdown())
+        
     except Exception as e:
         logger.error(f"Failed to initialize Firebase: {e}")
         logger.error("Exiting - Firebase credentials required to proceed")

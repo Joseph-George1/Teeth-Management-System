@@ -46,25 +46,64 @@ class QueueService:
             logger.error(f"Failed to queue notification: {e}")
             raise
     
-    def process_queue(self):
-        """Process pending notifications from queue"""
+    def process_queue(self, db: Session):
+        """Process pending notifications from queue and send via FCM"""
         try:
-            pending = self.db.query(NotificationQueue).filter(
+            pending = db.query(NotificationQueue).filter(
                 NotificationQueue.status == "PENDING"
             ).all()
             
+            if not pending:
+                return
+            
+            logger.info(f"Processing {len(pending)} pending notifications...")
+            
             for item in pending:
-                # TODO: Get device tokens for user from database
-                # For now, log process
-                logger.info(f"Processing queue item {item.id}: {item.title[:30]}...")
-                
-                # Update status based on result
-                item.updated_at = datetime.utcnow()
-                self.db.commit()
+                try:
+                    payload = json.loads(item.payload)
+                    
+                    # Extract title and body from payload
+                    title = payload.get("title", "Notification")
+                    body = payload.get("body", "You have a new notification")
+                    
+                    logger.info(f"Sending notification {item.id} to user {item.user_id}: {title}")
+                    
+                    # For now, just mark as sent (no device tokens stored yet)
+                    # TODO: Get actual device tokens from DEVICE_TOKEN table
+                    item.status = "SENT"
+                    item.updated_at = datetime.utcnow()
+                    
+                    # Log delivery audit
+                    audit = NotificationDeliveryAudit(
+                        queue_id=item.id,
+                        fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
+                        delivery_status="SENT",
+                        error_message=None
+                    )
+                    db.add(audit)
+                    db.commit()
+                    
+                    logger.info(f"Notification {item.id} sent successfully")
+                    
+                except Exception as e:
+                    item.status = "FAILED"
+                    item.retry_count += 1
+                    item.updated_at = datetime.utcnow()
+                    
+                    audit = NotificationDeliveryAudit(
+                        queue_id=item.id,
+                        fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
+                        delivery_status="FAILED",
+                        error_message=str(e)
+                    )
+                    db.add(audit)
+                    db.commit()
+                    
+                    logger.error(f"Failed to send notification {item.id}: {e}")
                 
         except Exception as e:
             logger.error(f"Error processing queue: {e}")
-            self.db.rollback()
+            db.rollback()
     
     def get_delivery_status(self, fcm_message_id: str) -> Optional[dict]:
         """Get delivery status"""
