@@ -4,6 +4,7 @@ import com.spring.boot.graduationproject1.dto.DeviceTokenDto;
 import com.spring.boot.graduationproject1.dto.RegisterDeviceTokenRequest;
 import com.spring.boot.graduationproject1.mapper.DeviceTokenMapper;
 import com.spring.boot.graduationproject1.model.DeviceToken;
+import com.spring.boot.graduationproject1.model.UserType;
 import com.spring.boot.graduationproject1.repo.DeviceTokenRepo;
 import com.spring.boot.graduationproject1.service.IDeviceTokenService;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,7 @@ public class DeviceTokenServiceImpl implements IDeviceTokenService {
             deviceToken = new DeviceToken();
             deviceToken.setToken(request.getToken());
             deviceToken.setUserId(userId);
-            deviceToken.setUserType(DeviceToken.UserType.valueOf(userType.toUpperCase()));
+            deviceToken.setUserType(UserType.valueOf(userType.toUpperCase()));
             deviceToken.setPlatform(DeviceToken.DevicePlatform.valueOf(request.getPlatform().toUpperCase()));
             deviceToken.setDeviceName(request.getDeviceName());
             deviceToken.setIsActive(true);
@@ -73,7 +74,7 @@ public class DeviceTokenServiceImpl implements IDeviceTokenService {
     public List<DeviceTokenDto> getActiveDeviceTokens(Long userId, String userType) {
         return deviceTokenRepo.findByUserIdAndUserTypeAndIsActiveTrue(
             userId,
-            DeviceToken.UserType.valueOf(userType.toUpperCase())
+            UserType.valueOf(userType.toUpperCase())
         ).stream()
          .map(deviceTokenMapper::toDto)
          .collect(Collectors.toList());
@@ -83,7 +84,7 @@ public class DeviceTokenServiceImpl implements IDeviceTokenService {
     public List<DeviceTokenDto> getAllDeviceTokens(Long userId, String userType) {
         return deviceTokenRepo.findByUserIdAndUserType(
             userId,
-            DeviceToken.UserType.valueOf(userType.toUpperCase())
+            UserType.valueOf(userType.toUpperCase())
         ).stream()
          .map(deviceTokenMapper::toDto)
          .collect(Collectors.toList());
@@ -113,7 +114,7 @@ public class DeviceTokenServiceImpl implements IDeviceTokenService {
     public Long countActiveTokens(Long userId, String userType) {
         return deviceTokenRepo.countByUserIdAndUserTypeAndIsActiveTrue(
             userId,
-            DeviceToken.UserType.valueOf(userType.toUpperCase())
+            UserType.valueOf(userType.toUpperCase())
         );
     }
     

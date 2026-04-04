@@ -1,6 +1,7 @@
 package com.spring.boot.graduationproject1.repo;
 
 import com.spring.boot.graduationproject1.model.DeviceToken;
+import com.spring.boot.graduationproject1.model.UserType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +25,7 @@ public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
      */
     List<DeviceToken> findByUserIdAndUserTypeAndIsActiveTrue(
         Long userId, 
-        DeviceToken.UserType userType
+        UserType userType
     );
     
     /**
@@ -32,7 +33,7 @@ public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
      */
     List<DeviceToken> findByUserIdAndUserType(
         Long userId, 
-        DeviceToken.UserType userType
+        UserType userType
     );
     
     /**
@@ -40,7 +41,7 @@ public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
      */
     List<DeviceToken> findByUserIdAndUserTypeAndPlatformAndIsActiveTrue(
         Long userId,
-        DeviceToken.UserType userType,
+        UserType userType,
         DeviceToken.DevicePlatform platform
     );
     
@@ -49,7 +50,7 @@ public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
      */
     Long countByUserIdAndUserTypeAndIsActiveTrue(
         Long userId,
-        DeviceToken.UserType userType
+        UserType userType
     );
     
     /**
@@ -62,7 +63,7 @@ public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
      */
     List<DeviceToken> findByUserIdAndUserTypeAndDeviceNameContaining(
         Long userId,
-        DeviceToken.UserType userType,
+        UserType userType,
         String deviceName
     );
 }
