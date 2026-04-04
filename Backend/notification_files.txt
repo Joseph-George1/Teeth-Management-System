@@ -1,0 +1,37 @@
+Files related to notifications:
+
+Controllers:
+- NotificationController.java
+
+DTOs:
+- DeviceTokenDto.java (related to notification delivery)
+- NotificationLogDto.java
+- NotificationPreferenceDto.java
+- RegisterDeviceTokenRequest.java (related to notification delivery)
+
+Mappers:
+- DeviceTokenMapper.java (related to notification delivery)
+- NotificationLogMapper.java
+- NotificationPreferenceMapper.java
+
+Models:
+- DeviceToken.java (related to notification delivery)
+- NotificationLog.java
+- NotificationPreference.java
+
+Repositories:
+- DeviceTokenRepo.java (related to notification delivery)
+- NotificationLogRepo.java
+- NotificationPreferenceRepo.java
+
+Services:
+- IDeviceTokenService.java (related to notification delivery)
+- INotificationLogService.java
+- INotificationPreferenceService.java
+- IPythonNotificationService.java
+
+Service Implementations:
+- DeviceTokenServiceImpl.java (related to notification delivery)
+- NotificationLogServiceImpl.java
+- NotificationPreferenceServiceImpl.java
+- PythonNotificationServiceImpl.java
