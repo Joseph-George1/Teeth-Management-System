@@ -163,3 +163,26 @@ APP_ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
 logger.info(f"Application: {APP_NAME} v{APP_VERSION}")
 logger.info(f"Environment: {APP_ENVIRONMENT}")
+
+# =========================================================================
+# EMAIL CONFIGURATION
+# =========================================================================
+class EmailConfig:
+    """Email service configuration"""
+    
+    def __init__(self):
+        """Initialize email configuration from environment variables"""
+        # SMTP settings
+        self.SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        self.SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+        self.SENDER_EMAIL = os.getenv("SENDER_EMAIL", "noreply@dentalsystem.com")
+        self.SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "")
+        
+        # Email sending settings
+        self.ENABLE_EMAIL = os.getenv("ENABLE_EMAIL", "false").lower() == "true"
+        self.USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+        self.USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
+        
+        # Logging
+        if self.ENABLE_EMAIL and not self.SENDER_PASSWORD:
+            logger.warning("Email enabled but SENDER_PASSWORD not set in environment variables")
