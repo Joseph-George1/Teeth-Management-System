@@ -95,14 +95,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointmentRepo.save(appointment);
 
 
-        User doctorUser = userRepo.findByEmail(doctor.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found for doctor"));
-        notificationService.notifyUser(
-                doctorUser,
-                "New Appointment",
-                "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
-        );
-
+        userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
+            notificationService.notifyUser(
+                    user,
+                    "New Appointment",
+                    "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
+            );
+        });
 
         return appointmentMapper.toDto(appointment);
     }
