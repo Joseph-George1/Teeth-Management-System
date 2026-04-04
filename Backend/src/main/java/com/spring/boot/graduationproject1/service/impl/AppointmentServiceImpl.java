@@ -6,6 +6,8 @@ import com.spring.boot.graduationproject1.model.*;
 import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.AppointmentService;
 import com.spring.boot.graduationproject1.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
+    private static final Logger logger = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     private final AppointmentRepo appointmentRepo;
     private final AppointmentMapper appointmentMapper;
