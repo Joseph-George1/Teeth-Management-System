@@ -13,10 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Patients {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+public class Patients extends User {
     @Column(name = "FIRST_NAME", nullable = false)
     private String firstName;
     @Column(name = "SUR_NAME", nullable = false)
@@ -28,4 +25,14 @@ public class Patients {
     private Role role;
     @OneToMany(mappedBy = "patient")
     private List<Appointments> appointments;
+    
+    @Override
+    public String getUserType() {
+        return "PATIENT";
+    }
+    
+    @Override
+    public String getIdentifier() {
+        return this.phoneNumber;
+    }
 }

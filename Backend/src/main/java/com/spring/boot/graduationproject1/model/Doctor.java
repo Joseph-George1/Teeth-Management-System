@@ -10,10 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class Doctor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Doctor extends User {
     @Column(nullable = false)
     private String firstName;
     @Column(nullable = false)
@@ -47,4 +44,13 @@ public class Doctor {
     @OneToMany(mappedBy = "doctor")
     private List<Appointments> appointments;
 
+    @Override
+    public String getUserType() {
+        return "DOCTOR";
+    }
+    
+    @Override
+    public String getIdentifier() {
+        return this.email;
+    }
 }
