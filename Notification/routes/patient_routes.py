@@ -91,7 +91,7 @@ async def get_patient_token(
             "appointment_id": token.appointment_id,
             "clinic_name": token.clinic_name,
             "clinic_location": token.clinic_location,
-            "appointment_date": token.appointment_date.isoformat() if token.appointment_date else None,
+            "appointment_time": token.appointment_time.isoformat() if token.appointment_time else None,
             "expires_at": token.expires_at.isoformat(),
             "message": "Use this token to view your appointment notification"
         }
