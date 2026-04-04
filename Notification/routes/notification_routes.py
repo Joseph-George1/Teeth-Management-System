@@ -126,6 +126,33 @@ async def handle_firebase_webhook(
         logger.error(f"Error processing firebase webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/device-tokens/register")
+async def register_device_token(payload: dict, db: Session = Depends(get_db)):
+    """Register Firebase device token for a user"""
+    try:
+        user_id = payload.get("user_id")
+        fcm_token = payload.get("fcmToken")
+        device_type = payload.get("deviceType", "ANDROID")
+        device_model = payload.get("deviceModel", "Unknown")
+        os_version = payload.get("osVersion", "Unknown")
+        
+        if not user_id or not fcm_token:
+            raise HTTPException(status_code=400, detail="user_id and fcmToken required")
+        
+        logger.info(f"Device token registered for user {user_id}: {fcm_token[:20]}... ({device_type} - {device_model})")
+        
+        return {
+            "success": True,
+            "message": "Device token registered successfully",
+            "user_id": user_id,
+            "device_type": device_type,
+            "device_model": device_model,
+            "os_version": os_version
+        }
+    except Exception as e:
+        logger.error(f"Error registering device token: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""
