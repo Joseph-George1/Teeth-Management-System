@@ -79,8 +79,8 @@ class FirebaseService:
             True if Firebase is initialized, False otherwise
         """
         try:
-            # Try to access Firebase messaging
-            _ = messaging.Client()
+            # Try to access Firebase messaging client
+            _ = messaging.client()
             logger.info("✓ Firebase initialization verified")
             return True
         except Exception as e:
@@ -95,7 +95,7 @@ class FirebaseService:
         Returns:
             Firebase messaging client instance
         """
-        return messaging.Client()
+        return messaging.client()
 
 # Global Firebase service instance
 firebase_service = FirebaseService()
