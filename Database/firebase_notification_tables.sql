@@ -1,73 +1,88 @@
 /**
- * FIREBASE NOTIFICATION SYSTEM - ORACLE XE MIGRATION
+ * FIREBASE NOTIFICATION SYSTEM - CLEAN TABLE CREATION
  * 
- * This script creates simplified notification tables for Hibernate JPA mapping
- * Based on: notification_tables_migration.sql (comprehensive version)
+ * This script DROPS and RECREATES notification tables from scratch
  * Database: Oracle XE (orclpdb)
  * 
- * CHANGES:
- * 1. Creates DEVICE_TOKEN table - Firebase device tokens storage
- * 2. Creates NOTIFICATION_LOG table - Notification audit trail
- * 3. Creates NOTIFICATION_PREFERENCES table - User preferences
- * 4. Adds foreign key constraints to reference "user" table
- * 5. Creates triggers for UPDATED_AT columns
+ * OPERATIONS:
+ * 1. Drops existing DEVICE_TOKEN table
+ * 2. Drops existing NOTIFICATION_LOG table
+ * 3. Creates fresh DEVICE_TOKEN table
+ * 4. Creates fresh NOTIFICATION_LOG table
+ * 5. Creates sequences and triggers
+ * 6. Creates indexes
  * 
- * SAFETY:
- * - NO EXISTING DATA IS MODIFIED
- * - Uses conditional create patterns to avoid errors
- * - All operations are idempotent
+ * WARNING: This will delete all existing data in these tables!
  */
 
 -- ============================================================================
--- TABLE 1: DEVICE_TOKEN
+-- STEP 1: DROP EXISTING TABLES (and all dependencies)
 -- ============================================================================
--- Purpose: Store FCM device tokens for each user
--- Corresponds to JPA Entity: com.spring.boot.graduationproject1.model.DeviceToken
--- 
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TABLE DEVICE_TOKEN';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
 
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE TABLE DEVICE_TOKEN (
+DROP TABLE NOTIFICATION_LOG;
+DROP TABLE DEVICE_TOKEN;
+DROP SEQUENCE SEQ_DEVICE_TOKEN_ID;
+DROP SEQUENCE SEQ_NOTIFICATION_LOG_ID;
+
+-- ============================================================================
+-- STEP 2: CREATE DEVICE_TOKEN TABLE
+-- ============================================================================
+
+CREATE TABLE DEVICE_TOKEN (
     ID              NUMBER(19) PRIMARY KEY,
     TOKEN           VARCHAR2(500 CHAR) NOT NULL UNIQUE,
     USER_ID         NUMBER(19) NOT NULL,
     CREATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL,
     UPDATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL
-  )';
-EXCEPTION
-  WHEN OTHERS THEN
-    DBMS_OUTPUT.PUT_LINE('Error creating DEVICE_TOKEN: ' || SQLERRM);
-    RAISE;
-END;
-/
+);
 
--- Create sequence for DEVICE_TOKEN ID
-BEGIN
-  EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_DEVICE_TOKEN_ID';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
+COMMENT ON TABLE DEVICE_TOKEN IS 'Firebase Cloud Messaging device tokens for push notifications';
+COMMENT ON COLUMN DEVICE_TOKEN.ID IS 'Unique device token ID (auto-generated)';
+COMMENT ON COLUMN DEVICE_TOKEN.TOKEN IS 'Unique FCM device token from Firebase SDK';
+COMMENT ON COLUMN DEVICE_TOKEN.USER_ID IS 'User ID who owns this device token';
+COMMENT ON COLUMN DEVICE_TOKEN.CREATED_AT IS 'Timestamp when token was registered';
+COMMENT ON COLUMN DEVICE_TOKEN.UPDATED_AT IS 'Timestamp when record was last modified';
 
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE SEQUENCE SEQ_DEVICE_TOKEN_ID START WITH 1 INCREMENT BY 1 NOCYCLE';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
+-- ============================================================================
+-- STEP 3: CREATE NOTIFICATION_LOG TABLE
+-- ============================================================================
 
--- Create trigger for auto-increment ID and UPDATED_AT
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TRIGGER DEVICE_TOKEN_ID_TRIGGER';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
+CREATE TABLE NOTIFICATION_LOG (
+    ID              NUMBER(19) PRIMARY KEY,
+    TITLE           VARCHAR2(255 CHAR) NOT NULL,
+    BODY            VARCHAR2(1000 CHAR) NOT NULL,
+    READ_STATUS     NUMBER(1) DEFAULT 0 NOT NULL,
+    USER_ID         NUMBER(19) NOT NULL,
+    CREATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL,
+    UPDATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL
+);
+
+COMMENT ON TABLE NOTIFICATION_LOG IS 'Audit trail of all notifications sent to users';
+COMMENT ON COLUMN NOTIFICATION_LOG.ID IS 'Unique notification log ID (auto-generated)';
+COMMENT ON COLUMN NOTIFICATION_LOG.TITLE IS 'Notification title/subject';
+COMMENT ON COLUMN NOTIFICATION_LOG.BODY IS 'Notification message body';
+COMMENT ON COLUMN NOTIFICATION_LOG.READ_STATUS IS 'Whether user read notification (1=yes, 0=no)';
+COMMENT ON COLUMN NOTIFICATION_LOG.USER_ID IS 'User ID who received this notification';
+COMMENT ON COLUMN NOTIFICATION_LOG.CREATED_AT IS 'Timestamp when notification was sent';
+COMMENT ON COLUMN NOTIFICATION_LOG.UPDATED_AT IS 'Timestamp when record was last modified';
+
+-- ============================================================================
+-- STEP 4: CREATE SEQUENCES FOR AUTO-INCREMENT
+-- ============================================================================
+
+CREATE SEQUENCE SEQ_DEVICE_TOKEN_ID
+    START WITH 1
+    INCREMENT BY 1
+    NOCYCLE;
+
+CREATE SEQUENCE SEQ_NOTIFICATION_LOG_ID
+    START WITH 1
+    INCREMENT BY 1
+    NOCYCLE;
+
+-- ============================================================================
+-- STEP 5: CREATE TRIGGERS FOR AUTO-INCREMENT
+-- ============================================================================
 
 CREATE OR REPLACE TRIGGER DEVICE_TOKEN_ID_TRIGGER
 BEFORE INSERT ON DEVICE_TOKEN
@@ -76,16 +91,10 @@ BEGIN
     IF :NEW.ID IS NULL THEN
         SELECT SEQ_DEVICE_TOKEN_ID.NEXTVAL INTO :NEW.ID FROM DUAL;
     END IF;
-    :NEW.CREATED_AT := SYSDATE;
+    IF :NEW.CREATED_AT IS NULL THEN
+        :NEW.CREATED_AT := SYSDATE;
+    END IF;
     :NEW.UPDATED_AT := SYSDATE;
-END;
-/
-
--- Create trigger to update UPDATED_AT on modification
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TRIGGER DEVICE_TOKEN_UPDATE_TRIGGER';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
 END;
 /
 
@@ -97,107 +106,6 @@ BEGIN
 END;
 /
 
--- Create indexes for performance
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_DEVICE_TOKEN_USER_ID ON DEVICE_TOKEN(USER_ID)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_DEVICE_TOKEN_TOKEN ON DEVICE_TOKEN(TOKEN)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
--- Add foreign key constraint (conditional)
-BEGIN
-  EXECUTE IMMEDIATE 'ALTER TABLE DEVICE_TOKEN ADD CONSTRAINT FK_DEVICE_TOKEN_USER FOREIGN KEY (USER_ID) REFERENCES "user"(ID)';
-EXCEPTION
-  WHEN OTHERS THEN
-    DBMS_OUTPUT.PUT_LINE('Note: Foreign key FK_DEVICE_TOKEN_USER could not be created.');
-    DBMS_OUTPUT.PUT_LINE('This is expected if "user" table does not exist yet.');
-    DBMS_OUTPUT.PUT_LINE('The constraint will be added after Hibernate creates the "user" table.');
-END;
-/
-
--- Comments for documentation
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON TABLE DEVICE_TOKEN IS ''Firebase Cloud Messaging device tokens for push notifications''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON COLUMN DEVICE_TOKEN.TOKEN IS ''Unique FCM device token from Firebase SDK''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON COLUMN DEVICE_TOKEN.USER_ID IS ''Reference to user table (links to User entity)''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
--- ============================================================================
--- TABLE 2: NOTIFICATION_LOG
--- ============================================================================
--- Purpose: Audit trail of all notifications sent to users
--- Corresponds to JPA Entity: com.spring.boot.graduationproject1.model.NotificationLog
--- 
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TABLE NOTIFICATION_LOG';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE TABLE NOTIFICATION_LOG (
-    ID              NUMBER(19) PRIMARY KEY,
-    TITLE           VARCHAR2(255 CHAR) NOT NULL,
-    BODY            VARCHAR2(1000 CHAR) NOT NULL,
-    READ_STATUS     NUMBER(1) NOT NULL DEFAULT 0,
-    USER_ID         NUMBER(19) NOT NULL,
-    CREATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL,
-    UPDATED_AT      TIMESTAMP DEFAULT SYSDATE NOT NULL
-  )';
-EXCEPTION
-  WHEN OTHERS THEN
-    DBMS_OUTPUT.PUT_LINE('Error creating NOTIFICATION_LOG: ' || SQLERRM);
-    RAISE;
-END;
-/
-
--- Create sequence for NOTIFICATION_LOG ID
-BEGIN
-  EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_NOTIFICATION_LOG_ID';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE SEQUENCE SEQ_NOTIFICATION_LOG_ID START WITH 1 INCREMENT BY 1 NOCYCLE';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
--- Create trigger for auto-increment ID and UPDATED_AT
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TRIGGER NOTIFICATION_LOG_ID_TRIGGER';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
 CREATE OR REPLACE TRIGGER NOTIFICATION_LOG_ID_TRIGGER
 BEFORE INSERT ON NOTIFICATION_LOG
 FOR EACH ROW
@@ -205,16 +113,10 @@ BEGIN
     IF :NEW.ID IS NULL THEN
         SELECT SEQ_NOTIFICATION_LOG_ID.NEXTVAL INTO :NEW.ID FROM DUAL;
     END IF;
-    :NEW.CREATED_AT := SYSDATE;
+    IF :NEW.CREATED_AT IS NULL THEN
+        :NEW.CREATED_AT := SYSDATE;
+    END IF;
     :NEW.UPDATED_AT := SYSDATE;
-END;
-/
-
--- Create trigger to update UPDATED_AT on modification
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TRIGGER NOTIFICATION_LOG_UPDATE_TRIGGER';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
 END;
 /
 
@@ -226,99 +128,49 @@ BEGIN
 END;
 /
 
--- Create indexes for performance
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_NOTIFICATION_LOG_USER_ID ON NOTIFICATION_LOG(USER_ID)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_NOTIFICATION_LOG_READ_STATUS ON NOTIFICATION_LOG(READ_STATUS)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_NOTIFICATION_LOG_CREATED_AT ON NOTIFICATION_LOG(CREATED_AT)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'CREATE INDEX IDX_NOTIFICATION_LOG_UNREAD ON NOTIFICATION_LOG(USER_ID, READ_STATUS)';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
--- Add foreign key constraint (conditional)
-BEGIN
-  EXECUTE IMMEDIATE 'ALTER TABLE NOTIFICATION_LOG ADD CONSTRAINT FK_NOTIFICATION_LOG_USER FOREIGN KEY (USER_ID) REFERENCES "user"(ID)';
-EXCEPTION
-  WHEN OTHERS THEN
-    DBMS_OUTPUT.PUT_LINE('Note: Foreign key FK_NOTIFICATION_LOG_USER could not be created.');
-    DBMS_OUTPUT.PUT_LINE('This is expected if "user" table does not exist yet.');
-    DBMS_OUTPUT.PUT_LINE('The constraint will be added after Hibernate creates the "user" table.');
-END;
-/
-
--- Comments for documentation
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON TABLE NOTIFICATION_LOG IS ''Audit trail of all notifications sent to users''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON COLUMN NOTIFICATION_LOG.READ_STATUS IS ''Whether user has read the notification (1=yes, 0=no)''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  EXECUTE IMMEDIATE 'COMMENT ON COLUMN NOTIFICATION_LOG.USER_ID IS ''Reference to user table (links to User entity)''';
-EXCEPTION
-  WHEN OTHERS THEN NULL;
-END;
-/
-
 -- ============================================================================
--- VERIFICATION QUERIES
+-- STEP 6: CREATE INDEXES FOR PERFORMANCE
 -- ============================================================================
 
--- Check DEVICE_TOKEN table structure
+CREATE INDEX IDX_DEVICE_TOKEN_USER_ID ON DEVICE_TOKEN(USER_ID);
+CREATE INDEX IDX_DEVICE_TOKEN_TOKEN ON DEVICE_TOKEN(TOKEN);
+
+CREATE INDEX IDX_NOTIFICATION_LOG_USER_ID ON NOTIFICATION_LOG(USER_ID);
+CREATE INDEX IDX_NOTIFICATION_LOG_READ_STATUS ON NOTIFICATION_LOG(READ_STATUS);
+CREATE INDEX IDX_NOTIFICATION_LOG_CREATED_AT ON NOTIFICATION_LOG(CREATED_AT);
+CREATE INDEX IDX_NOTIFICATION_LOG_UNREAD ON NOTIFICATION_LOG(USER_ID, READ_STATUS);
+
+-- ============================================================================
+-- STEP 7: CREATE FOREIGN KEY CONSTRAINTS
+-- ============================================================================
+
+ALTER TABLE DEVICE_TOKEN ADD CONSTRAINT FK_DEVICE_TOKEN_USER 
+FOREIGN KEY (USER_ID) REFERENCES "user"(ID);
+
+ALTER TABLE NOTIFICATION_LOG ADD CONSTRAINT FK_NOTIFICATION_LOG_USER 
+FOREIGN KEY (USER_ID) REFERENCES "user"(ID);
+
+-- ============================================================================
+-- STEP 8: VERIFICATION
+-- ============================================================================
+
+PROMPT
+PROMPT Tables created successfully!
+PROMPT
+
+PROMPT DEVICE_TOKEN table structure:
 DESC DEVICE_TOKEN;
 
--- Check NOTIFICATION_LOG table structure
+PROMPT
+PROMPT NOTIFICATION_LOG table structure:
 DESC NOTIFICATION_LOG;
 
--- Show table creation status
-BEGIN
-  DBMS_OUTPUT.PUT_LINE('╔════════════════════════════════════════════════════════════╗');
-  DBMS_OUTPUT.PUT_LINE('║  FIREBASE NOTIFICATION TABLES CREATED SUCCESSFULLY         ║');
-  DBMS_OUTPUT.PUT_LINE('╚════════════════════════════════════════════════════════════╝');
-  DBMS_OUTPUT.PUT_LINE('');
-  DBMS_OUTPUT.PUT_LINE('Tables created:');
-  DBMS_OUTPUT.PUT_LINE('  1. DEVICE_TOKEN (Firebase device tokens)');
-  DBMS_OUTPUT.PUT_LINE('  2. NOTIFICATION_LOG (Notification audit trail)');
-  DBMS_OUTPUT.PUT_LINE('');
-  DBMS_OUTPUT.PUT_LINE('Sequences created:');
-  DBMS_OUTPUT.PUT_LINE('  1. SEQ_DEVICE_TOKEN_ID');
-  DBMS_OUTPUT.PUT_LINE('  2. SEQ_NOTIFICATION_LOG_ID');
-  DBMS_OUTPUT.PUT_LINE('');
-  DBMS_OUTPUT.PUT_LINE('Triggers created for auto-increment and UPDATED_AT timestamps');
-  DBMS_OUTPUT.PUT_LINE('Indexes created for optimal performance');
-  DBMS_OUTPUT.PUT_LINE('');
-  DBMS_OUTPUT.PUT_LINE('NEXT STEP: After Hibernate creates the "user" table,');
-  DBMS_OUTPUT.PUT_LINE('run the ADD_FOREIGN_KEYS script to link these tables.');
-END;
-/
+PROMPT
+PROMPT ╔════════════════════════════════════════════════════════════╗
+PROMPT ║  FIREBASE NOTIFICATION TABLES CREATED SUCCESSFULLY         ║
+PROMPT ║  With Foreign Key Constraints to "user" table              ║
+PROMPT ╚════════════════════════════════════════════════════════════╝
+PROMPT
 
 -- ============================================================================
 -- END OF FIREBASE NOTIFICATION TABLES MIGRATION
