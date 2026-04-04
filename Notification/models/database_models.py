@@ -36,6 +36,53 @@ class Doctor(Base):
     )
 
 # =========================================================================
+# TABLE 0.5: PatientDeviceToken
+# Purpose: Store FCM device tokens for sending push notifications
+# Features: Device type tracking, token validation, deduplication
+# =========================================================================
+class PatientDeviceToken(Base):
+    """
+    Store FCM device tokens for patients and doctors
+    
+    Each device (phone) has a unique FCM token that must be sent to FCM
+    to receive push notifications. This table persists tokens so the
+    queue processor can look them up and actually send notifications.
+    
+    Flow:
+      1. Mobile app starts → registers FCM token via /api/v1/device-tokens/register
+      2. Token stored in PATIENT_DEVICE_TOKENS table (never deleted while active)
+      3. Queue processor queries this table to get FCM tokens
+      4. Calls firebase_service.send_to_device(fcm_token, ...)
+      5. FCM sends push to device
+    """
+    __tablename__ = "PATIENT_DEVICE_TOKENS"
+    
+    id = Column(Integer, primary_key=True)
+    
+    # Which user (patient or doctor) owns this token
+    user_id = Column(Integer, nullable=False, index=True)
+    
+    # The actual FCM token from mobile app
+    fcm_token = Column(String(500), unique=True, nullable=False, index=True)
+    
+    # Device information
+    device_type = Column(String(50))  # "android", "ios", etc.
+    device_model = Column(String(100))  # "Samsung Galaxy S21", "iPhone 13", etc.
+    os_version = Column(String(50))  # "12.0", "15.5", etc.
+    app_version = Column(String(50))  # Version of the Teeth app
+    
+    # Token validity
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    last_used_at = Column(DateTime)
+    
+    __table_args__ = (
+        Index('IDX_DEVICE_USER_ACTIVE', 'user_id', 'is_active'),
+        Index('IDX_DEVICE_TOKEN_ACTIVE', 'fcm_token', 'is_active'),
+        Index('IDX_DEVICE_CREATED', 'created_at'),
+    )
+
+# =========================================================================
 # TABLE 1: NotificationQueue
 # Purpose: Queue for notifications awaiting delivery
 # Features: Idempotency keys, retry tracking, persistence

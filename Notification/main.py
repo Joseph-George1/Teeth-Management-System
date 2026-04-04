@@ -150,19 +150,53 @@ def root():
 
 # Device token registration endpoint
 @app.post("/api/v1/device-tokens/register")
-def register_device_token(request: DeviceTokenRequest):
-    """Register Firebase device token for a user (from Flutter/Java backend)"""
+def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get_db_session)):
+    """
+    Register Firebase device token for a user
+    
+    Called by Flutter mobile app on startup or when token refreshes
+    Stores in database so queue processor can send push notifications
+    """
     try:
+        from models.database_models import PatientDeviceToken
+        
         user_id = request.user_id
         fcm_token = request.fcmToken
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
         
-        if not fcm_token:
-            raise HTTPException(status_code=400, detail="fcmToken is required")
+        if not fcm_token or not user_id:
+            raise HTTPException(status_code=400, detail="fcmToken and user_id are required")
         
-        logger.info(f"Device token registered for user {user_id}: {fcm_token[:20]}... ({device_type} - {device_model})")
+        # Check if token already exists for this user/device
+        existing = db.query(PatientDeviceToken).filter(
+            PatientDeviceToken.fcm_token == fcm_token
+        ).first()
+        
+        if existing:
+            # Token already registered - just update last_used_at
+            existing.is_active = True
+            existing.device_type = device_type
+            existing.device_model = device_model
+            existing.os_version = os_version
+            existing.last_used_at = datetime.utcnow()
+            db.commit()
+            logger.info(f"Updated existing device token for user {user_id}: {fcm_token[:20]}...")
+        else:
+            # New token - create entry
+            token_entry = PatientDeviceToken(
+                user_id=user_id,
+                fcm_token=fcm_token,
+                device_type=device_type,
+                device_model=device_model,
+                os_version=os_version,
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.add(token_entry)
+            db.commit()
+            logger.info(f"Registered new device token for user {user_id}: {fcm_token[:20]}... ({device_type}-{device_model})")
         
         return {
             "success": True,
@@ -170,11 +204,12 @@ def register_device_token(request: DeviceTokenRequest):
             "user_id": user_id,
             "device_type": device_type,
             "device_model": device_model,
-            "os_version": os_version
+            "fcm_token": fcm_token[:20] + "..."  # Never return full token in response
         }
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         logger.error(f"Error registering device token: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

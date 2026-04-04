@@ -47,7 +47,17 @@ class QueueService:
             raise
     
     def process_queue(self, db: Session):
-        """Process pending notifications from queue and send via FCM"""
+        """
+        Process pending notifications from queue and send via FCM
+        
+        CRITICAL: This is called every 2 seconds by APScheduler
+        Flow:
+          1. Query NOTIFICATION_QUEUE where status='PENDING'
+          2. For each pending item:
+             a. Get FCM tokens for the user from PATIENT_DEVICE_TOKENS
+             b. Call firebase_service.send_to_device() for EACH token
+             c. Update status to SENT/FAILED based on result
+        """
         try:
             pending = db.query(NotificationQueue).filter(
                 NotificationQueue.status == "PENDING"
@@ -58,6 +68,9 @@ class QueueService:
             
             logger.info(f"Processing {len(pending)} pending notifications...")
             
+            # Import here to avoid circular dependency
+            from models.database_models import PatientDeviceToken
+            
             for item in pending:
                 try:
                     payload = json.loads(item.payload)
@@ -66,24 +79,96 @@ class QueueService:
                     title = payload.get("title", "Notification")
                     body = payload.get("body", "You have a new notification")
                     
-                    logger.info(f"Sending notification {item.id} to user {item.user_id}: {title}")
+                    logger.info(f"Processing notification {item.id} for user {item.user_id}: '{title}'")
                     
-                    # For now, just mark as sent (no device tokens stored yet)
-                    # TODO: Get actual device tokens from DEVICE_TOKEN table
-                    item.status = "SENT"
+                    # ===== CRITICAL: Get all active FCM tokens for this user =====
+                    device_tokens = db.query(PatientDeviceToken).filter(
+                        PatientDeviceToken.user_id == item.user_id,
+                        PatientDeviceToken.is_active == True
+                    ).all()
+                    
+                    if not device_tokens:
+                        logger.warning(f"No active device tokens for user {item.user_id} - notification {item.id} cannot be sent")
+                        item.status = "FAILED"
+                        item.retry_count += 1
+                        item.updated_at = datetime.utcnow()
+                        
+                        audit = NotificationDeliveryAudit(
+                            notification_queue_id=item.id,
+                            fcm_message_id=None,
+                            delivery_status="FAILED",
+                            error_message="No active device tokens for user"
+                        )
+                        db.add(audit)
+                        db.commit()
+                        continue
+                    
+                    # ===== CRITICAL: Send to EACH device via FCM =====
+                    success_count = 0
+                    failure_count = 0
+                    
+                    for device_token in device_tokens:
+                        try:
+                            logger.info(f"Sending to user {item.user_id} on device {device_token.device_type}...")
+                            
+                            # Actually call FCM service to send notification
+                            fcm_message_id = self.firebase_service.send_to_device(
+                                fcm_token=device_token.fcm_token,
+                                title=title,
+                                body=body,
+                                data=payload
+                            )
+                            
+                            if fcm_message_id:
+                                success_count += 1
+                                logger.info(f"✓ FCM sent to user {item.user_id}: {device_token.device_type} | ID: {fcm_message_id}")
+                                
+                                # Log successful send
+                                audit = NotificationDeliveryAudit(
+                                    notification_queue_id=item.id,
+                                    fcm_message_id=fcm_message_id,
+                                    delivery_status="SENT",
+                                    error_message=None
+                                )
+                                db.add(audit)
+                                
+                                # Update device token last_used_at
+                                device_token.last_used_at = datetime.utcnow()
+                            else:
+                                failure_count += 1
+                                logger.warning(f"✗ FCM failed for user {item.user_id} on {device_token.device_type}")
+                                
+                                audit = NotificationDeliveryAudit(
+                                    notification_queue_id=item.id,
+                                    fcm_message_id=None,
+                                    delivery_status="FAILED",
+                                    error_message=f"FCM send failed for device {device_token.device_type}"
+                                )
+                                db.add(audit)
+                        
+                        except Exception as e:
+                            failure_count += 1
+                            logger.error(f"Error sending to FCM for user {item.user_id}: {e}")
+                            
+                            audit = NotificationDeliveryAudit(
+                                notification_queue_id=item.id,
+                                fcm_message_id=None,
+                                delivery_status="FAILED",
+                                error_message=str(e)
+                            )
+                            db.add(audit)
+                    
+                    # ===== Update queue item status =====
+                    if success_count > 0:
+                        item.status = "SENT"
+                        logger.info(f"Notification {item.id} SENT to {success_count} device(s), {failure_count} failed")
+                    else:
+                        item.status = "FAILED"
+                        item.retry_count += 1
+                        logger.error(f"Notification {item.id} FAILED on all {len(device_tokens)} device(s)")
+                    
                     item.updated_at = datetime.utcnow()
-                    
-                    # Log delivery audit
-                    audit = NotificationDeliveryAudit(
-                        notification_queue_id=item.id,
-                        fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
-                        delivery_status="SENT",
-                        error_message=None
-                    )
-                    db.add(audit)
                     db.commit()
-                    
-                    logger.info(f"Notification {item.id} sent successfully")
                     
                 except Exception as e:
                     item.status = "FAILED"
@@ -92,15 +177,15 @@ class QueueService:
                     
                     audit = NotificationDeliveryAudit(
                         notification_queue_id=item.id,
-                        fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
+                        fcm_message_id=None,
                         delivery_status="FAILED",
                         error_message=str(e)
                     )
                     db.add(audit)
                     db.commit()
                     
-                    logger.error(f"Failed to send notification {item.id}: {e}")
-                
+                    logger.error(f"Failed to process notification {item.id}: {e}")
+            
         except Exception as e:
             logger.error(f"Error processing queue: {e}")
             db.rollback()
