@@ -137,9 +137,9 @@ async def get_notifications(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Fetch notifications for authenticated doctor (from JWT token) - returns Flutter NotificationLogModel format"""
+    """Fetch ONLY the authenticated user's notifications - returns Flutter NotificationLogModel format"""
     try:
-        from models.database_models import NotificationQueue
+        from models.database_models import NotificationQueue, User
         
         # Extract token from Authorization header
         if not authorization:
@@ -157,16 +157,32 @@ async def get_notifications(
         if not email:
             raise HTTPException(status_code=401, detail="Email not found in token")
         
-        logger.info(f"Fetching notifications for doctor: {email}")
+        logger.info(f"Fetching notifications for authenticated user: {email}")
         
-        # Query notifications, ordered by most recent first
-        # TODO: Filter by doctor_id when NotificationQueue has doctor_id column
-        query = db.query(NotificationQueue).order_by(
+        # ===== CRITICAL: Look up user_id from email =====
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            logger.warning(f"User not found for email: {email}")
+            # Return empty list instead of error (user might not be in USERS table yet)
+            return {
+                "success": True,
+                "data": []
+            }
+        
+        user_id = user.id
+        logger.info(f"Authenticated user {email} has user_id: {user_id}")
+        
+        # ===== CRITICAL: Filter by user_id to show ONLY this user's notifications =====
+        query = db.query(NotificationQueue).filter(
+            NotificationQueue.user_id == user_id
+        ).order_by(
             NotificationQueue.created_at.desc()
         )
         
         total_count = query.count()
         notifications = query.limit(limit).offset(offset).all()
+        
+        logger.info(f"User {email} has {total_count} notifications, returning {len(notifications)} (limit={limit})")
         
         # Format response to match Flutter NotificationLogModel structure
         data = []
@@ -228,9 +244,9 @@ async def mark_notification_as_read(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Mark a single notification as read"""
+    """Mark a single notification as read (must be user's own notification)"""
     try:
-        from models.database_models import NotificationQueue
+        from models.database_models import NotificationQueue, User
         
         # Verify token
         if not authorization:
@@ -241,19 +257,26 @@ async def mark_notification_as_read(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Find and update notification
+        # Get user by email
+        email = payload.get('sub')
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Find notification and verify it belongs to this user
         notif = db.query(NotificationQueue).filter(
-            NotificationQueue.id == notification_id
+            NotificationQueue.id == notification_id,
+            NotificationQueue.user_id == user.id  # CRITICAL: Verify ownership
         ).first()
         
         if not notif:
-            raise HTTPException(status_code=404, detail="Notification not found")
+            raise HTTPException(status_code=404, detail="Notification not found or does not belong to you")
         
         notif.status = "DELIVERED"
         notif.updated_at = datetime.utcnow()
         db.commit()
         
-        logger.info(f"Marked notification {notification_id} as read")
+        logger.info(f"User {email} marked notification {notification_id} as read")
         
         return {
             "success": True,
@@ -271,9 +294,9 @@ async def mark_all_notifications_as_read(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Mark all notifications as read"""
+    """Mark all THIS USER's notifications as read"""
     try:
-        from models.database_models import NotificationQueue
+        from models.database_models import NotificationQueue, User
         
         # Verify token
         if not authorization:
@@ -284,14 +307,21 @@ async def mark_all_notifications_as_read(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Update all PENDING notifications to DELIVERED
+        # Get user by email
+        email = payload.get('sub')
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Update ONLY this user's PENDING notifications to DELIVERED
         updated_count = db.query(NotificationQueue).filter(
+            NotificationQueue.user_id == user.id,  # CRITICAL: Filter by user
             NotificationQueue.status == "PENDING"
         ).update({"status": "DELIVERED", "updated_at": datetime.utcnow()})
         
         db.commit()
         
-        logger.info(f"Marked {updated_count} notifications as read")
+        logger.info(f"User {email} marked {updated_count} notifications as read")
         
         return {
             "success": True,
@@ -310,9 +340,9 @@ async def delete_notification(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Delete a single notification"""
+    """Delete a single notification (must be user's own notification)"""
     try:
-        from models.database_models import NotificationQueue
+        from models.database_models import NotificationQueue, User
         
         # Verify token
         if not authorization:
@@ -323,18 +353,25 @@ async def delete_notification(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Find and delete notification
+        # Get user by email
+        email = payload.get('sub')
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Find notification and verify it belongs to this user
         notif = db.query(NotificationQueue).filter(
-            NotificationQueue.id == notification_id
+            NotificationQueue.id == notification_id,
+            NotificationQueue.user_id == user.id  # CRITICAL: Verify ownership
         ).first()
         
         if not notif:
-            raise HTTPException(status_code=404, detail="Notification not found")
+            raise HTTPException(status_code=404, detail="Notification not found or does not belong to you")
         
         db.delete(notif)
         db.commit()
         
-        logger.info(f"Deleted notification {notification_id}")
+        logger.info(f"User {email} deleted notification {notification_id}")
         
         return {
             "success": True,
@@ -352,9 +389,9 @@ async def delete_all_notifications(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Delete all notifications"""
+    """Delete all THIS USER's notifications"""
     try:
-        from models.database_models import NotificationQueue
+        from models.database_models import NotificationQueue, User
         
         # Verify token
         if not authorization:
@@ -365,11 +402,19 @@ async def delete_all_notifications(
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Delete all notifications
-        deleted_count = db.query(NotificationQueue).delete()
+        # Get user by email
+        email = payload.get('sub')
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        # Delete only this user's notifications
+        deleted_count = db.query(NotificationQueue).filter(
+            NotificationQueue.user_id == user.id  # CRITICAL: Only delete user's own
+        ).delete()
         db.commit()
         
-        logger.info(f"Deleted all {deleted_count} notifications")
+        logger.info(f"User {email} deleted all {deleted_count} notifications")
         
         return {
             "success": True,
