@@ -35,10 +35,10 @@ CREATE INDEX IDX_APP_ID ON PATIENT_TEMP_TOKEN(appointment_id);
 CREATE INDEX IDX_TOK_EXP ON PATIENT_TEMP_TOKEN(expires_at);
 
 -- 5. RECREATE VIEWS
-CREATE VIEW active_patient_tokens AS 
+CREATE VIEW active_patient_tokens AS
 SELECT * FROM PATIENT_TEMP_TOKEN WHERE is_used = 0 AND expires_at > CURRENT_TIMESTAMP;
 
-CREATE VIEW patient_token_stats AS 
+CREATE VIEW patient_token_stats AS
 SELECT patient_id, COUNT(*) as total_tokens FROM PATIENT_TEMP_TOKEN GROUP BY patient_id;
 
 COMMIT;
