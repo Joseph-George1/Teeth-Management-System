@@ -16,6 +16,7 @@ import sys
 import os
 from datetime import datetime
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 from models.schemas import DeviceTokenRequest
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
