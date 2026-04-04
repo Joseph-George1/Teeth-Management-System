@@ -34,8 +34,16 @@ public class AppointmentController {
     @PutMapping("/updateStatus/{appointmentId}")
     public ResponseEntity<AppointmentDto> updateAppointmentStatus(
             @PathVariable Long appointmentId,
-            @RequestParam AppointmentStatus status) {
-        return ResponseEntity.ok(appointmentService.updateAppointmentStatus(appointmentId, status));
+            @RequestParam String status) {
+        try {
+            AppointmentStatus appointmentStatus = AppointmentStatus.valueOf(status.toUpperCase());
+            AppointmentDto result = appointmentService.updateAppointmentStatus(appointmentId, appointmentStatus);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid appointment status: " + status + ". Must be one of: PENDING, APPROVED, DONE, CANCELLED");
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating appointment status: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/history/{doctorId}")
