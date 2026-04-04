@@ -66,12 +66,19 @@ class NotificationService:
             doctor_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_doctor")
             doctor_title = "New Appointment"
             doctor_body = f"You have a new appointment with {patient_name}"
+            # Doctor notification should include patient info clearly
             doctor_payload = {
                 "title": doctor_title,
                 "body": doctor_body,
                 "appointmentId": str(appointment_id),
                 "patientId": str(patient_id),
                 "patient_name": patient_name,
+                # Include doctor's own info so app can display it if needed
+                "doctor_id": str(doctor_id),
+                "doctor_name": None,  # Doctor already knows their own name
+                # Include clinic/location info if available
+                "location": location,
+                "clinic": location,
                 "type": "APPOINTMENT_CONFIRMED",
                 "time": None  # Set when appointment time is known
             }
@@ -134,6 +141,10 @@ class NotificationService:
                     "appointmentId": str(appointment_id),
                     "patientId": str(patient_id),
                     "patient_name": patient_name,
+                    "doctor_id": str(doctor_id),
+                    "doctor_name": None,
+                    "location": None,
+                    "clinic": None,
                     "type": "APPOINTMENT_REMINDER"
                 }
             )

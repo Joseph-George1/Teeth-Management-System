@@ -173,21 +173,43 @@ async def get_notifications(
         for notif in notifications:
             payload_obj = json.loads(notif.payload) if notif.payload else {}
             
-            # Extract fields from payload
-            notification_item = {
-                "id": notif.id,
-                "title": payload_obj.get("title", "Notification"),
-                "body": payload_obj.get("body", ""),
-                "readStatus": notif.status == "DELIVERED",  # Mark as read if delivered
-                "createdAt": notif.created_at.isoformat() if notif.created_at else None,
-                "appointmentId": payload_obj.get("appointmentId"),
-                "messageId": notif.fcm_message_id,
-                "doctorId": payload_obj.get("doctorId"),
-                "type": payload_obj.get("type", "appointment"),
-                "time": payload_obj.get("time"),
-                "clinic": payload_obj.get("location"),  # Map location to clinic
-                "doctorName": payload_obj.get("doctor_name")
-            }
+            # Determine notification type based on payload content
+            is_doctor_notification = "patientId" in payload_obj or "patient_name" in payload_obj
+            
+            # Extract fields intelligently based on notification direction
+            if is_doctor_notification:
+                # This is a doctor being notified - show patient info
+                notification_item = {
+                    "id": notif.id,
+                    "title": payload_obj.get("title", "Notification"),
+                    "body": payload_obj.get("body", ""),
+                    "readStatus": notif.status == "DELIVERED",
+                    "createdAt": notif.created_at.isoformat() if notif.created_at else None,
+                    "appointmentId": payload_obj.get("appointmentId"),
+                    "messageId": notif.fcm_message_id,
+                    "doctorId": payload_obj.get("doctor_id"),  # Doctor's own ID
+                    "type": payload_obj.get("type", "appointment"),
+                    "time": payload_obj.get("time"),
+                    "clinic": payload_obj.get("clinic"),
+                    "doctorName": payload_obj.get("doctor_name")
+                }
+            else:
+                # This is a patient being notified - show doctor info
+                notification_item = {
+                    "id": notif.id,
+                    "title": payload_obj.get("title", "Notification"),
+                    "body": payload_obj.get("body", ""),
+                    "readStatus": notif.status == "DELIVERED",
+                    "createdAt": notif.created_at.isoformat() if notif.created_at else None,
+                    "appointmentId": payload_obj.get("appointmentId"),
+                    "messageId": notif.fcm_message_id,
+                    "doctorId": payload_obj.get("doctorId"),  # Doctor's ID
+                    "type": payload_obj.get("type", "appointment"),
+                    "time": payload_obj.get("time"),
+                    "clinic": payload_obj.get("location") or payload_obj.get("clinic"),  # Map location to clinic
+                    "doctorName": payload_obj.get("doctor_name") or payload_obj.get("doctorName")
+                }
+            
             data.append(notification_item)
         
         return {
