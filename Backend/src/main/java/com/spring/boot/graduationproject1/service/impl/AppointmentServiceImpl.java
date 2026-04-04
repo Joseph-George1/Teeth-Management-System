@@ -101,7 +101,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     "New Appointment",
                     "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
             );
-        });
+
 
         return appointmentMapper.toDto(appointment);
     }
