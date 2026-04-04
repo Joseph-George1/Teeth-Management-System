@@ -75,7 +75,7 @@ class QueueService:
                     
                     # Log delivery audit
                     audit = NotificationDeliveryAudit(
-                        queue_id=item.id,
+                        notification_queue_id=item.id,
                         fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
                         delivery_status="SENT",
                         error_message=None
@@ -91,7 +91,7 @@ class QueueService:
                     item.updated_at = datetime.utcnow()
                     
                     audit = NotificationDeliveryAudit(
-                        queue_id=item.id,
+                        notification_queue_id=item.id,
                         fcm_message_id=f"msg_{item.id}_{int(datetime.utcnow().timestamp())}",
                         delivery_status="FAILED",
                         error_message=str(e)
