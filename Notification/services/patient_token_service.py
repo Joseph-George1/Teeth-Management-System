@@ -17,7 +17,7 @@ class PatientTokenService:
                       patient_last_name: str, appointment_id: int,
                       patient_email: str = None, patient_phone: str = None,
                       clinic_name: str = None, clinic_location: str = None,
-                      appointment_date: datetime = None,
+                      appointment_time: datetime = None,
                       expires_in_hours: int = 24) -> PatientTempToken:
         """
         Generate a temporary token for a patient to access their appointment notification
@@ -31,7 +31,7 @@ class PatientTokenService:
             patient_phone: Patient's phone (optional, for sending token)
             clinic_name: Name of clinic (optional, for context)
             clinic_location: Location of clinic (optional, for context)
-            appointment_date: When the appointment is scheduled (optional)
+            appointment_time: When the appointment is scheduled (optional)
             expires_in_hours: How many hours until token expires (default: 24)
         
         Returns:
@@ -58,7 +58,7 @@ class PatientTokenService:
                 appointment_id=appointment_id,
                 clinic_name=clinic_name,
                 clinic_location=clinic_location,
-                appointment_date=appointment_date,
+                appointment_time=appointment_time,
                 created_at=datetime.utcnow(),
                 expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours),
                 is_used=False

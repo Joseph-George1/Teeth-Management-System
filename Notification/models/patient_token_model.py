@@ -41,7 +41,7 @@ class PatientTempToken(Base):
     appointment_id = Column(Integer, nullable=False, index=True)
     clinic_name = Column(String(255))
     clinic_location = Column(String(255))
-    appointment_date = Column(DateTime)
+    appointment_time = Column(DateTime)
     
     # Token lifecycle
     created_at = Column(DateTime, default=datetime.utcnow, index=True)

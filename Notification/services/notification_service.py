@@ -86,7 +86,7 @@ class NotificationService:
             
             # === Notify DOCTOR: Show that someone has been appointed with them ===
             doctor_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_doctor")
-            doctor_title = "New Appointment"
+            doctor_title = "تم حجز موعد جديد"
             doctor_body = f"You have a new appointment with {patient_name}"
             # Doctor notification should include patient info clearly
             doctor_payload = {
