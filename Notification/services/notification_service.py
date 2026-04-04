@@ -43,11 +43,15 @@ class NotificationService:
             patient_title = f"{doctor_name} - {category}"
             patient_body = f"Your appointment at {location}"
             patient_payload = {
-                "appointment_id": appointment_id,
+                "title": patient_title,
+                "body": patient_body,
+                "appointmentId": str(appointment_id),
+                "doctorId": str(doctor_id),
                 "doctor_name": doctor_name,
                 "category": category,
                 "location": location,
-                "type": "APPOINTMENT_CONFIRMED"
+                "type": "APPOINTMENT_CONFIRMED",
+                "time": None  # Set when appointment time is known
             }
             self.queue_service.enqueue(
                 patient_id, 
@@ -63,9 +67,13 @@ class NotificationService:
             doctor_title = "New Appointment"
             doctor_body = f"You have a new appointment with {patient_name}"
             doctor_payload = {
-                "appointment_id": appointment_id,
+                "title": doctor_title,
+                "body": doctor_body,
+                "appointmentId": str(appointment_id),
+                "patientId": str(patient_id),
                 "patient_name": patient_name,
-                "type": "APPOINTMENT_CONFIRMED"
+                "type": "APPOINTMENT_CONFIRMED",
+                "time": None  # Set when appointment time is known
             }
             self.queue_service.enqueue(
                 doctor_id,
@@ -93,23 +101,41 @@ class NotificationService:
         try:
             # Notify patient of upcoming appointment
             patient_key = generate_idempotency_key(f"apt_reminder_{appointment_id}_patient")
+            patient_title = "Appointment Reminder"
+            patient_body = f"Reminder: You have an appointment with {doctor_name}"
             self.queue_service.enqueue(
                 patient_id,
-                "Appointment Reminder",
-                f"Reminder: You have an appointment with {doctor_name}",
+                patient_title,
+                patient_body,
                 patient_key,
-                {"appointment_id": appointment_id, "type": "APPOINTMENT_REMINDER"}
+                {
+                    "title": patient_title,
+                    "body": patient_body,
+                    "appointmentId": str(appointment_id),
+                    "doctorId": str(doctor_id),
+                    "doctor_name": doctor_name,
+                    "type": "APPOINTMENT_REMINDER"
+                }
             )
             results["patient"] = "queued"
             
             # Notify doctor of upcoming appointment
             doctor_key = generate_idempotency_key(f"apt_reminder_{appointment_id}_doctor")
+            doctor_title = "Appointment Reminder"
+            doctor_body = f"Reminder: You have an appointment with {patient_name}"
             self.queue_service.enqueue(
                 doctor_id,
-                "Appointment Reminder",
-                f"Reminder: You have an appointment with {patient_name}",
+                doctor_title,
+                doctor_body,
                 doctor_key,
-                {"appointment_id": appointment_id, "type": "APPOINTMENT_REMINDER"}
+                {
+                    "title": doctor_title,
+                    "body": doctor_body,
+                    "appointmentId": str(appointment_id),
+                    "patientId": str(patient_id),
+                    "patient_name": patient_name,
+                    "type": "APPOINTMENT_REMINDER"
+                }
             )
             results["doctor"] = "queued"
             
@@ -133,12 +159,19 @@ class NotificationService:
         """
         try:
             key = generate_idempotency_key(f"treatment_{treatment_plan_id}_patient")
+            title = "Treatment Plan Updated"
+            body = "Your dental treatment plan has been updated. Please review it."
             self.queue_service.enqueue(
                 patient_id,
-                "Treatment Plan Updated",
-                "Your dental treatment plan has been updated. Please review it.",
+                title,
+                body,
                 key,
-                {"treatment_plan_id": treatment_plan_id, "type": "TREATMENT_UPDATED"}
+                {
+                    "title": title,
+                    "body": body,
+                    "treatmentPlanId": str(treatment_plan_id),
+                    "type": "TREATMENT_UPDATED"
+                }
             )
             
             logger.info(f"Treatment plan {treatment_plan_id} update notification queued for patient {patient_id}")
@@ -164,12 +197,20 @@ class NotificationService:
         """
         try:
             key = generate_idempotency_key(f"payment_{patient_id}_{amount}_{currency}")
+            title = "Payment Received"
+            body = f"Your payment of {amount} {currency} has been received."
             self.queue_service.enqueue(
                 patient_id,
-                "Payment Received",
-                f"Your payment of {amount} {currency} has been received.",
+                title,
+                body,
                 key,
-                {"amount": amount, "currency": currency, "type": "PAYMENT_RECEIVED"}
+                {
+                    "title": title,
+                    "body": body,
+                    "amount": amount,
+                    "currency": currency,
+                    "type": "PAYMENT_RECEIVED"
+                }
             )
             
             logger.info(f"Payment receipt notification queued for patient {patient_id}")

@@ -2,6 +2,7 @@
 import logging
 import json
 from typing import Optional
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 from models.schemas import (
@@ -136,7 +137,7 @@ async def get_notifications(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Fetch notifications for authenticated doctor (from JWT token) (most recent first)"""
+    """Fetch notifications for authenticated doctor (from JWT token) - returns Flutter NotificationLogModel format"""
     try:
         from models.database_models import NotificationQueue
         
@@ -167,32 +168,196 @@ async def get_notifications(
         total_count = query.count()
         notifications = query.limit(limit).offset(offset).all()
         
-        # Format response
+        # Format response to match Flutter NotificationLogModel structure
         data = []
         for notif in notifications:
             payload_obj = json.loads(notif.payload) if notif.payload else {}
-            data.append({
+            
+            # Extract fields from payload
+            notification_item = {
                 "id": notif.id,
                 "title": payload_obj.get("title", "Notification"),
                 "body": payload_obj.get("body", ""),
-                "status": notif.status,
-                "created_at": notif.created_at.isoformat() if notif.created_at else None,
-                "updated_at": notif.updated_at.isoformat() if notif.updated_at else None,
-                "payload": payload_obj
-            })
+                "readStatus": notif.status == "DELIVERED",  # Mark as read if delivered
+                "createdAt": notif.created_at.isoformat() if notif.created_at else None,
+                "appointmentId": payload_obj.get("appointmentId"),
+                "messageId": notif.fcm_message_id,
+                "doctorId": payload_obj.get("doctorId"),
+                "type": payload_obj.get("type", "appointment"),
+                "time": payload_obj.get("time"),
+                "clinic": payload_obj.get("location"),  # Map location to clinic
+                "doctorName": payload_obj.get("doctor_name")
+            }
+            data.append(notification_item)
         
         return {
             "success": True,
-            "user_email": email,
-            "data": data,
-            "total_count": total_count,
-            "limit": limit,
-            "offset": offset
+            "data": data
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error fetching notifications: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/{notification_id}/read")
+async def mark_notification_as_read(
+    notification_id: int,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Mark a single notification as read"""
+    try:
+        from models.database_models import NotificationQueue
+        
+        # Verify token
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization token required")
+        
+        token = authorization.replace("Bearer ", "").replace("bearer ", "").strip()
+        payload = decode_jwt_payload(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Find and update notification
+        notif = db.query(NotificationQueue).filter(
+            NotificationQueue.id == notification_id
+        ).first()
+        
+        if not notif:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        notif.status = "DELIVERED"
+        notif.updated_at = datetime.utcnow()
+        db.commit()
+        
+        logger.info(f"Marked notification {notification_id} as read")
+        
+        return {
+            "success": True,
+            "message": "Notification marked as read"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error marking notification as read: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/read-all")
+async def mark_all_notifications_as_read(
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Mark all notifications as read"""
+    try:
+        from models.database_models import NotificationQueue
+        
+        # Verify token
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization token required")
+        
+        token = authorization.replace("Bearer ", "").replace("bearer ", "").strip()
+        payload = decode_jwt_payload(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Update all PENDING notifications to DELIVERED
+        updated_count = db.query(NotificationQueue).filter(
+            NotificationQueue.status == "PENDING"
+        ).update({"status": "DELIVERED", "updated_at": datetime.utcnow()})
+        
+        db.commit()
+        
+        logger.info(f"Marked {updated_count} notifications as read")
+        
+        return {
+            "success": True,
+            "message": f"Marked {updated_count} notifications as read"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error marking all notifications as read: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: int,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Delete a single notification"""
+    try:
+        from models.database_models import NotificationQueue
+        
+        # Verify token
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization token required")
+        
+        token = authorization.replace("Bearer ", "").replace("bearer ", "").strip()
+        payload = decode_jwt_payload(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Find and delete notification
+        notif = db.query(NotificationQueue).filter(
+            NotificationQueue.id == notification_id
+        ).first()
+        
+        if not notif:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        db.delete(notif)
+        db.commit()
+        
+        logger.info(f"Deleted notification {notification_id}")
+        
+        return {
+            "success": True,
+            "message": "Notification deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting notification: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("")
+async def delete_all_notifications(
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Delete all notifications"""
+    try:
+        from models.database_models import NotificationQueue
+        
+        # Verify token
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization token required")
+        
+        token = authorization.replace("Bearer ", "").replace("bearer ", "").strip()
+        payload = decode_jwt_payload(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Delete all notifications
+        deleted_count = db.query(NotificationQueue).delete()
+        db.commit()
+        
+        logger.info(f"Deleted all {deleted_count} notifications")
+        
+        return {
+            "success": True,
+            "message": f"Deleted {deleted_count} notifications"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting all notifications: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/health")
