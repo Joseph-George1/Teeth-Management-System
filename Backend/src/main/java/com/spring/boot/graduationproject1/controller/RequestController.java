@@ -31,7 +31,7 @@ public class RequestController {
     }
 
     @DeleteMapping("/deleteRequest")
-    public ResponseEntity<Void> deleteRequest(Long id){
+    public ResponseEntity<Void> deleteRequest(@RequestParam Long id){
         requestServices.deleteRequest(id);
         return ResponseEntity.noContent().build();
     }

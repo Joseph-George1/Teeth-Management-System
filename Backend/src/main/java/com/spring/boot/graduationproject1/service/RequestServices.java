@@ -10,7 +10,7 @@ public interface RequestServices {
     RequestDto getRequestById(Long id);
     RequestDto createRequest(RequestDto requestDto);
     RequestDto editRequest(Long requestId, RequestDto requestDto);
-    void deleteRequest();
+    void deleteRequest(Long requestId);
     List<RequestDto> getRequestByCategoryId(Long categoryId);
     List<RequestDto> getRequestByDoctorId();
     void updateRequestStatus(Long requestId, String status);
