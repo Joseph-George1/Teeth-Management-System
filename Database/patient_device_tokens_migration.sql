@@ -13,6 +13,21 @@
 -- 4. FCM delivers push notification to mobile device
 -- 5. App receives notification in onBackgroundMessage when closed
 
+-- Drop existing sequences if they exist (for re-running migrations)
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE seq_patient_device_tokens_id';
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE seq_user_id';
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END;
+/
+
 -- Create sequences FIRST
 CREATE SEQUENCE seq_patient_device_tokens_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_user_id START WITH 1000 INCREMENT BY 1;
