@@ -1,6 +1,11 @@
 """Patient temporary token management service"""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# Utility for timezone-aware UTC time
+def utc_now():
+    """Return current UTC time as timezone-aware datetime"""
+    return datetime.now(timezone.utc)
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from models.patient_token_model import PatientTempToken
@@ -59,8 +64,8 @@ class PatientTokenService:
                 clinic_name=clinic_name,
                 clinic_location=clinic_location,
                 appointment_time=appointment_time,
-                created_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours),
+                created_at=utc_now(),
+                expires_at=utc_now() + timedelta(hours=expires_in_hours),
                 is_used=0
             )
             

@@ -1,7 +1,7 @@
 """Queue management service"""
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from models.database_models import NotificationQueue, NotificationDeliveryAudit
@@ -10,6 +10,11 @@ from utils.idempotency import generate_idempotency_key
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# Utility for timezone-aware UTC time
+def utc_now():
+    """Return current UTC time as timezone-aware datetime"""
+    return datetime.now(timezone.utc)
 
 class QueueService:
     """Manage notification queue"""
@@ -150,7 +155,7 @@ class QueueService:
                                 db.add(audit)
                                 
                                 # Update device token last_used_at
-                                device_token.last_used_at = datetime.utcnow()
+                                device_token.last_used_at = utc_now()
                             else:
                                 failure_count += 1
                                 logger.warning(f"✗ FCM failed for user {item.user_id} on {device_token.device_type}")

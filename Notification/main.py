@@ -18,7 +18,10 @@ from datetime import datetime
 from sqlalchemy import text, Sequence
 from sqlalchemy.orm import Session
 from models.schemas import DeviceTokenRequest
-from apscheduler.schedulers.background import BackgroundScheduler
+# Utility for timezone-aware UTC time
+def utc_now():
+    """Return current UTC time as timezone-aware datetime"""
+    return datetime.now(timezone.utc)from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
 # Add current directory to path for imports
@@ -192,7 +195,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             existing.device_type = device_type or existing.device_type
             existing.device_model = device_model or existing.device_model
             existing.os_version = os_version or existing.os_version
-            existing.last_used_at = datetime.utcnow()
+            existing.last_used_at = utc_now()
             db.commit()
             logger.info(f"✓ Updated existing device token (user_id={existing.user_id}): {fcm_token[:20]}...")
             assigned_user_id = existing.user_id
@@ -211,7 +214,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
                 device_model=device_model,
                 os_version=os_version,
                 is_active=True,
-                created_at=datetime.utcnow()
+                created_at=utc_now()
             )
             db.add(token_entry)
             db.commit()

@@ -2,7 +2,7 @@
 import logging
 import json
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 from models.schemas import (
@@ -286,7 +286,7 @@ async def mark_notification_as_read(
             raise HTTPException(status_code=404, detail="Notification not found or does not belong to you")
         
         notif.status = "DELIVERED"
-        notif.updated_at = datetime.utcnow()
+        notif.updated_at = datetime.now(timezone.utc)
         db.commit()
         
         logger.info(f"User {email} marked notification {notification_id} as read")
@@ -336,7 +336,7 @@ async def mark_all_notifications_as_read(
         updated_count = db.query(NotificationQueue).filter(
             NotificationQueue.user_id == doctor_id,  # CRITICAL: Filter by doctor
             NotificationQueue.status == "PENDING"
-        ).update({"status": "DELIVERED", "updated_at": datetime.utcnow()})
+        ).update({"status": "DELIVERED", "updated_at": datetime.now(timezone.utc)})
         
         db.commit()
         

@@ -2,7 +2,7 @@
 import logging
 import json
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -47,7 +47,7 @@ async def get_patient_token(
                 and_(
                     PatientTempToken.patient_phone == phone,
                     PatientTempToken.is_used == 0,
-                    PatientTempToken.expires_at > datetime.utcnow()
+                    PatientTempToken.expires_at > datetime.now(timezone.utc)
                 )
             ).order_by(
                 PatientTempToken.created_at.desc()
@@ -67,7 +67,7 @@ async def get_patient_token(
                 and_(
                     PatientTempToken.appointment_id == appointment_id,
                     PatientTempToken.is_used == 0,
-                    PatientTempToken.expires_at > datetime.utcnow()
+                    PatientTempToken.expires_at > datetime.now(timezone.utc)
                 )
             ).order_by(
                 PatientTempToken.created_at.desc()

@@ -26,4 +26,4 @@ def validate_idempotency(key: str) -> bool:
 
 def is_idempotency_expired(created_at: datetime, ttl_hours: int = 24) -> bool:
     """Check if idempotency key has expired"""
-    return datetime.utcnow() - created_at > timedelta(hours=ttl_hours)
+    return datetime.now(timezone.utc) - created_at > timedelta(hours=ttl_hours)

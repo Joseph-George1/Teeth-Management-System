@@ -1,7 +1,7 @@
 """Patient temporary token model for viewing notifications without permanent login"""
 from sqlalchemy import Column, Integer, String, DateTime, Sequence, text
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 
 Base = declarative_base()
@@ -67,15 +67,15 @@ class PatientTempToken(Base):
     
     def is_valid(self) -> bool:
         """Check if token is still valid"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return self.is_used == 0 and now < self.expires_at
     
     def mark_as_used(self):
         """Mark token as used"""
         self.is_used = 1
-        self.used_at = datetime.utcnow()
+        self.used_at = datetime.now(timezone.utc)
     
     def record_access(self):
         """Record that token was accessed"""
-        self.accessed_at = datetime.utcnow()
+        self.accessed_at = datetime.now(timezone.utc)
         self.access_count += 1
