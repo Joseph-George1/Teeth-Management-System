@@ -14,14 +14,16 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import text, Sequence
 from sqlalchemy.orm import Session
 from models.schemas import DeviceTokenRequest
 # Utility for timezone-aware UTC time
 def utc_now():
     """Return current UTC time as timezone-aware datetime"""
-    return datetime.now(timezone.utc)from apscheduler.schedulers.background import BackgroundScheduler
+    return datetime.now(timezone.utc)
+
+from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
 # Add current directory to path for imports
