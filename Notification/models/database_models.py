@@ -5,11 +5,14 @@ Maps notification tables to Python classes
 Location: Notification/models/database_models.py
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, LargeBinary, Boolean, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, DateTime, Text, LargeBinary, Boolean, ForeignKey, Index, Sequence, text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
+
+# Oracle sequence for device tokens
+patient_device_token_seq = Sequence('seq_patient_device_tokens_id', optional=True)
 
 # =========================================================================
 # TABLE 0: Doctor (Read-only mapping from main backend)
@@ -59,7 +62,8 @@ class PatientDeviceToken(Base):
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, patient_device_token_seq, primary_key=True,
+                server_default=text("seq_patient_device_tokens_id.NEXTVAL"))
     
     # Which user (patient or doctor) owns this token - can be None if registered before login
     user_id = Column(Integer, nullable=True, index=True)

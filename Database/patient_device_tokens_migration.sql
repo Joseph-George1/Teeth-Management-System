@@ -13,8 +13,12 @@
 -- 4. FCM delivers push notification to mobile device
 -- 5. App receives notification in onBackgroundMessage when closed
 
+-- Create sequence FIRST
+CREATE SEQUENCE seq_patient_device_tokens_id START WITH 1 INCREMENT BY 1;
+
+-- Create table with sequence default
 CREATE TABLE PATIENT_DEVICE_TOKENS (
-    id NUMBER(19) PRIMARY KEY,
+    id NUMBER(19) DEFAULT seq_patient_device_tokens_id.NEXTVAL PRIMARY KEY,
     user_id NUMBER(19),
     fcm_token VARCHAR2(500) NOT NULL UNIQUE,
     device_type VARCHAR2(50),
@@ -31,8 +35,5 @@ CREATE INDEX IDX_DEVICE_USER_ACTIVE ON PATIENT_DEVICE_TOKENS(user_id, is_active)
 CREATE INDEX IDX_DEVICE_TOKEN_ACTIVE ON PATIENT_DEVICE_TOKENS(fcm_token, is_active);
 CREATE INDEX IDX_DEVICE_CREATED ON PATIENT_DEVICE_TOKENS(created_at);
 CREATE INDEX IDX_DEVICE_LAST_USED ON PATIENT_DEVICE_TOKENS(last_used_at);
-
--- Sequence
-CREATE SEQUENCE seq_patient_device_tokens_id START WITH 1 INCREMENT BY 1;
 
 COMMIT;
