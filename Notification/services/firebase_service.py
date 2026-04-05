@@ -8,7 +8,6 @@ Location: Notification/services/firebase_service.py
 import logging
 from typing import Optional, Dict, List
 from firebase_admin import messaging
-from firebase_admin import exceptions as firebase_exceptions
 from config import get_firebase_app
 
 logger = logging.getLogger(__name__)
@@ -38,10 +37,7 @@ class FirebaseService:
         Returns:
             FCM message ID if successful, None if failed
         
-        Raises:
-            firebase_admin.exceptions.InvalidArgumentError: If token is invalid
-            firebase_admin.exceptions.InternalError: If FCM error
-            firebase_admin.exceptions.ServiceUnavailableError: If service unavailable
+        Handles all Firebase SDK exceptions gracefully and logs errors
         """
         try:
             # Build FCM message with platform-specific configuration
@@ -74,17 +70,13 @@ class FirebaseService:
             logger.info(f"FCM message sent successfully to {fcm_token[:20]}... | ID: {fcm_message_id}")
             return fcm_message_id
             
-        except firebase_exceptions.InvalidArgumentError as e:
+        except ValueError as e:
             logger.warning(f"Invalid FCM token {fcm_token[:20]}...: {e}")
             return None
-        except firebase_exceptions.InternalError as e:
-            logger.error(f"FCM internal error: {e}")
-            return None
-        except firebase_exceptions.ServiceUnavailableError as e:
-            logger.error(f"FCM service unavailable: {e}")
-            return None
         except Exception as e:
-            logger.error(f"Unexpected error sending to FCM: {type(e).__name__}: {e}")
+            # Catch all Firebase exceptions (they inherit from base Exception)
+            error_type = type(e).__name__
+            logger.error(f"FCM error ({error_type}): {e}")
             return None
     
     def send_multicast(self, tokens: List[str], title: str, body: str, 
