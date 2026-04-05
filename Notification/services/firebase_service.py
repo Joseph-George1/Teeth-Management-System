@@ -40,6 +40,13 @@ class FirebaseService:
         Handles all Firebase SDK exceptions gracefully and logs errors
         """
         try:
+            # Firebase data field requires all values to be strings
+            # Convert any non-string values to strings
+            string_data = {}
+            if data:
+                for key, value in data.items():
+                    string_data[key] = str(value) if value is not None else ""
+            
             # Build FCM message with platform-specific configuration
             message = messaging.Message(
                 token=fcm_token,
@@ -47,7 +54,7 @@ class FirebaseService:
                     title=title,
                     body=body
                 ),
-                data=data or {},
+                data=string_data,
                 
                 # Android-specific configuration
                 android=messaging.AndroidConfig(
