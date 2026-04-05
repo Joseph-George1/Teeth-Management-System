@@ -160,29 +160,38 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
     """
     Register Firebase device token for a user
     
-    Called by Flutter mobile app on startup or when token refreshes
-    Stores in database so queue processor can send push notifications
+    IMPORTANT: user_id MUST come from backend login response (NOT auto-generated)
     
-    Returns a unique user_id if not provided:
-    - If user_id is provided: uses that ID
-    - If user_id is not provided: generates a new unique ID (starting at 1000)
+    Flow:
+    1. Mobile app logs in to Java backend → receives user_id (e.g., 454)
+    2. Mobile app calls this endpoint with that user_id
+    3. Device token linked to backend's user_id
+    4. Java backend sends notifications to same user_id
+    5. Notifications delivered to device ✓
     
-    This ensures every device token has a clear, unique owner with no conflicts
+    This ensures user IDs are IDENTICAL between backend and notification service
     """
     try:
         from models.database_models import PatientDeviceToken
         
         fcm_token = request.fcmToken
-        user_id = request.user_id  # Can be provided, or will be auto-generated
+        user_id = request.user_id  # MUST come from backend login
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
         
-        # fcmToken is REQUIRED - everything else optional
+        # fcmToken is REQUIRED
         if not fcm_token or not fcm_token.strip():
             raise HTTPException(status_code=400, detail="fcmToken is required")
         
-        logger.info(f"Device token registration request: user_id={user_id}, device={device_type}")
+        # user_id REQUIRED - must come from backend login
+        if not user_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="user_id is required. Please login to backend first and use the returned user_id"
+            )
+        
+        logger.info(f"Device token registration: user_id={user_id}, device={device_type}")
         
         # Check if token already exists
         existing = db.query(PatientDeviceToken).filter(
@@ -191,24 +200,16 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         
         if existing:
             # Update existing token
-            if user_id and user_id != existing.user_id:
-                existing.user_id = user_id  # Update user_id if provided and different
+            existing.user_id = user_id  # Always update to latest user_id from backend
             existing.is_active = True
             existing.device_type = device_type or existing.device_type
             existing.device_model = device_model or existing.device_model
             existing.os_version = os_version or existing.os_version
             existing.last_used_at = utc_now()
             db.commit()
-            logger.info(f"✓ Updated existing device token (user_id={existing.user_id}): {fcm_token[:20]}...")
-            assigned_user_id = existing.user_id
+            logger.info(f"✓ Updated device token for user {user_id}: {fcm_token[:20]}... ({device_type})")
         else:
-            # If user_id not provided, generate a new one
-            if not user_id:
-                result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
-                user_id = result.scalar()
-                logger.info(f"Generated new user_id: {user_id}")
-            
-            # Create new token entry with user_id (never null)
+            # Create new token entry with backend user_id
             token_entry = PatientDeviceToken(
                 user_id=user_id,
                 fcm_token=fcm_token,
@@ -220,17 +221,15 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             )
             db.add(token_entry)
             db.commit()
-            logger.info(f"✓ Registered new device token (user_id={user_id}): {fcm_token[:20]}... ({device_type})")
-            assigned_user_id = user_id
+            logger.info(f"✓ Registered device token for user {user_id}: {fcm_token[:20]}... ({device_type})")
         
         return {
             "success": True,
-            "message": "Device token registered successfully",
-            "user_id": assigned_user_id,
+            "message": "Device token registered successfully - ready to receive notifications",
+            "user_id": user_id,
             "device_type": device_type,
             "device_model": device_model,
-            "fcm_token": fcm_token[:20] + "...",
-            "token_id": existing.id if existing else token_entry.id
+            "fcm_token": fcm_token[:20] + "..."
         }
     except HTTPException:
         raise

@@ -46,21 +46,21 @@ class Doctor(Base):
 # =========================================================================
 class PatientDeviceToken(Base):
     """
-    Store FCM device tokens for patients and doctors
+    Store FCM device tokens linked to backend user IDs
     
-    Each device (phone) has a unique FCM token that must be sent to FCM
-    to receive push notifications. This table persists tokens so the
-    queue processor can look them up and actually send notifications.
+    Each device (phone) must register with backend user_id to receive notifications.
+    This ensures notification service and backend use IDENTICAL user IDs.
     
     Flow:
-      1. Mobile app starts → registers FCM token via /api/v1/device-tokens/register
-      2. If no user_id provided → auto-generates unique ID (starting at 1000)
-      3. Token stored in PATIENT_DEVICE_TOKENS table with user_id
-      4. Queue processor queries this table to get FCM tokens by user_id
-      5. Calls firebase_service.send_to_device(fcm_token, ...)
-      6. FCM sends push to device
+      1. Mobile app logs in to Java backend → receives user_id (e.g., 454)
+      2. Mobile app registers device token with that user_id
+      3. Token stored in PATIENT_DEVICE_TOKENS table linked to backend user_id
+      4. Queue processor queries this table for user_id
+      5. When backend sends notification to user_id=454, token is found
+      6. Calls firebase_service.send_to_device(fcm_token, ...)
+      7. FCM sends push to device ✓
       
-    Note: user_id is NEVER NULL - auto-generated if not provided
+    CRITICAL: user_id MUST come from backend - ensures perfect ID synchronization
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     
