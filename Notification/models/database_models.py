@@ -11,8 +11,9 @@ from datetime import datetime
 
 Base = declarative_base()
 
-# Oracle sequence for device tokens
+# Oracle sequences
 patient_device_token_seq = Sequence('seq_patient_device_tokens_id', optional=True)
+user_id_seq = Sequence('seq_user_id', optional=True)  # For auto-generating user IDs
 
 # =========================================================================
 # TABLE 0: Doctor (Read-only mapping from main backend)
@@ -53,20 +54,21 @@ class PatientDeviceToken(Base):
     
     Flow:
       1. Mobile app starts → registers FCM token via /api/v1/device-tokens/register
-      2. Token stored in PATIENT_DEVICE_TOKENS table (never deleted while active)
-      3. Queue processor queries this table to get FCM tokens
-      4. Calls firebase_service.send_to_device(fcm_token, ...)
-      5. FCM sends push to device
+      2. If no user_id provided → auto-generates unique ID (starting at 1000)
+      3. Token stored in PATIENT_DEVICE_TOKENS table with user_id
+      4. Queue processor queries this table to get FCM tokens by user_id
+      5. Calls firebase_service.send_to_device(fcm_token, ...)
+      6. FCM sends push to device
       
-    Note: user_id CAN be None initially (before user logs in)
+    Note: user_id is NEVER NULL - auto-generated if not provided
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     
     id = Column(Integer, patient_device_token_seq, primary_key=True,
                 server_default=text("seq_patient_device_tokens_id.NEXTVAL"))
     
-    # Which user (patient or doctor) owns this token - can be None if registered before login
-    user_id = Column(Integer, nullable=True, index=True)
+    # User ID assigned at first device token registration - NEVER NULL
+    user_id = Column(Integer, nullable=False, index=True)
     
     # The actual FCM token from mobile app - REQUIRED and UNIQUE
     fcm_token = Column(String(500), unique=True, nullable=False, index=True)

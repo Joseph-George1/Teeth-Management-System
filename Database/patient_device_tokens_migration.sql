@@ -3,7 +3,7 @@
 -- 
 -- Flow:
 -- 1. Mobile app calls POST /api/v1/device-tokens/register with FCM token
--- 2. Token saved in PATIENT_DEVICE_TOKENS table
+-- 2. Token saved in PATIENT_DEVICE_TOKENS table with auto-generated user_id
 -- 3. Queue processor every 2 seconds:
 --    a. Queries NOTIFICATION_QUEUE for pending notifications
 --    b. For each pending notification:
@@ -13,13 +13,14 @@
 -- 4. FCM delivers push notification to mobile device
 -- 5. App receives notification in onBackgroundMessage when closed
 
--- Create sequence FIRST
+-- Create sequences FIRST
 CREATE SEQUENCE seq_patient_device_tokens_id START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE seq_user_id START WITH 1000 INCREMENT BY 1;  -- User IDs start at 1000
 
--- Create table with sequence default
+-- Create table with sequence defaults
 CREATE TABLE PATIENT_DEVICE_TOKENS (
     id NUMBER(19) DEFAULT seq_patient_device_tokens_id.NEXTVAL PRIMARY KEY,
-    user_id NUMBER(19),
+    user_id NUMBER(19) DEFAULT seq_user_id.NEXTVAL NOT NULL,
     fcm_token VARCHAR2(500) NOT NULL UNIQUE,
     device_type VARCHAR2(50),
     device_model VARCHAR2(100),
