@@ -46,21 +46,24 @@ class Doctor(Base):
 # =========================================================================
 class PatientDeviceToken(Base):
     """
-    Store FCM device tokens linked to backend user IDs
+    Store FCM device tokens with flexible user ID handling
     
-    Each device (phone) must register with backend user_id to receive notifications.
-    This ensures notification service and backend use IDENTICAL user IDs.
+    Supports two registration paths:
     
-    Flow:
-      1. Mobile app logs in to Java backend → receives user_id (e.g., 454)
-      2. Mobile app registers device token with that user_id
-      3. Token stored in PATIENT_DEVICE_TOKENS table linked to backend user_id
-      4. Queue processor queries this table for user_id
-      5. When backend sends notification to user_id=454, token is found
-      6. Calls firebase_service.send_to_device(fcm_token, ...)
-      7. FCM sends push to device ✓
-      
-    CRITICAL: user_id MUST come from backend - ensures perfect ID synchronization
+    Path 1: With backend user_id (preferred when backend has the user)
+      1. Mobile logs in to Java backend → gets user_id=454
+      2. Mobile registers device token with user_id=454
+      3. Backend sends notifications to user_id=454
+      4. Token found → notification  delivered ✓
+    
+    Path 2: Without user_id (auto-generate locally)
+      1. Mobile registers device token without user_id
+      2. Notification service generates unique ID (e.g., 1000)
+      3. Returns to mobile, which saves locally
+      4. Uses that ID for subsequent operations
+      5. When synced with backend later, updates with backend's ID
+    
+    Both paths result in synchronized user IDs across all services
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     

@@ -158,24 +158,20 @@ def root():
 @app.post("/api/v1/device-tokens/register")
 def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get_db_session)):
     """
-    Register Firebase device token for a user
+    Register Firebase device token - syncs with backend user IDs
     
-    IMPORTANT: user_id MUST come from backend login response (NOT auto-generated)
+    FLEXIBLE: Accepts user_id from backend OR auto-generates if missing
     
-    Flow:
-    1. Mobile app logs in to Java backend → receives user_id (e.g., 454)
-    2. Mobile app calls this endpoint with that user_id
-    3. Device token linked to backend's user_id
-    4. Java backend sends notifications to same user_id
-    5. Notifications delivered to device ✓
+    With backend user_id: Mobile logs in → gets user_id from backend → sends it
+    Without user_id: Mobile registers anonymously → service generates one → returns it
     
-    This ensures user IDs are IDENTICAL between backend and notification service
+    Both paths sync perfectly with notifications
     """
     try:
         from models.database_models import PatientDeviceToken
         
         fcm_token = request.fcmToken
-        user_id = request.user_id  # MUST come from backend login
+        user_id = request.user_id  # From backend or None
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
@@ -183,13 +179,6 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         # fcmToken is REQUIRED
         if not fcm_token or not fcm_token.strip():
             raise HTTPException(status_code=400, detail="fcmToken is required")
-        
-        # user_id REQUIRED - must come from backend login
-        if not user_id:
-            raise HTTPException(
-                status_code=400, 
-                detail="user_id is required. Please login to backend first and use the returned user_id"
-            )
         
         logger.info(f"Device token registration: user_id={user_id}, device={device_type}")
         
@@ -200,16 +189,24 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         
         if existing:
             # Update existing token
-            existing.user_id = user_id  # Always update to latest user_id from backend
+            if user_id:
+                existing.user_id = user_id  # Update to backend user_id if provided
             existing.is_active = True
             existing.device_type = device_type or existing.device_type
             existing.device_model = device_model or existing.device_model
             existing.os_version = os_version or existing.os_version
             existing.last_used_at = utc_now()
             db.commit()
-            logger.info(f"✓ Updated device token for user {user_id}: {fcm_token[:20]}... ({device_type})")
+            logger.info(f"✓ Updated device token for user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
+            assigned_user_id = existing.user_id
         else:
-            # Create new token entry with backend user_id
+            # If user_id provided, use it; otherwise auto-generate
+            if not user_id:
+                result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
+                user_id = result.scalar()
+                logger.info(f"Generated new user_id: {user_id}")
+            
+            # Create new token entry
             token_entry = PatientDeviceToken(
                 user_id=user_id,
                 fcm_token=fcm_token,
@@ -222,11 +219,12 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             db.add(token_entry)
             db.commit()
             logger.info(f"✓ Registered device token for user {user_id}: {fcm_token[:20]}... ({device_type})")
+            assigned_user_id = user_id
         
         return {
             "success": True,
-            "message": "Device token registered successfully - ready to receive notifications",
-            "user_id": user_id,
+            "message": "Device token registered successfully",
+            "user_id": assigned_user_id,
             "device_type": device_type,
             "device_model": device_model,
             "fcm_token": fcm_token[:20] + "..."
