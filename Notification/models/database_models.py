@@ -54,15 +54,17 @@ class PatientDeviceToken(Base):
       3. Queue processor queries this table to get FCM tokens
       4. Calls firebase_service.send_to_device(fcm_token, ...)
       5. FCM sends push to device
+      
+    Note: user_id CAN be None initially (before user logs in)
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     
     id = Column(Integer, primary_key=True)
     
-    # Which user (patient or doctor) owns this token
-    user_id = Column(Integer, nullable=False, index=True)
+    # Which user (patient or doctor) owns this token - can be None if registered before login
+    user_id = Column(Integer, nullable=True, index=True)
     
-    # The actual FCM token from mobile app
+    # The actual FCM token from mobile app - REQUIRED and UNIQUE
     fcm_token = Column(String(500), unique=True, nullable=False, index=True)
     
     # Device information

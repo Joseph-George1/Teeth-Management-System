@@ -81,6 +81,23 @@ class QueueService:
                     
                     logger.info(f"Processing notification {item.id} for user {item.user_id}: '{title}'")
                     
+                    # ===== Check if user_id is valid =====
+                    if not item.user_id or item.user_id <= 0:
+                        logger.warning(f"Notification {item.id} has invalid user_id ({item.user_id}) - cannot send")
+                        item.status = "FAILED"
+                        item.retry_count += 1
+                        item.updated_at = datetime.utcnow()
+                        
+                        audit = NotificationDeliveryAudit(
+                            notification_queue_id=item.id,
+                            fcm_message_id=None,
+                            delivery_status="FAILED",
+                            error_message="Invalid or missing user_id"
+                        )
+                        db.add(audit)
+                        db.commit()
+                        continue
+                    
                     # ===== CRITICAL: Get all active FCM tokens for this user =====
                     device_tokens = db.query(PatientDeviceToken).filter(
                         PatientDeviceToken.user_id == item.user_id,

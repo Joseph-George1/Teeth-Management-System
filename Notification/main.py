@@ -157,37 +157,44 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
     
     Called by Flutter mobile app on startup or when token refreshes
     Stores in database so queue processor can send push notifications
+    
+    Note: user_id can be provided later - initially device can register anonymously
     """
     try:
         from models.database_models import PatientDeviceToken
         
-        user_id = request.user_id
         fcm_token = request.fcmToken
+        user_id = request.user_id  # Can be None/missing at first startup
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
         
-        if not fcm_token or not user_id:
-            raise HTTPException(status_code=400, detail="fcmToken and user_id are required")
+        # fcmToken is REQUIRED - everything else optional
+        if not fcm_token or not fcm_token.strip():
+            raise HTTPException(status_code=400, detail="fcmToken is required")
         
-        # Check if token already exists for this user/device
+        logger.info(f"Device token registration request: user_id={user_id}, device={device_type}")
+        
+        # Check if token already exists
         existing = db.query(PatientDeviceToken).filter(
             PatientDeviceToken.fcm_token == fcm_token
         ).first()
         
         if existing:
-            # Token already registered - just update last_used_at
+            # Update existing token
+            if user_id:
+                existing.user_id = user_id  # Update user_id if provided
             existing.is_active = True
-            existing.device_type = device_type
-            existing.device_model = device_model
-            existing.os_version = os_version
+            existing.device_type = device_type or existing.device_type
+            existing.device_model = device_model or existing.device_model
+            existing.os_version = os_version or existing.os_version
             existing.last_used_at = datetime.utcnow()
             db.commit()
-            logger.info(f"Updated existing device token for user {user_id}: {fcm_token[:20]}...")
+            logger.info(f"✓ Updated existing device token (user_id={existing.user_id}): {fcm_token[:20]}...")
         else:
-            # New token - create entry
+            # Create new token entry (user_id can be None, will be set on first login)
             token_entry = PatientDeviceToken(
-                user_id=user_id,
+                user_id=user_id,  # Allow None for now
                 fcm_token=fcm_token,
                 device_type=device_type,
                 device_model=device_model,
@@ -197,7 +204,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             )
             db.add(token_entry)
             db.commit()
-            logger.info(f"Registered new device token for user {user_id}: {fcm_token[:20]}... ({device_type}-{device_model})")
+            logger.info(f"✓ Registered new device token (user_id={user_id}): {fcm_token[:20]}... ({device_type})")
         
         return {
             "success": True,
@@ -205,13 +212,13 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             "user_id": user_id,
             "device_type": device_type,
             "device_model": device_model,
-            "fcm_token": fcm_token[:20] + "..."  # Never return full token in response
+            "fcm_token": fcm_token[:20] + "..."
         }
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
-        logger.error(f"Error registering device token: {e}")
+        logger.error(f"Error registering device token: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

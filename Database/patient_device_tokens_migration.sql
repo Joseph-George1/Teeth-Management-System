@@ -15,7 +15,7 @@
 
 CREATE TABLE PATIENT_DEVICE_TOKENS (
     id NUMBER(19) PRIMARY KEY,
-    user_id NUMBER(19) NOT NULL,
+    user_id NUMBER(19),
     fcm_token VARCHAR2(500) NOT NULL UNIQUE,
     device_type VARCHAR2(50),
     device_model VARCHAR2(100),
