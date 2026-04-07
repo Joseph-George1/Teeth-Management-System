@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
                 claims
         );
 
-        return new AuthResponseVm(token);
+        return new AuthResponseVm(token, doctor.getId(), doctor.getEmail(), "DOCTOR");
     }
 
     @Override
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
                 null
         );
 
-        return new AuthResponseVm(token);
+        return new AuthResponseVm(token, admin.getId(), admin.getEmail(), "ADMIN");
     }
 
 

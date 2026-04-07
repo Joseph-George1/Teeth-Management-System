@@ -1,0 +1,385 @@
+# TEETH MANAGEMENT SYSTEM - BACKUP & RESTORE QUICK REFERENCE
+
+## 🚀 Quick Start (5 Minutes)
+
+### PRODUCTION SERVER - BACKUP
+
+```bash
+# 1. Set password
+export DB_PASSWORD="your_oracle_sys_password"
+
+# 2. Run backup
+./backup.sh
+
+# 3. Monitor
+tail -f /backup/logs/backup_*.log
+
+# 4. Verify
+du -sh /backup/*
+find /backup -name "versions_*.txt"
+find /backup -name "checksums_*.sha256"
+```
+
+### NEW SERVER - RESTORE
+
+```bash
+# 1. Ensure Oracle XE is running
+sudo systemctl start oracle-xe-21c
+sudo systemctl status oracle-xe-21c
+
+# 2. Set password
+export DB_PASSWORD="your_oracle_sys_password"
+
+# 3. Run restore
+./restore.sh /path/to/backup
+
+# 4. Monitor
+tail -f /var/log/teeth-management/restore/restore_*.log
+
+# 5. Verify
+sqlplus sys/password@XE as sysdba
+SQL> SELECT COUNT(*) FROM dba_tables WHERE owner IN (SELECT username FROM dba_users WHERE oracle_maintained='N');
+```
+
+---
+
+## 📋 Pre-Backup Checklist
+
+```
+☐ Production system is stable
+☐ Disk space at /backup: 3x data size minimum
+☐ Oracle XE is running: systemctl status oracle-xe-21c
+☐ DB_PASSWORD environment variable set
+☐ Backup script is executable: chmod +x backup.sh
+☐ /backup directory is writable: touch /backup/test.tmp
+```
+
+---
+
+## 📋 Pre-Restore Checklist
+
+```
+☐ Ubuntu Server is installed and updated
+☐ Oracle XE 21c is installed and running
+☐ Java 17: java -version
+☐ Maven: mvn -v
+☐ Node.js & npm: node -v && npm -v
+☐ Apache 2.4: apache2 -v
+☐ Backup location is accessible
+☐ Disk space: 3x backup size
+☐ DB_PASSWORD environment variable set
+☐ Restore script is executable: chmod +x restore.sh
+```
+
+---
+
+## 🔄 What Gets Backed Up
+
+| Component | Location | Size |
+|-----------|----------|------|
+| Apache Config | `/etc/apache2/` | ~10MB |
+| SSL Certificates | `/etc/ssl/` | ~5MB |
+| Web UI Files | `/var/www/html/` | ~500MB |
+| Java Installation | `/usr/lib/jvm/java-17-*` | ~300MB |
+| Tomcat Server | `/opt/tomcat/` | ~200MB |
+| Backend App | `/var/apps/teeth-management/backend/` | ~100MB |
+| Frontend App | `/var/apps/teeth-management/frontend/` | ~200MB |
+| App Config | `/etc/teeth-management/` | ~10MB |
+| App Logs | `/var/log/teeth-management/` | ~50MB |
+| System Config | `/etc/hosts`, `/etc/cron.d/`, etc. | ~20MB |
+| **Oracle XE Database** | **Data Pump Export** | **50-200MB** |
+| **TOTAL** | | **~1.4GB** |
+
+---
+
+## 🔐 Version Verification
+
+### Backup Captures
+- ✅ OS Version (Ubuntu, Debian, etc.)
+- ✅ Java Version (17.x.x)
+- ✅ Maven Version (3.9.x)
+- ✅ Node.js & npm Version
+- ✅ Apache Version (2.4.x)
+- ✅ Python Version
+- ✅ Oracle Version (21c)
+- ✅ OpenSSL & SSL libraries
+- ✅ All Python packages (pip list)
+
+### Restore Checks
+1. **Compares** current system versions with backup versions
+2. **Detects** mismatches automatically
+3. **Reports** mismatches to `/var/log/teeth-management/restore/version_mismatches_*.txt`
+4. **Auto-corrects** for Apache, Java, Maven, Node.js
+
+---
+
+## 💾 Backup File Structure
+
+```
+/backup/
+├── metadata/
+│   ├── versions_20260329_143022.txt          ← System versions
+│   ├── manifest_20260329_143022.txt          ← File inventory
+│   └── checksums_20260329_143022.sha256      ← Integrity hashes
+│
+├── files/
+│   ├── apache2_config_20260329_143022.tar.gz
+│   ├── webui_files_20260329_143022.tar.gz
+│   ├── ssl_certificates_20260329_143022.tar.gz
+│   ├── java_installation_20260329_143022.tar.gz
+│   ├── tomcat_installation_20260329_143022.tar.gz
+│   ├── backend_application_20260329_143022.tar.gz
+│   ├── frontend_application_20260329_143022.tar.gz
+│   ├── application_config_20260329_143022.tar.gz
+│   ├── application_logs_20260329_143022.tar.gz
+│   └── system_config_20260329_143022.tar.gz
+│
+├── database/
+│   ├── oracle_datapump_20260329_143022/
+│   │   ├── tms_full_20260329_143022_1.dmp       ← Database dump 1
+│   │   ├── tms_full_20260329_143022_2.dmp       ← Database dump 2 (if large)
+│   │   ├── tms_export_20260329_143022.log       ← Export log
+│   │   └── control_files/
+│   │       ├── spfileXE.ora
+│   │       ├── initXE.ora
+│   │       └── orapwXE
+│   └── oracle_datapump_20260329_143022_backup.tar.gz
+│
+└── logs/
+    └── backup_20260329_143022.log
+```
+
+---
+
+## 🔍 Verify Backup Success
+
+```bash
+# Check backup metadata
+ls -la /backup/metadata/
+
+# Check all files present
+find /backup -type f | wc -l
+
+# Verify database dump files
+ls -lah /backup/database/oracle_datapump_*/*.dmp
+
+# Check checksums
+wc -l /backup/metadata/checksums_*.sha256
+
+# Check backup log
+tail -50 /backup/logs/backup_*.log | grep -i "success"
+```
+
+---
+
+## 🔍 Verify Restore Success
+
+```bash
+# Check restore completed
+tail -20 /var/log/teeth-management/restore/restore_*.log
+
+# Check database connectivity
+sqlplus sys/password@XE as sysdba
+SQL> SELECT COUNT(*) FROM dba_tables;
+SQL> SELECT COUNT(*) FROM dba_users;
+SQL> EXIT;
+
+# Check services
+systemctl status apache2
+systemctl status tomcat
+systemctl status oracle-xe-21c
+
+# Check application
+curl -s http://localhost/ | head -20
+```
+
+---
+
+## 🛠️ Common Commands
+
+### Setup System
+```bash
+sudo bash setup.sh backup-server   # Prepare for backup
+sudo bash setup.sh restore-server  # Prepare for restore
+```
+
+### Run Backup
+```bash
+export DB_PASSWORD="password"
+./backup.sh
+```
+
+### Run Restore
+```bash
+export DB_PASSWORD="password"
+./restore.sh /path/to/backup
+```
+
+### Check Oracle Status
+```bash
+sqlplus / as sysdba
+SQL> SELECT status FROM v$instance;
+SQL> EXIT;
+```
+
+### Transfer Backup
+```bash
+# To remote server via SCP
+scp -r /backup/ user@new-server:/backup/
+
+# To external drive
+rsync -av /backup/ /mnt/external_drive/backup/
+
+# Compress for transfer
+tar -czf backup_complete.tar.gz /backup/
+```
+
+### Monitor Services
+```bash
+systemctl status apache2
+systemctl status tomcat
+systemctl status oracle-xe-21c
+
+# Or check all at once
+for svc in apache2 tomcat oracle-xe-21c; do echo "=== $svc ==="; systemctl status $svc | head -3; done
+```
+
+---
+
+## 📊 Example: Calculate Backup Size
+
+```bash
+# Check current data size
+sqlplus sys/password@XE as sysdba
+SQL> SELECT SUM(bytes)/1024/1024 as size_mb FROM dba_segments WHERE owner NOT IN ('SYS','SYSTEM','SYSAUX');
+
+# With MEDIUM compression, backup will be ~40-60% of this
+# Example: 100GB data → ~40-60GB backup after compression
+```
+
+---
+
+## 🚨 Troubleshooting
+
+### Problem: "expdp not found"
+```bash
+export ORACLE_HOME="/u01/app/oracle/product/21c/dbhomeXE"
+export PATH="$ORACLE_HOME/bin:$PATH"
+which expdp
+```
+
+### Problem: "Oracle not running"
+```bash
+sudo systemctl start oracle-xe-21c
+sudo systemctl enable oracle-xe-21c
+sudo systemctl status oracle-xe-21c
+```
+
+### Problem: "Disk space error"
+```bash
+df -h /backup
+# Need minimum: 3x database size
+# Clean old backups: rm -rf /backup/files/old_*
+```
+
+### Problem: "Permission denied"
+```bash
+sudo chmod +x backup.sh restore.sh
+sudo bash backup.sh  # Run as root
+```
+
+### Problem: "Version mismatch"
+```bash
+# Check what doesn't match
+cat /var/log/teeth-management/restore/version_mismatches_*.txt
+
+# Script will auto-correct Apache, Java, Maven, Node.js
+# Manual correction may be needed for other components
+```
+
+---
+
+## 📚 Documentation Files
+
+1. **BACKUP_RESTORE_GUIDE.md** - Complete guide with detailed steps
+2. **DATABASE_BACKUP_DETAILS.md** - Oracle Data Pump technical details
+3. **QUICK_REFERENCE.txt** - This file
+4. **setup.sh** - Automated setup script
+5. **backup.sh** - Backup script
+6. **restore.sh** - Restore script
+
+---
+
+## 🔒 Security Best Practices
+
+```bash
+# Secure backup location
+chmod 700 /backup
+chmod 600 /backup/database/*.dmp
+
+# Use strong Oracle password
+# Transfer only via SSH/SFTP
+
+# Verify checksums after transfer
+sha256sum -c /backup/metadata/checksums_*.sha256
+
+# Consider encryption for stored backups
+gpg -c /backup/backup_complete.tar.gz
+```
+
+---
+
+## 📞 Quick Help
+
+```bash
+# View backup log
+tail -100 /backup/logs/backup_*.log
+
+# View restore log
+tail -100 /var/log/teeth-management/restore/restore_*.log
+
+# View version file
+cat /backup/metadata/versions_*.txt
+
+# View manifest
+cat /backup/metadata/manifest_*.txt
+
+# View mismatches (if any)
+cat /var/log/teeth-management/restore/version_mismatches_*.txt
+```
+
+---
+
+## ⏱️ Typical Timing
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| Backup 100GB Database | 30-60 min | Depends on system load |
+| Compress Backup | 20-40 min | Using MEDIUM compression |
+| Transfer to New Server | 30-120 min | Depends on network/drive speed |
+| Restore 100GB Database | 45-90 min | Parallel import (4 workers) |
+| Post-Restore Validation | 5-10 min | Database checks and tests |
+| **Total (Backup to Live)** | **2-5 hours** | For 100GB database |
+
+---
+
+## ✅ Post-Restore Checklist
+
+```
+☐ Apache is running: systemctl status apache2
+☐ Tomcat is running: systemctl status tomcat
+☐ Oracle XE is running: systemctl status oracle-xe-21c
+☐ Database has data: sqlplus sys/***@XE "SELECT COUNT(*) FROM dba_tables"
+☐ Backend builds: mvn clean install
+☐ Frontend builds: npm install && npm run build
+☐ Web app is accessible: curl http://localhost/
+☐ Database users exist: sqlplus sys/***@XE "SELECT COUNT(*) FROM dba_users"
+☐ No errors in logs: tail -50 /var/log/teeth-management/*
+☐ Version mismatch report reviewed (if any)
+```
+
+---
+
+**Last Updated:** March 29, 2026  
+**System:** Teeth Management System v2.0  
+**Environment:** Ubuntu Server with Oracle XE 21c

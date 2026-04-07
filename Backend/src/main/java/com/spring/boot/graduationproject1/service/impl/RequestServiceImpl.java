@@ -106,7 +106,7 @@ public class RequestServiceImpl implements RequestServices {
     }
 
     @Override
-    public void deleteRequest(long requestId) {
+    public void deleteRequest(Long requestId) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();

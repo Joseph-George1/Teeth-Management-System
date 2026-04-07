@@ -5,6 +5,10 @@ import com.spring.boot.graduationproject1.mapper.AppointmentMapper;
 import com.spring.boot.graduationproject1.model.*;
 import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.AppointmentService;
+import com.spring.boot.graduationproject1.service.NotificationService;
+import com.spring.boot.graduationproject1.service.NotificationClientService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,9 +17,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
+    private static final Logger logger = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
     private final AppointmentRepo appointmentRepo;
     private final AppointmentMapper appointmentMapper;
@@ -23,15 +29,23 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepo patientRepo;
     private final RequestRepo requestRepo;
     private final RoleRepo roleRepo;
+    private final NotificationService notificationService;
+    private final NotificationClientService notificationClientService;
+    private final UserRepo userRepo;
 
     public AppointmentServiceImpl(AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
-                                  DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo, RoleRepo roleRepo) {
+                                  DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo,
+                                  RoleRepo roleRepo, NotificationService notificationService, 
+                                  NotificationClientService notificationClientService, UserRepo userRepo) {
         this.appointmentMapper = appointmentMapper;
         this.appointmentRepo = appointmentRepo;
         this.doctorRepo = doctorRepo;
         this.patientRepo = patientRepo;
         this.requestRepo = requestRepo;
         this.roleRepo = roleRepo;
+        this.notificationService = notificationService;
+        this.notificationClientService = notificationClientService;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -87,6 +101,40 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setIsHistory(false);
 
         appointmentRepo.save(appointment);
+
+        // === STEP 5: Send appointment confirmation to Python notification service ===
+        try {
+            String idempotencyKey = UUID.randomUUID().toString();
+            String patientName = patient.getFirstName() + " " + patient.getLastName();
+            String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
+            String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
+            String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
+            notificationClientService.sendAppointmentConfirmation(
+                    appointment.getId(),
+                    patient.getId(),
+                    patientName,
+                    doctor.getId(),
+                    doctorName,
+                    category,
+                    location,
+                    idempotencyKey
+            );
+            logger.info("Appointment notification sent to microservice for appointment ID: {}", appointment.getId());
+        } catch (Exception e) {
+            logger.warn("Could not send appointment notification to microservice: {}", e.getMessage());
+            // Don't fail the appointment creation if notification fails
+        }
+
+        // Local notification to doctor
+        userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
+            notificationService.notifyUser(
+            user,
+            "New Appointment",
+            "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
+            );
+        });
+
+
         return appointmentMapper.toDto(appointment);
     }
 
@@ -140,6 +188,22 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Mark as history when done or cancelled
         if (status == AppointmentStatus.DONE || status == AppointmentStatus.CANCELLED) {
             appointment.setIsHistory(true);
+        }
+
+        // Notify doctor about appointment status change (gracefully handle errors)
+        try {
+            User doctorUser = userRepo.findByEmail(appointment.getDoctor().getEmail())
+                    .orElse(null);
+            if (doctorUser != null) {
+                notificationService.notifyUser(
+                        doctorUser,
+                        "Appointment " + status.name(),
+                        "Appointment with " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName() + " is " + status.name().toLowerCase()
+                );
+            }
+        } catch (Exception e) {
+            logger.warn("Could not send notification for appointment {}: {}", appointmentId, e.getMessage());
+            // Don't fail the appointment update if notification fails
         }
 
         appointmentRepo.save(appointment);
