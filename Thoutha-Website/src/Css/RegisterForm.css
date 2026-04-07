@@ -106,18 +106,6 @@
   color: var(--text-color-3);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
 @media (max-width: 1024px) {
   .signup-page {
     height: auto;

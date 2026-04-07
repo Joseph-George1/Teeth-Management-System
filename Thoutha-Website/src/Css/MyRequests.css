@@ -1,21 +1,17 @@
-.my-requests-title {
-  min-height: 85vh;
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 
 .my-requests-title {
   font-family: 'Cairo', sans-serif;
   font-size: 32px;
   font-weight: 900;
   color: var(--text-color-6, #1a1a1a);
-  margin-bottom: 40px;
   letter-spacing: -0.5px;
   text-align: right;
   width: 95%;
   margin-right: auto;
+  padding: 40px 20px 5px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .requests-list {
@@ -574,6 +570,7 @@
   .my-requests-title {
     font-size: 26px;
     margin-bottom: 30px;
+    padding: 10px 20px 0px 20px;
   }
 
   .requests-list {

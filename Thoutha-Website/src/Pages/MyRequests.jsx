@@ -209,7 +209,7 @@ export default function MyRequests() {
 
   return (
     <div className="my-requests-container">
-      <h1 className="my-requests-title">طلباتي</h1>
+      <p className="my-requests-title">طلباتي</p>
       {success && (
         <div style={{ 
           padding: '12px 16px', 

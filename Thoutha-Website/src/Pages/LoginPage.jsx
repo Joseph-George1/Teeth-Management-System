@@ -92,6 +92,13 @@ export default function LoginPage() {
         />
       </Helmet>
 
+      {/* Error Popup */}
+      {error && (
+        <div className="error-popup">
+          {error}
+        </div>
+      )}
+
       <div className="login-page">
         <div className="login-container">
 
@@ -106,22 +113,6 @@ export default function LoginPage() {
 
           {/* Form */}
           <form className="login-form" onSubmit={handleSubmit}>
-
-            {/* Error Message */}
-            {error && (
-              <div className="error-message" style={{
-                color: '#d32f2f',
-                backgroundColor: '#ffebee',
-                padding: '12px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                textAlign: 'center',
-                fontSize: '14px',
-                direction: 'rtl'
-              }}>
-                {error}
-              </div>
-            )}
 
             {/* Email */}
             <div className="input-group">

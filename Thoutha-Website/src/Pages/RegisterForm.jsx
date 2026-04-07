@@ -35,6 +35,26 @@ export default function RegisterForm() {
     error && setError('');
   };
 
+  // التحقق من الاسم الأول - العربية فقط
+  const handleFirstNameChange = (e) => {
+    const value = e.target.value;
+    // تقبل الأحرف العربية والمسافات فقط
+    if (/^[\u0600-\u06FF\s]*$/.test(value) || value === '') {
+      setFirstName(value);
+    }
+    error && setError('');
+  };
+
+  // التحقق من الاسم الثاني - العربية فقط
+  const handleLastNameChange = (e) => {
+    const value = e.target.value;
+    // تقبل الأحرف العربية والمسافات فقط
+    if (/^[\u0600-\u06FF\s]*$/.test(value) || value === '') {
+      setLastName(value);
+    }
+    error && setError('');
+  };
+
   const [cities, setCities] = useState([]);
   const [universities, setUniversities] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -107,6 +127,18 @@ export default function RegisterForm() {
       return;
     }
 
+    // التحقق من أن الاسم الأول باللغة العربية فقط
+    if (!/^[\u0600-\u06FF\s]+$/.test(firstName.trim())) {
+      setError('ادخل الاسم الأول باللغة العربية');
+      return;
+    }
+
+    // التحقق من أن الاسم الثاني باللغة العربية فقط
+    if (!/^[\u0600-\u06FF\s]+$/.test(lastName.trim())) {
+      setError('ادخل الاسم الأخير باللغة العربية');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('كلمات المرور غير متطابقة');
       return;
@@ -174,6 +206,13 @@ export default function RegisterForm() {
 
   return (
     <>
+    {/* Error Popup */}
+    {error && (
+      <div className="error-popup">
+        {error}
+      </div>
+    )}
+    
     <Helmet>
       <meta
         name="description"
@@ -185,25 +224,23 @@ export default function RegisterForm() {
         <p className="signup-title">انشاء حساب</p>
         <p className="signup-subtitle">انشئ حساب للمتابعه</p>
 
-        {error && <div className="error-message">{error}</div>}
-
         <form className="signup-form" onSubmit={handleSubmit}>
 
           <div className="input-group">
             <input
               type="text"
-              placeholder="الاسم الاول"
+              placeholder="الاسم الاول "
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={handleFirstNameChange}
               required
               className="input-field-2"
               autoComplete="given-name"
             />
             <input
               type="text"
-              placeholder="الاسم الاخير"
+              placeholder="الاسم الاخير "
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={handleLastNameChange}
               required
               className="input-field-2"
               autoComplete="family-name"
