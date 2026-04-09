@@ -1,0 +1,169 @@
+"""
+Pydantic models for request/response validation
+Handles HTTP payload validation for all notification endpoints
+
+Location: Notification/models/notification.py
+"""
+
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, Any, List
+from datetime import datetime
+
+# =========================================================================
+# REQUEST DTOs (from client/Java backend)
+# =========================================================================
+
+class SendNotificationRequest(BaseModel):
+    """
+    Request to send a notification immediately
+    
+    Fields:
+        user_id: ID of user to notify
+        title: Notification title
+        body: Notification body
+        template_id: Optional - ID of template if using templates
+        variables: Optional - variables for template substitution
+        notification_type: Type of notification (for analytics)
+        language: 'en' (English) or 'ar' (Arabic)
+    """
+    user_id: int
+    title: str
+    body: str
+    template_id: Optional[str] = None
+    variables: Optional[Dict[str, str]] = None
+    notification_type: Optional[str] = None
+    language: str = "en"
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": 5,
+                "title": "New Appointment Request",
+                "body": "New patient booking from Ahmed Hassan",
+                "notification_type": "APPOINTMENT_CONFIRMED",
+                "language": "en"
+            }
+        }
+
+class QueueNotificationRequest(BaseModel):
+    """Request to queue notification for future delivery"""
+    user_id: int
+    scheduled_time: datetime
+    title: str
+    body: str
+    notification_type: Optional[str] = None
+
+class MarkAsReadRequest(BaseModel):
+    """Request to mark notification as read/unread"""
+    is_read: bool = True
+
+class DeliveryStatusQuery(BaseModel):
+    """Query for notification delivery status"""
+    fcm_message_id: str
+
+# =========================================================================
+# RESPONSE DTOs (to client/Java backend)
+# =========================================================================
+
+class SendNotificationResponse(BaseModel):
+    """Response from sending notification"""
+    message: str
+    fcm_message_id: Optional[str] = None
+    delivery_status: str  # "PENDING", "SENT", "FAILED", "DELIVERED"
+    cached: bool = False  # True if duplicate request (idempotency)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Notification queued",
+                "fcm_message_id": None,
+                "delivery_status": "PENDING",
+                "cached": False
+            }
+        }
+
+class DeliveryStatusResponse(BaseModel):
+    """Response with delivery tracking information"""
+    fcm_message_id: str
+    status: str  # "SENT", "DELIVERED", "BOUNCED", "FAILED"
+    sent_at: datetime
+    delivered_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    retries: int = 0
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "fcm_message_id": "a5d2e8f1...",
+                "status": "SENT",
+                "sent_at": "2026-04-04T08:30:45.890",
+                "delivered_at": None,
+                "retries": 0
+            }
+        }
+
+class QueueResponse(BaseModel):
+    """Response from queue operation"""
+    message: str
+    queue_id: int
+    status: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Notification queued",
+                "queue_id": 7001,
+                "status": "PENDING"
+            }
+        }
+
+class UnreadNotification(BaseModel):
+    """Unread notification for user"""
+    id: int
+    title: str
+    body: str
+    notification_type: str
+    created_at: datetime
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": 501,
+                "title": "New Appointment Request",
+                "body": "From Ahmed Hassan",
+                "notification_type": "APPOINTMENT_CONFIRMED",
+                "created_at": "2026-04-04T08:30:00"
+            }
+        }
+
+class HealthCheckResponse(BaseModel):
+    """Health check response"""
+    status: str  # "healthy" or "unhealthy"
+    timestamp: datetime
+    firebase: str  # "initialized" or error message
+    database: str  # "connected" or error message
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "healthy",
+                "timestamp": "2026-04-04T08:35:00",
+                "firebase": "initialized",
+                "database": "connected"
+            }
+        }
+
+class ErrorResponse(BaseModel):
+    """Error response"""
+    error: str
+    detail: str
+    status_code: int
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "error": "Validation Error",
+                "detail": "user_id is required",
+                "status_code": 400
+            }
+        }
