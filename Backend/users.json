@@ -1,0 +1,13 @@
+{
+  "test@example.com": {
+    "password": "cGFzc3dvcmQxMjM=",
+    "first_name": "Test",
+    "last_name": "User",
+    "phone": "01012345678",
+    "faculty": "طب أسنان",
+    "year": "الرابعة",
+    "governorate": "القاهرة"
+  },
+  "new@example.com": "c2VjcmV0"
+}
+
