@@ -4,6 +4,7 @@ import com.spring.boot.graduationproject1.dto.AppointmentDto;
 import com.spring.boot.graduationproject1.model.Appointments;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.util.List;
 
@@ -14,9 +15,9 @@ public interface AppointmentMapper {
     @Mapping(source = "doctor.phoneNumber", target = "doctorPhoneNumber")
     @Mapping(source = "doctor.cityName", target = "doctorCity")
 
-    @Mapping(source = "patient.firstName", target = "patientFirstName")
-    @Mapping(source = "patient.lastName", target = "patientLastName")
-    @Mapping(source = "patient.phoneNumber", target = "patientPhoneNumber")
+    @Mapping(source = "patientNameSnapshot", target = "patientFirstName", qualifiedByName = "getFirstName")
+    @Mapping(source = "patientNameSnapshot", target = "patientLastName", qualifiedByName = "getLastName")
+    @Mapping(source = "patientPhoneSnapshot", target = "patientPhoneNumber")
 
     @Mapping(source = "request.description", target = "requestDescription")
     @Mapping(source = "request.category.name", target = "categoryName")
@@ -25,4 +26,18 @@ public interface AppointmentMapper {
     Appointments toEntity(AppointmentDto appointmentDto);
     List<AppointmentDto> toListDto(List<Appointments> appointments);
     List<Appointments> toListEntity(List<AppointmentDto> appointmentsDto);
+
+
+    @Named("getFirstName")
+    default String getFirstName(String fullName) {
+        if (fullName == null || fullName.isEmpty()) return "";
+        return fullName.split(" ")[0];
+    }
+
+    @Named("getLastName")
+    default String getLastName(String fullName) {
+        if (fullName == null || fullName.isEmpty()) return "";
+        String[] parts = fullName.split(" ");
+        return parts.length > 1 ? parts[1] : "";
+    }
 }

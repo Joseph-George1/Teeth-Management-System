@@ -76,6 +76,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // === STEP 3: Auto-create or get patient by phone number ===
         Patients patient = patientRepo.findByPhoneNumber(appointmentDto.getPatientPhoneNumber())
+                .map(existingPatient -> {
+                    existingPatient.setFirstName(appointmentDto.getPatientFirstName());
+                    existingPatient.setLastName(appointmentDto.getPatientLastName());
+                    return patientRepo.save(existingPatient);
+                })
                 .orElseGet(() -> {
                     Patients newPatient = new Patients();
                     newPatient.setFirstName(appointmentDto.getPatientFirstName());
@@ -285,10 +290,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatus(
-                doctor.getId(),
-                AppointmentStatus.APPROVED
-        );
+        List<Appointments> appointments = appointmentRepo
+                .findByDoctorIdAndStatusAndIsHistoryFalseAndIsExpiredFalse(
+                        doctor.getId(),
+                        AppointmentStatus.APPROVED
+                );
 
         return appointmentMapper.toListDto(appointments);
     }
@@ -301,11 +307,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         Doctor doctor = doctorRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        List<Appointments> appointments = appointmentRepo.findByDoctorIdAndStatus(
-                doctor.getId(),
-                AppointmentStatus.DONE
-        );
+        List<Appointments> appointments = appointmentRepo
+                .findByDoctorIdAndStatusAndIsHistoryTrue(
+                        doctor.getId(),
+                        AppointmentStatus.DONE
+                );
 
         return appointmentMapper.toListDto(appointments);
     }
+
+
 }
+
