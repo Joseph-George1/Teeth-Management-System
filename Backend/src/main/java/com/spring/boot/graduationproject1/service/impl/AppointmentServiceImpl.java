@@ -35,7 +35,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     public AppointmentServiceImpl(AppointmentRepo appointmentRepo, AppointmentMapper appointmentMapper,
                                   DoctorRepo doctorRepo, PatientRepo patientRepo, RequestRepo requestRepo,
-                                  RoleRepo roleRepo, NotificationService notificationService, 
+                                  RoleRepo roleRepo, NotificationService notificationService,
                                   NotificationClientService notificationClientService, UserRepo userRepo) {
         this.appointmentMapper = appointmentMapper;
         this.appointmentRepo = appointmentRepo;
@@ -81,8 +81,10 @@ public class AppointmentServiceImpl implements AppointmentService {
                     newPatient.setFirstName(appointmentDto.getPatientFirstName());
                     newPatient.setLastName(appointmentDto.getPatientLastName());
                     newPatient.setPhoneNumber(appointmentDto.getPatientPhoneNumber());
+
                     Role patientRole = roleRepo.findByName("ROLE_PATIENT")
                             .orElseThrow(() -> new RuntimeException("Role ROLE_PATIENT not found"));
+
                     newPatient.setRole(patientRole);
                     return patientRepo.save(newPatient);
                 });
@@ -92,6 +94,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
         appointment.setRequest(request);
+        // 🔥 SNAPSHOT
+        appointment.setPatientNameSnapshot(
+                appointmentDto.getPatientFirstName() + " " + appointmentDto.getPatientLastName()
+        );
+        appointment.setPatientPhoneSnapshot(
+                appointmentDto.getPatientPhoneNumber()
+        );
         appointment.setAppointmentDate(request.getDateTime()); // Date/time from request
         appointment.setDurationMinutes(null); // No duration tracking
         appointment.setStatus(AppointmentStatus.PENDING);
@@ -105,7 +114,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // === STEP 5: Send appointment confirmation to Python notification service ===
         try {
             String idempotencyKey = UUID.randomUUID().toString();
-            String patientName = patient.getFirstName() + " " + patient.getLastName();
+            String patientName = appointment.getPatientNameSnapshot();
             String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
             String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
             String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
@@ -128,9 +137,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Local notification to doctor
         userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
             notificationService.notifyUser(
-            user,
-            "New Appointment",
-            "New request from " + appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName()
+                    user,
+                    "New Appointment",
+                    "New request from " + appointment.getPatientNameSnapshot()
             );
         });
 
