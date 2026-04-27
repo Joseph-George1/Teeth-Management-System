@@ -229,11 +229,7 @@ export default function RegisterForm() {
           <div className="input-group">
             <input
               type="text"
-<<<<<<< HEAD
               placeholder="الاسم الاول باللغة العربية"
-=======
-              placeholder="الاسم الاول باللغة العربية "
->>>>>>> 024b7536665a0c0730db0c02e5a9a6bf8c07ff9d
               value={firstName}
               onChange={handleFirstNameChange}
               required
