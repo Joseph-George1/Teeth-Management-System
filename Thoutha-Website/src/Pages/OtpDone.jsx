@@ -33,7 +33,7 @@ export default function OtpDone(){
                 <h2 className="done-title">تم التفعيل بنجاح</h2>
                 <p className="done-subtitle">تهانينا! تم التحقق من الحساب اضغط للمتابعة</p>
 
-                <Link to="/coming-soon"><button className="done-button">المتابعة</button></Link>
+                <Link to="/login"><button className="done-button">المتابعة</button></Link>
             </div>
         </div>
     );
