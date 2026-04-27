@@ -53,4 +53,11 @@ public class Appointments {
 
     @Column(nullable = false)
     private Boolean isHistory = false; // Marks completed/cancelled appointments
+
+    // === SNAPSHOTS ===
+    @Column(nullable = false)
+    private String patientNameSnapshot;
+
+    @Column(nullable = false)
+    private String patientPhoneSnapshot;
 }
