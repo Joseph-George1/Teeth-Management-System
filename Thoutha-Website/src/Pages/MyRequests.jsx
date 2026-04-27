@@ -81,18 +81,44 @@ export default function MyRequests() {
   const { user, isLoggedIn } = useContext(AuthContext);
 
   const handleDelete = (reqId) => {
+    console.log("=== Delete Request Debug ===");
+    console.log("Request ID to delete:", reqId);
+    console.log("Doctor ID:", user?.id);
+    
+    if (!reqId) {
+      setError("معرّف الطلب غير صحيح");
+      return;
+    }
+
     const token = user?.token || localStorage.getItem("token");
-    fetch(`https://thoutha.page/api/request/deleteRequest/${reqId}`, {
+    if (!token) {
+      setError("توكن المصادقة غير موجود");
+      return;
+    }
+
+    fetch(`https://thoutha.page/api/request/deleteRequest?id=${reqId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("فشل حذف الطلب");
+        console.log("Delete response status:", res.status);
+        if (!res.ok) {
+          return res.text().then((text) => {
+            throw new Error(text || `HTTP ${res.status}: فشل حذف الطلب`);
+          });
+        }
+        return res.json().catch(() => ({}));
+      })
+      .then(() => {
+        console.log("Delete successful");
         setRequests((prev) => prev.filter((r) => r?.id !== reqId));
         setSuccess("تم حذف الطلب بنجاح ✓");
         setTimeout(() => setSuccess(""), 3000);
       })
-      .catch((err) => setError(err.message || "حدث خطأ أثناء الحذف"));
+      .catch((err) => {
+        console.error("Delete error:", err);
+        setError(err.message || "حدث خطأ أثناء الحذف");
+      });
   };
 
   const handleEditClick = (req) => {
@@ -201,15 +227,28 @@ export default function MyRequests() {
     return (
       <div className="my-requests-container">
         <h1 className="my-requests-title">طلباتي</h1>
-        <div className="requests-list">
-          <p className="requests-status">لم تضف أي طلبات حتى الآن! عندما تضيف طلبات جديدة ستظهر هنا.</p>
+        <div className="mr-empty-state-instructions">
+          <h3 className="mr-instructions-title">لا توجد طلبات حالياً</h3>
+          <p className="mr-instructions-text">جميع الطلبات الطبية التي تنشئها ستظهر هنا.</p>
+          <p className="mr-instructions-text">يمكنك إدارة طلباتك بسهولة:</p>
+          
+          <div className="mr-instructions-section">
+            <p className="mr-instructions-item">• اضغط "تعديل" لتحديث تفاصيل الطلب (الوصف والموعد).</p>
+            <p className="mr-instructions-item">• اضغط "حذف الطلب" لحذف الطلب نهائياً.</p>
+          </div>
+
+          <p className="mr-instructions-section-title">ملاحظة مهمة:</p>
+          <div className="mr-instructions-section">
+            <p className="mr-instructions-item">• إذا قام مريض بحجز أحد طلباتك وأضيف إلى الحجوزات القادمة، فلن تتمكن من تعديل هذا الطلب.</p>
+            <p className="mr-instructions-item">• عند حذف طلب، سيتم حذف جميع الحجوزات المعلقة المرتبطة به أيضاً.</p>
+          </div>
         </div>
       </div>
     );
 
   return (
     <div className="my-requests-container">
-      <p className="my-requests-title">طلباتي</p>
+      <h1 className="my-requests-title">طلباتي</h1>
       {success && (
         <div style={{ 
           padding: '12px 16px', 

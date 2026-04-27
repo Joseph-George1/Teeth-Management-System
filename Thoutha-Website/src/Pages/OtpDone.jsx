@@ -7,7 +7,7 @@ export default function OtpDone(){
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            navigate('/coming-soon', { replace: true });
+            navigate('/', { replace: true });
         }, 3000);
 
         return () => clearTimeout(timer);

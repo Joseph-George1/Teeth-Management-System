@@ -7,7 +7,7 @@
   letter-spacing: -0.5px;
   text-align: right;
   width: 95%;
-  margin-right: auto;
+  margin: auto;
   padding: 40px 20px 5px 20px;
   display: flex;
   flex-direction: column;
@@ -555,6 +555,62 @@
   cursor: not-allowed;
 }
 
+/* ── Empty State Instructions ── */
+.mr-empty-state-instructions {
+  background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 50px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 85%;
+  max-width: 700px;
+  min-height: 500px;
+  margin: 10px auto 40px auto;
+}
+
+.mr-instructions-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d61e7;
+  margin: 0 0 16px;
+  font-family: 'Cairo', sans-serif;
+}
+
+.mr-instructions-text {
+  font-size: 15px;
+  color: #374151;
+  margin: 8px 0;
+  line-height: 1.6;
+  font-family: 'Cairo', sans-serif;
+}
+
+.mr-instructions-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 20px 0 12px;
+  font-family: 'Cairo', sans-serif;
+}
+
+.mr-instructions-section {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  text-align: right;
+  border-right: 3px solid #1d61e7;
+}
+
+.mr-instructions-item {
+  font-size: 14px;
+  color: #374151;
+  margin: 8px 0;
+  line-height: 1.6;
+  font-family: 'Cairo', sans-serif;
+}
 
 @media (max-width: 1024px) {
   .requests-list {
@@ -575,6 +631,28 @@
 
   .requests-list {
     width: 85%;
+  }
+
+  .mr-empty-state-instructions {
+    width: 90%;
+    padding: 40px 30px;
+    min-height: 0;
+  }
+
+  .mr-instructions-title {
+    font-size: 20px;
+  }
+
+  .mr-instructions-text {
+    font-size: 14px;
+  }
+
+  .mr-instructions-section-title {
+    font-size: 15px;
+  }
+
+  .mr-instructions-item {
+    font-size: 13px;
   }
 
   .card {
@@ -652,6 +730,32 @@
     padding: 0 0;
     margin: 16px auto 24px;
     gap: 12px;
+  }
+
+  .mr-empty-state-instructions {
+    width: 95%;
+    padding: 30px 20px;
+    min-height: 0;
+  }
+
+  .mr-instructions-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .mr-instructions-text {
+    font-size: 13px;
+    margin: 6px 0;
+  }
+
+  .mr-instructions-section-title {
+    font-size: 14px;
+    margin: 16px 0 10px;
+  }
+
+  .mr-instructions-item {
+    font-size: 12px;
+    margin: 6px 0;
   }
 
   .card {

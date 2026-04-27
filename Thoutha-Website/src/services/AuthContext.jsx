@@ -202,5 +202,5 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{ isLoggedIn, user, authLoading, login, logout, refreshUserProfile, applyServerUserData }}>
       {children}
     </AuthContext.Provider>
- )
+ );
 }
