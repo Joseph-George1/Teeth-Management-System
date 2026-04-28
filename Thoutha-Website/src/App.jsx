@@ -1,5 +1,6 @@
 import { Route, Routes} from "react-router-dom";
 import NavBar from "./Components/NavBar";
+import ScrollToTop from "./Components/ScrollToTop";
 import Home from "./Pages/Home";
 import LoginPage from "./Pages/LoginPage";
 import RegisterForm from "./Pages/RegisterForm";
@@ -41,6 +42,7 @@ export default function App() {
   return (
     <>
     <NavBar/>
+    <ScrollToTop />
     <Routes>
       <Route path="/" element={<Home/>}></Route>
       <Route path="/login" element={<LoginPage/>}/>
