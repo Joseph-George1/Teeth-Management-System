@@ -244,6 +244,7 @@
 
 .chat-footer .chat-form:focus-within{
     outline: 2px solid var(--color-2);
+    border: none;
 }
 
 .chat-form .message-input{
@@ -254,6 +255,7 @@
     padding: 0 17px;
     font-size: 0.95rem;
     width: 100%;
+    border-color: transparent;
 }
 
 .chat-form button{
@@ -273,10 +275,12 @@
 
 .chat-form button:hover{
     background-color: var(--hover-color);
+    border: none;
 }
 
 .chat-form .message-input:valid~button{
     display: block;
+    border: none;
 }
 
 /* Media Queries for Responsive Design */

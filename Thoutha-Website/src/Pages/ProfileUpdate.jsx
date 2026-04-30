@@ -58,8 +58,9 @@ const isTokenExpired = (token) => {
 const normalizeStudyYearValue = (value) => {
   const normalizedValue = value?.toString().trim() || "";
 
-  if (normalizedValue === "الرابعة") return "4";
-  if (normalizedValue === "الخامسة") return "5";
+  if (normalizedValue === "الرابعة") return "الرابعة";
+  if (normalizedValue === "الخامسة") return "الخامسة";
+   if (normalizedValue === "امتياز") return "امتياز";
 
   return normalizedValue;
 };

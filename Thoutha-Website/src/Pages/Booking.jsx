@@ -226,6 +226,7 @@ export default function Booking() {
                                         onChange={handleInputChange}
                                         className={fieldErrors.firstName ? 'error' : ''}
                                         disabled={loading}
+                                        className="input_11"
                                     />
                                 </div>
                             </div>
@@ -246,6 +247,7 @@ export default function Booking() {
                                         onChange={handleInputChange}
                                         className={fieldErrors.lastName ? 'error' : ''}
                                         disabled={loading}
+                                        className="input_11"
                                     />
                                 </div>
                             </div>
@@ -267,6 +269,7 @@ export default function Booking() {
                                     onChange={handleInputChange}
                                     className={fieldErrors.phone ? 'error' : ''}
                                     disabled={loading}
+                                    className="input_11"
                                 />
                             </div>
                         </div>

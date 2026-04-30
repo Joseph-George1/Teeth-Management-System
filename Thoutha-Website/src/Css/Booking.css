@@ -229,7 +229,7 @@
   height: 16px;
 }
 
-input {
+.input_11 {
   width: 100%;
   padding: 9px 32px 9px 10px;
   border: 1.5px solid var(--border-color);
@@ -242,18 +242,18 @@ input {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus {
+.input_11:focus {
   border-color: var(--button-color-2);
   box-shadow: 0 0 0 3px rgba(37, 180, 229, 0.1);
   background: #fff;
 }
 
-input.error {
+.input_11.error {
   border-color: #FF6B6B;
   animation: shake 0.35s ease;
 }
 
-input::placeholder {
+.input_11::placeholder {
   color: var(--text-color-8);
   font-size: 12px;
 }

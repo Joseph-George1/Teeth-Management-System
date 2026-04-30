@@ -1,11 +1,13 @@
 import '../Css/Home.css';
-import { useRef } from "react";
+import { useRef, useContext } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from 'react-router-dom';
 import ChatBotIcon from "../Components/ChatBotIcon";
+import { AuthContext } from "../services/AuthContext";
 // import DoctorsList from './DoctorsList';
 export default function Home(){
   const aboutRef = useRef(null);
+  const { isLoggedIn } = useContext(AuthContext);
   return(
     <>
      <Helmet>
@@ -28,16 +30,18 @@ export default function Home(){
       </div> 
     </div>
     {/* chatbot cta section */}
-    <div className="chatbot-cta-section">
-      <div className="chatbot-cta-container">
-        <p className="chatbot-cta-text">لو مش عارف تحدد عندك إيه، روح اتكلم مع الطبيب الذكي</p>
-        <Link to="/chatbot" className="chatbot-cta-icon-link">
-          <div className="chatbot-cta-icon">
-            <ChatBotIcon />
-          </div>
-        </Link>
+    {!isLoggedIn && (
+      <div className="chatbot-cta-section">
+        <div className="chatbot-cta-container">
+          <p className="chatbot-cta-text">لو مش عارف تحدد عندك إيه، روح اتكلم مع الطبيب الذكي</p>
+          <Link to="/chatbot" className="chatbot-cta-icon-link">
+            <div className="chatbot-cta-icon">
+              <ChatBotIcon />
+            </div>
+          </Link>
+        </div>
       </div>
-    </div>
+    )}
       {/* category section */}
       <div className="category-section">
         <div className="category-container">
