@@ -11,6 +11,7 @@ export default function PediatricDentistry() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./فحص شامل.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function PediatricDentistry() {
         specialization="طب أسنان الأطفال"
         categoryId={10}
       />
+    </div>
     </>
   );
 }

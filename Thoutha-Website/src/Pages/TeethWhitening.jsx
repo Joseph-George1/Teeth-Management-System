@@ -11,6 +11,7 @@ export default function TeethWhitening() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./تبيض اسنان.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function TeethWhitening() {
         specialization="تنظيف وتبييض الأسنان"
         categoryId={7}
       />
+    </div>
     </>
   );
 }

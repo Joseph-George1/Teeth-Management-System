@@ -259,9 +259,9 @@
 }
 
 .chip-label {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-color-8, #666666);
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f2f2f;
   letter-spacing: 0.4px;
   margin-bottom: 2px;
 }
@@ -271,7 +271,7 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--text-color-6, #1a1a1a);
-  white-space: nowrap;
+  white-space: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -695,6 +695,7 @@
 
   .chip-value {
     font-size: 12px;
+    white-space: wrap;
   }
 
   .request-card-actions {
@@ -804,11 +805,12 @@
   }
 
   .chip-label {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .chip-value {
     font-size: 11px;
+    white-space: wrap;
   }
 
   .note-text {

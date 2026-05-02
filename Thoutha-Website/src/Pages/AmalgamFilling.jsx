@@ -11,6 +11,7 @@ export default function AmalgamFilling() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./حشو اسنان.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function AmalgamFilling() {
         specialization="حشو املجم"
         categoryId={2}
       />
+    </div>
     </>
   );
 }

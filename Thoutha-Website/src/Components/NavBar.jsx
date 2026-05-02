@@ -57,7 +57,7 @@ export default function NavBar() {
 
                     <div className="user-info-email">
                       <span className="user-name">{user?.firstName || user?.first_name} {user?.lastName || user?.last_name}</span>
-                      <p className="user-email">{user?.universityName || user?.faculty || user?.universities || user?.doctorUniversityName}</p>
+                      <p className="user-email">{user?.email}</p>
                     </div>
                   </div>
                 </div>
@@ -75,27 +75,27 @@ export default function NavBar() {
                   <FileText size={20} className="icon-color" /> طلباتي
                 </NavLink>
 
-              <NavLink to="/doctor-booking" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+              <NavLink to="/doctor-booking" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <Calendar size={20} className="icon-color"/> سجل الحجوزات
                 </NavLink>
 
-                <NavLink to="/patients" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/patients" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <Users size={20} className="icon-color"/> المرضى
                 </NavLink>
 
-                <NavLink to="/doctor-profile" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/doctor-profile" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <User size={20} className="icon-color"/> الملف الشخصي
                 </NavLink>
 
-                <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <FileText size={20} className="icon-color"/> الشروط والاستخدام
                 </NavLink>
 
-                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <Shield size={20} className="icon-color"/> سياسة الخصوصية
                 </NavLink>
 
-                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <User size={20} className="icon-color"/> حذف الحساب
                 </NavLink>
 
@@ -117,23 +117,23 @@ export default function NavBar() {
                   <Home size={20} className="icon-color"/> الصفحة الرئيسية
                 </NavLink>
 
-                <NavLink to="/chatbot" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/chatbot" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <Bot size={20} className="icon-color"/> الطبيب الذكي
                 </NavLink>
 
-                <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/terms&conditions" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <FileText size={20} className="icon-color"/> الشروط والاستخدام
                 </NavLink>
 
-                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/privacy-policy" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <Shield size={20} className="icon-color"/> سياسة الخصوصية
                 </NavLink>
 
-                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <User size={20} className="icon-color"/> حذف الحساب
                 </NavLink>
 
-                <NavLink to="/login" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactivelink"}>
+                <NavLink to="/login" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <LogIn size={20} className="icon-color"/> تسجيل دخول / إنشاء حساب
                 </NavLink>
               </>

@@ -96,6 +96,7 @@
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 50px;
   padding: 5px 16px;
+  margin: 0px 0px 11px 0px;
 }
 
 .dp-badge-dot {
@@ -366,6 +367,7 @@
 
   .info-value {
     font-size: 13px;
+    white-space: wrap;
   }
 
   .info-label {

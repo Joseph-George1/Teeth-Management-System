@@ -118,7 +118,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 className="input-field"
-                placeholder="User@gmail.com"
+                placeholder="User@universityName.edu.eg"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
