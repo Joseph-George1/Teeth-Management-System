@@ -47,4 +47,6 @@ public class AppointmentDto {
     // === SNAPSHOTS ===
     private String patientNameSnapshot;
     private String patientPhoneSnapshot;
+    private String categorySnapshot;
+    private String doctorSnapshot;
 }

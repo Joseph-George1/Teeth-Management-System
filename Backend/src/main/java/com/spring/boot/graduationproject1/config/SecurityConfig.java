@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/appointment/getApprovedAndDone").hasAnyRole("ADMIN","DOCTOR")
                         .requestMatchers(HttpMethod.GET,"/api/appointment/getApproved").hasAnyRole("ADMIN","DOCTOR")
                         .requestMatchers(HttpMethod.GET,"/api/appointment/getDone").hasAnyRole("ADMIN","DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/appointment/getCancelled").hasAnyRole("ADMIN","DOCTOR")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
