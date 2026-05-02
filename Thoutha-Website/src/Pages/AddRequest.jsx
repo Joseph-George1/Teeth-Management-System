@@ -207,7 +207,6 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
                 required
                 style={{ flex: 1 }}
               />
-              {date && <span style={{ color: "#666", fontSize: "14px", whiteSpace: "nowrap" }}>{formatDateArabic(date)}</span>}
             </div>
           </div>
 
@@ -219,11 +218,6 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
               onChange={handleTimeChange}
               required
             />
-            {time12Display && (
-              <div style={{ marginTop: "8px", fontSize: "14px", color: "#666", textAlign: "right" }}>
-                {time12Display}
-              </div>
-            )}
           </div>
 
           <div className="add-request-field">
