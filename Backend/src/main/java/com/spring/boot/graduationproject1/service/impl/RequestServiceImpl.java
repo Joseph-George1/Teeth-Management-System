@@ -2,13 +2,11 @@ package com.spring.boot.graduationproject1.service.impl;
 
 import com.spring.boot.graduationproject1.dto.RequestDto;
 import com.spring.boot.graduationproject1.mapper.RequestMapper;
+import com.spring.boot.graduationproject1.model.Appointments;
 import com.spring.boot.graduationproject1.model.Category;
 import com.spring.boot.graduationproject1.model.Doctor;
 import com.spring.boot.graduationproject1.model.Requests;
-import com.spring.boot.graduationproject1.repo.CategoryRepo;
-import com.spring.boot.graduationproject1.repo.CityRepo;
-import com.spring.boot.graduationproject1.repo.DoctorRepo;
-import com.spring.boot.graduationproject1.repo.RequestRepo;
+import com.spring.boot.graduationproject1.repo.*;
 import com.spring.boot.graduationproject1.service.RequestServices;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,15 +22,15 @@ public class RequestServiceImpl implements RequestServices {
     private final RequestMapper requestMapper;
     private final DoctorRepo doctorRepo;
     private final CategoryRepo categoryRepo;
-    private final CityRepo cityRepo;
+    private final AppointmentRepo appointmentRepo;
 
     public RequestServiceImpl(RequestRepo requestRepo, RequestMapper requestMapper,
-                              DoctorRepo doctorRepo, CategoryRepo categoryRepo,CityRepo cityRepo) {
+                              DoctorRepo doctorRepo, CategoryRepo categoryRepo,AppointmentRepo appointmentRepo) {
         this.requestRepo = requestRepo;
         this.requestMapper = requestMapper;
         this.doctorRepo = doctorRepo;
         this.categoryRepo = categoryRepo;
-        this.cityRepo = cityRepo;
+        this.appointmentRepo = appointmentRepo;
     }
 
     @Override
@@ -120,7 +118,14 @@ public class RequestServiceImpl implements RequestServices {
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
 
-        requestRepo.delete(request);
+        List<Appointments> apps = appointmentRepo.findByRequestId(requestId);
+
+        for (Appointments app : apps) {
+            app.setRequest(null);
+        }
+
+        appointmentRepo.saveAll(apps);
+        requestRepo.deleteById(requestId);
     }
 
     @Override
