@@ -123,7 +123,6 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       .then((data) => {
         if (!cancelled) {
           let requests = normalizeList(data);
-          // Extra safety: filter by categoryName on frontend if available
           if (categoryName && requests.length > 0) {
             requests = requests.filter(r => 
               (r?.categoryName === categoryName || r?.category === categoryName)

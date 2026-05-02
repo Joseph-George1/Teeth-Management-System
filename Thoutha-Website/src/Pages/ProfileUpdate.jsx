@@ -28,9 +28,9 @@ const CancelIcon = () => sv("M6 18L18 6M6 6l12 12");
 
 const SERVER_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
 const YEAR_OPTIONS = [
-  { value: "4", label: "الرابعة" },
-  { value: "5", label: "الخامسة" },
-  { value: "خريج", label: "خريج" },
+  { value: "الرابعة", label: "الرابعة" },
+  { value: "الخامسة", label: "الخامسة" },
+  { value: "امتياز", label: "امتياز" },
 ];
 
 const decodeTokenPayload = (token) => {
@@ -58,8 +58,9 @@ const isTokenExpired = (token) => {
 const normalizeStudyYearValue = (value) => {
   const normalizedValue = value?.toString().trim() || "";
 
-  if (normalizedValue === "الرابعة") return "4";
-  if (normalizedValue === "الخامسة") return "5";
+  if (normalizedValue === "الرابعة") return "الرابعة";
+  if (normalizedValue === "الخامسة") return "الخامسة";
+   if (normalizedValue === "امتياز") return "امتياز";
 
   return normalizedValue;
 };

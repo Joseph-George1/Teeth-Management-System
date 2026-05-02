@@ -150,11 +150,15 @@
   flex-direction: column;
   width: 296px;
   background: var(--text-color-1);
-  height: 182.5vh;
-  position: absolute;
+  height: 100vh;
+  position: fixed;
   top: 0px;
   left: 0px;
   z-index: 900;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .mobile-menu2 {
@@ -177,7 +181,7 @@
   width: 100%;
   height: 100vh;
   background: #00000060;
-  z-index: 900;
+  z-index: 899;
 }
 
 .user-info-circle {
@@ -256,4 +260,27 @@
   }
 }
 
+/* Mobile Menu Scrollbar Styling */
+/* Webkit browsers (Chrome, Safari, Edge) */
+.mobile-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-menu::-webkit-scrollbar-thumb {
+  background: #25B4E5;
+  border-radius: 3px;
+}
+
+.mobile-menu::-webkit-scrollbar-thumb:hover {
+  background: #1D61E7;
+}
+
+/* Firefox scrollbar */
+.mobile-menu {
+  scrollbar-width: thin;
+}
 

@@ -229,7 +229,7 @@ export default function RegisterForm() {
           <div className="input-group">
             <input
               type="text"
-              placeholder="الاسم الاول باللغة العربية "
+              placeholder="الاسم الاول باللغة العربية"
               value={firstName}
               onChange={handleFirstNameChange}
               required
@@ -278,7 +278,7 @@ export default function RegisterForm() {
               disabled={citiesLoading}
             >
               <option value="">
-                {citiesLoading ? 'جاري تحميل المحافظات...' : 'اختر المحافظة'}
+                {citiesLoading ? 'جاري تحميل المحافظات...' : 'اختر المحافظةالتابعة لها الكلية'}
               </option>
               {cities.map((item) => (
                 <option key={item.id || item.name} value={item.name}>
@@ -311,8 +311,9 @@ export default function RegisterForm() {
               className="input-field-2"
             >
               <option value="">السنة الدراسية</option>
-              <option value="4">الرابعة</option>
-              <option value="5">الخامسة</option>
+              <option value="الرابعة">الرابعة</option>
+              <option value="الخامسة">الخامسة</option>
+              <option value="امتياز">امتياز</option>
             </select>
 
             <select
