@@ -1,4 +1,4 @@
-# Security Audit Log - Thoutha (DentalLink)
+# Security Audit Log - Thoutha
 
 ## [2026-05-02] Vulnerability Patching & Mitigation
 
