@@ -139,7 +139,6 @@ export default function DoctorProfile() {
 
   const getInitials = () => {
     const first = user?.firstName || user?.first_name || "U";
-    const last = user?.lastName || user?.last_name || "N";
     return `${first[0]}`;
   };
 
