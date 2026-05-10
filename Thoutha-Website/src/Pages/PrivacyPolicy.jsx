@@ -3,7 +3,7 @@ import '../Css/TermsConditions.css';
 export default function PrivacyPolicy() {
   return (
     <div className="terms-container">
-      <h1 className="terms-title">🛡 سياسة الخصوصية – منصة ثوثة</h1>
+      <h1 className="terms-title"> سياسة الخصوصية – منصة ثوثة</h1>
 
       <section className="terms-section">
         <p>آخر تحديث:</p>
@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="terms-section">
-        <h2>1. البيانات التي نقوم بجمعها</h2>
+        <h2>١. البيانات التي نقوم بجمعها</h2>
         <p>قد تقوم المنصة بجمع البيانات التالية:</p>
         <ul>
           <li>الاسم الثلاثي</li>
@@ -27,7 +27,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="terms-section">
-        <h2>2. كيفية استخدام البيانات</h2>
+        <h2>٢. كيفية استخدام البيانات</h2>
         <p>يتم استخدام البيانات فقط من أجل:</p>
         <ul>
           <li>إتمام عملية الحجز بين المريض وطالب طب الأسنان</li>
@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="terms-section">
-        <h2>3. حماية البيانات</h2>
+        <h2>٣. حماية البيانات</h2>
         <p>
           نلتزم باتخاذ الإجراءات التقنية المناسبة لحماية بيانات المستخدمين من
           الوصول غير المصرح به أو الاستخدام غير القانوني.
@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="terms-section">
-        <h2>4. حقوق المستخدم</h2>
+        <h2>٤. حقوق المستخدم</h2>
         <p>يحق للمستخدم:</p>
         <ul>
           <li>طلب تعديل بياناته</li>
@@ -57,7 +57,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="terms-section">
-        <h2>5. الموافقة على السياسة</h2>
+        <h2>٥. الموافقة على السياسة</h2>
         <p>باستخدامك لمنصة ثوثة، فإنك توافق على سياسة الخصوصية هذه.</p>
       </section>
     </div>

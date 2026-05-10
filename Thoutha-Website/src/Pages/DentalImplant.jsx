@@ -11,6 +11,7 @@ export default function DentalImplant() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./زراعه اسنان.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function DentalImplant() {
         specialization="زراعة الأسنان"
         categoryId={6}
       />
+    </div>
     </>
   );
 }

@@ -12,7 +12,8 @@ export default function Braces() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
-      <div className="top-page">
+    <div className="my-requests-container" >
+        <div className="top-page">
         <div className="circle-img">
           <img src="./تقويم اسنان.svg" alt="img" />
         </div>
@@ -33,6 +34,7 @@ export default function Braces() {
         specialization="تقويم الأسنان"
         categoryId={8}
       />
-    </>
+    </div>
+ </>
   );
 }

@@ -11,6 +11,7 @@ export default function ToothExtraction() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./حشو اسنان.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function ToothExtraction() {
         specialization="حشو عصب"
         categoryId={3}
       />
+    </div>
     </>
   );
 }

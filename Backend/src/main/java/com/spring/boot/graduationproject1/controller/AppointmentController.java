@@ -79,4 +79,9 @@ public class AppointmentController {
     public ResponseEntity<List<AppointmentDto>> getDone() {
         return ResponseEntity.ok(appointmentService.getDoneAppointments());
     }
+
+    @GetMapping("/getCancelled")
+    public ResponseEntity<List<AppointmentDto>> getCancelled() {
+        return ResponseEntity.ok(appointmentService.getCancelledAppointments());
+    }
 }

@@ -19,9 +19,10 @@ public interface AppointmentMapper {
     @Mapping(source = "patientNameSnapshot", target = "patientLastName", qualifiedByName = "getLastName")
     @Mapping(source = "patientPhoneSnapshot", target = "patientPhoneNumber")
 
-    @Mapping(source = "request.description", target = "requestDescription")
-    @Mapping(source = "request.category.name", target = "categoryName")
 
+
+    @Mapping(source = "categorySnapshot", target = "categoryName")
+    @Mapping(source = "descriptionSnapshot", target = "requestDescription")
     AppointmentDto toDto(Appointments appointments);
     Appointments toEntity(AppointmentDto appointmentDto);
     List<AppointmentDto> toListDto(List<Appointments> appointments);

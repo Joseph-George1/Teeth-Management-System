@@ -29,7 +29,7 @@ public class Appointments {
     private Patients patient;
 
     @ManyToOne
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "request_id", nullable = true)
     private Requests request;
 
     @Column(nullable = false)
@@ -60,4 +60,10 @@ public class Appointments {
 
     @Column(nullable = false)
     private String patientPhoneSnapshot;
+
+    @Column(nullable = false)
+    private String categorySnapshot;
+
+    @Column(nullable = false)
+    private String descriptionSnapshot;
 }

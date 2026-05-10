@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -105,6 +106,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         );
         appointment.setPatientPhoneSnapshot(
                 appointmentDto.getPatientPhoneNumber()
+        );
+        appointment.setCategorySnapshot(
+                request.getCategory().getName()
+        );
+        appointment.setDescriptionSnapshot(
+                request.getDescription()
         );
         appointment.setAppointmentDate(request.getDateTime()); // Date/time from request
         appointment.setDurationMinutes(null); // No duration tracking
@@ -311,6 +318,23 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .findByDoctorIdAndStatusAndIsHistoryTrue(
                         doctor.getId(),
                         AppointmentStatus.DONE
+                );
+
+        return appointmentMapper.toListDto(appointments);
+    }
+
+    @Override
+    public List<AppointmentDto> getCancelledAppointments() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email=authentication.getName();
+
+        Doctor doctor=doctorRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        List<Appointments> appointments=appointmentRepo
+                .findByDoctorIdAndStatusAndIsHistoryTrue(
+                        doctor.getId(),
+                        AppointmentStatus.CANCELLED
                 );
 
         return appointmentMapper.toListDto(appointments);

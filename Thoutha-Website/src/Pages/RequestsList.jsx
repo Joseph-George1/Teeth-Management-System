@@ -34,11 +34,36 @@ const getTime = (req) => {
   return req?.time || req?.requestTime || "";
 };
 
+// Convert English numbers to Arabic
+const toArabicNumbers = (str) => {
+  if (!str) return "";
+  const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  let result = String(str);
+  englishNumbers.forEach((eng, i) => {
+    result = result.replace(new RegExp(eng, 'g'), arabicNumbers[i]);
+  });
+  return result;
+};
+
 const getTimePeriod = (req) => {
   const t = getTime(req);
   if (!t) return "";
-  const [h] = t.split(":").map(Number);
-  return h < 12 ? `${t} صباحاً` : `${t} مساءً`;
+  const [h, m] = t.split(":").map(Number);
+  let hour = h;
+  const period = h >= 12 ? "م" : "ص";
+  if (hour > 12) hour = hour - 12;
+  if (hour === 0) hour = 12;
+  return toArabicNumbers(`${String(hour).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`);
+};
+
+const getDateArabic = (req) => {
+  const dateStr = getDate(req);
+  if (!dateStr) return "";
+  const date = new Date(dateStr + "T00:00:00");
+  const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  const arabicMonths = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+  return toArabicNumbers(`${arabicDays[date.getDay()]} ${date.getDate()} ${arabicMonths[date.getMonth()]} ${date.getFullYear()}`);
 };
 
 const decodeTokenPayload = (token) => {
@@ -233,7 +258,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                         </div>
                         <div className="chip-text">
                           <div className="chip-label">اليوم</div>
-                          <div className="chip-value">{getDate(req)}</div>
+                          <div className="chip-value">{getDateArabic(req)}</div>
                         </div>
                       </div>
                     )}

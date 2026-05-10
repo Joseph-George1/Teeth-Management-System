@@ -321,7 +321,7 @@ export default function ProfileUpdate() {
           <div className="pu-avatar-strip">
             <div className="pu-avatar-circle">
               <span className="pu-avatar-initials">
-                {form.firstName?.[0]}{form.lastName?.[0]}
+                {form.firstName?.[0]}
               </span>
             </div>
             <div>

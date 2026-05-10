@@ -11,6 +11,7 @@ export default function RemovableProsthetics() {
   const { isLoggedIn } = useContext(AuthContext);
   return (
     <>
+    <div className="my-requests-container">
       <div className="top-page">
         <div className="circle-img">
           <img src="./تركيبات اسنان.svg" alt="img" />
@@ -32,6 +33,7 @@ export default function RemovableProsthetics() {
         specialization="تركيبات متحركة"
         categoryId={5}
       />
+    </div>
     </>
   );
 }

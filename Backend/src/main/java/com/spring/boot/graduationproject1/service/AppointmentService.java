@@ -15,4 +15,5 @@ public interface AppointmentService {
     List<AppointmentDto> getApprovedAndDoneAppointments();
     List<AppointmentDto> getApprovedAppointments();
     List<AppointmentDto> getDoneAppointments();
+    List<AppointmentDto> getCancelledAppointments();
 }
