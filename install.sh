@@ -950,6 +950,34 @@ update_production_server() {
 
 
 # -----------------------------
+# Function: Enable Apache modules for production
+# -----------------------------
+enable_apache_modules() {
+    # Check if Apache is installed
+    if ! command -v apache2 >/dev/null 2>&1 && ! command -v httpd >/dev/null 2>&1; then
+        warn "Apache not detected on this system. Skipping Apache module enablement."
+        return 0
+    fi
+    
+    msg "Enabling Apache modules..."
+    
+    # Enable all required modules
+    if sudo a2enmod -q access_compat alias auth_basic authn_core authn_file authz_core authz_host authz_user autoindex deflate dir env filter headers lbmethod_byrequests mime mpm_event negotiation proxy proxy_balancer proxy_http reqtimeout rewrite setenvif slotmem_shm socache_shmcb ssl status 2>&1; then
+        msg "Restarting Apache2..."
+        if sudo systemctl restart apache2 2>&1; then
+            ok "All modules enabled & Apache restarted successfully"
+            track_component "apache-modules"
+            return 0
+        else
+            warn "Apache modules enabled but restart failed. Please restart manually: sudo systemctl restart apache2"
+            return 1
+        fi
+    else
+        err "Failed to enable Apache modules. Check the output above for details"
+    fi
+}
+
+# -----------------------------
 # Function: Display interactive menu
 # -----------------------------
 show_menu() {
@@ -969,7 +997,8 @@ show_menu() {
     echo -e "  ${BLUE}7)${RESET} Setup .env Configuration"
     echo -e "  ${BLUE}8)${RESET} Create systemd Services"
     echo -e "  ${BLUE}9)${RESET} Update Production Server"
-    echo -e "  ${BLUE}10)${RESET} Custom Selection"
+    echo -e "  ${BLUE}10)${RESET} Enable Apache Modules"
+    echo -e "  ${BLUE}11)${RESET} Custom Selection"
     echo -e "  ${BLUE}0)${RESET} Exit"
     echo
     echo -n "Enter your choice [1]: "
@@ -1034,6 +1063,7 @@ main() {
             INSTALL_ORACLE=true
             INSTALL_ASTART=true
             SETUP_ENV=true
+            INSTALL_APACHE=true
             ;;
         2)
             INSTALL_PYTHON=true
@@ -1062,6 +1092,10 @@ main() {
             exit 0
             ;;
         10)
+            enable_apache_modules
+            exit 0
+            ;;
+        11)
             msg "Custom selection - you will be prompted for each component"
             INSTALL_PYTHON=true
             INSTALL_NODE=true
@@ -1069,6 +1103,7 @@ main() {
             INSTALL_ORACLE=false
             INSTALL_ASTART=true
             SETUP_ENV=true
+            INSTALL_APACHE=false
             ;;
         0)
             msg "Installation cancelled by user"
@@ -1082,6 +1117,7 @@ main() {
             INSTALL_ORACLE=true
             INSTALL_ASTART=true
             SETUP_ENV=true
+            INSTALL_APACHE=true
             ;;
     esac
     
@@ -1126,6 +1162,11 @@ main() {
         else
             msg "Skipping Oracle Database installation."
         fi
+    fi
+    
+    # Enable Apache modules
+    if [ "${INSTALL_APACHE:-false}" = true ]; then
+        enable_apache_modules
     fi
     
     # Create systemd services if available
