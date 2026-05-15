@@ -350,7 +350,7 @@ start_bg() {
     log_activity "$flag" "$name"
     log_process_start "$name" "$cmd" "$logfile"
     
-    nohup bash -lc "$cmd" < /dev/null >> "$logfile" 2>&1 &
+    nohup env -i bash -lc "$cmd" >> "$logfile" 2>&1 &
     pid=$!
     
     # Verify process actually started
