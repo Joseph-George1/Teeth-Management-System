@@ -350,7 +350,7 @@ start_bg() {
     log_activity "$flag" "$name"
     log_process_start "$name" "$cmd" "$logfile"
     
-    nohup bash -lc "$cmd" >> "$logfile" 2>&1 &
+    nohup bash -lc "$cmd" < /dev/null >> "$logfile" 2>&1 &
     pid=$!
     
     # Verify process actually started
@@ -745,7 +745,7 @@ ai_chatbot_with_web(){
 # Function to start the OTP service 
 #-------------------------------------------------------------
 
-OTP_satrt(){
+OTP_start(){
     validate_paths || return 1
     
     # Check if port is already in use
@@ -776,7 +776,7 @@ password_reset_start(){
     if ! check_port "$OTP_PORT"; then
         echo -e "${YELLOW}Warning: OTP service (port $OTP_PORT) is not running${NC}"
         echo -e "${YELLOW}Password reset service requires OTP service. Starting OTP service first...${NC}"
-        OTP_satrt || {
+        OTP_start || {
             echo -e "${RED}Failed to start OTP service. Password reset service requires OTP service.${NC}"
             return 1
         }
@@ -905,7 +905,7 @@ run_whole_system() {
     echo -e "${BLUE}Starting all services...${NC}"
     
     # Start OTP service first (dependency for password reset)
-    OTP_satrt || echo -e "${YELLOW}Warning: OTP Service failed to start${NC}"
+    OTP_start || echo -e "${YELLOW}Warning: OTP Service failed to start${NC}"
     sleep 2
     
     # Start password reset service (depends on OTP)
@@ -1140,8 +1140,8 @@ while getopts ":cauwbxpsvhlofnr:L:F:" option; do
             ;;
         o)
             echo -e "${GREEN}Starting OTP Service...${NC}"
-            verbose_log "Executing: OTP_satrt"
-            OTP_satrt
+            verbose_log "Executing: OTP_start"
+            OTP_start
             exit 0
             ;;
         f)
