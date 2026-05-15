@@ -753,7 +753,7 @@ OTP_start(){
         echo -e "${RED}ERROR: Port $OTP_PORT is already in use${NC}"
         return 1
     fi
-    cmd="cd \"$otp_dir\" && python3 OTP_W.py"
+    cmd="cd \"$otp_dir\" && python3.11 OTP_W.py"
     start_bg "otp_service" "-o" "$cmd" "$OTP_PORT"
 }
 
@@ -783,7 +783,7 @@ password_reset_start(){
         sleep 3
     fi
     
-    cmd="cd \"$password_reset_dir\" && python3 forgetpassword.py"
+    cmd="cd \"$password_reset_dir\" && python3.11 forgetpassword.py"
     start_bg "password_reset" "-f" "$cmd" "$PASSWORD_RESET_PORT"
 }
 
@@ -801,7 +801,7 @@ ai_chatbot_api_only(){
     fi
     
     # Run API in background; output goes to process log only
-    cmd="cd \"$core_path\" && python3 api.py"
+    cmd="cd \"$core_path\" && python3.11 api.py"
     start_bg "ai_chatbot_api" "-a" "$cmd" "$API_PORT"
 }
 
@@ -856,7 +856,7 @@ notification_service_start() {
     fi
     
     # Run notification service in background; output goes to process log only
-    cmd="cd \"$notification_path\" && python3 main.py"
+    cmd="cd \"$notification_path\" && python3.11 main.py"
     start_bg "notification_service" "-n" "$cmd" "$NOTIFICATION_PORT"
 }
 
@@ -874,7 +874,7 @@ loginreg_script() {
     fi
     
     # Run login/registration script in background; output goes to process log only
-    cmd="cd \"$backend_path\" && python3 loginapi.py"
+    cmd="cd \"$backend_path\" && python3.11 loginapi.py"
     start_bg "loginreg" "-x" "$cmd" "$LOGIN_API_PORT"
 }
 
@@ -892,7 +892,7 @@ proxy_start() {
     fi
     
     # Run proxy server in background; output goes to process log only
-    cmd="cd \"$HOME/Teeth-Management-System\" && python3 proxy_server.py"
+    cmd="cd \"$HOME/Teeth-Management-System\" && python3.11 proxy_server.py"
     start_bg "proxy_server" "-p" "$cmd" "$PROXY_PORT"
 }
 
