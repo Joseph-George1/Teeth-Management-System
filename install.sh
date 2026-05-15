@@ -770,7 +770,7 @@ ensure_oracle_prereqs() {
         esac
 
         ok "Oracle installation step completed."
-        return 0
+#        return 0
     fi
 
     ok "Oracle installation detected. Continuing with prerequisite checks..."
