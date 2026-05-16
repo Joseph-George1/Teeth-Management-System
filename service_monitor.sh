@@ -282,6 +282,12 @@ send_whatsapp_notification() {
         return 0  # Skip WhatsApp notifications if API is not available
     fi
     
+    # Check if API key is configured (warn if still placeholder)
+    if [ -z "$WAHA_API_KEY" ] || [ "$WAHA_API_KEY" = "YOUR_WAHA_API_KEY_HERE" ]; then
+        warn_log "WAHA_API_KEY not configured. Skipping WhatsApp notifications."
+        return 0
+    fi
+    
     # Construct WhatsApp message (with proper JSON escaping)
     local message="🔔 Service Monitor Alert
 
@@ -313,21 +319,14 @@ $description"
         local waha_endpoint="$WAHA_API_URL/api/sendText"
         
         # Send request with HTTP status code
+        # WAHA API expects X-API-Key header (not Authorization: Bearer)
         local response
         local http_code
         
-        if [ -n "$WAHA_API_KEY" ] && [ "$WAHA_API_KEY" != "YOUR_WAHA_API_KEY_HERE" ]; then
-            # With API key authentication
-            response=$(curl -s -w "\n%{http_code}" -X POST "$waha_endpoint" \
-                -H 'Content-Type: application/json' \
-                -H "Authorization: Bearer $WAHA_API_KEY" \
-                -d "$payload" 2>&1)
-        else
-            # Without API key
-            response=$(curl -s -w "\n%{http_code}" -X POST "$waha_endpoint" \
-                -H 'Content-Type: application/json' \
-                -d "$payload" 2>&1)
-        fi
+        response=$(curl -s -w "\n%{http_code}" -X POST "$waha_endpoint" \
+            -H 'Content-Type: application/json' \
+            -H "X-API-Key: $WAHA_API_KEY" \
+            -d "$payload" 2>&1)
         
         http_code=$(echo "$response" | tail -n1)
         local body=$(echo "$response" | sed '$d')
