@@ -157,6 +157,18 @@ check_service_health() {
 }
 
 #===============================================================================
+# Utility: JSON String Escaping
+#===============================================================================
+
+json_escape() {
+    # Escape special characters for JSON strings
+    # Handle: quotes, backslashes, newlines, carriage returns, tabs
+    local string="$1"
+    # Use sed to escape JSON special characters
+    printf '%s\n' "$string" | sed -e 's/[\"]/\\"/g' -e 's/\\/\\\\/g' -e 's/$/\\n/g' | tr -d '\n' | sed 's/\\n$//'
+}
+
+#===============================================================================
 # Discord Notification Functions
 #===============================================================================
 
@@ -230,13 +242,13 @@ send_whatsapp_notification() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     local hostname=$(hostname)
     
-    # Construct WhatsApp message
-    local message="*🔔 Service Monitor Alert*
+    # Construct WhatsApp message (with proper JSON escaping)
+    local message="🔔 Service Monitor Alert
 
-*Title:* $title
-*Service:* $service_name
-*Host:* $hostname
-*Time:* $timestamp
+Title: $title
+Service: $service_name
+Host: $hostname
+Time: $timestamp
 
 $description"
     
@@ -245,15 +257,18 @@ $description"
         # Format: number@c.us (WhatsApp format)
         local chat_id="${phone}@c.us"
         
-        # Prepare payload for WAHA API
-        local payload=$(cat <<EOF
-{
-    "chatId": "$chat_id",
-    "text": "$message",
-    "session": "$WAHA_SESSION"
-}
-EOF
-)
+        # Escape message for JSON and prepare payload
+        local escaped_message=$(json_escape "$message")
+        local escaped_chat_id=$(json_escape "$chat_id")
+        local escaped_session=$(json_escape "$WAHA_SESSION")
+        
+        # Prepare payload for WAHA API using printf to avoid issues with special chars
+        local payload
+        payload=$(printf '{
+    "chatId": "%s",
+    "text": "%s",
+    "session": "%s"
+}' "$escaped_chat_id" "$escaped_message" "$escaped_session")
         
         local waha_endpoint="$WAHA_API_URL/api/sendText"
         
@@ -379,8 +394,17 @@ LOCK_TIMEOUT=300  # 5 minutes - if lock is older, consider it stale
 acquire_lock() {
     # Check if lock exists and is fresh
     if [ -f "$LOCK_FILE" ]; then
-        local lock_age=$(($(date +%s) - $(stat -c %Y "$LOCK_FILE" 2>/dev/null || echo 0)))
-        if [ $lock_age -lt $LOCK_TIMEOUT ]; then
+        # Try to get file modification time (portable method)
+        local lock_mtime
+        if command -v stat >/dev/null 2>&1; then
+            # Try GNU stat first, fall back to BSD stat
+            lock_mtime=$(stat -c %Y "$LOCK_FILE" 2>/dev/null || stat -f %m "$LOCK_FILE" 2>/dev/null || echo 0)
+        else
+            lock_mtime=$(date -r "$LOCK_FILE" +%s 2>/dev/null || echo 0)
+        fi
+        
+        local lock_age=$(($(date +%s) - lock_mtime))
+        if [ "$lock_age" -lt "$LOCK_TIMEOUT" ]; then
             # Lock exists and is fresh - another instance is running
             return 1
         else
