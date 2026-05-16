@@ -169,6 +169,32 @@ json_escape() {
 }
 
 #===============================================================================
+# WAHA API Diagnostics
+#===============================================================================
+
+check_waha_api() {
+    # Check if WAHA API is reachable and health
+    if [ -z "$WAHA_API_URL" ]; then
+        warn_log "WAHA_API_URL not configured. WhatsApp notifications disabled."
+        return 1
+    fi
+    
+    local health_url="$WAHA_API_URL/api/health"
+    local response
+    response=$(curl -s -w "\n%{http_code}" -m 3 "$health_url" 2>&1)
+    
+    local http_code=$(echo "$response" | tail -n1)
+    
+    if [ "$http_code" = "200" ]; then
+        info_log "WAHA API is healthy at $WAHA_API_URL"
+        return 0
+    else
+        warn_log "WAHA API health check failed (HTTP $http_code) at $WAHA_API_URL"
+        return 1
+    fi
+}
+
+#===============================================================================
 # Discord Notification Functions
 #===============================================================================
 
@@ -242,6 +268,11 @@ send_whatsapp_notification() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     local hostname=$(hostname)
     
+    # Check if WAHA API is configured and accessible
+    if ! check_waha_api; then
+        return 0  # Skip WhatsApp notifications if API is not available
+    fi
+    
     # Construct WhatsApp message (with proper JSON escaping)
     local message="🔔 Service Monitor Alert
 
@@ -272,14 +303,31 @@ $description"
         
         local waha_endpoint="$WAHA_API_URL/api/sendText"
         
-        # Send request
+        # Send request with HTTP status code
         local response
-        response=$(curl -s -X POST "$waha_endpoint" \
-            -H 'Content-Type: application/json' \
-            -d "$payload" 2>&1)
+        local http_code
         
-        if echo "$response" | grep -q 'error'; then
-            warn_log "Failed to send WhatsApp to +$phone: $response"
+        if [ -n "$WAHA_API_KEY" ] && [ "$WAHA_API_KEY" != "YOUR_WAHA_API_KEY_HERE" ]; then
+            # With API key authentication
+            response=$(curl -s -w "\n%{http_code}" -X POST "$waha_endpoint" \
+                -H 'Content-Type: application/json' \
+                -H "Authorization: Bearer $WAHA_API_KEY" \
+                -d "$payload" 2>&1)
+        else
+            # Without API key
+            response=$(curl -s -w "\n%{http_code}" -X POST "$waha_endpoint" \
+                -H 'Content-Type: application/json' \
+                -d "$payload" 2>&1)
+        fi
+        
+        http_code=$(echo "$response" | tail -n1)
+        local body=$(echo "$response" | sed '$d')
+        
+        # Check HTTP status code and response for errors
+        if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
+            warn_log "Failed to send WhatsApp to +$phone (HTTP $http_code): $body"
+        elif echo "$body" | grep -qi 'error\|failed\|invalid'; then
+            warn_log "Failed to send WhatsApp to +$phone: $body"
         else
             info_log "WhatsApp notification sent to +$phone for $service_name"
         fi
@@ -390,6 +438,18 @@ restart_service() {
 
 LOCK_FILE="$LOG_DIR/.monitor.lock"
 LOCK_TIMEOUT=300  # 5 minutes - if lock is older, consider it stale
+TEST_MODE_DIR="$LOG_DIR/test_mode"
+
+is_service_in_test_mode() {
+    # Check if a service has the test mode flag enabled
+    local service_name="$1"
+    local test_flag="$TEST_MODE_DIR/${service_name}.testing"
+    
+    if [ -f "$test_flag" ]; then
+        return 0  # Service is in test mode (skip monitoring)
+    fi
+    return 1  # Service is not in test mode (monitor normally)
+}
 
 acquire_lock() {
     # Check if lock exists and is fresh
@@ -433,9 +493,17 @@ monitor_services() {
     
     local failed_services=()
     local recovered_services=()
+    local skipped_services=()
     
     # Check each service
     for service_name in "${!SERVICES[@]}"; do
+        # Skip if service is in test mode
+        if is_service_in_test_mode "$service_name"; then
+            info_log "⊘ $service_name is in TEST MODE - skipping monitoring"
+            skipped_services+=("$service_name")
+            continue
+        fi
+        
         local service_config="${SERVICES[$service_name]}"
         local port=$(echo "$service_config" | cut -d'|' -f1)
         local endpoint=$(echo "$service_config" | cut -d'|' -f2)
@@ -485,7 +553,7 @@ monitor_services() {
     done
     
     info_log "========== Service Monitor Completed =========="
-    info_log "Summary: Checked ${#SERVICES[@]} services, Failed: ${#failed_services[@]}, Recovered: ${#recovered_services[@]}"
+    info_log "Summary: Checked $((${#SERVICES[@]} - ${#skipped_services[@]})) services, Skipped: ${#skipped_services[@]}, Failed: ${#failed_services[@]}, Recovered: ${#recovered_services[@]}"
 }
 
 #===============================================================================
