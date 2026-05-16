@@ -33,8 +33,23 @@ ASTART_SCRIPT="$PROJECT_DIR/astart"
 LOG_FILE="$PROJECT_DIR/logs/service_monitor.log"
 LOG_DIR="$PROJECT_DIR/logs"
 
-# Discord webhook URL (set via environment or here)
-DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-}"
+#===============================================================================
+# Notification Configuration
+#===============================================================================
+
+# Discord webhook URL
+# Get from: Discord Server Settings → Integrations → Webhooks → Copy Webhook URL
+# Example: https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
+DISCORD_WEBHOOK_URL="YOUR_DISCORD_WEBHOOK_URL_HERE"
+
+# WhatsApp configuration (WAHA API)
+WAHA_API_URL="http://127.0.0.1:3000"
+WAHA_API_KEY="YOUR_WAHA_API_KEY_HERE"  # Leave empty "" if no API key required
+WAHA_SESSION="default"
+
+# Phone numbers to receive WhatsApp alerts (without + prefix)
+# Add more numbers as needed: ("2012345678" "2009876543" "2001234567")
+WHATSAPP_PHONES=("201226191421" "201097727531")
 
 # Timeout for health checks (seconds)
 HEALTH_CHECK_TIMEOUT=5
@@ -208,12 +223,66 @@ EOF
     return 0
 }
 
+send_whatsapp_notification() {
+    local title="$1"
+    local description="$2"
+    local service_name="$3"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local hostname=$(hostname)
+    
+    # Construct WhatsApp message
+    local message="*🔔 Service Monitor Alert*
+
+*Title:* $title
+*Service:* $service_name
+*Host:* $hostname
+*Time:* $timestamp
+
+$description"
+    
+    # Send to each phone number
+    for phone in "${WHATSAPP_PHONES[@]}"; do
+        # Format: number@c.us (WhatsApp format)
+        local chat_id="${phone}@c.us"
+        
+        # Prepare payload for WAHA API
+        local payload=$(cat <<EOF
+{
+    "chatId": "$chat_id",
+    "text": "$message",
+    "session": "$WAHA_SESSION"
+}
+EOF
+)
+        
+        local waha_endpoint="$WAHA_API_URL/api/sendText"
+        
+        # Send request
+        local response
+        response=$(curl -s -X POST "$waha_endpoint" \
+            -H 'Content-Type: application/json' \
+            -d "$payload" 2>&1)
+        
+        if echo "$response" | grep -q 'error'; then
+            warn_log "Failed to send WhatsApp to +$phone: $response"
+        else
+            info_log "WhatsApp notification sent to +$phone for $service_name"
+        fi
+    done
+    
+    return 0
+}
+
 send_service_down_notification() {
     local service_name="$1"
     send_discord_notification \
         "🔴 Service Down" \
         "Service **$service_name** is **DOWN** and recovery attempts failed." \
         16711680 \
+        "$service_name"
+    send_whatsapp_notification \
+        "🔴 Service Down" \
+        "Service $service_name is DOWN and recovery attempts failed." \
         "$service_name"
 }
 
@@ -224,6 +293,10 @@ send_service_recovering_notification() {
         "Service **$service_name** was down. Attempting automatic recovery..." \
         16776960 \
         "$service_name"
+    send_whatsapp_notification \
+        "🟡 Service Recovering" \
+        "Service $service_name was down. Attempting automatic recovery..." \
+        "$service_name"
 }
 
 send_service_recovered_notification() {
@@ -232,6 +305,10 @@ send_service_recovered_notification() {
         "🟢 Service Recovered" \
         "Service **$service_name** has been **RECOVERED**." \
         65280 \
+        "$service_name"
+    send_whatsapp_notification \
+        "🟢 Service Recovered" \
+        "Service $service_name has been RECOVERED." \
         "$service_name"
 }
 
