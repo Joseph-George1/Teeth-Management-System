@@ -3,11 +3,18 @@ Configuration module for Notification Service
 Manages database connections, Firebase initialization, application settings
 
 Location: Notification/config.py
+
+Architecture Notes:
+  - Uses pathlib.Path to resolve ../.env relative to this file's location
+  - Parses JDBC format from .env and builds explicit Oracle Net descriptor with SERVICE_NAME
+  - Bypasses oracledb driver's SID/SERVICE_NAME heuristic guessing for modern PDB connections
 """
 
 import os
 import json
 import logging
+import re
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,44 +23,147 @@ from firebase_admin import credentials
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file
-load_dotenv()
+# =========================================================================
+# ENVIRONMENT SETUP - EXPLICIT RELATIVE PATH TO ../.env
+# =========================================================================
+"""
+Load .env from parent directory using pathlib.Path for explicit, cross-platform resolution.
+This ensures the script works correctly regardless of the current working directory.
+
+Example: If config.py is at /app/Notification/config.py, we load /app/.env
+"""
+NOTIFICATION_DIR = Path(__file__).parent  # /path/to/Notification
+ENV_FILE = NOTIFICATION_DIR.parent / ".env"  # /path/to/.env
+
+if ENV_FILE.exists():
+    load_dotenv(dotenv_path=ENV_FILE)
+    logger.info(f"✓ Loaded environment from: {ENV_FILE}")
+else:
+    logger.warning(f"⚠ .env file not found at {ENV_FILE}. Using environment variables or defaults.")
 
 # =========================================================================
-# DATABASE CONFIGURATION
+# DATABASE CONFIGURATION - ORACLE WITH PLUGGABLE DATABASE (PDB)
 # =========================================================================
-# Oracle Database connection settings
-DB_USER = os.getenv("DB_USER", "hr")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "hr")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "1521")
-DB_NAME = os.getenv("DB_NAME", "orclpdb")
+"""
+Oracle Connection String Architecture:
 
-# Build Oracle connection string using oracledb driver
-DATABASE_URL = f"oracle+oracledb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+Modern Oracle 21c Express uses Pluggable Database (PDB) "XEPDB1" with SERVICE_NAME.
+The oracledb driver has heuristic parsing that can misinterpret the connection target.
 
-logger.info(f"Database connection: {DB_HOST}:{DB_PORT}/{DB_NAME}")
+Solution: Explicitly build Oracle Net descriptor with (CONNECT_DATA=(SERVICE_NAME=...))
 
-# Create SQLAlchemy engine with connection pooling
-# pool_size: Number of connections to maintain in pool
-# max_overflow: Additional connections allowed beyond pool_size
-# pool_pre_ping: Test connection on checkout for stale connection detection
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,  # Set to True for SQL logging in debug
-    pool_size=20,         # Connection pool size
-    max_overflow=10,      # Additional connections beyond pool size
-    pool_pre_ping=True,   # Test connection on checkout
-    pool_recycle=3600     # Recycle connections after 1 hour
+Format:
+  oracle+oracledb://username:password@hostname:port/?service_name=SERVICE_NAME
+  
+This bypasses driver guessing and explicitly tells Oracle to use SERVICE_NAME lookup
+instead of SID lookup, resolving DPY-6003 "SID not registered" errors.
+"""
+
+def parse_jdbc_url(jdbc_url: str) -> dict:
+    """
+    Parse Oracle JDBC URL to extract connection parameters.
+    
+    Handles format: jdbc:oracle:thin:@hostname:port/SERVICE_NAME
+    
+    Args:
+        jdbc_url: JDBC connection string from environment
+        
+    Returns:
+        Dictionary with 'host', 'port', 'service_name' keys
+        
+    Raises:
+        ValueError: If URL format is invalid
+    """
+    # Pattern: jdbc:oracle:thin:@hostname:port/SERVICE_NAME
+    pattern = r'jdbc:oracle:thin:@([^:]+):(\d+)/(.+)'
+    match = re.match(pattern, jdbc_url)
+    
+    if not match:
+        raise ValueError(
+            f"Invalid JDBC URL format: {jdbc_url}\n"
+            f"Expected: jdbc:oracle:thin:@hostname:port/SERVICE_NAME"
+        )
+    
+    host, port, service_name = match.groups()
+    return {
+        'host': host.strip(),
+        'port': port.strip(),
+        'service_name': service_name.strip()
+    }
+
+
+# Extract database credentials from environment
+DB_JDBC_URL = os.getenv("DB_URL")
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# Validate required credentials
+if not all([DB_JDBC_URL, DB_USERNAME, DB_PASSWORD]):
+    missing = []
+    if not DB_JDBC_URL:
+        missing.append("DB_URL")
+    if not DB_USERNAME:
+        missing.append("DB_USERNAME")
+    if not DB_PASSWORD:
+        missing.append("DB_PASSWORD")
+    
+    raise ValueError(
+        f"Missing required environment variables: {', '.join(missing)}\n"
+        f"Expected .env file at: {ENV_FILE}"
+    )
+
+# Parse JDBC URL to extract host, port, and service name
+try:
+    jdbc_params = parse_jdbc_url(DB_JDBC_URL)
+    DB_HOST = jdbc_params['host']
+    DB_PORT = jdbc_params['port']
+    DB_SERVICE_NAME = jdbc_params['service_name']
+    
+    logger.info(f"✓ Parsed JDBC URL:")
+    logger.info(f"  Host: {DB_HOST}")
+    logger.info(f"  Port: {DB_PORT}")
+    logger.info(f"  Service Name (PDB): {DB_SERVICE_NAME}")
+    
+except ValueError as e:
+    logger.error(f"❌ Failed to parse DB_URL: {e}")
+    raise
+
+# Build SQLAlchemy connection string with explicit SERVICE_NAME
+# Format: oracle+oracledb://username:password@host:port/?service_name=SERVICE_NAME
+# This tells oracledb to use SERVICE_NAME (for PDB) instead of SID lookup
+DATABASE_URL = (
+    f"oracle+oracledb://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/"
+    f"?service_name={DB_SERVICE_NAME}"
 )
 
-# Session factory
+logger.info(f"✓ Database connection: {DB_HOST}:{DB_PORT}/{DB_SERVICE_NAME} (as SERVICE_NAME)")
+
+# Create SQLAlchemy engine with production-grade connection pooling
+# Configuration tuned for AWS EC2 with background worker processes
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,  # Set to True for SQL logging in debug mode
+    # Connection pool settings (critical for background workers)
+    pool_size=20,         # Persistent connections in pool
+    max_overflow=10,      # Additional connections allowed beyond pool_size
+    pool_pre_ping=True,   # Validate connection on checkout (stale connection detection)
+    pool_recycle=3600,    # Recycle connections after 1 hour (prevents timeouts)
+    pool_timeout=30,      # Wait up to 30 seconds for a connection from the pool
+)
+
+# Session factory for dependency injection in FastAPI routes
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db_session():
     """
-    Dependency injection for database session
-    Usage: db = Depends(get_db_session)
+    Dependency injection for database session in FastAPI routes.
+    
+    Usage:
+        @app.get("/endpoint")
+        def route(db = Depends(get_db_session)):
+            # db is a SQLAlchemy Session object
+            pass
     """
     db = SessionLocal()
     try:
@@ -67,7 +177,7 @@ def get_db_session():
 # Path to Firebase service account credentials
 FIREBASE_KEY_PATH = os.getenv(
     "FIREBASE_KEY_PATH",
-    os.path.join(os.path.dirname(__file__), "firebase-key.json")
+    str(NOTIFICATION_DIR / "firebase-key.json")  # Use pathlib consistently
 )
 
 # Global Firebase app instance
@@ -148,7 +258,7 @@ NOTIFICATION_CONFIG = {
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE = os.getenv(
     "LOG_FILE",
-    os.path.join(os.path.dirname(__file__), "logs/notification.log")
+    str(NOTIFICATION_DIR / "logs" / "notification.log")
 )
 
 logger.info(f"Logging level: {LOG_LEVEL}")
