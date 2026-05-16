@@ -59,7 +59,7 @@ declare -A SERVICES=(
     [proxy_server]="5173||astart|bash $ASTART_SCRIPT -p"
     [otp_service]="8000|/health|astart|bash $ASTART_SCRIPT -o"
     [password_reset]="7000||astart|bash $ASTART_SCRIPT -f"
-    [notification_service]="9000|/api/notify/health|astart|bash $ASTART_SCRIPT -n"
+    [notification_service]="9000|/health|astart|bash $ASTART_SCRIPT -n"
     
     # Systemctl services (special Discord bot services)
     [flask-api.service]="5010||systemctl|sudo systemctl start flask-api.service"
@@ -293,6 +293,36 @@ restart_service() {
 }
 
 #===============================================================================
+# Locking Mechanism (Prevents Concurrent Executions)
+#===============================================================================
+
+LOCK_FILE="$LOG_DIR/.monitor.lock"
+LOCK_TIMEOUT=300  # 5 minutes - if lock is older, consider it stale
+
+acquire_lock() {
+    # Check if lock exists and is fresh
+    if [ -f "$LOCK_FILE" ]; then
+        local lock_age=$(($(date +%s) - $(stat -c %Y "$LOCK_FILE" 2>/dev/null || echo 0)))
+        if [ $lock_age -lt $LOCK_TIMEOUT ]; then
+            # Lock exists and is fresh - another instance is running
+            return 1
+        else
+            # Lock is stale, remove it
+            rm -f "$LOCK_FILE"
+        fi
+    fi
+    
+    # Create lock file
+    mkdir -p "$LOG_DIR"
+    echo $$ > "$LOCK_FILE"
+    return 0
+}
+
+release_lock() {
+    rm -f "$LOCK_FILE"
+}
+
+#===============================================================================
 # Main Monitoring Loop
 #===============================================================================
 
@@ -364,6 +394,15 @@ monitor_services() {
 main() {
     # Allow override via environment
     VERBOSE="${VERBOSE:-0}"
+    
+    # Acquire lock to prevent concurrent executions
+    if ! acquire_lock; then
+        warn_log "Another monitor instance is already running. Exiting."
+        exit 0
+    fi
+    
+    # Ensure cleanup on exit
+    trap release_lock EXIT INT TERM
     
     # Ensure we can run astart if needed
     if [ ! -x "$ASTART_SCRIPT" ]; then
