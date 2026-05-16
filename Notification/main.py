@@ -8,6 +8,7 @@ Port: 9000
 Created: April 4, 2026
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,11 +38,87 @@ from utils.logger import setup_logger
 # Initialize logging
 logger = setup_logger(__name__)
 
-# Create FastAPI app
+# =========================================================================
+# LIFESPAN CONTEXT MANAGER - Modern FastAPI Startup/Shutdown Handler
+# =========================================================================
+"""
+FastAPI 0.93+ uses lifespan context managers instead of @app.on_event().
+This approach is more explicit and handles both startup and shutdown cleanly.
+
+Replaces deprecated:
+  @app.on_event("startup")
+  async def startup_event(): ...
+"""
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    FastAPI lifespan context manager for startup and shutdown events.
+    
+    Startup (yield before): Initialize Firebase and background tasks
+    Shutdown (after yield): Clean up scheduler gracefully
+    """
+    # ======================= STARTUP =======================
+    try:
+        init_firebase()
+        logger.info("Firebase initialized successfully on startup")
+        
+        # Import queue service for background notification processing
+        from services.queue_service import QueueService
+        from services.patient_token_service import PatientTokenService
+        
+        def process_notifications():
+            """Background task to process notification queue (runs every 2 seconds)"""
+            try:
+                db = next(get_db_session())
+                queue_service = QueueService(db)
+                queue_service.process_queue(db)
+                db.close()
+            except Exception as e:
+                logger.error(f"Background queue processor error: {e}")
+        
+        def cleanup_patient_tokens():
+            """Background task to cleanup expired patient tokens (runs every hour)"""
+            try:
+                db = next(get_db_session())
+                token_service = PatientTokenService(db)
+                deleted = token_service.cleanup_expired_tokens()
+                db.close()
+            except Exception as e:
+                logger.error(f"Patient token cleanup error: {e}")
+        
+        # Initialize APScheduler for background tasks
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(process_notifications, 'interval', seconds=2)
+        scheduler.add_job(cleanup_patient_tokens, 'interval', hours=1)
+        scheduler.start()
+        
+        logger.info("Background notification queue processor started (runs every 2 seconds)")
+        logger.info("Patient token cleanup started (runs every hour)")
+        
+        # Store scheduler in app state for access in shutdown
+        app.state.scheduler = scheduler
+        
+        yield  # Application runs here
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize Firebase: {e}")
+        logger.error("Exiting - Firebase credentials required to proceed")
+        sys.exit(1)
+    
+    # ======================= SHUTDOWN =======================
+    finally:
+        # Clean up scheduler gracefully
+        if hasattr(app.state, 'scheduler'):
+            app.state.scheduler.shutdown()
+            logger.info("Background scheduler shut down gracefully")
+
+# Create FastAPI app with lifespan handler
 app = FastAPI(
     title="Teeth Management Notification Service",
     version="1.0.0",
-    description="Advanced notification service with FCM, templates, multi-language, and delivery tracking"
+    description="Advanced notification service with FCM, templates, multi-language, and delivery tracking",
+    lifespan=lifespan  # Modern way to handle startup/shutdown
 )
 
 # Enable CORS (for Java backend calling from different port)
@@ -52,56 +129,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize Firebase on startup
-@app.on_event("startup")
-async def startup_event():
-    try:
-        init_firebase()
-        logger.info("Firebase initialized successfully on startup")
-        
-        # Start background queue processor
-        from services.queue_service import QueueService
-        
-        def process_notifications():
-            """Background task to process notification queue"""
-            try:
-                db = next(get_db_session())
-                queue_service = QueueService(db)
-                queue_service.process_queue(db)
-                db.close()
-            except Exception as e:
-                logger.error(f"Background queue processor error: {e}")
-        
-        # Initialize APScheduler
-        scheduler = BackgroundScheduler()
-        scheduler.add_job(process_notifications, 'interval', seconds=2)
-        
-        # Add job to cleanup expired patient tokens (every hour)
-        def cleanup_patient_tokens():
-            """Background task to cleanup expired patient tokens"""
-            try:
-                from services.patient_token_service import PatientTokenService
-                db = next(get_db_session())
-                token_service = PatientTokenService(db)
-                deleted = token_service.cleanup_expired_tokens()
-                db.close()
-            except Exception as e:
-                logger.error(f"Patient token cleanup error: {e}")
-        
-        scheduler.add_job(cleanup_patient_tokens, 'interval', hours=1)
-        
-        scheduler.start()
-        logger.info("Background notification queue processor started (runs every 2 seconds)")
-        logger.info("Patient token cleanup started (runs every hour)")
-        
-        # Shutdown handler
-        atexit.register(lambda: scheduler.shutdown())
-        
-    except Exception as e:
-        logger.error(f"Failed to initialize Firebase: {e}")
-        logger.error("Exiting - Firebase credentials required to proceed")
-        sys.exit(1)
 
 # Health check endpoint (for cron monitoring)
 @app.get("/health")
