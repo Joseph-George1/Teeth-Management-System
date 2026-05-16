@@ -15,11 +15,16 @@
 #   0 2 * * * /home/ubuntu/Teeth-Management-System/service_monitor.sh
 #
 # Configuration:
-#   Set DISCORD_WEBHOOK_URL environment variable or edit below
-#   Set ASTART_PATH if using non-standard location
+#   1. Copy .env.example to .env
+#   2. Edit .env and set:
+#      - DISCORD_WEBHOOK_URL (for Discord notifications)
+#      - WAHA_API_KEY (for WhatsApp notifications via WAHA API)
+#      - WAHA_API_URL (default: http://127.0.0.1:3000)
+#      - WHATSAPP_PHONES (space-separated phone numbers)
+#   3. Or set environment variables before running the script
 #
 # Dependencies:
-#   - curl (for health checks and Discord notifications)
+#   - curl (for health checks and notifications)
 #   - systemctl (for system services)
 #   - bash
 ################################################################################
@@ -34,22 +39,44 @@ LOG_FILE="$PROJECT_DIR/logs/service_monitor.log"
 LOG_DIR="$PROJECT_DIR/logs"
 
 #===============================================================================
+# Load Configuration from .env File
+#===============================================================================
+
+ENV_FILE="$PROJECT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    # Source .env file safely (only export variables, don't execute commands)
+    set -a
+    source "$ENV_FILE"
+    set +a
+    echo "Configuration loaded from $ENV_FILE"
+else
+    echo "Warning: .env file not found at $ENV_FILE"
+    echo "Using default/placeholder configuration values"
+fi
+
+#===============================================================================
 # Notification Configuration
 #===============================================================================
 
 # Discord webhook URL
 # Get from: Discord Server Settings → Integrations → Webhooks → Copy Webhook URL
 # Example: https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
-DISCORD_WEBHOOK_URL="YOUR_DISCORD_WEBHOOK_URL_HERE"
+DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-YOUR_DISCORD_WEBHOOK_URL_HERE}"
 
 # WhatsApp configuration (WAHA API)
-WAHA_API_URL="http://127.0.0.1:3000"
-WAHA_API_KEY="YOUR_WAHA_API_KEY_HERE"  # Leave empty "" if no API key required
-WAHA_SESSION="default"
+WAHA_API_URL="${WAHA_API_URL:-http://127.0.0.1:3000}"
+WAHA_API_KEY="${WAHA_API_KEY:-YOUR_WAHA_API_KEY_HERE}"  # Set in .env or leave as placeholder
+WAHA_SESSION="${WAHA_SESSION:-default}"
 
 # Phone numbers to receive WhatsApp alerts (without + prefix)
 # Add more numbers as needed: ("2012345678" "2009876543" "2001234567")
-WHATSAPP_PHONES=("201226191421" "201097727531")
+# Can also be set in .env as: WHATSAPP_PHONES="201226191421 201097727531"
+if [ -z "${WHATSAPP_PHONES}" ]; then
+    WHATSAPP_PHONES=("201226191421" "201097727531")
+elif [ "${WHATSAPP_PHONES//[[:space:]]/}" != "${WHATSAPP_PHONES}" ]; then
+    # Convert space-separated string to array
+    WHATSAPP_PHONES=($WHATSAPP_PHONES)
+fi
 
 # Timeout for health checks (seconds)
 HEALTH_CHECK_TIMEOUT=5
