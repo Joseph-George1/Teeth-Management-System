@@ -173,7 +173,7 @@ json_escape() {
 #===============================================================================
 
 check_waha_api() {
-    # Check if WAHA API is reachable and health
+    # Check if WAHA API is reachable and healthy
     if [ -z "$WAHA_API_URL" ]; then
         warn_log "WAHA_API_URL not configured. WhatsApp notifications disabled."
         return 1
@@ -181,12 +181,21 @@ check_waha_api() {
     
     local health_url="$WAHA_API_URL/api/health"
     local response
-    response=$(curl -s -w "\n%{http_code}" -m 3 "$health_url" 2>&1)
+    
+    # Include API key if configured
+    if [ -n "$WAHA_API_KEY" ] && [ "$WAHA_API_KEY" != "YOUR_WAHA_API_KEY_HERE" ]; then
+        response=$(curl -s -w "\n%{http_code}" -m 3 \
+            -H "Authorization: Bearer $WAHA_API_KEY" \
+            "$health_url" 2>&1)
+    else
+        response=$(curl -s -w "\n%{http_code}" -m 3 "$health_url" 2>&1)
+    fi
     
     local http_code=$(echo "$response" | tail -n1)
     
-    if [ "$http_code" = "200" ]; then
-        info_log "WAHA API is healthy at $WAHA_API_URL"
+    if [ "$http_code" = "200" ] || [ "$http_code" = "401" ]; then
+        # 200 = healthy, 401 = API key needed but API is responding (will be handled in send function)
+        info_log "WAHA API is reachable at $WAHA_API_URL"
         return 0
     else
         warn_log "WAHA API health check failed (HTTP $http_code) at $WAHA_API_URL"
