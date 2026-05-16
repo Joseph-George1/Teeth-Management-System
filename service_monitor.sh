@@ -361,23 +361,23 @@ monitor_services() {
             warn_log "✗ $service_name is DOWN - attempting recovery"
             failed_services+=("$service_name|$restart_method|$restart_command")
             
-            # Send initial notification
-            send_service_recovering_notification "$service_name"
-            
-            # Attempt restart
+            # Attempt restart (no notification yet - only on final outcome)
             if restart_service "$service_name" "$restart_method" "$restart_command"; then
                 # Check again after restart
                 sleep 2
                 if check_service_health "$service_name" "$port" "$endpoint"; then
                     info_log "✓ $service_name recovered successfully"
                     recovered_services+=("$service_name")
+                    # Send notification ONLY on successful recovery
                     send_service_recovered_notification "$service_name"
                 else
                     error_log "✗ $service_name still down after restart attempt"
+                    # Send notification ONLY on failed recovery
                     send_service_down_notification "$service_name"
                 fi
             else
                 error_log "✗ Failed to restart $service_name"
+                # Send notification ONLY on failed restart
                 send_service_down_notification "$service_name"
             fi
         fi
