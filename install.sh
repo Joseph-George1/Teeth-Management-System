@@ -777,35 +777,157 @@ ensure_oracle_prereqs() {
 # -----------------------------
 # Function: Setup .env configuration file
 # -----------------------------
+# =============================================================================
+# Function: Setup .env configuration file
+# =============================================================================
 setup_env_file() {
     local env_file="$SCRIPT_DIR/.env"
     local env_example="$SCRIPT_DIR/.env.example"
     
     if [ -f "$env_file" ]; then
         ok ".env file already exists at $env_file"
-        return 0
+        echo -n "Overwrite existing .env file? (y/n) [n]: "
+        read -r -t 15 overwrite_choice || overwrite_choice="n"
+        if ! validate_yes_no "${overwrite_choice:-n}"; then
+            return 0
+        fi
     fi
     
     msg "Creating .env configuration file..."
     
     if [ -f "$env_example" ]; then
+        # Copy .env.example to .env
         cp "$env_example" "$env_file"
         ok ".env file created from .env.example"
+        
+        # Interactive prompts for critical configuration
+        echo
+        msg "Let's configure your system. Press Enter to keep defaults."
+        echo
+        
+        # Database Configuration
+        echo -n "Database URL [jdbc:oracle:thin:@localhost:1521/orclpdb]: "
+        read -r -t 15 db_url || db_url=""
+        if [ -n "$db_url" ]; then
+            sed -i.bak "s|DB_URL=.*|DB_URL=$db_url|" "$env_file"
+        fi
+        
+        echo -n "Database Username [hr]: "
+        read -r -t 15 db_user || db_user=""
+        if [ -n "$db_user" ]; then
+            sed -i "s/DB_USERNAME=.*/DB_USERNAME=$db_user/" "$env_file"
+        fi
+        
+        echo -n "Database Password [hr]: "
+        read -r -t 15 db_pass || db_pass=""
+        if [ -n "$db_pass" ]; then
+            sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$db_pass/" "$env_file"
+        fi
+        
+        # Clean up backup file from sed
+        rm -f "${env_file}.bak"
+        
+        ok ".env file configured with your values"
     else
-        # Create basic .env file
+        warn ".env.example not found. Creating basic .env file with defaults..."
         cat > "$env_file" << 'EOF'
-# Teeth Management System Configuration
+# =============================================================================
+# TEETH MANAGEMENT SYSTEM - ENVIRONMENT CONFIGURATION
+# =============================================================================
 
-# Database Configuration
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
 DB_URL=jdbc:oracle:thin:@localhost:1521/orclpdb
 DB_USERNAME=hr
 DB_PASSWORD=hr
+ORACLE_HOME=/opt/oracle/product/21c/dbhomeXE
+DB_HOST=localhost
+DB_PORT=1521
+DB_ORACLE_SID=XE
 
-# Port Configuration
+# =============================================================================
+# API SERVICE PORTS
+# =============================================================================
 WEB_UI_PORT=5173
 BACKEND_PORT=8080
 API_PORT=5010
 LOGIN_API_PORT=5000
+OTP_PORT=8000
+PROXY_PORT=5173
+FORGET_PASSWORD_PORT=7000
+NOTIFICATION_PORT=9000
+DASHBOARD_PORT=6500
+
+# =============================================================================
+# BACKEND URLs (for inter-service communication)
+# =============================================================================
+BACKEND_URL=http://localhost:8080
+AI_URL=http://127.0.0.1:5010
+OTP_URL=http://127.0.0.1:8000
+PROXY_URL=http://127.0.0.1:5173
+OTP_SERVICE_URL=http://127.0.0.1:8000
+
+# =============================================================================
+# BACKUP CONFIGURATION
+# =============================================================================
+BACKUP_ROOT_PATH=/backup
+BACKUP_RETENTION_DAYS=7
+
+# =============================================================================
+# DISCORD CONFIGURATION
+# =============================================================================
+DISCORD_TOKEN=your-discord-bot-token-here
+DISCORD_WEBHOOK_URL=
+ALLOWED_USER_IDS=
+
+# =============================================================================
+# FIREBASE CONFIGURATION
+# =============================================================================
+FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/firebase-service-account.json
+FIREBASE_KEY_PATH=./Notification/firebase-key.json
+
+# =============================================================================
+# WHATSAPP CONFIGURATION (WAHA API)
+# =============================================================================
+WAHA_API_URL=http://127.0.0.1:3000
+WAHA_API_KEY=
+WAHA_SESSION=default
+WHATSAPP_PHONES=
+
+# =============================================================================
+# NOTIFICATION SERVICE CONFIGURATION
+# =============================================================================
+MAX_RETRIES=3
+RETRY_BACKOFF_MULTIPLIER=2.0
+INITIAL_RETRY_DELAY_MS=1000
+QUEUE_CHECK_INTERVAL=30
+TEMPLATE_CACHE_TTL=300
+MAX_DEVICES_PER_USER=5
+NOTIFICATION_ENVIRONMENT=production
+
+# =============================================================================
+# EMAIL CONFIGURATION (SMTP)
+# =============================================================================
+ENABLE_EMAIL=false
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+SENDER_EMAIL=noreply@dentalsystem.com
+SENDER_PASSWORD=
+
+# =============================================================================
+# GOOGLE API CONFIGURATION
+# =============================================================================
+GOOGLE_API_KEY=
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_DIR=$HOME/Teeth-Management-System/logs
+LOG_LEVEL=INFO
+LOG_FILE=$HOME/Teeth-Management-System/logs/application.log
 EOF
         ok ".env file created with default values"
     fi
@@ -935,20 +1057,79 @@ show_post_install() {
     echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${RESET}"
     echo
     echo -e "${CYAN}Next Steps:${RESET}"
-    echo -e "  1. Review and update: ${YELLOW}$SCRIPT_DIR/.env${RESET}"
-    echo -e "  2. Start all services: ${YELLOW}astart -w${RESET}"
-    echo -e "  3. Check service status: ${YELLOW}astart -l${RESET}"
-    echo -e "  4. View logs: ${YELLOW}astart -L <service_name>${RESET}"
+    echo -e "  1. Review and update configuration:"
+    echo -e "     ${YELLOW}$SCRIPT_DIR/.env${RESET}"
+    echo -e "     Use ${YELLOW}.env.example${RESET} as a reference for all available options"
+    echo
+    echo -e "  2. Start all services:"
+    echo -e "     ${YELLOW}astart -w${RESET}"
+    echo
+    echo -e "  3. Check service status:"
+    echo -e "     ${YELLOW}astart -l${RESET}"
+    echo
+    echo -e "  4. View logs:"
+    echo -e "     ${YELLOW}astart -L <service_name>${RESET}"
+    echo
+    echo -e "${CYAN}Available Configuration Options (.env):${RESET}"
+    echo -e "  ╔═══════════════════════════════════════════════════╗"
+    echo -e "  ║ DATABASE & SYSTEM                                 ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • DB_URL, DB_USERNAME, DB_PASSWORD                │"
+    echo -e "  │ • DB_HOST, DB_PORT, DB_ORACLE_SID, ORACLE_HOME    │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ SERVICES & PORTS                                  ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • WEB_UI_PORT, BACKEND_PORT, API_PORT, OTP_PORT   │"
+    echo -e "  │ • FORGET_PASSWORD_PORT, NOTIFICATION_PORT         │"
+    echo -e "  │ • DASHBOARD_PORT, PROXY_PORT                      │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ BACKEND COMMUNICATION                             ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • BACKEND_URL, AI_URL, OTP_URL, PROXY_URL         │"
+    echo -e "  ║ • OTP_SERVICE_URL                                 ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ NOTIFICATIONS & ALERTS                            ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • DISCORD_TOKEN, DISCORD_WEBHOOK_URL              │"
+    echo -e "  │ • WAHA_API_URL, WAHA_API_KEY, WAHA_SESSION        │"
+    echo -e "  │ • WHATSAPP_PHONES (space-separated)               │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ NOTIFICATION SERVICE CONFIG                       ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • MAX_RETRIES, RETRY_BACKOFF_MULTIPLIER           │"
+    echo -e "  │ • QUEUE_CHECK_INTERVAL, TEMPLATE_CACHE_TTL        │"
+    echo -e "  │ • MAX_DEVICES_PER_USER, NOTIFICATION_ENVIRONMENT  │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ EMAIL (SMTP) CONFIG                               ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • ENABLE_EMAIL, SMTP_SERVER, SMTP_PORT            │"
+    echo -e "  │ • SENDER_EMAIL, SENDER_PASSWORD                   │"
+    echo -e "  │ • SMTP_USE_TLS, SMTP_USE_SSL                      │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ FIREBASE & GOOGLE                                 ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • FIREBASE_SERVICE_ACCOUNT_JSON                   │"
+    echo -e "  │ • FIREBASE_KEY_PATH, GOOGLE_API_KEY               │"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  ║ BACKUP & LOGGING                                  ║"
+    echo -e "  ╠═══════════════════════════════════════════════════╣"
+    echo -e "  │ • BACKUP_ROOT_PATH, BACKUP_RETENTION_DAYS         │"
+    echo -e "  │ • LOG_DIR, LOG_LEVEL, LOG_FILE                    │"
+    echo -e "  ╚═══════════════════════════════════════════════════╝"
     echo
     echo -e "${CYAN}Available Services:${RESET}"
     echo -e "  - Backend (Spring Boot): Port 8080"
     echo -e "  - Login API: Port 5000"
     echo -e "  - AI Chatbot API: Port 5010"
     echo -e "  - Web UI (Vite): Port 5173"
+    echo -e "  - OTP Service: Port 8000"
+    echo -e "  - Password Reset: Port 7000"
+    echo -e "  - Admin Dashboard: Port 6500"
     echo
     echo -e "${CYAN}Documentation:${RESET}"
     echo -e "  - Installation log: ${YELLOW}$INSTALL_LOG${RESET}"
     echo -e "  - Rollback log: ${YELLOW}$ROLLBACK_LOG${RESET}"
+    echo -e "  - Environment template: ${YELLOW}$SCRIPT_DIR/.env.example${RESET}"
     echo -e "  - Help: ${YELLOW}astart -h${RESET}"
     echo
     echo -e "${MAGENTA}For issues or questions, check the README.md file${RESET}"

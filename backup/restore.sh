@@ -11,6 +11,22 @@
 set -e  # Exit on error
 
 # ============================================================================
+# LOAD ENVIRONMENT CONFIGURATION FROM .env
+# ============================================================================
+# Load configuration from parent directory .env file
+SOURCE_ROOT_PATH="$HOME/Teeth-Management-System"
+ENV_FILE="${SOURCE_ROOT_PATH}/.env"
+
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+    echo "[INFO] Loaded environment from: $ENV_FILE"
+else
+    echo "[WARNING] .env file not found at $ENV_FILE. Using defaults or previously exported env vars."
+fi
+
+# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
@@ -18,11 +34,10 @@ set -e  # Exit on error
 APACHE_PATH="/etc/apache2"
 WEBUI_PATH="/var/www/html"
 SSL_PATH="/etc/ssl"
-JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
 TOMCAT_PATH="/opt/tomcat"
 
 # Source code - Single directory for GitHub sync
-SOURCE_ROOT_PATH="$HOME/Teeth-Management-System"
 BACKEND_PATH="${SOURCE_ROOT_PATH}/Backend"
 FRONTEND_PATH="${SOURCE_ROOT_PATH}/Thoutha-Website"
 AI_CHATBOT_PATH="${SOURCE_ROOT_PATH}/Ai-chatbot"
@@ -30,14 +45,38 @@ NOTIFICATIONS_PATH="${SOURCE_ROOT_PATH}/Notifications"
 OTP_PATH="${SOURCE_ROOT_PATH}/OTP"
 LOG_PATH="${SOURCE_ROOT_PATH}/logs"
 
-# Database - Oracle XE Configuration
-DB_USER="sys"  # SYSDBA privileges required for full database import
-DB_PASSWORD="password"  # TODO: Replace with actual database password
-DB_HOST="localhost"
-DB_PORT="1521"
-DB_ORACLE_SID="XE"
-ORACLE_HOME="/opt/oracle/product/21c/dbhomeXE"
+# Database - Oracle Configuration (from .env or defaults)
+# Note: For restore, we need SYS user with SYSDBA privileges
+# The .env contains DB_URL (JDBC format), DB_USERNAME, DB_PASSWORD for regular app access
+# For restore operations, configure DB_SYS_PASSWORD in .env or provide it at runtime
+parse_db_url() {
+    local jdbc_url="$1"
+    # Pattern: jdbc:oracle:thin:@hostname:port/SERVICE_NAME
+    if [[ $jdbc_url =~ ^jdbc:oracle:thin:@([^:]+):([0-9]+)/(.+)$ ]]; then
+        DB_HOST="${BASH_REMATCH[1]}"
+        DB_PORT="${BASH_REMATCH[2]}"
+        DB_SERVICE_NAME="${BASH_REMATCH[3]}"
+    fi
+}
+
+# Parse DB_URL if available
+if [ -n "$DB_URL" ]; then
+    parse_db_url "$DB_URL"
+    echo "[INFO] Parsed DB_URL: Host=$DB_HOST, Port=$DB_PORT, Service=$DB_SERVICE_NAME"
+fi
+
+# Set defaults if not already set
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-1521}"
+DB_SERVICE_NAME="${DB_SERVICE_NAME:-orclpdb}"
+DB_ORACLE_SID="${DB_ORACLE_SID:-XE}"
+ORACLE_HOME="${ORACLE_HOME:-/opt/oracle/product/21c/dbhomeXE}"
 IMPORT_PATH="${ORACLE_HOME}/bin"
+
+# For restore operations, use SYS account with SYSDBA privileges
+# If not set in .env, default to sys/password
+DB_RESTORE_USER="sys"
+DB_RESTORE_PASSWORD="${DB_SYS_PASSWORD:-password}"
 
 # Backup configuration
 BACKUP_SOURCE_PATH="${1:-.}"  # First argument is backup location

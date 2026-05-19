@@ -6,14 +6,31 @@ This service integrates with OTP_W.py for WhatsApp OTP and Oracle database for u
 import os
 import logging
 import secrets
+import re
 from datetime import datetime, timedelta
 from functools import wraps
+from pathlib import Path
 
 import oracledb
 import bcrypt
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+# ─────────────────────────────────────────────
+#  ENVIRONMENT SETUP - LOAD .env
+# ─────────────────────────────────────────────
+# Load .env from root directory (parent of this script's location)
+SCRIPT_DIR = Path(__file__).parent
+ROOT_DIR = SCRIPT_DIR
+ENV_FILE = ROOT_DIR / ".env"
+
+if ENV_FILE.exists():
+    load_dotenv(dotenv_path=ENV_FILE)
+    print(f"[INFO] Loaded environment from: {ENV_FILE}")
+else:
+    print(f"[WARNING] .env file not found at {ENV_FILE}. Using environment variables or defaults.")
 
 # Configure logging
 logging.basicConfig(
@@ -21,6 +38,35 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────
+#  HELPER - Parse JDBC URL
+# ─────────────────────────────────────────────
+def parse_jdbc_url(jdbc_url: str) -> dict:
+    """
+    Parse Oracle JDBC URL to extract connection parameters.
+    Handles format: jdbc:oracle:thin:@hostname:port/SERVICE_NAME
+    
+    Args:
+        jdbc_url: JDBC connection string from environment
+        
+    Returns:
+        Dictionary with 'dsn' key for oracledb.connect()
+    """
+    # Pattern: jdbc:oracle:thin:@hostname:port/SERVICE_NAME
+    pattern = r'jdbc:oracle:thin:@([^:]+):(\d+)/(.+)'
+    match = re.match(pattern, jdbc_url)
+    
+    if not match:
+        raise ValueError(
+            f"Invalid JDBC URL format: {jdbc_url}\n"
+            f"Expected: jdbc:oracle:thin:@hostname:port/SERVICE_NAME"
+        )
+    
+    host, port, service_name = match.groups()
+    # Return DSN format for oracledb: hostname:port/service_name
+    dsn = f"{host.strip()}:{port.strip()}/{service_name.strip()}"
+    return {'dsn': dsn}
 
 # ─────────────────────────────────────────────
 #  CONFIGURATION
@@ -34,9 +80,32 @@ logger = logging.getLogger(__name__)
 # - 7000: Password Reset Service (this service)
 
 OTP_SERVICE_URL = os.getenv("OTP_SERVICE_URL", "http://127.0.0.1:8000")
-DB_USER = os.getenv("DB_USER", "hr")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "hr")
-DB_DSN = os.getenv("DB_DSN", "localhost:1521/orclpdb")
+
+# Database Configuration - Load from .env with standardized variable names
+DB_JDBC_URL = os.getenv("DB_URL")
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# Parse JDBC URL and create DSN for oracledb
+if DB_JDBC_URL:
+    try:
+        parsed = parse_jdbc_url(DB_JDBC_URL)
+        DB_DSN = parsed['dsn']
+        logger.info(f"✓ Parsed DB_URL: {parsed['dsn']}")
+    except ValueError as e:
+        logger.error(f"Failed to parse DB_URL: {e}")
+        raise
+else:
+    # Fallback to legacy environment variables if DB_URL not set
+    DB_USERNAME = os.getenv("DB_USERNAME") or os.getenv("DB_USER", "hr")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "hr")
+    DB_DSN = os.getenv("DB_DSN", "localhost:1521/orclpdb")
+    logger.warning("DB_URL not set. Using legacy DB_USER/DB_PASSWORD/DB_DSN variables.")
+
+# Validate database configuration
+if not all([DB_USERNAME, DB_PASSWORD, DB_DSN]):
+    raise ValueError("Missing required database configuration: DB_USERNAME, DB_PASSWORD, DB_DSN")
+
 FLASK_PORT = int(os.getenv("FORGET_PASSWORD_PORT", "7000"))
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
@@ -58,7 +127,7 @@ def get_db_connection():
     """Create and return a database connection."""
     try:
         connection = oracledb.connect(
-            user=DB_USER,
+            user=DB_USERNAME,
             password=DB_PASSWORD,
             dsn=DB_DSN
         )
@@ -572,6 +641,8 @@ if __name__ == '__main__':
     logger.info(f"Starting Password Reset Service on port {FLASK_PORT}")
     logger.info(f"OTP Service URL: {OTP_SERVICE_URL}")
     logger.info(f"Database DSN: {DB_DSN}")
+    logger.info(f"Database User: {DB_USERNAME}")
+    logger.info("Configuration loaded from: .env file")
     
     app.run(
         host='0.0.0.0',

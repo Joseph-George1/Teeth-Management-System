@@ -269,7 +269,7 @@ logger.info(f"Log file: {LOG_FILE}")
 # =========================================================================
 APP_NAME = "Teeth Management Notification Service"
 APP_VERSION = "1.0.0"
-APP_ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+APP_ENVIRONMENT = os.getenv("NOTIFICATION_ENVIRONMENT", os.getenv("ENVIRONMENT", "production"))
 
 logger.info(f"Application: {APP_NAME} v{APP_VERSION}")
 logger.info(f"Environment: {APP_ENVIRONMENT}")

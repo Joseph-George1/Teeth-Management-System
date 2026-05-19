@@ -2,10 +2,15 @@ import os
 import asyncio
 from pathlib import Path
 from aiohttp import web, ClientSession
+from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
 
+# Load environment variables from master .env file at project root
+ENV_FILE = Path(__file__).parent / ".env"
+if ENV_FILE.exists():
+    load_dotenv(dotenv_path=ENV_FILE)
 
 ASTART_PATH = Path(os.environ.get("ASTART_PATH", "astart"))
 try:
@@ -23,25 +28,46 @@ def parse_log_paths(astart_file: Path):
 	log_dir = None
 	activity = None
 	pid_dir = None
+	
+	# First, try to read from .env (master configuration)
 	try:
-		text = astart_file.read_text()
-		for line in text.splitlines():
-			if line.strip().startswith('LOG_DIR='):
-				val = line.split('=', 1)[1].strip().strip('"').strip("'")
-				val = val.replace('$HOME', str(Path.home()))
-				log_dir = Path(val).expanduser()
-			if line.strip().startswith('ACTIVITY_LOG='):
-				val = line.split('=', 1)[1].strip().strip('"').strip("'")
-				if log_dir:
-					val = val.replace('$LOG_DIR', str(log_dir))
-				activity = Path(val).expanduser()
-			if line.strip().startswith('PID_DIR='):
-				val = line.split('=', 1)[1].strip().strip('"').strip("'")
-				if log_dir:
-					val = val.replace('$LOG_DIR', str(log_dir))
-				pid_dir = Path(val).expanduser()
+		env_file = astart_file.parent / '.env'
+		if env_file.exists():
+			with open(env_file, 'r') as f:
+				for line in f:
+					if line.strip().startswith('LOG_DIR='):
+						val = line.split('=', 1)[1].strip().strip('"').strip("'")
+						val = val.replace('$HOME', str(Path.home()))
+						log_dir = Path(val).expanduser()
+					if line.strip().startswith('LOG_FILE='):
+						val = line.split('=', 1)[1].strip().strip('"').strip("'")
+						if log_dir:
+							val = val.replace('$LOG_DIR', str(log_dir))
+						activity = Path(val).expanduser()
 	except Exception:
 		pass
+	
+	# Fallback: parse from astart file
+	if not log_dir:
+		try:
+			text = astart_file.read_text()
+			for line in text.splitlines():
+				if line.strip().startswith('LOG_DIR='):
+					val = line.split('=', 1)[1].strip().strip('"').strip("'")
+					val = val.replace('$HOME', str(Path.home()))
+					log_dir = Path(val).expanduser()
+				if line.strip().startswith('ACTIVITY_LOG='):
+					val = line.split('=', 1)[1].strip().strip('"').strip("'")
+					if log_dir:
+						val = val.replace('$LOG_DIR', str(log_dir))
+					activity = Path(val).expanduser()
+				if line.strip().startswith('PID_DIR='):
+					val = line.split('=', 1)[1].strip().strip('"').strip("'")
+					if log_dir:
+						val = val.replace('$LOG_DIR', str(log_dir))
+					pid_dir = Path(val).expanduser()
+		except Exception:
+			pass
 
 	if not log_dir:
 		log_dir = (ASTART_PATH.parent / 'logs')
