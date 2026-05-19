@@ -35,6 +35,7 @@ async def notify_appointment_confirmed(
             appointment_id=request.appointment_id,
             patient_id=request.patient_id,
             patient_name=request.patient_name,
+            patient_phone=request.patient_phone,
             doctor_id=request.doctor_id,
             doctor_name=request.doctor_name,
             category=request.category,

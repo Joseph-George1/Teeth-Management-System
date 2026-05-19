@@ -22,7 +22,8 @@ class NotificationService:
     def notify_appointment_confirmed(self, appointment_id: int, 
                                     patient_id: int, patient_name: str,
                                     doctor_id: int, doctor_name: str,
-                                    category: str = "General", location: str = "Clinic") -> Dict:
+                                    category: str = "General", location: str = "Clinic",
+                                    patient_phone: str = None) -> Dict:
         """
         Notify both patient and doctor about appointment confirmation
         
@@ -30,6 +31,7 @@ class NotificationService:
             appointment_id: ID of the appointment
             patient_id: ID of the patient
             patient_name: Name of the patient (provided by Java backend)
+            patient_phone: Phone number of the patient (optional, for token retrieval)
             doctor_id: ID of the doctor
             doctor_name: Name of the doctor (provided by Java backend)
             category: Medical category/specialty of the doctor
@@ -73,12 +75,13 @@ class NotificationService:
                     patient_first_name=patient_name.split()[0] if patient_name else "Patient",
                     patient_last_name=patient_name.split()[-1] if patient_name and len(patient_name.split()) > 1 else "",
                     appointment_id=appointment_id,
+                    patient_phone=patient_phone,
                     clinic_name="Clinic",
                     clinic_location=location,
                     expires_in_hours=24
                 )
                 results["patient_token"] = patient_token.token
-                logger.info(f"Generated temp token {patient_token.token} for patient {patient_id}")
+                logger.info(f"Generated temp token {patient_token.token} for patient {patient_id} (phone: {patient_phone})")
                 # TODO: Send token via SMS: send_sms(patient_phone, f"Your appointment token: {patient_token.token}")
             except Exception as e:
                 logger.error(f"Failed to generate patient token: {e}")

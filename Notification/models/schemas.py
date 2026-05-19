@@ -67,6 +67,7 @@ class AppointmentNotificationRequest(BaseModel):
     appointment_id: int = Field(..., description="ID of the appointment")
     patient_id: int = Field(..., description="ID of the patient")
     patient_name: str = Field(..., description="Name of the patient")
+    patient_phone: str = Field(None, description="Phone number of the patient (for token retrieval)")
     doctor_id: int = Field(..., description="ID of the doctor")
     doctor_name: str = Field(..., description="Name of the doctor")
     category: str = Field(..., description="Medical category/specialty")
@@ -79,6 +80,7 @@ class AppointmentNotificationRequest(BaseModel):
                 "appointment_id": 1001,
                 "patient_id": 501,
                 "patient_name": "Ahmed Hassan",
+                "patient_phone": "201001234567",
                 "doctor_id": 201,
                 "doctor_name": "Dr. Sarah Ahmed",
                 "category": "Orthodontics",
