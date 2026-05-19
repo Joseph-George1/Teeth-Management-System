@@ -111,7 +111,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 request.getCategory().getName()
         );
         appointment.setDescriptionSnapshot(
-                request.getDescription()
+                request.getDescription() != null ? request.getDescription() : ""
         );
         appointment.setAppointmentDate(request.getDateTime()); // Date/time from request
         appointment.setDurationMinutes(null); // No duration tracking
