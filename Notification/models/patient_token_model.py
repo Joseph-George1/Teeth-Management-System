@@ -68,7 +68,15 @@ class PatientTempToken(Base):
     def is_valid(self) -> bool:
         """Check if token is still valid"""
         now = datetime.now(timezone.utc)
-        return self.is_used == 0 and now < self.expires_at
+        
+        # Handle timezone-naive expires_at from Oracle
+        if self.expires_at and self.expires_at.tzinfo is None:
+            # Assume Oracle timestamps are UTC, make them aware
+            expires_at_aware = self.expires_at.replace(tzinfo=timezone.utc)
+        else:
+            expires_at_aware = self.expires_at
+        
+        return self.is_used == 0 and expires_at_aware and now < expires_at_aware
     
     def mark_as_used(self):
         """Mark token as used"""

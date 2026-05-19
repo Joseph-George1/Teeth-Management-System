@@ -73,7 +73,7 @@ class PatientTokenService:
             self.db.commit()
             
             logger.info(f"Generated temp token {token_string} for patient {patient_id} "
-                       f"(appointment {appointment_id}, expires in {expires_in_hours}h)")
+                       f"(phone: {patient_phone}, appointment {appointment_id}, expires in {expires_in_hours}h)")
             
             return token
             
