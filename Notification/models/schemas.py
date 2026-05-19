@@ -140,22 +140,22 @@ class WebhookPayload(BaseModel):
 class DeviceTokenRequest(BaseModel):
     """Request to register a device token for FCM
     
-    Mobile app can provide user_id OR let backend generate one:
+    Mobile app can provide patient_id OR let backend generate one:
     
-    Path 1: With backend user_id (preferred)
-    - Mobile logs in → gets user_id=454 from backend
-    - Mobile registers device token with user_id=454
-    - Notifications sent to user_id=454 work perfectly
+    Path 1: With backend patient_id (preferred)
+    - Mobile logs in → gets patient_id=261 from backend
+    - Mobile registers device token with patient_id=261
+    - Notifications sent for patient_id=261 work perfectly
     
-    Path 2: Without user_id (auto-generate)
-    - Mobile registers device token without user_id
+    Path 2: Without patient_id (auto-generate)
+    - Mobile registers device token without patient_id
     - Notification service generates unique user_id
     - Returns generated user_id to mobile
     - Mobile saves locally and uses for future calls
     
-    Both paths result in synchronized user IDs between backend and notification service
+    Both paths result in synchronized patient IDs between backend and notification service
     """
-    user_id: Optional[int] = Field(None, description="User ID from backend login (optional, auto-generated if missing)")
+    patient_id: Optional[int] = Field(None, description="Patient ID from backend login (optional, auto-generated if missing)")
     fcmToken: str = Field(..., description="Firebase Cloud Messaging device token")
     deviceType: str = Field(default="ANDROID", description="Device type (ANDROID, iOS, WEB)")
     deviceModel: Optional[str] = Field(default="Unknown", description="Device model name")

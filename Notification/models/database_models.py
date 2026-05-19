@@ -50,28 +50,31 @@ class PatientDeviceToken(Base):
     
     Supports two registration paths:
     
-    Path 1: With backend user_id (preferred when backend has the user)
-      1. Mobile logs in to Java backend → gets user_id=454
-      2. Mobile registers device token with user_id=454
-      3. Backend sends notifications to user_id=454
-      4. Token found → notification  delivered ✓
+    Path 1: With backend patient_id (preferred when backend has the patient)
+      1. Mobile logs in to Java backend → gets patient_id=261
+      2. Mobile registers device token with patient_id=261
+      3. Backend sends notifications for patient_id=261
+      4. Token found by patient_id → notification delivered ✓
     
-    Path 2: Without user_id (auto-generate locally)
-      1. Mobile registers device token without user_id
-      2. Notification service generates unique ID (e.g., 1000)
+    Path 2: Without patient_id (auto-generate locally)
+      1. Mobile registers device token without patient_id
+      2. Notification service generates unique user_id (e.g., 1000)
       3. Returns to mobile, which saves locally
       4. Uses that ID for subsequent operations
-      5. When synced with backend later, updates with backend's ID
+      5. When synced with backend later, updates with backend's patient_id
     
-    Both paths result in synchronized user IDs across all services
+    Both paths result in synchronized patient IDs across all services
     """
     __tablename__ = "PATIENT_DEVICE_TOKENS"
     
     id = Column(Integer, patient_device_token_seq, primary_key=True,
                 server_default=text("seq_patient_device_tokens_id.NEXTVAL"))
     
-    # User ID assigned at first device token registration - NEVER NULL
+    # User ID assigned at first device token registration - auto-generated if not provided
     user_id = Column(Integer, nullable=False, index=True)
+    
+    # Patient ID from backend database - CRITICAL for matching notifications
+    patient_id = Column(Integer, index=True)  # Can be NULL initially, updated later
     
     # The actual FCM token from mobile app - REQUIRED and UNIQUE
     fcm_token = Column(String(500), unique=True, nullable=False, index=True)
@@ -89,6 +92,7 @@ class PatientDeviceToken(Base):
     
     __table_args__ = (
         Index('IDX_DEVICE_USER_ACTIVE', 'user_id', 'is_active'),
+        Index('IDX_DEVICE_PATIENT_ACTIVE', 'patient_id', 'is_active'),
         Index('IDX_DEVICE_TOKEN_ACTIVE', 'fcm_token', 'is_active'),
         Index('IDX_DEVICE_CREATED', 'created_at'),
     )

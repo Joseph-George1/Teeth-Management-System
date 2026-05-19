@@ -194,12 +194,12 @@ def root():
 @app.post("/api/v1/device-tokens/register")
 def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get_db_session)):
     """
-    Register Firebase device token - syncs with backend user IDs
+    Register Firebase device token - syncs with backend patient IDs
     
-    FLEXIBLE: Accepts user_id from backend OR auto-generates if missing
+    FLEXIBLE: Accepts patient_id from backend OR auto-generates if missing
     
-    With backend user_id: Mobile logs in → gets user_id from backend → sends it
-    Without user_id: Mobile registers anonymously → service generates one → returns it
+    With backend patient_id: Mobile logs in → gets patient_id from backend → sends it
+    Without patient_id: Mobile registers anonymously → service generates one → returns it
     
     Both paths sync perfectly with notifications
     """
@@ -207,7 +207,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         from models.database_models import PatientDeviceToken
         
         fcm_token = request.fcmToken
-        user_id = request.user_id  # From backend or None
+        patient_id = request.patient_id  # From backend or None
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
@@ -216,7 +216,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         if not fcm_token or not fcm_token.strip():
             raise HTTPException(status_code=400, detail="fcmToken is required")
         
-        logger.info(f"Device token registration: user_id={user_id}, device={device_type}")
+        logger.info(f"Device token registration: patient_id={patient_id}, device={device_type}")
         
         # Check if token already exists
         existing = db.query(PatientDeviceToken).filter(
@@ -225,37 +225,35 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         
         if existing:
             # Update existing token
-            if user_id:
-                existing.user_id = user_id  # Update to backend user_id if provided
+            if patient_id:
+                existing.patient_id = patient_id  # Update to backend patient_id if provided
             existing.is_active = True
             existing.device_type = device_type or existing.device_type
             existing.device_model = device_model or existing.device_model
             existing.os_version = os_version or existing.os_version
             existing.last_used_at = utc_now()
             db.commit()
-            logger.info(f"✓ Updated device token for user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
+            logger.info(f"✓ Updated device token for patient {existing.patient_id}, user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = existing.user_id
+            assigned_patient_id = existing.patient_id
         else:
-            # If user_id provided, use it; otherwise auto-generate
+            # Generate user_id if not already provided (fallback mechanism)
+            user_id = None
             if not user_id:
                 try:
-                    # Try to use sequence (fallback if available)
                     result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
                     user_id = result.scalar()
                     logger.info(f"Generated new user_id from sequence: {user_id}")
                 except Exception as seq_error:
-                    # Fallback: generate from max existing user_id + 1
-                    logger.debug(f"Sequence not available, using max(user_id) fallback: {seq_error}")
                     try:
                         result = db.execute(text(
                             "SELECT NVL(MAX(user_id), 999) + 1 as next_id FROM PATIENT_DEVICE_TOKENS"
                         ))
                         user_id = result.scalar()
                         if user_id is None:
-                            user_id = 1000  # Start at 1000 if table is empty
+                            user_id = 1000
                         logger.info(f"Generated new user_id (fallback from max): {user_id}")
                     except Exception as max_error:
-                        # Last resort: use timestamp-based ID
                         logger.warning(f"Could not query max user_id: {max_error}, using timestamp-based ID")
                         import time
                         user_id = int(time.time() * 1000) % 9999999
@@ -264,6 +262,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             # Create new token entry
             token_entry = PatientDeviceToken(
                 user_id=user_id,
+                patient_id=patient_id,  # Store patient_id for matching notifications
                 fcm_token=fcm_token,
                 device_type=device_type,
                 device_model=device_model,
@@ -273,13 +272,15 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             )
             db.add(token_entry)
             db.commit()
-            logger.info(f"✓ Registered device token for user {user_id}: {fcm_token[:20]}... ({device_type})")
+            logger.info(f"✓ Registered device token for patient {patient_id}, user {user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = user_id
+            assigned_patient_id = patient_id
         
         return {
             "success": True,
             "message": "Device token registered successfully",
             "user_id": assigned_user_id,
+            "patient_id": assigned_patient_id,
             "device_type": device_type,
             "device_model": device_model,
             "fcm_token": fcm_token[:20] + "..."

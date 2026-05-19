@@ -103,11 +103,21 @@ class QueueService:
                         db.commit()
                         continue
                     
-                    # ===== CRITICAL: Get all active FCM tokens for this user =====
+                    # ===== CRITICAL: Get all active FCM tokens for this patient =====
+                    # user_id in NOTIFICATION_QUEUE is actually the patient_id from the backend
+                    # Search PATIENT_DEVICE_TOKENS by patient_id for matching devices
                     device_tokens = db.query(PatientDeviceToken).filter(
-                        PatientDeviceToken.user_id == item.user_id,
+                        PatientDeviceToken.patient_id == item.user_id,  # user_id = patient_id
                         PatientDeviceToken.is_active == True
                     ).all()
+                    
+                    # If not found by patient_id, try user_id as fallback (for backward compatibility)
+                    if not device_tokens:
+                        logger.debug(f"No tokens found by patient_id {item.user_id}, trying user_id fallback...")
+                        device_tokens = db.query(PatientDeviceToken).filter(
+                            PatientDeviceToken.user_id == item.user_id,
+                            PatientDeviceToken.is_active == True
+                        ).all()
                     
                     if not device_tokens:
                         logger.warning(f"No active device tokens for user {item.user_id} - notification {item.id} cannot be sent")
