@@ -361,7 +361,7 @@ async def delete_notification(
 ):
     """Delete a single notification (must be doctor's own notification)"""
     try:
-        from models.database_models import NotificationQueue, Doctor
+        from models.database_models import NotificationQueue, NotificationDeliveryAudit, NotificationDeliveryAttempts, Doctor
         
         # Verify token
         if not authorization:
@@ -393,10 +393,22 @@ async def delete_notification(
         if not notif:
             raise HTTPException(status_code=404, detail="Notification not found or does not belong to you")
         
+        # CASCADE DELETE: Delete related records first (handles FK constraints)
+        # Delete delivery attempts first (references audit records)
+        db.query(NotificationDeliveryAttempts).filter(
+            NotificationDeliveryAttempts.notification_queue_id == notification_id
+        ).delete(synchronize_session=False)
+        
+        # Delete audit records (references queue)
+        db.query(NotificationDeliveryAudit).filter(
+            NotificationDeliveryAudit.notification_queue_id == notification_id
+        ).delete(synchronize_session=False)
+        
+        # Finally delete the notification queue entry
         db.delete(notif)
         db.commit()
         
-        logger.info(f"User {email} deleted notification {notification_id}")
+        logger.info(f"User {email} deleted notification {notification_id} with cascade delete of related audit/attempt records")
         
         return {
             "success": True,
@@ -416,7 +428,7 @@ async def delete_all_notifications(
 ):
     """Delete all THIS DOCTOR's notifications"""
     try:
-        from models.database_models import NotificationQueue, Doctor
+        from models.database_models import NotificationQueue, NotificationDeliveryAudit, NotificationDeliveryAttempts, Doctor
         
         # Verify token
         if not authorization:
@@ -439,13 +451,32 @@ async def delete_all_notifications(
             import hashlib
             doctor_id = int(hashlib.md5(email.encode()).hexdigest()[:8], 16) % 1000000
         
-        # Delete only this doctor's notifications
+        # Get all notification IDs for this doctor
+        notification_ids = db.query(NotificationQueue.id).filter(
+            NotificationQueue.user_id == doctor_id
+        ).all()
+        
+        notification_ids = [n[0] for n in notification_ids]
+        
+        if notification_ids:
+            # CASCADE DELETE: Delete related records first (handles FK constraints)
+            # Delete delivery attempts
+            db.query(NotificationDeliveryAttempts).filter(
+                NotificationDeliveryAttempts.notification_queue_id.in_(notification_ids)
+            ).delete(synchronize_session=False)
+            
+            # Delete audit records
+            db.query(NotificationDeliveryAudit).filter(
+                NotificationDeliveryAudit.notification_queue_id.in_(notification_ids)
+            ).delete(synchronize_session=False)
+        
+        # Finally delete the notification queue entries
         deleted_count = db.query(NotificationQueue).filter(
             NotificationQueue.user_id == doctor_id  # CRITICAL: Only delete doctor's own
-        ).delete()
+        ).delete(synchronize_session=False)
         db.commit()
         
-        logger.info(f"User {email} deleted all {deleted_count} notifications")
+        logger.info(f"User {email} deleted all {deleted_count} notifications with cascade delete of related audit/attempt records")
         
         return {
             "success": True,
