@@ -236,24 +236,11 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             logger.info(f"✓ Updated device token for user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = existing.user_id
         else:
-            # If user_id provided, use it; otherwise auto-generate
+            # If user_id provided, use it; otherwise auto-generate from sequence
             if not user_id:
-                try:
-                    # Try to use sequence (requires migration to be run)
-                    result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
-                    user_id = result.scalar()
-                    logger.info(f"Generated new user_id from sequence: {user_id}")
-                except Exception as seq_error:
-                    # Fallback: generate user_id from max existing + 1 (or start at 1000)
-                    logger.warning(f"Sequence seq_user_id not available, using fallback: {seq_error}")
-                    try:
-                        result = db.execute(text("SELECT NVL(MAX(user_id), 999) + 1 as next_id FROM PATIENT_DEVICE_TOKENS"))
-                        user_id = result.scalar()
-                    except Exception as fallback_error:
-                        # If table doesn't exist yet, start at 1000
-                        logger.warning(f"Could not query max user_id: {fallback_error}, starting at 1000")
-                        user_id = 1000
-                    logger.info(f"Generated new user_id (fallback): {user_id}")
+                result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
+                user_id = result.scalar()
+                logger.info(f"Generated new user_id: {user_id}")
             
             # Create new token entry
             token_entry = PatientDeviceToken(
