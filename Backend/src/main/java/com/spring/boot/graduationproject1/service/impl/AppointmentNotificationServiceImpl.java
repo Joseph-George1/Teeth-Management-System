@@ -23,6 +23,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
         try {
             String idempotencyKey = generateIdempotencyKey(appointment.getId(), "created");
             String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
             String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
             String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
             String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
@@ -31,6 +32,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     appointment.getId(),
                     appointment.getPatient().getId(),
                     patientName,
+                    patientPhone,
                     appointment.getDoctor().getId(),
                     doctorName,
                     category,
@@ -49,6 +51,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
         try {
             String idempotencyKey = generateIdempotencyKey(appointment.getId(), "approved");
             String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
             String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
             String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
             String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
@@ -57,6 +60,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     appointment.getId(),
                     appointment.getPatient().getId(),
                     patientName,
+                    patientPhone,
                     appointment.getDoctor().getId(),
                     doctorName,
                     category,
@@ -75,6 +79,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
         try {
             String idempotencyKey = generateIdempotencyKey(appointment.getId(), "cancelled");
             String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
             String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
             String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
             String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
@@ -85,6 +90,7 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     appointment.getId(),
                     appointment.getPatient().getId(),
                     patientName,
+                    patientPhone,
                     appointment.getDoctor().getId(),
                     doctorName,
                     category,
@@ -101,14 +107,16 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
     @Override
     public void notifyAppointmentDone(Appointments appointment) {
         try {
-            String idempotencyKey = generateIdempotencyKey(appointment.getId(), "done");
-            String patientName = appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
             String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
             String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
             String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
             
             notificationClientService.sendAppointmentConfirmation(
                     appointment.getId(),
+                    appointment.getPatient().getId(),
+                    patientName,
+                    patientPhont.getId(),
                     appointment.getPatient().getId(),
                     patientName,
                     appointment.getDoctor().getId(),

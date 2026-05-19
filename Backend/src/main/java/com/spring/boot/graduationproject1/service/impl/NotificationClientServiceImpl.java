@@ -25,7 +25,7 @@ public class NotificationClientServiceImpl implements NotificationClientService 
     }
 
     @Override
-    public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName,
+    public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName, String patientPhone,
                                                            Long doctorId, String doctorName, String category, 
                                                            String location, String idempotencyKey) {
         try {
@@ -35,6 +35,7 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             payload.put("appointment_id", appointmentId);
             payload.put("patient_id", patientId);
             payload.put("patient_name", patientName);
+            payload.put("patient_phone", patientPhone);
             payload.put("doctor_id", doctorId);
             payload.put("doctor_name", doctorName);
             payload.put("category", category);
