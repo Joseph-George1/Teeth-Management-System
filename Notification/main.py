@@ -194,20 +194,24 @@ def root():
 @app.post("/api/v1/device-tokens/register")
 def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get_db_session)):
     """
-    Register Firebase device token - syncs with backend patient IDs
+    Register Firebase device token - syncs with backend user IDs
     
-    FLEXIBLE: Accepts patient_id from backend OR auto-generates if missing
+    CRITICAL: The mobile app sends the Doctor/Patient ID as 'user_id' in the
+    request body. This endpoint MUST trust and use that ID for token storage,
+    because all downstream notification lookups (queue_service.py) query by
+    this same ID.
     
-    With backend patient_id: Mobile logs in → gets patient_id from backend → sends it
-    Without patient_id: Mobile registers anonymously → service generates one → returns it
-    
-    Both paths sync perfectly with notifications
+    FIX HISTORY: Previously, the Pydantic schema only defined 'patient_id'
+    but the mobile app sent 'user_id'. Pydantic silently dropped the unknown
+    field, causing tokens to be saved without a valid ID → notification failures.
     """
     try:
         from models.database_models import PatientDeviceToken
         
         fcm_token = request.fcmToken
-        patient_id = request.patient_id  # From backend or None
+        # CRITICAL FIX: Use get_resolved_user_id() which accepts BOTH
+        # 'user_id' (sent by mobile app) and 'patient_id' (legacy field name)
+        resolved_id = request.get_resolved_user_id()
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
@@ -216,7 +220,9 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         if not fcm_token or not fcm_token.strip():
             raise HTTPException(status_code=400, detail="fcmToken is required")
         
-        logger.info(f"Device token registration: patient_id={patient_id}, device={device_type}")
+        logger.info(f"Device token registration: resolved_id={resolved_id} "
+                     f"(user_id={request.user_id}, patient_id={request.patient_id}), "
+                     f"device={device_type}")
         
         # Check if token already exists
         existing = db.query(PatientDeviceToken).filter(
@@ -224,22 +230,23 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         ).first()
         
         if existing:
-            # Update existing token
-            if patient_id:
-                existing.patient_id = patient_id  # Update to backend patient_id if provided
+            # Update existing token — ALWAYS update the ID if provided
+            if resolved_id is not None:
+                existing.user_id = resolved_id      # For queue_service fallback lookup
+                existing.patient_id = resolved_id    # For queue_service primary lookup
             existing.is_active = True
             existing.device_type = device_type or existing.device_type
             existing.device_model = device_model or existing.device_model
             existing.os_version = os_version or existing.os_version
             existing.last_used_at = utc_now()
             db.commit()
-            logger.info(f"✓ Updated device token for patient {existing.patient_id}, user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
+            logger.info(f"✓ Updated device token: user_id={existing.user_id}, "
+                        f"patient_id={existing.patient_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = existing.user_id
-            assigned_patient_id = existing.patient_id
         else:
-            # Generate user_id if not already provided (fallback mechanism)
-            user_id = None
-            if not user_id:
+            # For new registrations: use the resolved ID, or auto-generate one
+            user_id = resolved_id
+            if user_id is None:
                 try:
                     result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
                     user_id = result.scalar()
@@ -259,10 +266,11 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
                         user_id = int(time.time() * 1000) % 9999999
                         logger.info(f"Generated new user_id (timestamp-based): {user_id}")
             
-            # Create new token entry
+            # Create new token entry — store resolved ID in BOTH columns
+            # so queue_service can find it whether it queries by patient_id or user_id
             token_entry = PatientDeviceToken(
                 user_id=user_id,
-                patient_id=patient_id,  # Store patient_id for matching notifications
+                patient_id=user_id,   # CRITICAL: Set patient_id = user_id for consistency
                 fcm_token=fcm_token,
                 device_type=device_type,
                 device_model=device_model,
@@ -272,15 +280,14 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             )
             db.add(token_entry)
             db.commit()
-            logger.info(f"✓ Registered device token for patient {patient_id}, user {user_id}: {fcm_token[:20]}... ({device_type})")
+            logger.info(f"✓ Registered device token: user_id={user_id}, "
+                        f"patient_id={user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = user_id
-            assigned_patient_id = patient_id
         
         return {
             "success": True,
             "message": "Device token registered successfully",
             "user_id": assigned_user_id,
-            "patient_id": assigned_patient_id,
             "device_type": device_type,
             "device_model": device_model,
             "fcm_token": fcm_token[:20] + "..."
@@ -291,6 +298,7 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         db.rollback()
         logger.error(f"Error registering device token: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

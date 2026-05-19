@@ -140,31 +140,45 @@ class WebhookPayload(BaseModel):
 class DeviceTokenRequest(BaseModel):
     """Request to register a device token for FCM
     
-    Mobile app can provide patient_id OR let backend generate one:
+    Accepts user identity from the request body via EITHER field name:
+      - user_id:    The ID the mobile app sends (Doctor or Patient ID from backend)
+      - patient_id: Legacy alias for the same value
     
-    Path 1: With backend patient_id (preferred)
-    - Mobile logs in → gets patient_id=261 from backend
-    - Mobile registers device token with patient_id=261
-    - Notifications sent for patient_id=261 work perfectly
+    CRITICAL FIX: The mobile app sends {"user_id": 1064, "fcmToken": "..."}
+    Previously only 'patient_id' was defined, so Pydantic silently dropped
+    the 'user_id' field, causing the token to be saved without a valid ID.
+    Now both field names are accepted and merged into a canonical 'user_id'.
     
-    Path 2: Without patient_id (auto-generate)
-    - Mobile registers device token without patient_id
+    Path 1: With backend user_id (preferred)
+    - Mobile logs in → gets doctor_id/patient_id from backend → sends as user_id
+    - Device token saved with that ID
+    - Notifications sent for that ID find the token and deliver ✓
+    
+    Path 2: Without user_id (auto-generate)
+    - Mobile registers device token without user_id
     - Notification service generates unique user_id
     - Returns generated user_id to mobile
     - Mobile saves locally and uses for future calls
-    
-    Both paths result in synchronized patient IDs between backend and notification service
     """
-    patient_id: Optional[int] = Field(None, description="Patient ID from backend login (optional, auto-generated if missing)")
+    user_id: Optional[int] = Field(None, description="User ID from backend login (Doctor ID or Patient ID)")
+    patient_id: Optional[int] = Field(None, description="Legacy alias for user_id — if both are provided, user_id takes priority")
     fcmToken: str = Field(..., description="Firebase Cloud Messaging device token")
     deviceType: str = Field(default="ANDROID", description="Device type (ANDROID, iOS, WEB)")
     deviceModel: Optional[str] = Field(default="Unknown", description="Device model name")
     osVersion: Optional[str] = Field(default="Unknown", description="OS version")
     
+    def get_resolved_user_id(self) -> Optional[int]:
+        """Return the canonical user ID, preferring user_id over patient_id.
+        
+        This ensures that regardless of which field name the caller uses
+        (user_id or patient_id), we always get a single resolved value.
+        """
+        return self.user_id if self.user_id is not None else self.patient_id
+    
     class Config:
         json_schema_extra = {
             "example": {
-                "user_id": 454,
+                "user_id": 1064,
                 "fcmToken": "d-o1a3WbSauKMigqcovr4b:APA91bGLfNkOZMrKJXnkkTv5eI_pb39xHsT8jLyNOoJVC2jmavWkgWylFBkUD5LS4cv",
                 "deviceType": "ANDROID",
                 "deviceModel": "Samsung Galaxy S21",
