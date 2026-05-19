@@ -212,6 +212,27 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
         # CRITICAL FIX: Use get_resolved_user_id() which accepts BOTH
         # 'user_id' (sent by mobile app) and 'patient_id' (legacy field name)
         resolved_id = request.get_resolved_user_id()
+        
+        # ===== GUEST PATIENT RESOLUTION =====
+        # If no user_id/patient_id but a patient_token is provided (guest flow),
+        # look up the PATIENT_TEMP_TOKEN table to find the REAL patient_id.
+        # The mobile app sends patientToken="619279" (a random 6-digit code),
+        # but Java's backend uses the real Patients.id (e.g., 501) when sending
+        # notifications. We must store the real ID so dispatch can match them.
+        if resolved_id is None and request.patient_token:
+            from models.patient_token_model import PatientTempToken
+            temp_record = db.query(PatientTempToken).filter(
+                PatientTempToken.token == request.patient_token
+            ).first()
+            if temp_record and temp_record.patient_id:
+                resolved_id = temp_record.patient_id
+                logger.info(f"✓ Resolved guest patient_token '{request.patient_token}' "
+                           f"→ real patient_id={resolved_id} "
+                           f"(appointment_id={temp_record.appointment_id})")
+            else:
+                logger.warning(f"⚠ patient_token '{request.patient_token}' not found in "
+                             f"PATIENT_TEMP_TOKEN — device will get auto-generated ID")
+        
         device_type = request.deviceType
         device_model = request.deviceModel
         os_version = request.osVersion
@@ -221,7 +242,8 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             raise HTTPException(status_code=400, detail="fcmToken is required")
         
         logger.info(f"Device token registration: resolved_id={resolved_id} "
-                     f"(user_id={request.user_id}, patient_id={request.patient_id}), "
+                     f"(user_id={request.user_id}, patient_id={request.patient_id}, "
+                     f"patient_token={request.patient_token}), "
                      f"device={device_type}")
         
         # Check if token already exists

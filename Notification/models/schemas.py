@@ -140,28 +140,37 @@ class WebhookPayload(BaseModel):
 class DeviceTokenRequest(BaseModel):
     """Request to register a device token for FCM
     
-    Accepts user identity from the request body via EITHER field name:
-      - user_id:    The ID the mobile app sends (Doctor or Patient ID from backend)
-      - patient_id: Legacy alias for the same value
+    Accepts user identity from the request body via ANY of these field names:
+      - user_id:       The ID the mobile app sends (Doctor or Patient ID from backend)
+      - patient_id:    Legacy alias for the same value
+      - patient_token:  Guest patient token (numeric string, e.g. "619279") — sent
+                        by the mobile app as "patientToken" when a guest books
+                        without creating an account
     
-    CRITICAL FIX: The mobile app sends {"user_id": 1064, "fcmToken": "..."}
-    Previously only 'patient_id' was defined, so Pydantic silently dropped
-    the 'user_id' field, causing the token to be saved without a valid ID.
-    Now both field names are accepted and merged into a canonical 'user_id'.
+    Priority order for resolving identity: user_id > patient_id > patient_token
     
-    Path 1: With backend user_id (preferred)
+    Path 1: With backend user_id (preferred — logged-in doctors/patients)
     - Mobile logs in → gets doctor_id/patient_id from backend → sends as user_id
     - Device token saved with that ID
     - Notifications sent for that ID find the token and deliver ✓
     
-    Path 2: Without user_id (auto-generate)
-    - Mobile registers device token without user_id
+    Path 2: With patient_token (guest patients)
+    - Guest books without account → backend assigns a patient token (e.g. "619279")
+    - Mobile sends {"patientToken": "619279", "fcmToken": "..."}
+    - Token is parsed to int and stored as patient_id
+    - Notifications sent for patient 619279 find the device and deliver ✓
+    
+    Path 3: Without any identity (auto-generate)
+    - Mobile registers device token without any ID
     - Notification service generates unique user_id
     - Returns generated user_id to mobile
     - Mobile saves locally and uses for future calls
     """
     user_id: Optional[int] = Field(None, description="User ID from backend login (Doctor ID or Patient ID)")
     patient_id: Optional[int] = Field(None, description="Legacy alias for user_id — if both are provided, user_id takes priority")
+    patient_token: Optional[str] = Field(None, alias="patientToken",
+        description="Guest patient token (numeric string, e.g. '619279') from mobile app — "
+                    "used when a guest books without creating an account")
     fcmToken: str = Field(..., description="Firebase Cloud Messaging device token")
     deviceType: str = Field(default="ANDROID", description="Device type (ANDROID, iOS, WEB)")
     deviceModel: Optional[str] = Field(default="Unknown", description="Device model name")
@@ -172,18 +181,41 @@ class DeviceTokenRequest(BaseModel):
         
         This ensures that regardless of which field name the caller uses
         (user_id or patient_id), we always get a single resolved value.
+        
+        NOTE: patient_token is NOT resolved here. It is a random 6-digit
+        code (e.g. "619279") from PATIENT_TEMP_TOKEN — NOT a database ID.
+        Resolving it to the real patient_id requires a DB lookup, which
+        is handled by the register endpoint in main.py.
         """
-        return self.user_id if self.user_id is not None else self.patient_id
+        if self.user_id is not None:
+            return self.user_id
+        if self.patient_id is not None:
+            return self.patient_id
+        return None
     
     class Config:
+        populate_by_name = True  # Accept both alias ("patientToken") and field name ("patient_token")
         json_schema_extra = {
-            "example": {
-                "user_id": 1064,
-                "fcmToken": "d-o1a3WbSauKMigqcovr4b:APA91bGLfNkOZMrKJXnkkTv5eI_pb39xHsT8jLyNOoJVC2jmavWkgWylFBkUD5LS4cv",
-                "deviceType": "ANDROID",
-                "deviceModel": "Samsung Galaxy S21",
-                "osVersion": "33"
-            }
+            "examples": [
+                {
+                    "summary": "Logged-in user (doctor or patient)",
+                    "value": {
+                        "user_id": 1064,
+                        "fcmToken": "d-o1a3WbSauKMigqcovr4b:APA91bGLfNkOZMrKJXnkkTv5eI_pb39xHsT8jLyNOoJVC2jmavWkgWylFBkUD5LS4cv",
+                        "deviceType": "ANDROID",
+                        "deviceModel": "Samsung Galaxy S21",
+                        "osVersion": "33"
+                    }
+                },
+                {
+                    "summary": "Guest patient (no account)",
+                    "value": {
+                        "patientToken": "619279",
+                        "fcmToken": "e-x2b4YcTbuLNjhrdpws5c:APA91bHMgOZNsKKLkTv6fJ_qc40yItU9kMyOQJWD3knbxXkfTEkVE6LS5dw",
+                        "deviceType": "ANDROID"
+                    }
+                }
+            ]
         }
 
 # =========================================================================

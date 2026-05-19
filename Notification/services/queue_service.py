@@ -119,6 +119,40 @@ class QueueService:
                             PatientDeviceToken.is_active == True
                         ).all()
                     
+                    # ===== GUEST PATIENT FALLBACK =====
+                    # If still not found, this might be a guest patient whose device was
+                    # registered under a temp token value (e.g., 619279) instead of the
+                    # real patient_id (e.g., 501). Bridge via PATIENT_TEMP_TOKEN table:
+                    #   real patient_id (501) → PATIENT_TEMP_TOKEN.token ("619279") → 
+                    #   PATIENT_DEVICE_TOKENS.patient_id (619279)
+                    if not device_tokens:
+                        try:
+                            from models.patient_token_model import PatientTempToken
+                            temp_tokens = db.query(PatientTempToken).filter(
+                                PatientTempToken.patient_id == item.user_id
+                            ).all()
+                            for tt in temp_tokens:
+                                try:
+                                    token_as_id = int(tt.token)
+                                    device_tokens = db.query(PatientDeviceToken).filter(
+                                        PatientDeviceToken.patient_id == token_as_id,
+                                        PatientDeviceToken.is_active == True
+                                    ).all()
+                                    if not device_tokens:
+                                        # Also try user_id column
+                                        device_tokens = db.query(PatientDeviceToken).filter(
+                                            PatientDeviceToken.user_id == token_as_id,
+                                            PatientDeviceToken.is_active == True
+                                        ).all()
+                                    if device_tokens:
+                                        logger.info(f"✓ Found guest device via temp token '{tt.token}' "
+                                                   f"for patient_id={item.user_id}")
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        except Exception as e:
+                            logger.debug(f"Guest patient fallback lookup failed: {e}")
+                    
                     if not device_tokens:
                         logger.warning(f"No active device tokens for user {item.user_id} - notification {item.id} cannot be sent")
                         item.status = "FAILED"
