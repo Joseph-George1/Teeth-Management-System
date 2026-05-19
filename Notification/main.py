@@ -236,11 +236,30 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
             logger.info(f"✓ Updated device token for user {existing.user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = existing.user_id
         else:
-            # If user_id provided, use it; otherwise auto-generate from sequence
+            # If user_id provided, use it; otherwise auto-generate
             if not user_id:
-                result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
-                user_id = result.scalar()
-                logger.info(f"Generated new user_id: {user_id}")
+                try:
+                    # Try to use sequence (fallback if available)
+                    result = db.execute(text("SELECT seq_user_id.NEXTVAL as next_id FROM dual"))
+                    user_id = result.scalar()
+                    logger.info(f"Generated new user_id from sequence: {user_id}")
+                except Exception as seq_error:
+                    # Fallback: generate from max existing user_id + 1
+                    logger.debug(f"Sequence not available, using max(user_id) fallback: {seq_error}")
+                    try:
+                        result = db.execute(text(
+                            "SELECT NVL(MAX(user_id), 999) + 1 as next_id FROM PATIENT_DEVICE_TOKENS"
+                        ))
+                        user_id = result.scalar()
+                        if user_id is None:
+                            user_id = 1000  # Start at 1000 if table is empty
+                        logger.info(f"Generated new user_id (fallback from max): {user_id}")
+                    except Exception as max_error:
+                        # Last resort: use timestamp-based ID
+                        logger.warning(f"Could not query max user_id: {max_error}, using timestamp-based ID")
+                        import time
+                        user_id = int(time.time() * 1000) % 9999999
+                        logger.info(f"Generated new user_id (timestamp-based): {user_id}")
             
             # Create new token entry
             token_entry = PatientDeviceToken(
