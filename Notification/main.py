@@ -60,8 +60,15 @@ async def lifespan(app: FastAPI):
     """
     # ======================= STARTUP =======================
     try:
-        init_firebase()
-        logger.info("Firebase initialized successfully on startup")
+        # Try to initialize Firebase
+        try:
+            init_firebase()
+            logger.info("✓ Firebase initialized successfully on startup")
+            firebase_enabled = True
+        except FileNotFoundError as e:
+            logger.warning(f"⚠ Firebase initialization skipped: {e}")
+            logger.warning("⚠ Push notifications will not work, but API endpoints will be available for testing")
+            firebase_enabled = False
         
         # Import queue service for background notification processing
         from services.queue_service import QueueService
@@ -70,6 +77,8 @@ async def lifespan(app: FastAPI):
         def process_notifications():
             """Background task to process notification queue (runs every 2 seconds)"""
             try:
+                if not firebase_enabled:
+                    return  # Skip if Firebase not initialized
                 db = next(get_db_session())
                 queue_service = QueueService(db)
                 queue_service.process_queue(db)
@@ -93,8 +102,9 @@ async def lifespan(app: FastAPI):
         scheduler.add_job(cleanup_patient_tokens, 'interval', hours=1)
         scheduler.start()
         
-        logger.info("Background notification queue processor started (runs every 2 seconds)")
-        logger.info("Patient token cleanup started (runs every hour)")
+        logger.info("✓ Background notification queue processor started (runs every 2 seconds)")
+        logger.info("✓ Patient token cleanup started (runs every hour)")
+        logger.info(f"✓ Notification Service ready on port 9000 (Firebase: {'enabled' if firebase_enabled else 'disabled'})")
         
         # Store scheduler in app state for access in shutdown
         app.state.scheduler = scheduler
@@ -102,8 +112,7 @@ async def lifespan(app: FastAPI):
         yield  # Application runs here
         
     except Exception as e:
-        logger.error(f"Failed to initialize Firebase: {e}")
-        logger.error("Exiting - Firebase credentials required to proceed")
+        logger.error(f"Failed to initialize service: {e}")
         sys.exit(1)
     
     # ======================= SHUTDOWN =======================
