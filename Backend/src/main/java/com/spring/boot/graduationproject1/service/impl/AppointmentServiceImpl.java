@@ -127,6 +127,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         try {
             String idempotencyKey = UUID.randomUUID().toString();
             String patientName = appointment.getPatientNameSnapshot();
+            String patientPhone = patient.getPhoneNumber();
             String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
             String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
             String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
@@ -134,6 +135,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                     appointment.getId(),
                     patient.getId(),
                     patientName,
+                    patientPhone,
                     doctor.getId(),
                     doctorName,
                     category,

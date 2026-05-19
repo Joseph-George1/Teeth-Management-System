@@ -28,6 +28,7 @@ public class NotificationController {
             @RequestParam Long appointmentId,
             @RequestParam Long patientId,
             @RequestParam String patientName,
+            @RequestParam String patientPhone,
             @RequestParam Long doctorId,
             @RequestParam String doctorName,
             @RequestParam String category,
@@ -35,7 +36,7 @@ public class NotificationController {
         try {
             String idempotencyKey = UUID.randomUUID().toString();
             Map<String, Object> response = notificationClientService.sendAppointmentConfirmation(
-                    appointmentId, patientId, patientName, doctorId, doctorName, category, location, idempotencyKey);
+                    appointmentId, patientId, patientName, patientPhone, doctorId, doctorName, category, location, idempotencyKey);
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
