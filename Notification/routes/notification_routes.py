@@ -394,21 +394,28 @@ async def delete_notification(
             raise HTTPException(status_code=404, detail="Notification not found or does not belong to you")
         
         # CASCADE DELETE: Delete related records first (handles FK constraints)
-        # Delete delivery attempts first (references audit records)
-        db.query(NotificationDeliveryAttempts).filter(
-            NotificationDeliveryAttempts.notification_queue_id == notification_id
-        ).delete(synchronize_session=False)
+        # Only attempt to delete if those tables exist (graceful handling for incomplete schemas)
+        try:
+            # Delete delivery attempts first (references audit records)
+            db.query(NotificationDeliveryAttempts).filter(
+                NotificationDeliveryAttempts.notification_queue_id == notification_id
+            ).delete(synchronize_session=False)
+        except Exception as e:
+            logger.warning(f"Could not delete delivery attempts (table may not exist): {e}")
         
-        # Delete audit records (references queue)
-        db.query(NotificationDeliveryAudit).filter(
-            NotificationDeliveryAudit.notification_queue_id == notification_id
-        ).delete(synchronize_session=False)
+        try:
+            # Delete audit records (references queue)
+            db.query(NotificationDeliveryAudit).filter(
+                NotificationDeliveryAudit.notification_queue_id == notification_id
+            ).delete(synchronize_session=False)
+        except Exception as e:
+            logger.warning(f"Could not delete audit records (table may not exist): {e}")
         
         # Finally delete the notification queue entry
         db.delete(notif)
         db.commit()
         
-        logger.info(f"User {email} deleted notification {notification_id} with cascade delete of related audit/attempt records")
+        logger.info(f"User {email} deleted notification {notification_id}")
         
         return {
             "success": True,
@@ -460,15 +467,22 @@ async def delete_all_notifications(
         
         if notification_ids:
             # CASCADE DELETE: Delete related records first (handles FK constraints)
-            # Delete delivery attempts
-            db.query(NotificationDeliveryAttempts).filter(
-                NotificationDeliveryAttempts.notification_queue_id.in_(notification_ids)
-            ).delete(synchronize_session=False)
+            # Only attempt if those tables exist (graceful handling for incomplete schemas)
+            try:
+                # Delete delivery attempts
+                db.query(NotificationDeliveryAttempts).filter(
+                    NotificationDeliveryAttempts.notification_queue_id.in_(notification_ids)
+                ).delete(synchronize_session=False)
+            except Exception as e:
+                logger.warning(f"Could not delete delivery attempts (table may not exist): {e}")
             
-            # Delete audit records
-            db.query(NotificationDeliveryAudit).filter(
-                NotificationDeliveryAudit.notification_queue_id.in_(notification_ids)
-            ).delete(synchronize_session=False)
+            try:
+                # Delete audit records
+                db.query(NotificationDeliveryAudit).filter(
+                    NotificationDeliveryAudit.notification_queue_id.in_(notification_ids)
+                ).delete(synchronize_session=False)
+            except Exception as e:
+                logger.warning(f"Could not delete audit records (table may not exist): {e}")
         
         # Finally delete the notification queue entries
         deleted_count = db.query(NotificationQueue).filter(
@@ -476,7 +490,7 @@ async def delete_all_notifications(
         ).delete(synchronize_session=False)
         db.commit()
         
-        logger.info(f"User {email} deleted all {deleted_count} notifications with cascade delete of related audit/attempt records")
+        logger.info(f"User {email} deleted all {deleted_count} notifications")
         
         return {
             "success": True,
