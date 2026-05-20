@@ -189,13 +189,25 @@ class Thoutha:
         # Try to load all keys from vectoria.json
         self.api_keys = get_all_api_keys()
         
-        # Also add key from .env if it exists
-        env_key = os.getenv("GEMINI_API_KEY")
+        # Also add key from .env if it exists - try multiple common variable names
+        env_key = None
+        for key_var in ["GEMINI_API_KEY", "GOOGLE_API_KEY", "API_KEY", "GENAI_API_KEY"]:
+            candidate = os.getenv(key_var)
+            if candidate:
+                env_key = candidate
+                print(f"[Thoutha] Found .env key from {key_var}")
+                break
+        
         if env_key and env_key not in self.api_keys:
             self.api_keys.append(env_key)
-            print(f"[Thoutha] Loaded {len(self.api_keys) - 1} API key(s) from vectoria.json + 1 from .env")
+            total = len(self.api_keys)
+            print(f"[Thoutha] Loaded {total - 1} API key(s) from vectoria.json + 1 from .env (total: {total})")
+        elif env_key:
+            print(f"[Thoutha] .env key matches one from vectoria.json, skipping duplicate")
         elif self.api_keys:
-            print(f"[Thoutha] Loaded {len(self.api_keys)} API key(s) from vectoria.json")
+            print(f"[Thoutha] Loaded {len(self.api_keys)} API key(s) from vectoria.json (no .env key found)")
+        else:
+            print(f"[Thoutha] WARNING: No API keys found in vectoria.json or .env")
         
         if not self.api_keys:
             raise ValueError("No API keys found in vectoria.json or .env")
