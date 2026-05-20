@@ -123,30 +123,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointmentRepo.save(appointment);
 
-        // === STEP 5: Send appointment confirmation to Python notification service ===
-        try {
-            String idempotencyKey = UUID.randomUUID().toString();
-            String patientName = appointment.getPatientNameSnapshot();
-            String patientPhone = patient.getPhoneNumber();
-            String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
-            String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
-            String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
-            notificationClientService.sendAppointmentConfirmation(
-                    appointment.getId(),
-                    patient.getId(),
-                    patientName,
-                    patientPhone,
-                    doctor.getId(),
-                    doctorName,
-                    category,
-                    location,
-                    idempotencyKey
-            );
-            logger.info("Appointment notification sent to microservice for appointment ID: {}", appointment.getId());
-        } catch (Exception e) {
-            logger.warn("Could not send appointment notification to microservice: {}", e.getMessage());
-            // Don't fail the appointment creation if notification fails
-        }
+        // NOTE: Patient push notification is intentionally NOT sent here.
+        // At creation time the appointment is still PENDING (doctor hasn't reviewed it),
+        // and the guest patient may not have registered their FCM token yet.
+        // The patient notification is sent in updateAppointmentStatus() when the
+        // doctor approves the appointment (status = APPROVED).
 
         // Local notification to doctor
         userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
@@ -230,6 +211,42 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         appointmentRepo.save(appointment);
+
+        // === Send patient-facing push notification via Python microservice ===
+        // Only fires AFTER the doctor has reviewed and changed the status.
+        // At this point the guest patient has had time to register their FCM token.
+        if (status == AppointmentStatus.APPROVED 
+                || status == AppointmentStatus.CANCELLED 
+                || status == AppointmentStatus.DONE) {
+            try {
+                String idempotencyKey = UUID.randomUUID().toString();
+                String patientName = appointment.getPatientNameSnapshot();
+                String patientPhone = appointment.getPatient().getPhoneNumber();
+                Doctor doctor = appointment.getDoctor();
+                String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
+                String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
+                String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
+
+                notificationClientService.sendAppointmentConfirmation(
+                        appointment.getId(),
+                        appointment.getPatient().getId(),
+                        patientName,
+                        patientPhone,
+                        doctor.getId(),
+                        doctorName,
+                        category,
+                        location,
+                        idempotencyKey
+                );
+                logger.info("Patient push notification sent for appointment {} (status={})", 
+                           appointmentId, status);
+            } catch (Exception e) {
+                logger.warn("Could not send patient push notification for appointment {}: {}", 
+                           appointmentId, e.getMessage());
+                // Don't fail the status update if notification fails
+            }
+        }
+
         return appointmentMapper.toDto(appointment);
     }
 
