@@ -17,7 +17,12 @@ import uuid
 import traceback
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from root directory if it exists, then current directory
+root_env = os.path.join(os.path.dirname(__file__), "..", ".env")
+if os.path.exists(root_env):
+    load_dotenv(root_env)
+else:
+    load_dotenv()  # Fallback to current directory
 
 # Try to import AI client
 try:
