@@ -1,1 +1,0 @@
-"""Notification service utilities package"""
