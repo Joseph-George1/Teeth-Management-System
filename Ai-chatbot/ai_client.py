@@ -185,20 +185,20 @@ class Thoutha:
         self._configure_client()
 
     def _load_api_keys(self):
-        """Load API keys from vectoria.json, fallback to .env variables."""
+        """Load API keys from vectoria.json and .env variables."""
         # Try to load all keys from vectoria.json
         self.api_keys = get_all_api_keys()
         
-        if not self.api_keys:
-            # Fallback to environment variable
-            single_key = os.getenv("GEMINI_API_KEY")
-            if single_key:
-                self.api_keys = [single_key]
-                print("[Thoutha] Using backup key from .env")
-            else:
-                raise ValueError("No API keys found.")
-        else:
+        # Also add key from .env if it exists
+        env_key = os.getenv("GEMINI_API_KEY")
+        if env_key and env_key not in self.api_keys:
+            self.api_keys.append(env_key)
+            print(f"[Thoutha] Loaded {len(self.api_keys) - 1} API key(s) from vectoria.json + 1 from .env")
+        elif self.api_keys:
             print(f"[Thoutha] Loaded {len(self.api_keys)} API key(s) from vectoria.json")
+        
+        if not self.api_keys:
+            raise ValueError("No API keys found in vectoria.json or .env")
 
 
 
