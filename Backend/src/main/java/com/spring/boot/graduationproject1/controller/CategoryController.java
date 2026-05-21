@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026 Muhammad Ashraf Tawfik Elkateb
+ * GitHub: https://github.com/MuhammamdElKateb
+ */
 package com.spring.boot.graduationproject1.controller;
 
 import com.spring.boot.graduationproject1.dto.CategoryDto;
