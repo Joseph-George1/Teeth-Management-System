@@ -136,6 +136,30 @@ public class AppointmentServiceImpl implements AppointmentService {
             );
         });
 
+        // === Send silent patient confirmation to Python to generate Temp Token ===
+        try {
+            String idempotencyKey = UUID.randomUUID().toString();
+            String patientName = appointment.getPatientNameSnapshot();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
+            String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
+            String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
+            String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
+            notificationClientService.sendAppointmentConfirmation(
+                    appointment.getId(),
+                    appointment.getPatient().getId(),
+                    patientName,
+                    patientPhone,
+                    appointment.getDoctor().getId(),
+                    doctorName,
+                    category,
+                    location,
+                    idempotencyKey,
+                    "BOOKING" // triggerType
+            );
+            logger.info("Booking notification sent to Python for pending appointment ID: {}", appointment.getId());
+        } catch (Exception e) {
+            logger.warn("Could not send silent patient confirmation: {}", e.getMessage());
+        }
 
         return appointmentMapper.toDto(appointment);
     }
@@ -204,7 +228,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                         doctorName,
                         category,
                         location,
-                        idempotencyKey
+                        idempotencyKey,
+                        "APPROVAL" // triggerType
                 );
                 logger.info("Patient confirmation notification sent for approved appointment ID: {}", appointment.getId());
             } catch (Exception e) {

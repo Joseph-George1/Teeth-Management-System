@@ -31,7 +31,7 @@ public class NotificationClientServiceImpl implements NotificationClientService 
     @Override
     public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName, String patientPhone,
                                                            Long doctorId, String doctorName, String category, 
-                                                           String location, String idempotencyKey) {
+                                                           String location, String idempotencyKey, String triggerType) {
         try {
             String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
             
@@ -45,6 +45,7 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             payload.put("category", category);
             payload.put("location", location);
             payload.put("idempotency_key", idempotencyKey);
+            payload.put("trigger_type", triggerType);
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

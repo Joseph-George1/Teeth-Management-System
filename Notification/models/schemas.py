@@ -72,6 +72,7 @@ class AppointmentNotificationRequest(BaseModel):
     doctor_name: str = Field(..., description="Name of the doctor")
     category: str = Field(..., description="Medical category/specialty")
     location: str = Field(..., description="City or location of the clinic")
+    trigger_type: str = Field(default="APPROVAL", description="BOOKING or APPROVAL")
     
     class Config:
         json_schema_extra = {
@@ -84,7 +85,8 @@ class AppointmentNotificationRequest(BaseModel):
                 "doctor_id": 201,
                 "doctor_name": "Dr. Sarah Ahmed",
                 "category": "Orthodontics",
-                "location": "Cairo"
+                "location": "Cairo",
+                "trigger_type": "APPROVAL"
             }
         }
 

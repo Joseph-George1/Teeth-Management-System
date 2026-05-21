@@ -23,7 +23,8 @@ class NotificationService:
                                     patient_id: int, patient_name: str,
                                     doctor_id: int, doctor_name: str,
                                     category: str = "General", location: str = "Clinic",
-                                    patient_phone: str = None) -> Dict:
+                                    patient_phone: str = None,
+                                    trigger_type: str = "APPROVAL") -> Dict:
         """
         Notify both patient and doctor about appointment confirmation
         
@@ -43,29 +44,32 @@ class NotificationService:
         results = {"patient": None, "doctor": None}
         
         try:
-            # === Notify PATIENT: Show doctor name, category, and location ===
-            patient_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_patient")
-            patient_title = f"{doctor_name} - {category}"
-            patient_body = f"Your appointment at {location}"
-            patient_payload = {
-                "title": patient_title,
-                "body": patient_body,
-                "appointmentId": str(appointment_id),
-                "doctorId": str(doctor_id),
-                "doctor_name": doctor_name,
-                "category": category,
-                "location": location,
-                "type": "APPOINTMENT_CONFIRMED",
-                "time": None  # Set when appointment time is known
-            }
-            self.queue_service.enqueue(
-                patient_id, 
-                patient_title,
-                patient_body,
-                patient_key,
-                patient_payload
-            )
-            results["patient"] = "queued"
+            if trigger_type == "APPROVAL":
+                # === Notify PATIENT: Show doctor name, category, and location ===
+                patient_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_patient")
+                patient_title = f"{doctor_name} - {category}"
+                patient_body = f"Your appointment at {location}"
+                patient_payload = {
+                    "title": patient_title,
+                    "body": patient_body,
+                    "appointmentId": str(appointment_id),
+                    "doctorId": str(doctor_id),
+                    "doctor_name": doctor_name,
+                    "category": category,
+                    "location": location,
+                    "type": "APPOINTMENT_CONFIRMED",
+                    "time": None  # Set when appointment time is known
+                }
+                self.queue_service.enqueue(
+                    patient_id, 
+                    patient_title,
+                    patient_body,
+                    patient_key,
+                    patient_payload
+                )
+                results["patient"] = "queued"
+            else:
+                results["patient"] = "skipped (booking phase)"
             
             # === AUTO-GENERATE TEMPORARY TOKEN FOR PATIENT ===
             # Patient gets a 6-digit code via SMS to view appointment without login
@@ -87,36 +91,39 @@ class NotificationService:
                 logger.error(f"Failed to generate patient token: {e}")
                 results["patient_token"] = None
             
-            # === Notify DOCTOR: Show that someone has been appointed with them ===
-            doctor_key = generate_idempotency_key(f"apt_confirm_{appointment_id}_doctor")
-            doctor_title = "تم حجز موعد جديد"
-            doctor_body = f"You have a new appointment with {patient_name}"
-            # Doctor notification should include patient info clearly
-            doctor_payload = {
-                "title": doctor_title,
-                "body": doctor_body,
-                "appointmentId": str(appointment_id),
-                "patientId": str(patient_id),
-                "patient_name": patient_name,
-                # Include doctor's own info so app can display it if needed
-                "doctor_id": str(doctor_id),
-                "doctor_name": None,  # Doctor already knows their own name
-                # Include clinic/location info if available
-                "location": location,
-                "clinic": location,
-                "type": "APPOINTMENT_CONFIRMED",
-                "time": None  # Set when appointment time is known
-            }
-            self.queue_service.enqueue(
-                doctor_id,
-                doctor_title,
-                doctor_body,
-                doctor_key,
-                doctor_payload
-            )
-            results["doctor"] = "queued"
+            if trigger_type == "BOOKING":
+                # === Notify DOCTOR: Show that someone has been appointed with them ===
+                doctor_key = generate_idempotency_key(f"apt_req_{appointment_id}_doctor")
+                doctor_title = "طلب موعد جديد"
+                doctor_body = f"You have a new appointment request from {patient_name}"
+                # Doctor notification should include patient info clearly
+                doctor_payload = {
+                    "title": doctor_title,
+                    "body": doctor_body,
+                    "appointmentId": str(appointment_id),
+                    "patientId": str(patient_id),
+                    "patient_name": patient_name,
+                    # Include doctor's own info so app can display it if needed
+                    "doctor_id": str(doctor_id),
+                    "doctor_name": None,  # Doctor already knows their own name
+                    # Include clinic/location info if available
+                    "location": location,
+                    "clinic": location,
+                    "type": "NEW_APPOINTMENT_REQUEST",
+                    "time": None  # Set when appointment time is known
+                }
+                self.queue_service.enqueue(
+                    doctor_id,
+                    doctor_title,
+                    doctor_body,
+                    doctor_key,
+                    doctor_payload
+                )
+                results["doctor"] = "queued"
+            else:
+                results["doctor"] = "skipped (approval phase)"
             
-            logger.info(f"Appointment {appointment_id} confirmation notifications queued - Patient: {patient_name}, Doctor: {doctor_name}")
+            logger.info(f"Appointment {appointment_id} notifications processed - Patient: {patient_name}, Doctor: {doctor_name}, Trigger: {trigger_type}")
             return results
             
         except Exception as e:
