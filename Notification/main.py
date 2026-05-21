@@ -30,7 +30,7 @@ import atexit
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
 
-from config import get_db_session, init_firebase
+from config import get_db_session, init_firebase, SessionLocal
 from routes.notification_routes import router as notification_router
 from routes.patient_routes import router as patient_router
 from utils.logger import setup_logger
@@ -74,27 +74,45 @@ async def lifespan(app: FastAPI):
         from services.queue_service import QueueService
         from services.patient_token_service import PatientTokenService
         
+        # Throttle counter for Firebase-disabled warnings (avoid log spam)
+        _firebase_warn_counter = {"count": 0}
+        
         def process_notifications():
             """Background task to process notification queue (runs every 2 seconds)"""
+            if not firebase_enabled:
+                # Log a warning every ~60 seconds (30 cycles × 2s) so it's visible in logs
+                _firebase_warn_counter["count"] += 1
+                if _firebase_warn_counter["count"] % 30 == 1:
+                    logger.warning(
+                        "⚠ Firebase is NOT initialized — all push notifications are DISABLED. "
+                        "PENDING items in NOTIFICATION_QUEUE will NOT be dispatched. "
+                        "Fix: place firebase-key.json in the Notification/ directory and restart."
+                    )
+                return
+            
+            db = None
             try:
-                if not firebase_enabled:
-                    return  # Skip if Firebase not initialized
-                db = next(get_db_session())
+                db = SessionLocal()
                 queue_service = QueueService(db)
                 queue_service.process_queue(db)
-                db.close()
             except Exception as e:
-                logger.error(f"Background queue processor error: {e}")
+                logger.error(f"Background queue processor error: {e}", exc_info=True)
+            finally:
+                if db is not None:
+                    db.close()
         
         def cleanup_patient_tokens():
             """Background task to cleanup expired patient tokens (runs every hour)"""
+            db = None
             try:
-                db = next(get_db_session())
+                db = SessionLocal()
                 token_service = PatientTokenService(db)
                 deleted = token_service.cleanup_expired_tokens()
-                db.close()
             except Exception as e:
                 logger.error(f"Patient token cleanup error: {e}")
+            finally:
+                if db is not None:
+                    db.close()
         
         # Initialize APScheduler for background tasks
         scheduler = BackgroundScheduler()
