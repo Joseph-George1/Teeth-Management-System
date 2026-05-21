@@ -2,7 +2,6 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorBooking.css";
 
-// Helper functions
 const getDate = (dt) => dt ? dt.split('T')[0] : '';
 const getTime = (dt) => {
   if (!dt) return '';
@@ -32,6 +31,7 @@ export default function DoctorBookings() {
   const [error, setError] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [toast, setToast] = useState(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState(null);
 
   useEffect(() => {
     if (!isLoggedIn || authLoading) return;
@@ -47,7 +47,6 @@ export default function DoctorBookings() {
       return;
     }
 
-    // جلب الحجوزات المقبولة من API
     fetch("https://thoutha.page/api/appointment/getApproved", {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -108,7 +107,6 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      // حذف من قائمة الحجوزات المقبولة
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
       showToast("تم اكمال الحجز وإضافته للمرضى كحالة مكتملة ✓", "success");
@@ -117,11 +115,9 @@ export default function DoctorBookings() {
     }
   };
 
-  const handleCancel = async (e, appointmentId) => {
-    e.stopPropagation();
-    
+  const handleCancel = async (appointmentId) => {
     const token = user?.token || localStorage.getItem("token");
-    
+
     try {
       const response = await fetch(
         `https://thoutha.page/api/appointment/updateStatus/${appointmentId}?status=CANCELLED`,
@@ -136,12 +132,12 @@ export default function DoctorBookings() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      // حذف من قائمة الحجوزات المقبولة
       setBookings((prev) => prev.filter((b) => b.id !== appointmentId));
       setSelectedBooking(null);
-      showToast("تم الغاء الحالة وحذفها من الحجوزات ✓", "success");
+      setCancelConfirmId(null);
+      showToast("تم إلغاء الحالة بنجاح", "error");
     } catch (err) {
-      showToast(err.message || "فشل الالغاء", "error");
+      showToast(err.message || "فشل الإلغاء", "error");
     }
   };
 
@@ -151,16 +147,7 @@ export default function DoctorBookings() {
     return "upcoming";
   };
 
-  const handleDelete = async (e, appointmentId) => {
-    e.stopPropagation();
-    
-    if (!window.confirm("هل أنت متأكد من حذف هذا الحجز؟")) {
-      return;
-    }
-
-    const token = user?.token || localStorage.getItem("token");
-    
-  };
+  
 
   return (
     <div className="dnb-page" dir="rtl">
@@ -227,10 +214,11 @@ export default function DoctorBookings() {
                   </button>
                   <button 
                     className="dnb-action-btn dnb-action-btn--reject" 
-                    onClick={(e) => handleCancel(e, booking.id)}
+                    onClick={(e) => { e.stopPropagation(); setCancelConfirmId(booking.id); }}
                   >
                     ملغي
                   </button>
+                  
                 </div>
               </div>
             ))}
@@ -289,9 +277,36 @@ export default function DoctorBookings() {
               </button>
               <button 
                 className="dnb-action-btn dnb-action-btn--reject" 
-                onClick={(e) => handleCancel(e, selectedBooking.id)}
+                onClick={(e) => { e.stopPropagation(); setCancelConfirmId(selectedBooking.id); }}
               >
                 ملغي
+              </button>
+              
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelConfirmId && (
+        <div className="dnb-overlay" onClick={() => setCancelConfirmId(null)}>
+          <div className="dnb-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="dnb-sheet-handle" />
+
+            <div className="dnb-sheet-header">
+              <h2 className="dnb-sheet-name">هل أنت متأكد من إلغاء هذه الحالة؟</h2>
+            </div>
+
+            <div className="dnb-sheet-divider" />
+
+            <div className="dnb-sheet-actions">
+              <button className="dnb-close-btn" onClick={() => setCancelConfirmId(null)}>
+                الإلغاء
+              </button>
+              <button 
+                className="dnb-action-btn dnb-action-btn--reject" 
+                onClick={() => handleCancel(cancelConfirmId)}
+              >
+                تأكيد
               </button>
             </div>
           </div>

@@ -2,7 +2,6 @@ import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorBooking.css";
 
-// Helper functions
 const getDate = (dt) => dt ? dt.split('T')[0] : '';
 const getTime = (dt) => {
   if (!dt) return '';
@@ -46,7 +45,6 @@ export default function Patient() {
       return;
     }
 
-    // جلب المرضى المكتملين من API
     fetch("https://thoutha.page/api/appointment/getDone", {
       headers: { Authorization: `Bearer ${token}` }
     })

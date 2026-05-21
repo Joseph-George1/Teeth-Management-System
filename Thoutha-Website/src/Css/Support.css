@@ -93,13 +93,12 @@
   cursor: not-allowed;
 }
 
-/* ===== Toast Messages ===== */
-
 @keyframes slideInUp {
   from {
     transform: translateY(30px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -134,22 +133,20 @@
   border: 1px solid #dc2626;
 }
 
-/* ===== Responsive ===== */
-
 @media (max-width: 768px) {
   .support-container {
     padding: 32px 20px;
   }
 
-  .support-title {
+.support-title {
     font-size: 24px;
   }
 
-  .support-section h2 {
+.support-section h2 {
     font-size: 19px;
   }
 
-  .support-form {
+.support-form {
     max-width: 100%;
   }
 }
@@ -159,7 +156,8 @@
     padding: 24px 16px;
   }
 
-  .support-title {
+.support-title {
     font-size: 22px;
   }
 }
+

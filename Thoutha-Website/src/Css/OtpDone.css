@@ -74,10 +74,6 @@
     margin-bottom: 15px;
 }
 
-
-
-
-/* Responsive styles */
 @media (max-width: 600px) {
   .done-container {
     width: 95vw;
@@ -85,19 +81,22 @@
     height: auto;
     padding: 24px 8px 18px;
   }
-  .done-subtitle {
+
+.done-subtitle {
     width: 90vw;
     font-size: 16px;
     line-height: 1.5;
     margin-bottom: 16px;
   }
-  .done-button {
+
+.done-button {
     width: 90vw;
     min-width: 0;
     height: 40px;
     font-size: 13px;
   }
-  .done-page {
+
+.done-page {
     padding: 24px 4px;
   }
 }
@@ -106,12 +105,15 @@
   .done-container {
     padding: 12px 2px 10px;
   }
-  .done-subtitle {
+
+.done-subtitle {
     font-size: 15px;
     margin-bottom: 12px;
   }
-  .done-button {
+
+.done-button {
     height: 36px;
     font-size: 12px;
   }
 }
+

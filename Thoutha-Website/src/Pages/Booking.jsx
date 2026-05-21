@@ -3,6 +3,56 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import '../Css/Booking.css';
 
+const getDoctorDisplayName = (req) => {
+    const first = req?.doctorFirstName || req?.firstName || req?.first_name || "";
+    const last = req?.doctorLastName || req?.lastName || req?.last_name || "";
+    return `${first} ${last}`.trim();
+};
+
+const getDuplicateBookingMessage = (req) => {
+    const doctorName = getDoctorDisplayName(req);
+    return doctorName
+        ? `تم الحجز المسبق مع د.${doctorName}`
+        : "تم الحجز المسبق بهذا الرقم";
+};
+
+const isDuplicateBookingError = (status, errorData) => {
+    if (status === 403 || status === 409 || status === 422) return true;
+
+    const combined = [
+        errorData?.message,
+        errorData?.messageAr,
+        errorData?.messageEn,
+        errorData?.error,
+        typeof errorData === "string" ? errorData : "",
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    const duplicateHints = [
+        "موجود",
+        "مسبق",
+        "already",
+        "exists",
+        "duplicate",
+        "مكرر",
+        "رقم",
+        "هاتف",
+        "phone",
+        "مسجل",
+        "booked",
+        "conflict",
+        "حجز",
+        "appointment",
+        "نفس",
+    ];
+
+    if (duplicateHints.some((hint) => combined.includes(hint))) return true;
+
+    return status === 400;
+};
+
 export default function Booking() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -56,6 +106,7 @@ export default function Booking() {
         setApiError(null);
 
         if (!requestData?.id) {
+            setApiError('لا توجد بيانات حجز. يرجى اختيار طلب من صفحة الخدمة أولاً.');
             return;
         }
 
@@ -83,25 +134,25 @@ export default function Booking() {
             );
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                let errorMessage = errorData.message || 'فشل الحجز';
-                
-                // إذا كانت 400 أو الرسالة تحتوي على مؤشرات حجز مسبق
-                if (response.status === 400 || 
-                    errorMessage.toLowerCase().includes('موجود') || 
-                    errorMessage.toLowerCase().includes('مسبق') ||
-                    errorMessage.toLowerCase().includes('already') ||
-                    errorMessage.toLowerCase().includes('exists')) {
-                    errorMessage = `تم الحجز المسبق مع د. ${requestData?.doctorFirstName} ${requestData?.doctorLastName}`;
+                const rawBody = await response.text();
+                let errorData = {};
+                try {
+                    errorData = rawBody ? JSON.parse(rawBody) : {};
+                } catch {
+                    errorData = { message: rawBody };
                 }
-                
+
+                const errorMessage = isDuplicateBookingError(response.status, errorData)
+                    ? getDuplicateBookingMessage(requestData)
+                    : (errorData?.messageAr || errorData?.message || errorData?.messageEn || "فشل الحجز");
+
                 setApiError(errorMessage);
-                throw new Error(errorMessage);
+                return;
             }
 
             setConfirmed(true);
         } catch (err) {
-            console.error(err);
+            setApiError(err.message || 'حدث خطأ أثناء الحجز');
         } finally {
             setLoading(false);
         }
@@ -135,7 +186,7 @@ export default function Booking() {
     return (
         <div className="booking-wrapper">
             <div className="card1">
-                {/* Top strip */}
+                {}
                 <div className="card-top1">
                     <div className="avatar1">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -143,17 +194,17 @@ export default function Booking() {
                         </svg>
                     </div>
                     <div className="card-top-info">
-                        <div className="doctor-name1">{requestData?.doctorFirstName} {requestData?.doctorLastName}</div>
+                        <div className="doctor-name1">{getDoctorDisplayName(requestData)}</div>
                         <div className="spec">{requestData?.categoryName}</div>
                     </div>
                     <div className="tag">حجز موعد</div>
                 </div>
 
-                {/* Body */}
+                {}
                 <div className="card-body1">
-                    {/* Booking view */}
+                    {}
                     <div className={`booking-view ${confirmed ? 'hide' : ''}`} id="bookingView">
-                        {/* Doctor info rows */}
+                        {}
                         <div className="info-rows">
                             <div className="info-row">
                                 <div className="info-cell">
@@ -205,7 +256,7 @@ export default function Booking() {
                             </div>
                         </div>
 
-                        {/* Form */}
+                        {}
                         <div className="divider1">بياناتك</div>
 
                         <div className="form-row-2">
@@ -224,9 +275,8 @@ export default function Booking() {
                                         placeholder="الاسم الاول"
                                         value={formData.patientFirstName}
                                         onChange={handleInputChange}
-                                        className={fieldErrors.firstName ? 'error' : ''}
+                                        className={`input_11 ${fieldErrors.firstName ? 'error' : ''}`}
                                         disabled={loading}
-                                        className="input_11"
                                     />
                                 </div>
                             </div>
@@ -245,9 +295,8 @@ export default function Booking() {
                                         placeholder="الاسم الاخير"
                                         value={formData.patientLastName}
                                         onChange={handleInputChange}
-                                        className={fieldErrors.lastName ? 'error' : ''}
+                                        className={`input_11 ${fieldErrors.lastName ? 'error' : ''}`}
                                         disabled={loading}
-                                        className="input_11"
                                     />
                                 </div>
                             </div>
@@ -267,9 +316,8 @@ export default function Booking() {
                                     placeholder="01X XXXX XXXX"
                                     value={formData.patientPhoneNumber}
                                     onChange={handleInputChange}
-                                    className={fieldErrors.phone ? 'error' : ''}
+                                    className={`input_11 ${fieldErrors.phone ? 'error' : ''}`}
                                     disabled={loading}
-                                    className="input_11"
                                 />
                             </div>
                         </div>
@@ -288,7 +336,7 @@ export default function Booking() {
                         </button>
                     </div>
 
-                    {/* Success view */}
+                    {}
                     <div className={`success-view ${confirmed ? 'show' : ''}`} id="successView">
                         <div className="success-ring">
                             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--button-color-1)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -297,7 +345,7 @@ export default function Booking() {
                         </div>
                         <h3>تم الحجز بنجاح</h3>
                         <div className="success-box" id="successMsg">
-                            تم حجز موعدك بنجاح مع <span className="hl">د. {requestData?.doctorFirstName} {requestData?.doctorLastName}</span> يوم <span className="hl">{formatDate(requestData?.dateTime)}</span> الساعة <span className="hl">{formatTime(requestData?.dateTime)}</span> في <span className="hl">{requestData?.doctorUniversityName}</span>.
+                            تم حجز موعدك بنجاح مع <span className="hl">د.{getDoctorDisplayName(requestData)}</span> يوم <span className="hl">{formatDate(requestData?.dateTime)}</span> الساعة <span className="hl">{formatTime(requestData?.dateTime)}</span> في <span className="hl">{requestData?.doctorUniversityName}</span>.
                         </div>
                         <div className="chips">
                             <div className="chip">

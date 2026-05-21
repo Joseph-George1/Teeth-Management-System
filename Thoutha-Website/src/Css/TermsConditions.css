@@ -42,8 +42,6 @@
   margin-bottom: 10px;
 }
 
-/* ===== Contact Form ===== */
-
 .support-form {
   display: flex;
   flex-direction: column;
@@ -90,13 +88,12 @@
   cursor: not-allowed;
 }
 
-/* ===== Toast Messages ===== */
-
 @keyframes slideInUp {
   from {
     transform: translateY(30px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -131,14 +128,13 @@
   border: 1px solid #dc2626;
 }
 
-/*  Responsive Design */
 @media (max-width: 1024px) {
   .terms-container {
     padding: 40px 24px;
     max-width: 100%;
   }
 
-  .terms-title {
+.terms-title {
     font-size: 26px;
   }
 }
@@ -148,15 +144,15 @@
     padding: 32px 20px;
   }
 
-  .terms-title {
+.terms-title {
     font-size: 24px;
   }
 
-  .terms-section h2 {
+.terms-section h2 {
     font-size: 19px;
   }
 
-  .terms-section p,
+.terms-section p,
   .terms-section li {
     font-size: 15px;
   }
@@ -167,7 +163,8 @@
     padding: 24px 16px;
   }
 
-  .terms-title {
+.terms-title {
     font-size: 22px;
   }
 }
+

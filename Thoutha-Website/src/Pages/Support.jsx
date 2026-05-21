@@ -24,13 +24,12 @@ export default function Support(){
         () => {
           setLoading(false);
           setSuccess(true);
-          form.current.reset();
+          form.current?.reset();
           setTimeout(() => setSuccess(false), 3000);
         },
-        (error) => {
+        () => {
           setLoading(false);
           setError("حدث خطأ أثناء إرسال الرسالة ❌");
-          console.error("EmailJS Error:", error);
           setTimeout(() => setError(""), 3000);
         }
       );

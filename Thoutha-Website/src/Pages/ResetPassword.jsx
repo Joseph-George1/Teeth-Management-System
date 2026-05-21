@@ -20,6 +20,11 @@ export default function ResetPassword() {
   const handleSubmit = async () => {
     setError("");
 
+    if (!phone) {
+      setError("يرجى إعادة بدء عملية استعادة كلمة المرور من البداية");
+      return;
+    }
+
     if (!newPassword || !confirmPassword) {
       setError("يرجى تعبئة جميع الحقول");
       return;
@@ -120,3 +125,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+

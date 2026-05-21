@@ -12,7 +12,6 @@ export default function Otp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Normalize the phone number
   const normalizePhone = (value) => {
     let cleaned = value.replace(/[^\d+]/g, "");
     if (!cleaned.startsWith("+20")) {
@@ -21,10 +20,8 @@ export default function Otp() {
     return cleaned.trim();
   };
 
-  // Validate Egyptian phone number
   const isValidEgyptPhone = (number) => /^\+20\d{10}$/.test(number);
 
-  // إذا جاء الرقم من صفحة التسجيل، عيّن الرقم فقط (بدون إرسال OTP تلقائي)
   useEffect(() => {
     const phoneFromState = location.state?.phone;
     if (phoneFromState) {
@@ -49,7 +46,6 @@ export default function Otp() {
       setLoading(true);
       setError("");
 
-      // console.log("[SIGNUP FLOW] Sending OTP to:", normalizedPhone);
 
       const response = await fetch(API_SEND_OTP, {
         method: "POST",
@@ -60,29 +56,23 @@ export default function Otp() {
           phone_number: normalizedPhone,
         }),
       });
-      // console.log("Status:", response.status);
 
       const data = await response.json().catch(() => ({}));
-      // console.log("[SIGNUP] Send OTP response:", data);
 
       if (!response.ok) {
         throw new Error(data?.message || "فشل إرسال الكود");
       }
 
-      // Store flow type and phone in sessionStorage for Signup flow
       sessionStorage.setItem("flow_type", "signup");
       sessionStorage.setItem("otp_phone", normalizedPhone);
 
-      // console.log("[SIGNUP] Stored in sessionStorage - flow_type: signup, otp_phone:", normalizedPhone);
 
-      // Navigate to OTP verification page
       navigate("/otp-verify", {
         state: { phone: normalizedPhone },
       });
 
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء إرسال الكود");
-      console.error("[SIGNUP] Error sending OTP:", err);
     } finally {
       setLoading(false);
     }

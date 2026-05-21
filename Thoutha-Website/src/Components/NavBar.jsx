@@ -17,7 +17,7 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Navbar */}
+      {}
       <nav className="navbar-container">
         <div className="nav-left">
           <Link to="/" className="logo-box">
@@ -26,22 +26,22 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Overlay */}
+        {}
         {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
 
-        {/* Menu Button */}
+        {}
         <button className="menu-icon" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={28} /> : <Menu size={28} className="icon-animate" />}
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {}
       {isOpen && (
         <div className="mobile-menu mobile-animate">
           <div className="mobile-menu2">
             {isLoggedIn ? (
               <>
-                {/* User Info */}
+                {}
                 <div className="menu-icon2">
                   <button className="menu-icon3" onClick={() => setIsOpen(!isOpen)}>
                     <span>القائمة</span>
@@ -62,7 +62,7 @@ export default function NavBar() {
                   </div>
                 </div>
 
-                {/* Links for logged in users */}
+                {}
                 <NavLink to="/doctor-home" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? "active-link" : "notactive-link"}>
                   <Home size={20} className="icon-color"/> الصفحة الرئيسية
                 </NavLink>
@@ -105,7 +105,7 @@ export default function NavBar() {
               </>
             ) : (
               <>
-                {/* Links for not logged in users */}
+                {}
                 <div className="menu-icon1">
                   <button className="menu-icon3" onClick={() => setIsOpen(!isOpen)}>
                     <span>القائمة</span>

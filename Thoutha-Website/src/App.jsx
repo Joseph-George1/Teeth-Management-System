@@ -1,4 +1,4 @@
-import { Route, Routes} from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import ScrollToTop from "./Components/ScrollToTop";
 import Home from "./Pages/Home";
@@ -33,11 +33,10 @@ import ProfileUpdate from "./Pages/ProfileUpdate";
 import DeleteMyAccount from "./Pages/DeleteMyAccount";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
-import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
 import UnauthorizedPage from "./Pages/UnauthorizedPage";
 import MyRequests from "./Pages/MyRequests";
-// import ComingSoon from "./Pages/ComingSoon";
+
 export default function App() {
   return (
     <>

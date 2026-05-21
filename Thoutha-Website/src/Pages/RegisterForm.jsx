@@ -3,7 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from "react-helmet-async";
 import '../Css/RegisterForm.css';
 
-const SERVER_URL = 'https://thoutha.page/api'; 
+const SERVER_URL = 'https://thoutha.page/api';
+
+const normalizeList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
+};
 
 export default function RegisterForm() {
   const navigate = useNavigate();
@@ -35,20 +42,16 @@ export default function RegisterForm() {
     error && setError('');
   };
 
-  // التحقق من الاسم الأول - العربية فقط
   const handleFirstNameChange = (e) => {
     const value = e.target.value;
-    // تقبل الأحرف العربية والمسافات فقط
     if (/^[\u0600-\u06FF\s]*$/.test(value) || value === '') {
       setFirstName(value);
     }
     error && setError('');
   };
 
-  // التحقق من الاسم الثاني - العربية فقط
   const handleLastNameChange = (e) => {
     const value = e.target.value;
-    // تقبل الأحرف العربية والمسافات فقط
     if (/^[\u0600-\u06FF\s]*$/.test(value) || value === '') {
       setLastName(value);
     }
@@ -63,16 +66,14 @@ export default function RegisterForm() {
   const [universitiesLoading, setUniversitiesLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  // 🔹 Fetch Cities
   useEffect(() => {
     const fetchCities = async () => {
       try {
         const response = await fetch(`${SERVER_URL}/cities/getAllCities`);
         if (!response.ok) throw new Error('Failed to load cities');
         const data = await response.json();
-        setCities(data || []);
-      } catch (err) {
-        console.error('خطأ في تحميل المحافظات:', err);
+        setCities(normalizeList(data));
+      } catch {
         setCities([]);
       } finally {
         setCitiesLoading(false);
@@ -81,16 +82,14 @@ export default function RegisterForm() {
     fetchCities();
   }, []);
 
-  // 🔹 Fetch Universities
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
         const response = await fetch(`${SERVER_URL}/university/getAllUniversities`);
         if (!response.ok) throw new Error('Failed to load universities');
         const data = await response.json();
-        setUniversities(data || []);
-      } catch (err) {
-        console.error('خطأ في تحميل الجامعات:', err);
+        setUniversities(normalizeList(data));
+      } catch {
         setUniversities([]);
       } finally {
         setUniversitiesLoading(false);
@@ -99,16 +98,14 @@ export default function RegisterForm() {
     fetchUniversities();
   }, []);
 
-  // 🔹 Fetch Categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await fetch(`${SERVER_URL}/category/getCategories`);
         if (!response.ok) throw new Error('Failed to load categories');
         const data = await response.json();
-        setCategories(data || []);
-      } catch (err) {
-        console.error('خطأ في تحميل الخدمات:', err);
+        setCategories(normalizeList(data));
+      } catch {
         setCategories([]);
       } finally {
         setCategoriesLoading(false);
@@ -117,7 +114,6 @@ export default function RegisterForm() {
     fetchCategories();
   }, []);
 
-  // 🔹 Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -127,13 +123,11 @@ export default function RegisterForm() {
       return;
     }
 
-    // التحقق من أن الاسم الأول باللغة العربية فقط
     if (!/^[\u0600-\u06FF\s]+$/.test(firstName.trim())) {
       setError('ادخل الاسم الأول باللغة العربية');
       return;
     }
 
-    // التحقق من أن الاسم الثاني باللغة العربية فقط
     if (!/^[\u0600-\u06FF\s]+$/.test(lastName.trim())) {
       setError('ادخل الاسم الأخير باللغة العربية');
       return;
@@ -170,8 +164,6 @@ export default function RegisterForm() {
         universityName: faculty,
       };
 
-      // Commented out to prevent user data leak
-      // console.log('Signup payload:', signupPayload);
 
       const response = await fetch(`${SERVER_URL}/auth/signup`, {
         method: 'POST',
@@ -179,8 +171,7 @@ export default function RegisterForm() {
         body: JSON.stringify(signupPayload),
       });
 
-      const data = await response.json();
-      // console.log('Signup response:', data);
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         if (Array.isArray(data) && data.length > 0) {
@@ -193,11 +184,9 @@ export default function RegisterForm() {
         return;
       }
 
-      // لو التسجيل ناجح، نروح لصفحة OTP
       navigate('/otp', { state: { email, phone } });
 
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
@@ -206,7 +195,7 @@ export default function RegisterForm() {
 
   return (
     <>
-    {/* Error Popup */}
+    {}
     {error && (
       <div className="error-popup">
         {error}
@@ -370,3 +359,4 @@ export default function RegisterForm() {
     </>
   );
 }
+

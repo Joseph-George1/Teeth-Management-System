@@ -1,7 +1,7 @@
-// Context/AuthContext.jsx
-import { createContext, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { AuthContext } from "./AuthContextObject";
 
-export const AuthContext = createContext();
+export { AuthContext };
 
 const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
 const DOCTOR_PROFILE_URL = `${API_BASE_URL}/doctor/getDoctorById`;
@@ -160,7 +160,7 @@ export function AuthProvider({ children }) {
     refreshUserProfile(token)
       .catch(() => {
         if (!isActive) return;
-        setUser(null);
+        logout();
       })
       .finally(() => {
         if (isActive) {

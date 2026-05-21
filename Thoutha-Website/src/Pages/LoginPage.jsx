@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useState, useContext, useEffect } from 'react';
-import { Link, replace, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from "../services/AuthContext";
 import '../Css/LoginPage.css';
 
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  // تحميل البيانات المحفوظة عند دخول الصفحة
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     const savedPassword = localStorage.getItem('rememberedPassword');
@@ -49,7 +48,6 @@ export default function LoginPage() {
       const data = await response.json().catch(() => ({}));
 
       if (response.ok && data?.token) {
-        // حفظ البيانات إذا كان المستخدم اختار تذكره
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', email);
           localStorage.setItem('rememberedPassword', password);
@@ -76,7 +74,6 @@ export default function LoginPage() {
       } else {
         setError(message || 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى');
       }
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -91,7 +88,6 @@ export default function LoginPage() {
         />
       </Helmet>
 
-      {/* Error Popup */}
       {error && (
         <div className="error-popup">
           {error}
@@ -101,19 +97,15 @@ export default function LoginPage() {
       <div className="login-page">
         <div className="login-container">
 
-          {/* Logo */}
           <div className="logo-container">
             <img src="/ثوثة.png" alt="ثوثة Logo" className="logo" />
           </div>
 
-          {/* Title */}
           <p className="login-title">تسجيل الدخول</p>
           <p className="login-subtitle">ادخل الرقم او الايميل</p>
 
-          {/* Form */}
           <form className="login-form" onSubmit={handleSubmit}>
 
-            {/* Email */}
             <div className="input-group">
               <input
                 type="email"
@@ -127,7 +119,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="input-group">
               <input
                 type="password"
@@ -141,7 +132,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Remember Me & Forgot Password */}
+
             <div className="form-options">
               <Link to="/forget-password" className="forgot-password">نسيت كلمة المرور؟</Link>
               <label className="remember-me">
@@ -156,14 +147,12 @@ export default function LoginPage() {
               </label>
             </div>
 
-            {/* Login Button */}
             <button type="submit" className="login-button" disabled={loading}>
               {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
             </button>
 
           </form>
 
-          {/* Create Account */}
           <div className="create-account">
             <span>ليس لديك حساب؟ </span>
             <Link to="/sign" className="create-account-link">انشئ حساب</Link>

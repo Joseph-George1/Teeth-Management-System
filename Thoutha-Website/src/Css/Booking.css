@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+
 :root {
   --color-1-background: #C4EDFC;
   --color-2-background: #A2F9CF;
@@ -47,6 +49,7 @@
     opacity: 0;
     transform: scale(0.93) translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -413,6 +416,7 @@
     opacity: 0;
     transform: translateY(14px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -423,9 +427,11 @@
   0%, 100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-5px);
   }
+
   75% {
     transform: translateX(5px);
   }
@@ -437,8 +443,6 @@
   }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-
 html {
   direction: rtl;
   font-family: 'Cairo', sans-serif;
@@ -447,3 +451,4 @@ html {
 html[dir="rtl"] {
   direction: rtl;
 }
+

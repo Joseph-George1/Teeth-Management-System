@@ -122,7 +122,6 @@
   min-width: 0;
 }
 
-/* Avatar placeholder */
 .db-avatar-placeholder {
   width: 52px;
   height: 52px;
@@ -216,6 +215,7 @@
     transform: translateY(100%);
     opacity: 0.7;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -311,24 +311,23 @@
     width: 100%;
   }
 
-  .page-title {
+.page-title {
     font-size: 24px;
   }
 
-  .appbar-title-text {
+.appbar-title-text {
     font-size: 18px;
   }
 
-  .sheet-patient-name {
+.sheet-patient-name {
     font-size: 20px;
   }
 
-  .booking-name {
+.booking-name {
     font-size: 16px;
   }
 }
 
-/* ─── DoctorBookings (dnb-) styles ──────────────────────────────────────── */
 .dnb-page {
   min-height: 100vh;
   background: #f9fafb;
@@ -364,7 +363,8 @@
 
 @keyframes dnbFadeIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .dnb-appbar {
@@ -470,7 +470,6 @@
   border: 1px solid #fecaca;
 }
 
-/* Empty State */
 .dnb-empty-state {
   background: linear-gradient(135deg, #f0f9ff 0%, #f3f4f6 100%);
   border: 1px solid #bfdbfe;
@@ -697,7 +696,8 @@
 
 @keyframes dnbSlideUp {
   from { transform: translateY(100%); opacity: 0.8; }
-  to   { transform: translateY(0);    opacity: 1; }
+
+  to { transform: translateY(0);    opacity: 1; }
 }
 
 .dnb-sheet-handle {
@@ -800,6 +800,10 @@
   flex: 1;
 }
 
+.dnb-sheet-actions .dnb-close-btn {
+  width: auto;
+}
+
 .dnb-delete-btn {
   padding: 12px;
   border-radius: 12px;
@@ -823,7 +827,11 @@
 
 @media (max-width: 768px) {
   .dnb-booking-card { width: 100%; }
-  .dnb-page-title { font-size: 22px; }
-  .dnb-appbar-title-text { font-size: 18px; }
-  .dnb-sheet-name { font-size: 18px; }
+
+.dnb-page-title { font-size: 22px; }
+
+.dnb-appbar-title-text { font-size: 18px; }
+
+.dnb-sheet-name { font-size: 18px; }
 }
+

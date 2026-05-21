@@ -100,6 +100,7 @@
   color: var(--text-color-1);
   padding: 0 !important;
 }
+
 .menu-icon3 {
   background-color: transparent;
   border: none;
@@ -167,6 +168,7 @@
   gap: 25px;
   padding: 0px 0px 18px 0px;
 }
+
 .mobile-menu a {
   text-decoration: none;
   font-size: 1.1rem;
@@ -197,6 +199,7 @@
   padding-top: 8px;
   gap: 10px;
 }
+
 .user-info {
   color: var(--text-color-1);
   font-weight: 600;
@@ -245,23 +248,21 @@
     display: none;
   }
 
-  .menu-icon,
+.menu-icon,
   .menu-icon2 {
     display: block;
   }
 
-  .mobile-menu,
+.mobile-menu,
   .mobile-menu2 {
     display: flex;
   }
 
-  .mobile-menu a {
+.mobile-menu a {
     font-size: 0.95rem;
   }
 }
 
-/* Mobile Menu Scrollbar Styling */
-/* Webkit browsers (Chrome, Safari, Edge) */
 .mobile-menu::-webkit-scrollbar {
   width: 6px;
 }
@@ -279,7 +280,6 @@
   background: #1D61E7;
 }
 
-/* Firefox scrollbar */
 .mobile-menu {
   scrollbar-width: thin;
 }

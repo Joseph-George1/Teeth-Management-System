@@ -11,7 +11,6 @@
   align-items: flex-start;
 }
 
-/* ── Background Blobs ──────────────────────────────────────────────────────── */
 .pu-blob {
   position: fixed;
   border-radius: 50%;
@@ -45,7 +44,6 @@
   animation: floatA 7s ease-in-out infinite 2s;
 }
 
-/* ── Wrapper & Card ────────────────────────────────────────────────────────── */
 .pu-wrapper {
   width: 100%;
   max-width: 700px;
@@ -63,7 +61,6 @@
   overflow: hidden;
 }
 
-/* ── Page Header ───────────────────────────────────────────────────────────── */
 .pu-page-header {
   display: flex;
   align-items: center;
@@ -99,7 +96,6 @@
   font-weight: 400;
 }
 
-/* ── Avatar Strip ──────────────────────────────────────────────────────────── */
 .pu-avatar-strip {
   display: flex;
   align-items: center;
@@ -139,7 +135,6 @@
   color: #6C7278;
 }
 
-/* ── Dividers & Section Labels ─────────────────────────────────────────────── */
 .pu-section-divider {
   height: 1.5px;
   background: linear-gradient(90deg, transparent, #EDF1F3 30%, #EDF1F3 70%, transparent);
@@ -159,7 +154,6 @@
   margin: 0 0 14px;
 }
 
-/* ── Form Rows & Fields ────────────────────────────────────────────────────── */
 .pu-row {
   display: flex;
   gap: 14px;
@@ -181,7 +175,6 @@
   letter-spacing: 0.2px;
 }
 
-/* ── Input Box ─────────────────────────────────────────────────────────────── */
 .pu-input-box {
   display: flex;
   align-items: center;
@@ -234,7 +227,6 @@
   cursor: pointer;
 }
 
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
 .pu-buttons-row {
   display: flex;
   gap: 12px;
@@ -281,7 +273,6 @@
   letter-spacing: 0.3px;
 }
 
-/* ── Footer Note ───────────────────────────────────────────────────────────── */
 .pu-footer-note {
   text-align: center;
   margin-top: 14px;
@@ -289,7 +280,6 @@
   color: #6C7278;
 }
 
-/* ── Loading & Error States ────────────────────────────────────────────────── */
 .pu-loading-screen,
 .pu-error-screen {
   min-height: 100vh;
@@ -331,7 +321,6 @@
   box-shadow: 0 8px 24px rgba(29, 97, 231, 0.3);
 }
 
-/* ── Toast Notification ────────────────────────────────────────────────────── */
 .pu-toast {
   position: fixed;
   top: 20px;
@@ -362,6 +351,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -374,38 +364,37 @@
   }
 }
 
-/* ── Responsive Design ─────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .pu-root {
     padding: 24px 12px;
   }
 
-  .pu-card {
+.pu-card {
     border-radius: 20px;
     padding: 20px;
   }
 
-  .pu-page-title {
+.pu-page-title {
     font-size: 20px;
   }
 
-  .pu-page-subtitle {
+.pu-page-subtitle {
     font-size: 12px;
   }
 
-  .pu-row {
+.pu-row {
     flex-direction: column;
   }
 
-  .pu-field-wrap {
+.pu-field-wrap {
     flex: 1;
   }
 
-  .pu-buttons-row {
+.pu-buttons-row {
     flex-direction: column;
   }
 
-  .pu-primary-btn,
+.pu-primary-btn,
   .pu-secondary-btn {
     width: 100%;
     justify-content: center;
@@ -417,47 +406,47 @@
     padding: 16px 8px;
   }
 
-  .pu-card {
+.pu-card {
     padding: 16px;
   }
 
-  .pu-page-header {
+.pu-page-header {
     margin-bottom: 16px;
   }
 
-  .pu-page-title {
+.pu-page-title {
     font-size: 18px;
   }
 
-  .pu-avatar-strip {
+.pu-avatar-strip {
     margin-bottom: 16px;
   }
 
-  .pu-section-label {
+.pu-section-label {
     font-size: 11px;
   }
 
-  .pu-icon-wrap {
+.pu-icon-wrap {
     width: 40px;
     height: 40px;
     font-size: 18px;
   }
 
-  .pu-avatar-circle {
+.pu-avatar-circle {
     width: 48px;
     height: 48px;
   }
 
-  .pu-avatar-initials {
+.pu-avatar-initials {
     font-size: 16px;
   }
 
-  .pu-input-box {
+.pu-input-box {
     height: 44px;
     padding: 0 12px;
   }
 
-  .pu-primary-btn,
+.pu-primary-btn,
   .pu-secondary-btn {
     padding: 10px 20px;
     font-size: 14px;

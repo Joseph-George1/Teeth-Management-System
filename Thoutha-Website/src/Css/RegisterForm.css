@@ -12,7 +12,7 @@
   --border-radius-1: 12px;
 }
 
-.signup-page  {
+.signup-page {
   font-family: 'Cairo', sans-serif;
   background-image: linear-gradient(160deg, var(--color-1-background), var(--text-color-5), var(--color-2-background));
   height: 710px;
@@ -21,7 +21,7 @@
   justify-content: center;
 }
 
-.signup-container  {
+.signup-container {
   background-color: var(--color-3-background);
   width: 480px;
   height: 600.1875px;
@@ -34,13 +34,13 @@
   position: relative;
 }
 
-.signup-title  {
+.signup-title {
   font-size: 32px;
   letter-spacing: -0.64px;
   font-weight: 700;
 }
 
-.signup-subtitle  {
+.signup-subtitle {
   color: var(--text-color-3);
   font-size: 12px;
   font-weight: 500;
@@ -62,6 +62,7 @@
   width: calc(50% - 5px);
   margin-bottom: 0;
 }
+
 .input-field-2 {
   width: 432px;
   height: 40px;
@@ -75,7 +76,7 @@
   font-size: 12px;
 }
 
-.signup-button  {
+.signup-button {
   width: 432px;
   height: 42px;
   background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
@@ -90,19 +91,19 @@
   margin-top: 5px;
 }
 
-.login-link  {
+.login-link {
   display: flex;
   gap: 4px;
   margin-top: 5px;
   font-size: 12px;
 }
 
-.login-link a  {
+.login-link a {
   text-decoration: none;
   color: var(--text-color-2);
 }
 
-.login-link span  {
+.login-link span {
   color: var(--text-color-3);
 }
 
@@ -112,7 +113,7 @@
     padding: 48px 24px;
   }
 
-  .signup-container {
+.signup-container {
     width: 92%;
     max-width: 480px;
     height: auto;
@@ -120,21 +121,21 @@
     align-items: stretch;
   }
 
-  .signup-title {
+.signup-title {
     font-size: 30px;
   }
 
-  .input-field-2 {
+.input-field-2 {
     width: 100%;
     margin-bottom: 10px;
     box-sizing: border-box;
   }
 
-  .input-group.password-row .input-field-2 {
+.input-group.password-row .input-field-2 {
     width: calc(50% - 5px);
   }
 
-  .signup-button {
+.signup-button {
     width: 100%;
   }
 }
@@ -144,37 +145,35 @@
     padding: 24px 12px;
   }
 
-  .signup-container {
+.signup-container {
     width: 100%;
     padding: 16px;
   }
 
-  .signup-title {
+.signup-title {
     font-size: 22px;
     text-align: center;
   }
 
-  .signup-subtitle {
+.signup-subtitle {
     font-size: 13px;
     text-align: center;
   }
 
-  .input-field-2 {
+.input-field-2 {
     font-size: 14px;
     height: 44px;
   }
 
-  .signup-button {
+.signup-button {
     height: 44px;
     font-size: 15px;
   }
 
-  .login-link {
+.login-link {
     font-size: 13px;
     gap: 6px;
     justify-content: center;
   }
 }
-
-
 

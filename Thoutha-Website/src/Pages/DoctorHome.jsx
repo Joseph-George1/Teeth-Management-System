@@ -2,7 +2,6 @@ import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorHome.css";
 
-// ─── Helper Functions ─────────────────────────────────────────────────────────
 const getDate = (dt) => dt ? dt.split('T')[0] : '';
 const getTime = (dt) => {
   if (!dt) return '';
@@ -24,7 +23,6 @@ const normalizeList = (payload) => {
   if (Array.isArray(payload?.content)) return payload.content;
   return [];
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function DoctorHome() {
   const { user, authLoading, isLoggedIn } = useContext(AuthContext);
@@ -33,6 +31,7 @@ export default function DoctorHome() {
   const [error, setError] = useState("");
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [toast, setToast] = useState(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState(null);
 
   useEffect(() => {
     if (!isLoggedIn || authLoading) return;
@@ -52,7 +51,6 @@ export default function DoctorHome() {
       .then((data) => {
         if (!cancelled) {
           const normalizedData = normalizeList(data);
-          // عرض فقط الـ PENDING appointments
           const pendingOnly = normalizedData.filter(appt => appt.status === "PENDING");
           const processedData = pendingOnly.map((appt, idx) => ({
             id: appt.id || idx,
@@ -108,7 +106,6 @@ export default function DoctorHome() {
 
       if (!response.ok) throw new Error("فشل تحديث حالة الحجز");
 
-      // حذف من قائمة المعلقة
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       setSelectedAppt(null);
       
@@ -118,11 +115,7 @@ export default function DoctorHome() {
     }
   };
 
-  const handleReject = async (e, id) => {
-    e.stopPropagation();
-    const appt = appointments.find(a => a.id === id);
-    if (!appt) return;
-
+  const handleReject = async (id) => {
     const token = user?.token || localStorage.getItem("token");
 
     try {
@@ -141,18 +134,14 @@ export default function DoctorHome() {
 
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       setSelectedAppt(null);
-      showToast("تم رفض الحجز", "error");
+      setCancelConfirmId(null);
+      showToast("تم إلغاء الحالة بنجاح", "error");
     } catch (err) {
       showToast(err.message || "فشل الرفض", "error");
     }
   };
 
-  const handleDelete = (e, id) => {
-    e.stopPropagation();
-    setAppointments((prev) => prev.filter((a) => a.id !== id));
-    setSelectedAppt(null);
-    showToast("تم حذف الحجز", "info");
-  };
+  
 
   const displayName = [
     user?.firstName || user?.first_name,
@@ -167,10 +156,10 @@ export default function DoctorHome() {
         <div className={`dh-toast dh-toast--${toast.type}`}>{toast.msg}</div>
       )}
 
-      {/* Body */}
+      {}
       <main className="dh-content">
 
-        {/* Welcome */}
+        {}
         <section className="dh-welcome">
           {authLoading ? (
             <div className="dh-skeleton dh-skeleton--name" />
@@ -182,7 +171,7 @@ export default function DoctorHome() {
           <p className="dh-subtitle">إليك نظرة عامة على حجوزاتك وأدائك</p>
         </section>
 
-        {/* Appointments */}
+        {}
         <section className="dh-section">
           <h2 className="dh-section-title">الحجوزات المعلقة</h2>
 
@@ -215,8 +204,8 @@ export default function DoctorHome() {
                   appt={appt}
                   onClick={() => setSelectedAppt(appt)}
                   onAccept={(e) => handleAccept(e, appt.id)}
-                  onReject={(e) => handleReject(e, appt.id)}
-                  onDelete={(e) => handleDelete(e, appt.id)}
+                  onReject={(e) => { e.stopPropagation(); setCancelConfirmId(appt.id); }}
+                  onDelete={() => {}}
                 />
               ))}
             </div>
@@ -225,7 +214,7 @@ export default function DoctorHome() {
 
       </main>
 
-      {/* Details bottom sheet */}
+      {}
       {selectedAppt && (
         <div className="dh-overlay" onClick={() => setSelectedAppt(null)}>
           <div className="dh-sheet" onClick={(e) => e.stopPropagation()}>
@@ -263,13 +252,30 @@ export default function DoctorHome() {
             <button className="dh-close-btn" onClick={() => setSelectedAppt(null)}>إغلاق</button>
             {!selectedAppt.accepted && !selectedAppt.rejected && (
               <div className="dh-sheet-actions">
-                <button className="dh-action-btn dh-action-btn--accept" onClick={(e) => handleAccept(e, selectedAppt.id)}>قبول</button>
-                <button className="dh-action-btn dh-action-btn--reject" onClick={(e) => handleReject(e, selectedAppt.id)}>رفض</button>
-              </div>
+                  <button className="dh-action-btn dh-action-btn--accept" onClick={(e) => handleAccept(e, selectedAppt.id)}>قبول</button>
+                  <button className="dh-action-btn dh-action-btn--reject" onClick={(e) => { e.stopPropagation(); setCancelConfirmId(selectedAppt.id); }}>رفض</button>
+                </div>
             )}
-            {(selectedAppt.accepted || selectedAppt.rejected) && (
-              <button className="dh-action-btn dh-action-btn--delete" onClick={(e) => handleDelete(e, selectedAppt.id)}>حذف</button>
-            )}
+            
+          </div>
+        </div>
+      )}
+
+      {cancelConfirmId && (
+        <div className="dh-overlay" onClick={() => setCancelConfirmId(null)}>
+          <div className="dh-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="dh-sheet-handle" />
+
+            <div className="dh-sheet-header">
+              <h2 className="dh-sheet-name">هل أنت متأكد من إلغاء هذه الحالة؟</h2>
+            </div>
+
+            <div className="dh-sheet-divider" />
+
+            <div className="dh-sheet-actions">
+              <button className="dh-close-btn" onClick={() => setCancelConfirmId(null)}>إلغاء</button>
+              <button className="dh-action-btn dh-action-btn--reject" onClick={() => handleReject(cancelConfirmId)}>تأكيد الإلغاء</button>
+            </div>
           </div>
         </div>
       )}

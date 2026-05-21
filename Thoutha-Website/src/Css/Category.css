@@ -15,7 +15,7 @@
   --button-raduis-1: 10px;
 }
 
-.top-page  {
+.top-page {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,14 +23,14 @@
   gap: 20px;
 }
 
-.top-page .circle-img  {
+.top-page .circle-img {
   border-radius: 50%;
   border: 2px solid var(--button-color-2);
   text-align: center;
   padding: 12px;
 }
 
-.top-page img  {
+.top-page img {
   width: 80px;
   height: 70px;
 }
@@ -40,3 +40,4 @@
     font-weight: 500;
     font-size: 20px;
 }
+

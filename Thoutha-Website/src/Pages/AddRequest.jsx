@@ -25,55 +25,11 @@ const isTokenExpired = (token) => {
   return payload.exp * 1000 < Date.now();
 };
 
-// Convert English numbers to Arabic
-const toArabicNumbers = (str) => {
-  if (!str) return "";
-  const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-  const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  let result = String(str);
-  englishNumbers.forEach((eng, i) => {
-    result = result.replace(new RegExp(eng, 'g'), arabicNumbers[i]);
-  });
-  return result;
-};
-
-// Format time to 12-hour format with Arabic text
-const formatTime12Hour = (time24) => {
-  if (!time24) return "";
-  const [hours, minutes] = time24.split(":");
-  let h = parseInt(hours);
-  const period = h >= 12 ? "م" : "ص";
-  if (h > 12) h = h - 12;
-  if (h === 0) h = 12;
-  return toArabicNumbers(`${String(h).padStart(2, "0")}:${minutes} ${period}`);
-};
-
-// Convert 12-hour format back to 24-hour format
-const convertTime24Hour = (time12) => {
-  if (!time12) return "";
-  const [timeStr, period] = time12.split(" ");
-  let [h, m] = timeStr.split(":");
-  h = parseInt(h);
-  if (period === "م" && h !== 12) h = h + 12;
-  if (period === "ص" && h === 12) h = 0;
-  return `${String(h).padStart(2, "0")}:${m}`;
-};
-
-// Format date to Arabic
-const formatDateArabic = (dateStr) => {
-  if (!dateStr) return "";
-  const date = new Date(dateStr + "T00:00:00");
-  const arabicDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-  const arabicMonths = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-  return toArabicNumbers(`${arabicDays[date.getDay()]} ${date.getDate()} ${arabicMonths[date.getMonth()]} ${date.getFullYear()}`);
-};
-
 export default function AddRequest({ isOpen, onClose, onSuccess, specialization, categoryId }) {
   const { user, logout, refreshUserProfile } = useContext(AuthContext);
   const navigate = useNavigate();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [time12Display, setTime12Display] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -82,14 +38,6 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
 
   const handleTimeChange = (e) => {
     const time24 = e.target.value;
-    setTime(time24);
-    setTime12Display(formatTime12Hour(time24));
-  };
-
-  const handleTime12Change = (e) => {
-    const time12 = e.target.value;
-    setTime12Display(time12);
-    const time24 = convertTime24Hour(time12);
     setTime(time24);
   };
 
@@ -109,7 +57,6 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
 
       const dateTime = `${date}T${time}:00`;
 
-      // ── Step 1: Update doctor category FIRST so backend assigns correct category ──
       if (specialization) {
         let currentDoctor = user;
 
@@ -138,13 +85,11 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
             });
             await refreshUserProfile(token).catch(() => null);
           } catch {
-            // Silent — continue to create request
+            void 0;
           }
         }
       }
-      // ─────────────────────────────────────────────────────────────────────────────
 
-      // ── Step 2: Create the request ────────────────────────────────────────────────
       const body = {
         description,
         dateTime,
@@ -164,7 +109,6 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
       if (!response.ok) {
         throw new Error(resData?.message || resData?.messageAr || "فشل إرسال الطلب");
       }
-      // ─────────────────────────────────────────────────────────────────────────────
 
       setDate("");
       setTime("");
