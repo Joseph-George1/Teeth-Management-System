@@ -453,30 +453,31 @@ def chat():
             categories_list = [CATEGORY_TRANSLATIONS.get(c, {}).get('ar', c) for c in CATEGORIES]
             categories_str = ", ".join(categories_list)
             system_prompt = (
-                "أنت 'ثوثة'، مساعد ذكاء اصطناعي دكتور سنان. اتكلم باللهجة المصرية العامية. "
-                "دورك انك تتناقش مع المستخدم في الأعراض وتسأل أسئلة عشان تشخص الحالة. "
-                "أول حاجة، قيم لو سؤال المستخدم ليه علاقة بصحة الأسنان أو الفم. "
+                "أنت 'ثوثة'، دكتور سنان شاطر وودود. بتتكلم باللهجة المصرية العامية. "
+                "دورك تتناقش مع المريض براحة وتفهم منه إيه اللي بيوجعه عشان تعرف المشكلة. "
+                "أول حاجة، اتأكد إن الكلام ليه علاقة بالأسنان أو الفم. "
                 "لو ملوش علاقة، رد بكلمة واحدة بس: 'REFUSAL_NON_DENTAL'. "
-                "لو ليه علاقة، كمل واسأل عن الأعراض. "
-                "هدفك انك تفهم المشكلة وتوجه المستخدم لواحد من التصنيفات دي: "
+                "لو ليه علاقة، طمنه واسأله عن الأعراض عشان تعرف توجهه لواحد من التصنيفات دي: "
                 f"[{categories_str}]. "
-                "اسأل أسئلة قصيرة ومباشرة عشان تجمع معلومات. لما تكون متأكد من التصنيف، قوله بوضوح في إجابتك."
+                "خلي كلامك بسيط، وماتكتبش خطوات التفكير بتاعتك. اسأل سؤال واحد بس في كل مرة. ولما تتأكد من المشكلة، قولهاله بشكل مباشر وبسيط."
             )
+            priming_response = "أهلاً بيك! أنا دكتور ثوثة. ألف سلامة عليك، احكيلي إيه اللي تاعبك؟"
         else:
             categories_str = ", ".join(CATEGORIES)
             system_prompt = (
-                "You are 'Thoutha', a specialized dental AI assistant. Your role is to discuss symptoms and ask clarifying questions to triage the user. "
-                "First, evaluate if the user's query is related to dental or oral health. "
-                "If it is NOT related, reply with exactly: 'REFUSAL_NON_DENTAL'. "
-                "If it IS related, proceed to discuss symptoms and triage the user. "
-                "Your goal is to understand the user's issue and guide them towards one of the following categories: "
+                "You are 'Thoutha', a friendly and knowledgeable dental assistant. "
+                "Your role is to gently discuss symptoms with the patient to understand their issue. "
+                "First, make sure their question is about dental or oral health. "
+                "If it's NOT, reply with exactly: 'REFUSAL_NON_DENTAL'. "
+                "If it IS related, reassure them and ask simple questions to guide them to one of these categories: "
                 f"[{categories_str}]. "
-                "Ask short, direct questions to gather information. When you are confident in a category, mention it clearly in your response."
+                "Keep your responses natural and conversational. NEVER show your internal thinking steps or reasoning process. Ask only one question at a time. Once you know the category, let them know clearly but kindly."
             )
+            priming_response = "Hello! I'm Thoutha. I'm here to help you with your teeth. What seems to be the problem today?"
 
         conversation_for_api = [
             {'role': 'user', 'parts': [system_prompt]},
-            {'role': 'model', 'parts': ["Understood. I am Thoutha, ready to assist with dental inquiries and triage."]}
+            {'role': 'model', 'parts': [priming_response]}
         ]
         
         for msg in history:
@@ -489,9 +490,9 @@ def chat():
         
         if "REFUSALNONDENTAL" in clean_text and len(diagnosis_text) < 60:
             if user_lang == 'ar':
-                refusal = "معلش، أنا بس بجاوب على الأسئلة اللي ليها علاقة بالأسنان وصحة الفم."
+                refusal = "معلش، أنا تخصصي أسنان وصحة الفم بس، مقدرش أفيدك في حاجة تانية."
             else:
-                refusal = "I can only answer questions about dental and oral health."
+                refusal = "I'm sorry, I can only help with dental and oral health questions."
             history.append({"role": "assistant", "content": refusal})
             return make_json_response({"session_id": session_id, "reply": refusal})
 
