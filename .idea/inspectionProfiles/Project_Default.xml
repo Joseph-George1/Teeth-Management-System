@@ -15,6 +15,10 @@
           <option value="flask" />
           <option value="textblob" />
           <option value="flask_cors" />
+          <option value="APScheduler" />
+          <option value="firebase-admin" />
+          <option value="python-dateutil" />
+          <option value="sqlalchemy" />
         </list>
       </option>
     </inspection_tool>
