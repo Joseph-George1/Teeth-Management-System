@@ -71,27 +71,28 @@ class NotificationService:
             else:
                 results["patient"] = "skipped (booking phase)"
             
-            # === AUTO-GENERATE TEMPORARY TOKEN FOR PATIENT ===
-            # Patient gets a 6-digit code via SMS to view appointment without login
-            try:
-                patient_token = self.patient_token_service.generate_token(
-                    patient_id=patient_id,
-                    patient_first_name=patient_name.split()[0] if patient_name else "Patient",
-                    patient_last_name=patient_name.split()[-1] if patient_name and len(patient_name.split()) > 1 else "",
-                    appointment_id=appointment_id,
-                    patient_phone=patient_phone,
-                    clinic_name="Clinic",
-                    clinic_location=location,
-                    expires_in_hours=24
-                )
-                results["patient_token"] = patient_token.token
-                logger.info(f"Generated temp token {patient_token.token} for patient {patient_id} (phone: {patient_phone})")
-                # TODO: Send token via SMS: send_sms(patient_phone, f"Your appointment token: {patient_token.token}")
-            except Exception as e:
-                logger.error(f"Failed to generate patient token: {e}")
-                results["patient_token"] = None
             
             if trigger_type == "BOOKING":
+                # === AUTO-GENERATE TEMPORARY TOKEN FOR PATIENT ===
+                # Patient gets a 6-digit code via SMS to view appointment without login
+                try:
+                    patient_token = self.patient_token_service.generate_token(
+                        patient_id=patient_id,
+                        patient_first_name=patient_name.split()[0] if patient_name else "Patient",
+                        patient_last_name=patient_name.split()[-1] if patient_name and len(patient_name.split()) > 1 else "",
+                        appointment_id=appointment_id,
+                        patient_phone=patient_phone,
+                        clinic_name="Clinic",
+                        clinic_location=location,
+                        expires_in_hours=24
+                    )
+                    results["patient_token"] = patient_token.token
+                    logger.info(f"Generated temp token {patient_token.token} for patient {patient_id} (phone: {patient_phone})")
+                    #Send token via SMS: send_sms(patient_phone, f"Your appointment token: {patient_token.token}")
+                except Exception as e:
+                    logger.error(f"Failed to generate patient token: {e}")
+                    results["patient_token"] = None
+                
                 # === Notify DOCTOR: Show that someone has been appointed with them ===
                 doctor_key = generate_idempotency_key(f"apt_req_{appointment_id}_doctor")
                 doctor_title = "طلب موعد جديد"
