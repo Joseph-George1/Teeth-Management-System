@@ -4,6 +4,127 @@ import ChatBotIcon from "../Components/ChatBotIcon";
 import '../Css/ChatBot.css';
 
 const CHAT_STORAGE_KEY = "thoutha_chat_state";
+const DEFAULT_LANGUAGE = "ar";
+
+const CATEGORY_LABELS = {
+  "Cosmetic Filling": { ar: "حشو تجميلي", en: "Cosmetic Filling" },
+  "Amalgam Filling": { ar: "حشو امالجم", en: "Amalgam Filling" },
+  "Endodontic Fillings (Root Canal)": { ar: "حشو عصب", en: "Endodontic Fillings (Root Canal)" },
+  "Fixed Prosthetics (Crowns and Bridges)": { ar: "تيجان وجسور", en: "Fixed Prosthetics (Crowns and Bridges)" },
+  "Removable Prosthetics": { ar: "تركيبات متحركة", en: "Removable Prosthetics" },
+  "Dental Implants": { ar: "زراعة الأسنان", en: "Dental Implants" },
+  "Cleaning and Whitening": { ar: "تنظيف وتبييض الأسنان", en: "Cleaning and Whitening" },
+  "Orthodontics": { ar: "تقويم الأسنان", en: "Orthodontics" },
+  "Surgery and Extraction": { ar: "الجراحة والخلع", en: "Surgery and Extraction" },
+  "Pediatric Dentistry": { ar: "طب أسنان الأطفال", en: "Pediatric Dentistry" },
+};
+
+const CATEGORY_ALIASES = {
+  "حشو تجميلي": "Cosmetic Filling",
+  "حشوات الأسنان": "Cosmetic Filling",
+  "Cosmetic Filling": "Cosmetic Filling",
+
+  "حشو امالجم": "Amalgam Filling",
+  "Amalgam Filling": "Amalgam Filling",
+
+  "حشو عصب": "Endodontic Fillings (Root Canal)",
+  "Endodontic Fillings (Root Canal)": "Endodontic Fillings (Root Canal)",
+
+  "تيجان وجسور": "Fixed Prosthetics (Crowns and Bridges)",
+  "تيجان الأسنان / التركيبات": "Fixed Prosthetics (Crowns and Bridges)",
+  "Crowns and Bridges": "Fixed Prosthetics (Crowns and Bridges)",
+  "Dental Crowns / Prosthodontics": "Fixed Prosthetics (Crowns and Bridges)",
+  "Fixed Prosthetics (Crowns and Bridges)": "Fixed Prosthetics (Crowns and Bridges)",
+
+  "تركيبات متحركة": "Removable Prosthetics",
+  "Removable Prosthetics": "Removable Prosthetics",
+
+  "زراعة الأسنان": "Dental Implants",
+  "Dental Implants": "Dental Implants",
+
+  "تنظيف وتبييض الأسنان": "Cleaning and Whitening",
+  "Cleaning and Whitening": "Cleaning and Whitening",
+  "تبييض الأسنان": "Cleaning and Whitening",
+  "Teeth Whitening": "Cleaning and Whitening",
+
+  "تقويم الأسنان": "Orthodontics",
+  "Orthodontics": "Orthodontics",
+
+  "الجراحة والخلع": "Surgery and Extraction",
+  "خلع الأسنان": "Surgery and Extraction",
+  "Tooth Extraction": "Surgery and Extraction",
+  "Surgery and Extraction": "Surgery and Extraction",
+
+  "طب أسنان الأطفال": "Pediatric Dentistry",
+  "Pediatric Dentistry": "Pediatric Dentistry",
+  "Pediatric": "Pediatric Dentistry",
+  "الاطفال": "Pediatric Dentistry",
+};
+
+const CATEGORY_ROUTES = {
+  "Cosmetic Filling": "/dental-filling",
+  "Amalgam Filling": "/amalgam-filling",
+  "Endodontic Fillings (Root Canal)": "/tooth-extraction",
+  "Fixed Prosthetics (Crowns and Bridges)": "/crowns&bridges",
+  "Removable Prosthetics": "/removable-prosthetics",
+  "Dental Implants": "/dental-implant",
+  "Cleaning and Whitening": "/teeth-whitening",
+  "Orthodontics": "/braces",
+  "Surgery and Extraction": "/surgery-extraction",
+  "Pediatric Dentistry": "/pediatric-dentistry",
+};
+
+const normalizeCategory = (raw) => CATEGORY_ALIASES[raw?.trim?.() ? raw.trim() : raw] || raw;
+
+const getCategoryLabel = (rawCategory, language = DEFAULT_LANGUAGE) => {
+  const category = normalizeCategory(rawCategory);
+  return CATEGORY_LABELS[category]?.[language] || category || "";
+};
+
+const getCategoryRoute = (rawCategory) => CATEGORY_ROUTES[normalizeCategory(rawCategory)];
+
+const normalizeQuestion = (question) => ({
+  id: question?.id,
+  text_en: question?.text_en || question?.text || "",
+  text_ar: question?.text_ar || question?.text || "",
+  answers: (question?.options || question?.answers || []).map((answer) => ({
+    id: answer?.id,
+    text_en: answer?.text_en || answer?.text || "",
+    text_ar: answer?.text_ar || answer?.text || "",
+  })),
+});
+
+const getLocalizedText = (value, language = DEFAULT_LANGUAGE) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+
+  if (language === "en") {
+    return value.text_en || value.text || value.text_ar || "";
+  }
+
+  return value.text_ar || value.text || value.text_en || "";
+};
+
+const normalizeText = (value) => (value || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+
+const isOtherAnswer = (answer) => {
+  const candidates = [answer?.id, answer?.text_en, answer?.text_ar, answer?.text]
+    .map(normalizeText)
+    .filter(Boolean);
+
+  return candidates.some((candidate) =>
+    [
+      "something else",
+      "other",
+      "حاجة تانيه",
+      "حاجة تانية",
+      "حاجه تانيه",
+      "حاجه تانية",
+      "اخرى",
+      "أخرى",
+    ].includes(candidate)
+  );
+};
 
 const BotMessage = ({ text }) => (
   <div className="chatbot-flex">
@@ -20,21 +141,20 @@ const UserMessage = ({ text }) => (
   </div>
 );
 
-const QuickReplies = ({ question, disabled, isActive, onSelect, onOtherClick }) => {
+const QuickReplies = ({ question, disabled, isActive, language = DEFAULT_LANGUAGE, onSelect }) => {
   if (!isActive) return null;
   return (
-    <div className="quick-replies">
+    <div className={`quick-replies ${question.answers.length === 3 ? "quick-replies--three" : ""}`}>
       {question.answers.map((answer) => {
-        const isOther = /اخر|أخر|other/i.test(answer.text);
         return (
           <button
             key={`${question.id}-${answer.id}`}
             type="button"
-            className={`quick-reply-button ${isOther ? "full other-button" : ""}`}
-            onClick={() => isOther ? onOtherClick(question, answer) : onSelect(question, answer)}
+            className="quick-reply-button"
+            onClick={() => onSelect(question, answer)}
             disabled={disabled}
           >
-            {answer.text}
+            {getLocalizedText(answer, language)}
           </button>
         );
       })}
@@ -42,32 +162,36 @@ const QuickReplies = ({ question, disabled, isActive, onSelect, onOtherClick }) 
   );
 };
 
-const ErrorBlock = ({ onNewChat }) => (
+const ErrorBlock = ({ onNewChat, language = DEFAULT_LANGUAGE }) => (
   <div className="chatbot-flex">
     <div className="message bot-message error-message">
-      <p className="message-text"> حدث خطأ في الاتصال بالسيرفر. يمكنك بدء محادثة جديدة.</p>
+      <p className="message-text">
+        {language === "en"
+          ? "There was a connection error with the server. You can start a new chat."
+          : "حدث خطأ في الاتصال بالسيرفر. يمكنك بدء محادثة جديدة."}
+      </p>
       <ChatBotIcon />
     </div>
     <button
       type="button"
       className="quick-reply-button restart-button inline-restart"
       onClick={onNewChat}
-      title="بدء محادثة جديدة"
+      title={language === "en" ? "Start a new chat" : "بدء محادثة جديدة"}
     >
-      <span>بدء محادثة جديدة</span>
+      <span>{language === "en" ? "Start a new chat" : "بدء محادثة جديدة"}</span>
     </button>
   </div>
 );
 
-const ResultButtons = ({ category, disabled, onOpen, onRestart }) => (
+const ResultButtons = ({ category, disabled, language = DEFAULT_LANGUAGE, onOpen, onRestart }) => (
   <div className="quick-replies" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     <button
       type="button"
       className="quick-reply-button full result-button"
       onClick={onOpen}
-      title={`الذهاب إلى صفحة ${category}`}
+      title={language === "en" ? `Go to ${category} page` : `الذهاب إلى صفحة ${category}`}
     >
-      <span>عرض حالات</span>
+      <span>{language === "en" ? "View cases" : "عرض الحالات"}</span>
       <strong>{category}</strong>
       <span style={{ marginLeft: '8px' }}>←</span>
     </button>
@@ -76,12 +200,19 @@ const ResultButtons = ({ category, disabled, onOpen, onRestart }) => (
       className="quick-reply-button restart-button"
       onClick={onRestart}
       disabled={disabled}
-      title="إعادة المحادثة من البداية"
+      title={language === "en" ? "Restart the chat from the beginning" : "إعادة المحادثة من البداية"}
     >
-      <span>إعادة المحادثة من البداية</span>
+      <span>{language === "en" ? "Restart the chat from the beginning" : "إعادة المحادثة من البداية"}</span>
     </button>
   </div>
 );
+
+const OTHER_PROMPTS = {
+  ar: "اتفضل قولى حاسس بأيه عشان اقدر اساعدك",
+  en: "Please tell me how you're feeling so I can help you.",
+};
+
+const getResponseCategory = (data) => data?.result?.category || data?.recommended_category || data?.category || null;
 
 export default function ChatBot() {
   const navigate = useNavigate();
@@ -98,6 +229,7 @@ export default function ChatBot() {
   const [inputText, setInputText] = useState("");
   const [hasServerError, setHasServerError] = useState(false);
   const [allSessions, setAllSessions] = useState([]);
+  const [chatLanguage, setChatLanguage] = useState(DEFAULT_LANGUAGE);
 
   const API_BASE = "https://thoutha.page/api";
   const API_HEADERS = { "Content-Type": "application/json" };
@@ -142,6 +274,7 @@ export default function ChatBot() {
         setSessionId(saved.sessionId || null);
         setActiveQuestionId(saved.activeQuestionId || null);
         setHasServerError(saved.hasServerError || false);
+        setChatLanguage(saved.chatLanguage || DEFAULT_LANGUAGE);
 
         if (!saved.sessionId && ((saved.flowItems?.length) || (saved.chatHistory?.length))) {
           startSession();
@@ -162,8 +295,9 @@ export default function ChatBot() {
       sessionId,
       activeQuestionId,
       hasServerError,
+      chatLanguage,
     });
-  }, [flowItems, chatHistory, chatMode, sessionId, activeQuestionId, hasServerError, allSessions]);
+  }, [flowItems, chatHistory, chatMode, sessionId, activeQuestionId, hasServerError, allSessions, chatLanguage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -173,7 +307,7 @@ export default function ChatBot() {
     setIsLoading(true);
     setHasServerError(false);
     try {
-      const res = await fetch(`${API_BASE}/session/start`, { method: "POST", headers: API_HEADERS, body: JSON.stringify({ language: "ar" }) });
+      const res = await fetch(`${API_BASE}/session/start`, { method: "POST", headers: API_HEADERS, body: JSON.stringify({ language: chatLanguage }) });
       if (!res.ok && res.status >= 500) {
         setHasServerError(true);
         setIsLoading(false);
@@ -192,20 +326,26 @@ export default function ChatBot() {
 
   const processResponse = (data) => {
     if (data?.chatbot_activated === true) { setChatMode(true); return true; }
-    if (data?.result?.category) {
-      const category = data.result.category;
-      const mappedCategory = mapToAppCategory(category);
-      addFlowItem({ type: "result", text: ` تم تحديد الفئة: ${mappedCategory}`, category: mappedCategory });
+    const responseCategory = getResponseCategory(data);
+    if (responseCategory) {
+      const category = normalizeCategory(responseCategory);
+      const categoryLabel = getCategoryLabel(category, chatLanguage);
+      addFlowItem({
+        type: "result",
+        category,
+        categoryLabel,
+        text_ar: ` تم تحديد الفئة: ${categoryLabel}`,
+        text_en: `Category identified: ${categoryLabel}`,
+      });
       return true;
     }
-    if (data?.question && data?.question?.id && data?.question?.text) {
+    if (data?.question && data?.question?.id && (data?.question?.text || data?.question?.text_en || data?.question?.text_ar)) {
       const question = data.question;
       setActiveQuestionId(question.id);
       addFlowItem({
         type: "question",
         id: question.id,
-        text: question.text,
-        question: { id: question.id, text: question.text, answers: (question.options || question.answers || []).map(a => ({ id: a.id, text: a.text })) }
+        question: normalizeQuestion(question),
       });
       return true;
     }
@@ -213,18 +353,26 @@ export default function ChatBot() {
     return false;
   };
 
-  const handleOtherClick = (question, answer) => {
-    setActiveQuestionId(null);
-    addFlowItem({ type: "answer", text: answer.text });
-    addFlowItem({ type: "bot_prompt", text: "اتفضل اتكلم، قولي حاسس بإيه بالظبط؟ 😊" });
-    setChatMode(true);
-  };
-
   const submitAnswer = async (question, answer) => {
+    if (isOtherAnswer(answer)) {
+      setActiveQuestionId(null);
+      addFlowItem({ type: "answer", text_en: answer.text_en, text_ar: answer.text_ar });
+      addFlowItem({
+        type: "bot_prompt",
+        text_en: OTHER_PROMPTS.en,
+        text_ar: OTHER_PROMPTS.ar,
+      });
+      setChatMode(true);
+      return;
+    }
+
     if (!sessionId) return;
     setIsLoading(true);
     setActiveQuestionId(null);
-    addFlowItem({ type: "answer", text: answer.text });
+    if (question.id === "Q0") {
+      setChatLanguage(answer.id === "EN" ? "en" : "ar");
+    }
+    addFlowItem({ type: "answer", text_en: answer.text_en, text_ar: answer.text_ar });
     try {
       const res = await fetch(`${API_BASE}/session/answer`, { method: "POST", headers: API_HEADERS, body: JSON.stringify({ session_id: sessionId, question_id: question.id, answer_id: answer.id }) });
       if (!res.ok && res.status >= 500) {
@@ -234,7 +382,11 @@ export default function ChatBot() {
       }
       const data = await res.json();
       if (!processResponse(data)) {
-        addFlowItem({ type: "result", text: "عذراً، أحتاج المزيد من المعلومات. من فضلك اكتب رسالة بالتفصيل:" });
+        addFlowItem({
+          type: "result",
+          text_ar: "عذراً، أحتاج المزيد من المعلومات. من فضلك اكتب رسالة بالتفصيل:",
+          text_en: "Sorry, I need a bit more information. Please type your message in detail:",
+        });
         setChatMode(true);
       }
     } catch {
@@ -262,11 +414,18 @@ export default function ChatBot() {
 
       const data = await res.json();
 
-      if (data?.result?.category) {
-        const category = data.result.category;
-        const mappedCategory = mapToAppCategory(category);
+      const responseCategory = getResponseCategory(data);
+      if (responseCategory) {
+        const category = normalizeCategory(responseCategory);
+        const categoryLabel = getCategoryLabel(category, chatLanguage);
         setChatHistory(prev => prev.filter(m => m.text !== THINKING_TEXT));
-        addFlowItem({ type: "result", text: ` تم تحديد الفئة: ${mappedCategory}`, category: mappedCategory });
+        addFlowItem({
+          type: "result",
+          category,
+          categoryLabel,
+          text_ar: ` تم تحديد الفئة: ${categoryLabel}`,
+          text_en: `Category identified: ${categoryLabel}`,
+        });
         if (data.session_id) setSessionId(data.session_id);
         return;
       }
@@ -299,7 +458,7 @@ export default function ChatBot() {
     setHasServerError(false);
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/session/start`, { method: "POST", headers: API_HEADERS, body: JSON.stringify({ language: "ar" }) });
+      const res = await fetch(`${API_BASE}/session/start`, { method: "POST", headers: API_HEADERS, body: JSON.stringify({ language: chatLanguage }) });
       if (!res.ok && res.status >= 500) {
         setHasServerError(true);
         setIsLoading(false);
@@ -335,34 +494,8 @@ export default function ChatBot() {
 
   const restartSession = () => startNewChat();
 
-  const CATEGORY_MAP = {
-    "تبييض الأسنان": "تنظيف وتبييض الأسنان", "Teeth Whitening": "تنظيف وتبييض الأسنان", "تنظيف وتبييض الأسنان": "تنظيف وتبييض الأسنان",
-    "زراعة الأسنان": "زراعة الأسنان", "Dental Implants": "زراعة الأسنان",
-    "حشوات الأسنان": "حشو تجميلي", "Dental Fillings": "حشو تجميلي", "حشو تجميلي": "حشو تجميلي",
-    "خلع الأسنان": "الجراحة والخلع", "Tooth Extraction": "الجراحة والخلع", "الجراحة والخلع": "الجراحة والخلع",
-    "تيجان الأسنان / التركيبات": "تيجان وجسور", "Dental Crowns / Prosthodontics": "تيجان وجسور", "تيجان وجسور": "تيجان وجسور",
-    "تقويم الأسنان": "تقويم الأسنان", "Braces": "تقويم الأسنان",
-    "فحص شامل للأسنان": "فحص شامل", "Comprehensive Dental Examination": "فحص شامل", "فحص شامل": "فحص شامل",
-    "حشو امالجم": "حشو امالجم", "حشو عصب": "حشو عصب", "تركيبات متحركة": "تركيبات متحركة",
-    "الاطفال": "طب أسنان الأطفال", "Pediatric": "طب أسنان الأطفال", "Pediatric Dentistry": "طب أسنان الأطفال", "طب الأسنان للأطفال": "طب أسنان الأطفال", "طب أسنان الأطفال": "طب أسنان الأطفال",
-    "تركيبات ثابتة (تيجان وجسور)": "تيجان وجسور", "Crowns and Bridges": "تيجان وجسور"
-  };
-
-  const mapToAppCategory = (raw) => CATEGORY_MAP[raw] ?? CATEGORY_MAP[raw?.trim()] ?? raw;
-
-  const getCategoryRoute = (category) => {
-    const routes = {
-      "تنظيف وتبييض الأسنان": "/teeth-whitening", "زراعة الأسنان": "/dental-implant", "حشو تجميلي": "/dental-filling",
-      "حشو امالجم": "/amalgam-filling", "حشو عصب": "/tooth-extraction", "الجراحة والخلع": "/surgery-extraction",
-      "تيجان وجسور": "/crowns&bridges", "تركيبات متحركة": "/removable-prosthetics", "تقويم الأسنان": "/braces",
-      "فحص شامل": "/", "طب أسنان الأطفال": "/pediatric-dentistry"
-    };
-    return routes[category];
-  };
-
   const openCategory = (rawCategory) => {
-    const mapped = mapToAppCategory(rawCategory);
-    const pageRoute = getCategoryRoute(mapped);
+    const pageRoute = getCategoryRoute(rawCategory);
     if (pageRoute) navigate(pageRoute);
   };
 
@@ -379,35 +512,35 @@ export default function ChatBot() {
       </div>
       {session.flowItems.map((item, i) => (
         <div key={`old-${index}-flow-${i}`}>
-          {item.type === "question" && <BotMessage text={item.question.text} />}
-          {item.type === "bot_prompt" && <BotMessage text={item.text} />}
+          {item.type === "question" && <BotMessage text={getLocalizedText(item.question, chatLanguage)} />}
+          {item.type === "bot_prompt" && <BotMessage text={getLocalizedText(item, chatLanguage)} />}
           {item.type === "result" && (
             <>
-              <BotMessage text={item.text} />
+              <BotMessage text={getLocalizedText(item, chatLanguage)} />
               {item.category && (
                 <div className="quick-replies">
                   <button
                     type="button"
                     className="quick-reply-button full result-button"
                     onClick={() => openCategory(item.category)}
-                    title={`الذهاب إلى صفحة ${item.category}`}
+                    title={`الذهاب إلى صفحة ${getCategoryLabel(item.category, chatLanguage)}`}
                   >
-                    <span>عرض حالات</span>
-                    <strong>{item.category}</strong>
+                    <span>{chatLanguage === "en" ? "View cases" : "عرض الحالات"}</span>
+                    <strong>{getCategoryLabel(item.category, chatLanguage)}</strong>
                     <span style={{ marginLeft: '8px' }}>←</span>
                   </button>
                 </div>
               )}
             </>
           )}
-          {item.type === "answer" && <UserMessage text={item.text} />}
+          {item.type === "answer" && <UserMessage text={getLocalizedText(item, chatLanguage)} />}
         </div>
       ))}
       {session.chatHistory.map((m, i) =>
         m.role === "user"
           ? <UserMessage key={`old-${index}-chat-${i}`} text={m.text} />
           : m.text === "__SERVER_ERROR__"
-            ? <ErrorBlock key={`old-${index}-err-${i}`} onNewChat={startNewChat} />
+            ? <ErrorBlock key={`old-${index}-err-${i}`} onNewChat={startNewChat} language={chatLanguage} />
             : <BotMessage key={`old-${index}-chat-${i}`} text={m.text} />
       )}
     </div>
@@ -455,34 +588,35 @@ export default function ChatBot() {
               </div>
             )}
 
-            {isLoading && flowItems.length === 0 && <BotMessage text="...جاري تجهيز الأسئلة" />}
+            {isLoading && flowItems.length === 0 && <BotMessage text={chatLanguage === "en" ? "...Preparing questions" : "...جاري تجهيز الأسئلة"} />}
 
             {hasServerError && flowItems.length === 0 && (
-              <ErrorBlock onNewChat={startNewChat} />
+              <ErrorBlock onNewChat={startNewChat} language={chatLanguage} />
             )}
 
             {flowItems.map((item, i) => (
               <div key={i}>
                 {item.type === "question" && (
                   <>
-                    <BotMessage text={item.question.text} />
+                    <BotMessage text={getLocalizedText(item.question, chatLanguage)} />
                     <QuickReplies
                       question={item.question}
+                      language={chatLanguage}
                       disabled={isLoading}
                       isActive={!chatMode && activeQuestionId === item.question.id && item.question.answers.length > 0}
                       onSelect={submitAnswer}
-                      onOtherClick={handleOtherClick}
                     />
                   </>
                 )}
 
-                {item.type === "bot_prompt" && <BotMessage text={item.text} />}
+                {item.type === "bot_prompt" && <BotMessage text={getLocalizedText(item, chatLanguage)} />}
                 {item.type === "result" && (
                   <>
-                    <BotMessage text={item.text} />
+                    <BotMessage text={getLocalizedText(item, chatLanguage)} />
                     {item.category && (
                       <ResultButtons
-                        category={item.category}
+                        category={getCategoryLabel(item.category, chatLanguage)}
+                        language={chatLanguage}
                         disabled={isLoading}
                         onOpen={() => openCategory(item.category)}
                         onRestart={restartSession}
@@ -490,8 +624,8 @@ export default function ChatBot() {
                     )}
                   </>
                 )}
-                {item.type === "answer" && <UserMessage text={item.text} />}
-                {item.type === "server_error" && <ErrorBlock onNewChat={startNewChat} />}
+                {item.type === "answer" && <UserMessage text={getLocalizedText(item, chatLanguage)} />}
+                {item.type === "server_error" && <ErrorBlock onNewChat={startNewChat} language={chatLanguage} />}
               </div>
             ))}
 
@@ -499,7 +633,7 @@ export default function ChatBot() {
               m.role === "user"
                 ? <UserMessage key={i} text={m.text} />
                 : m.text === "__SERVER_ERROR__"
-                  ? <ErrorBlock key={i} onNewChat={startNewChat} />
+                  ? <ErrorBlock key={i} onNewChat={startNewChat} language={chatLanguage} />
                   : <BotMessage key={i} text={m.text} />
             )}
           </div>
@@ -510,7 +644,7 @@ export default function ChatBot() {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="اكتب رسالتك.............................."
+                  placeholder={chatLanguage === "en" ? "Type your message.............................." : "اكتب رسالتك.............................."}
                   className="message-input"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}

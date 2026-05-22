@@ -2,18 +2,38 @@ import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorHome.css";
 
-const getDate = (dt) => dt ? dt.split('T')[0] : '';
+const getDate = (dt) => {
+  if (!dt) return '';
+
+  const date = new Date(dt);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return new Intl.DateTimeFormat('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
 const getTime = (dt) => {
   if (!dt) return '';
-  const parts = dt.split('T');
-  return parts[1] ? parts[1].slice(0, 5) : '';
+
+  const date = new Date(dt);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return new Intl.DateTimeFormat('ar-EG', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
 };
 
 const getTimePeriod = (dt) => {
-  const t = getTime(dt);
-  if (!t) return '';
-  const [h] = t.split(':').map(Number);
-  return h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً';
+  if (!dt) return '';
+
+  const date = new Date(dt);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.getHours() < 12 ? 'صباحاً' : 'مساءً';
 };
 
 const normalizeList = (payload) => {

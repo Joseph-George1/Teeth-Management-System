@@ -115,6 +115,10 @@
     margin-top: 10px;
 }
 
+.quick-replies.quick-replies--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .quick-replies[style*="flex-direction: column"] {
     display: flex !important;
     grid-template-columns: unset !important;

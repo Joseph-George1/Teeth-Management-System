@@ -217,7 +217,10 @@ export default function ProfileUpdate() {
         }
       }
 
-      showToast("success", "تم حفظ البيانات بنجاح ✓");
+      showToast("success", "تم حفظ البيانات بنجاح");
+      setTimeout(() => {
+        navigate("/doctor-profile", { replace: true });
+      }, 1200);
     } catch (err) {
       showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
     } finally {
