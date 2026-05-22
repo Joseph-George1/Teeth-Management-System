@@ -1,0 +1,20 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="toothGrad" x1="70" y1="40" x2="186" y2="210">
+      <stop stop-color="#FFFFFF"></stop>
+      <stop offset="1" stop-color="#E5F3FF"></stop>
+    </linearGradient>
+
+    <linearGradient id="metalGrad" x1="110" y1="78" x2="156" y2="126">
+      <stop stop-color="#D1D5DB"></stop>
+      <stop offset="0.5" stop-color="#9CA3AF"></stop>
+      <stop offset="1" stop-color="#6B7280"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Tooth -->
+  <path d="M92 52C72 52 58 68 58 91C58 107 65 121 75 135C82 145 86 154 89 166C93 182 97 202 109 202C120 202 121 182 126 172C128 168 132 168 134 172C139 182 140 202 151 202C163 202 167 182 171 166C174 154 178 145 185 135C195 121 202 107 202 91C202 68 188 52 168 52C151 52 143 61 128 61C113 61 109 52 92 52Z" fill="url(#toothGrad)" stroke="#334155" stroke-width="6"></path>
+
+  <!-- Amalgam filling -->
+  <path d="M103 83C103 74 110 68 119 68H137C147 68 154 75 154 85C154 93 149 99 142 102L137 104C132 106 126 106 121 104L115 102C108 99 103 92 103 83Z" fill="url(#metalGrad)" stroke="#4B5563" stroke-width="4"></path>
+</svg>

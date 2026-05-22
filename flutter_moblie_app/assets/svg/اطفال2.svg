@@ -1,0 +1,33 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Tooth gradient -->
+    <linearGradient id="toothGradChild" x1="70" y1="40" x2="186" y2="210">
+      <stop stop-color="#FFFFFF"></stop>
+      <stop offset="1" stop-color="#EAF6FF"></stop>
+    </linearGradient>
+
+    <!-- Cheek gradient -->
+    <linearGradient id="cheekGradChild" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F9A8D4"></stop>
+      <stop offset="1" stop-color="#F472B6"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Tooth -->
+  <path d="M92 52C72 52 58 68 58 91C58 107 65 121 75 135C82 145 86 154 89 166C93 182 97 202 109 202C120 202 121 182 126 172C128 168 132 168 134 172C139 182 140 202 151 202C163 202 167 182 171 166C174 154 178 145 185 135C195 121 202 107 202 91C202 68 188 52 168 52C151 52 143 61 128 61C113 61 109 52 92 52Z" fill="url(#toothGradChild)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"></path>
+
+  <!-- Eyes -->
+  <circle cx="104" cy="112" r="6" fill="#0F172A"></circle>
+  <circle cx="152" cy="112" r="6" fill="#0F172A"></circle>
+
+  <!-- Smile -->
+  <path d="M103 140C109 150 119 156 128 156C137 156 147 150 153 140" stroke="#0F172A" stroke-width="6" stroke-linecap="round"></path>
+
+  <!-- Cheeks -->
+  <circle cx="90" cy="132" r="7" fill="url(#cheekGradChild)" opacity="0.6"></circle>
+  <circle cx="166" cy="132" r="7" fill="url(#cheekGradChild)" opacity="0.6"></circle>
+
+  <!-- Sparkles -->
+  <path d="M190 70L193 80L203 83L193 86L190 96L187 86L177 83L187 80L190 70Z" fill="#22C55E"></path>
+  <path d="M60 80L62 87L69 89L62 91L60 98L58 91L51 89L58 87L60 80Z" fill="#22C55E"></path>
+</svg>

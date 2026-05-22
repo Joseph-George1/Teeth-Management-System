@@ -11,4 +11,5 @@ import java.util.List;
 
 public interface DeviceTokenRepo extends JpaRepository<DeviceToken, Long> {
     List<DeviceToken> findByUserId(Long userId);
+    void deleteByToken(String token);
 }

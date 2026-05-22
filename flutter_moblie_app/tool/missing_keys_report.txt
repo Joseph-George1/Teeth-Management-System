@@ -1,0 +1,122 @@
+﻿Used keys: 749
+Missing in ar.json: 157
+  $doctorFirstName $doctorLastName
+  Privacy Policy.Thutha Application
+  Sign Up.Must End With Universityedueg
+  appointments.access_denied
+  appointments.appointment_details
+  appointments.canceled
+  appointments.certain
+  appointments.closing
+  appointments.everyone
+  appointments.my_appointments
+  appointments.on_hold
+  appointments.specialization
+  appointments.the_condition
+  appointments.the_date
+  appointments.the_doctor
+  appointments.the_time
+  appointments.there_are_no_current
+  auth.a_server_error_has
+  auth.academic_year
+  auth.account_creation_failed_please
+  auth.already_have_an_account
+  auth.an_error_occurred_connecting
+  auth.an_error_occurred_in
+  auth.an_unexpected_error_occurred
+  auth.an_unexpected_error_occurred_1
+  auth.college
+  auth.confirm_password
+  auth.create_a_new_account
+  auth.email
+  auth.email_and_password_are
+  auth.email_required
+  auth.fifth
+  auth.first_name
+  auth.first_name_required
+  auth.fourth
+  auth.invalid_data
+  auth.last_name
+  auth.last_name_required
+  auth.login_data_is_incorrect
+  auth.password
+  auth.password_confirmation_is_required
+  auth.password_must_be_at
+  auth.password_required
+  auth.passwords_do_not_match
+  auth.phone_number
+  auth.please_enter_a_valid
+  auth.privilege
+  auth.registration
+  auth.text
+  auth.text_1
+Missing in en.json: 150
+  $doctorFirstName $doctorLastName
+  Privacy Policy.Thutha Application
+  Sign Up.Must End With Universityedueg
+  appointments.access_denied
+  appointments.appointment_details
+  appointments.canceled
+  appointments.certain
+  appointments.closing
+  appointments.everyone
+  appointments.my_appointments
+  appointments.on_hold
+  appointments.specialization
+  appointments.the_condition
+  appointments.the_date
+  appointments.the_doctor
+  appointments.the_time
+  appointments.there_are_no_current
+  auth.a_server_error_has
+  auth.academic_year
+  auth.account_creation_failed_please
+  auth.already_have_an_account
+  auth.an_error_occurred_connecting
+  auth.an_error_occurred_in
+  auth.an_unexpected_error_occurred
+  auth.an_unexpected_error_occurred_1
+  auth.college
+  auth.confirm_password
+  auth.create_a_new_account
+  auth.email
+  auth.email_and_password_are
+  auth.email_required
+  auth.fifth
+  auth.first_name
+  auth.first_name_required
+  auth.fourth
+  auth.invalid_data
+  auth.last_name
+  auth.last_name_required
+  auth.login_data_is_incorrect
+  auth.password
+  auth.password_confirmation_is_required
+  auth.password_must_be_at
+  auth.password_required
+  auth.passwords_do_not_match
+  auth.phone_number
+  auth.please_enter_a_valid
+  auth.privilege
+  auth.registration
+  auth.text
+  auth.text_1
+Only in ar (not en): 9
+  booking.Your Data
+  chat.Dental Crownsprostheeses
+  doctor.02:00 pm
+  doctor.04:00 pm
+  doctor.06:00 pm
+  doctor.10:00 am
+  doctor.12:00 noon
+  doctor.9:00 am
+  requests.If A Patient Books 1
+Only in en (not ar): 8
+  chat.Dental Crownsprostheses
+  doctor.0200 Pm
+  doctor.0400 Pm
+  doctor.0600 Pm
+  doctor.1000 Am
+  doctor.1200 Noon
+  doctor.900 Am
+  doctor.University Data

@@ -13,4 +13,5 @@ public interface NotificationClientService {
     Map<String, Object> sendPaymentReceived(Long patientId, String amount);
     Map<String, Object> getNotificationStatus(String fcmMessageId);
     boolean healthCheck();
+    Map<String, Object> deregisterToken(String token);
 }

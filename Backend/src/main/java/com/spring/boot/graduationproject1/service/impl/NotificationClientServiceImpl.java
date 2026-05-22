@@ -131,4 +131,23 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return false;
         }
     }
+
+    @Override
+    public Map<String, Object> deregisterToken(String token) {
+        try {
+            String url = notificationServiceUrl + "/api/v1/device-tokens/deregister?token=" + token;
+            
+            HttpHeaders headers = new HttpHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.DELETE, entity, Map.class);
+            
+            logger.info("Token deregistered on notification service. Status: {}", response.getStatusCode());
+            return response.getBody();
+            
+        } catch (RestClientException e) {
+            logger.error("Failed to deregister token on notification service: {}", e.getMessage(), e);
+            return Map.of("success", false, "error", e.getMessage());
+        }
+    }
 }
