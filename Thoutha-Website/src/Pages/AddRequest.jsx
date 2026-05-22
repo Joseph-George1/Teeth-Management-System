@@ -161,6 +161,7 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
               value={time}
               onChange={handleTimeChange}
               required
+              className="input"
             />
           </div>
 
@@ -171,6 +172,7 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
+              required
             />
           </div>
 

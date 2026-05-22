@@ -633,6 +633,9 @@
     height: 44px;
     font-size: 13px;
   }
+  .add-request-field .input{
+    width:100px;
+  }
 }
 
 .open-request-btn {
