@@ -14,13 +14,20 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
+  console.log('[FCM SW] Background message received:', payload);
+
+  // If FCM SDK already contains a notification block, the SDK will automatically display it.
+  // We return early here to prevent the duplicate notification bug.
+  if (payload.notification) {
+    console.log('[FCM SW] Notification payload detected, SDK handles display automatically.');
+    return;
+  }
+
   const notificationTitle =
-    payload.notification?.title ||
     payload.data?.title ||
     'حجز جديد - ثوثة';
 
   const notificationBody =
-    payload.notification?.body ||
     payload.data?.body ||
     'لديك حجز جديد من مريض';
 

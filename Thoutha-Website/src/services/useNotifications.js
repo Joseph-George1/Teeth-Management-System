@@ -6,6 +6,9 @@ const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://thoutha.page/api';
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 const FCM_TOKEN_KEY = 'thoutha_fcm_token';
 
+const foregroundCallbacks = new Set();
+let globalUnsubscribe = null;
+
 export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
   const unsubscribeRef = useRef(null);
   const tokenRegisteredRef = useRef(false);
@@ -51,15 +54,15 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
     }
 
     try {
+      const permission = await Notification.requestPermission();
+      console.log('[Thoutha] Permission:', permission);
+      if (permission !== 'granted') return false;
+
       const messaging = await getFirebaseMessaging();
       if (!messaging) {
         console.warn('[Thoutha] Firebase Messaging not supported');
         return false;
       }
-
-      const permission = await Notification.requestPermission();
-      console.log('[Thoutha] Permission:', permission);
-      if (permission !== 'granted') return false;
 
       let swRegistration;
       try {
@@ -100,18 +103,43 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
 
       console.log('[Thoutha] FCM token acquired');
 
-      if (fcmToken !== existingToken) {
-        const doctorId = user?.id || user?.doctorId || user?.userId;
-        await registerTokenWithBackend(fcmToken, authToken, doctorId);
-      } else {
-        console.log('[Thoutha] Token unchanged, already registered');
-        tokenRegisteredRef.current = true;
-      }
+      const doctorId = user?.id || user?.doctorId || user?.userId;
+      console.log('[Thoutha] Registering FCM token with backend for doctorId:', doctorId);
+      await registerTokenWithBackend(fcmToken, authToken, doctorId);
 
-      if (onForegroundMessage && !unsubscribeRef.current) {
-        unsubscribeRef.current = onMessage(messaging, (payload) => {
-          console.log('[Thoutha] Foreground message:', payload);
-          onForegroundMessage(payload);
+      if (!globalUnsubscribe) {
+        globalUnsubscribe = onMessage(messaging, (payload) => {
+          console.log('[Thoutha] Foreground message received globally:', payload);
+          
+          // Trigger all registered react callbacks
+          foregroundCallbacks.forEach((cb) => {
+            try {
+              cb(payload);
+            } catch (err) {
+              console.error('[Thoutha] Error in foreground callback:', err);
+            }
+          });
+          
+          // If the page is hidden (minimized or background tab), show a native push notification
+          if (document.hidden && Notification.permission === 'granted') {
+            const title = payload.notification?.title || payload.data?.title || 'حجز جديد - ثوثة';
+            const body = payload.notification?.body || payload.data?.body || 'لديك حجز جديد من مريض';
+            
+            navigator.serviceWorker.ready.then((registration) => {
+              registration.showNotification(title, {
+                body: body,
+                icon: '/ثوثة.png',
+                badge: '/thoutha-48x48.png',
+                tag: 'thoutha-booking-foreground',
+                renotify: true,
+                data: {
+                  url: payload.data?.url || '/doctor-home'
+                }
+              });
+            }).catch((err) => {
+              console.error('[Thoutha] Global showNotification error:', err);
+            });
+          }
         });
       }
 
@@ -120,20 +148,23 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
       console.error('[Thoutha] Setup error:', err);
       return false;
     }
-  }, [isLoggedIn, user, onForegroundMessage, registerTokenWithBackend]);
+  }, [isLoggedIn, user, registerTokenWithBackend]);
 
   useEffect(() => {
     if (isLoggedIn && user && Notification.permission === 'granted') {
       setupPushNotifications();
     }
 
+    if (onForegroundMessage) {
+      foregroundCallbacks.add(onForegroundMessage);
+    }
+
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
+      if (onForegroundMessage) {
+        foregroundCallbacks.delete(onForegroundMessage);
       }
     };
-  }, [isLoggedIn, user, setupPushNotifications]);
+  }, [isLoggedIn, user, setupPushNotifications, onForegroundMessage]);
 
   useEffect(() => {
     if (!isLoggedIn) {

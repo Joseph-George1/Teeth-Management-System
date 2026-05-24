@@ -9,7 +9,8 @@
 //   5. Handle foreground notifications (when PWA is open)
 //   6. Deregister token on logout
 
-import { messaging, getToken, onMessage } from './firebaseConfig';
+import { getFirebaseMessaging } from './firebaseConfig';
+import { getToken, onMessage } from 'firebase/messaging';
 
 const NOTIFICATION_API = 'https://thoutha.page';
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
@@ -56,6 +57,12 @@ export async function registerForPushNotifications(doctorId) {
     console.log('[Push] Notification permission granted');
 
     // 4. Get FCM registration token
+    const messaging = await getFirebaseMessaging();
+    if (!messaging) {
+      console.warn('[Push] Firebase Messaging not supported');
+      return null;
+    }
+
     const fcmToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: swRegistration,
@@ -90,7 +97,10 @@ export async function registerForPushNotifications(doctorId) {
  *
  * @param {function} onNotificationReceived - Callback with {title, body, data}
  */
-export function setupForegroundNotifications(onNotificationReceived) {
+export async function setupForegroundNotifications(onNotificationReceived) {
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return;
+
   onMessage(messaging, (payload) => {
     console.log('[Push] Foreground message received:', payload);
 
