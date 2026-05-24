@@ -41,12 +41,17 @@ export async function registerForPushNotifications(doctorId) {
       return null;
     }
 
-    // 2. Register the Firebase messaging service worker
-    const swRegistration = await navigator.serviceWorker.register(
-      '/firebase-messaging-sw.js',
-      { scope: '/' }
-    );
-    console.log('[Push] Service worker registered:', swRegistration.scope);
+    // 2. Register or reuse active PWA service worker
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    let swRegistration = registrations.find(r => r.active && (r.active.scriptURL.includes('sw.js') || r.active.scriptURL.includes('firebase-messaging-sw.js')));
+    
+    if (!swRegistration) {
+      console.log('[Push] No active service worker found, registering firebase-messaging-sw.js');
+      swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+    } else {
+      console.log('[Push] Using active service worker:', swRegistration.active.scriptURL);
+    }
+    await navigator.serviceWorker.ready;
 
     // 3. Request notification permission from the user
     const permission = await Notification.requestPermission();

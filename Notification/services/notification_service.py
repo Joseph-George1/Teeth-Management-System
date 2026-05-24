@@ -182,7 +182,7 @@ class NotificationService:
             #         "type": "APPOINTMENT_REMINDER"
             #     }
             # )
-            results["doctor"] = "skipped (reminders disabled for doctor)"
+            #results["doctor"] = "skipped (reminders disabled for doctor)"
             
             return results
         except Exception as e:

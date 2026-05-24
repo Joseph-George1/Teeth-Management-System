@@ -66,7 +66,15 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
 
       let swRegistration;
       try {
-        swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        swRegistration = registrations.find(r => r.active && (r.active.scriptURL.includes('sw.js') || r.active.scriptURL.includes('firebase-messaging-sw.js')));
+        
+        if (!swRegistration) {
+          console.log('[Thoutha] No active service worker found, registering firebase-messaging-sw.js');
+          swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        } else {
+          console.log('[Thoutha] Using active service worker:', swRegistration.active.scriptURL);
+        }
         await navigator.serviceWorker.ready;
         console.log('[Thoutha] Service worker ready');
       } catch (err) {
