@@ -78,11 +78,6 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(Boolean(storedToken));
 
   const logout = useCallback(() => {
-    // Deregister push token so notifications stop for this device
-    import('./pushNotificationService').then(({ deregisterPushNotifications }) => {
-      deregisterPushNotifications().catch(() => {});
-    });
-
     clearStoredAuth();
     setIsLoggedIn(false);
     setUser(null);
@@ -197,19 +192,7 @@ export function AuthProvider({ children }) {
     setAuthLoading(true);
 
     try {
-      const normalizedUser = await refreshUserProfile(token);
-
-      // Register for push notifications after successful login
-      // Non-blocking — failures don't break the login flow
-      if (normalizedUser?.id) {
-        import('./pushNotificationService').then(({ registerForPushNotifications }) => {
-          registerForPushNotifications(normalizedUser.id).catch((err) =>
-            console.warn('[Push] Registration failed (non-blocking):', err)
-          );
-        });
-      }
-
-      return normalizedUser;
+      return await refreshUserProfile(token);
     } finally {
       setAuthLoading(false);
     }

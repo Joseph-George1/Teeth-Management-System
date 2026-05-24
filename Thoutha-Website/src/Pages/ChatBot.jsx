@@ -183,7 +183,7 @@ const ErrorBlock = ({ onNewChat, language = DEFAULT_LANGUAGE }) => (
   </div>
 );
 
-const ResultButtons = ({ category, disabled, language = DEFAULT_LANGUAGE, onOpen, onRestart }) => (
+const ResultButtons = ({ category, language = DEFAULT_LANGUAGE, onOpen }) => (
   <div className="quick-replies" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     <button
       type="button"
@@ -191,18 +191,8 @@ const ResultButtons = ({ category, disabled, language = DEFAULT_LANGUAGE, onOpen
       onClick={onOpen}
       title={language === "en" ? `Go to ${category} page` : `الذهاب إلى صفحة ${category}`}
     >
-      <span>{language === "en" ? "View cases" : "عرض الحالات"}</span>
-      <strong>{category}</strong>
-      <span style={{ marginLeft: '8px' }}>←</span>
-    </button>
-    <button
-      type="button"
-      className="quick-reply-button restart-button"
-      onClick={onRestart}
-      disabled={disabled}
-      title={language === "en" ? "Restart the chat from the beginning" : "إعادة المحادثة من البداية"}
-    >
-      <span>{language === "en" ? "Restart the chat from the beginning" : "إعادة المحادثة من البداية"}</span>
+      <span style={{ marginRight: '8px', fontSize: '1.1em' }}>→</span>
+      <span>{language === "en" ? `View ${category} cases` : `عرض حالات ${category}`}</span>
     </button>
   </div>
 );
@@ -213,6 +203,18 @@ const OTHER_PROMPTS = {
 };
 
 const getResponseCategory = (data) => data?.result?.category || data?.recommended_category || data?.category || null;
+
+const detectCategoryFromText = (text) => {
+  if (!text) return null;
+  const normalized = text.trim().toLowerCase();
+  const sortedAliases = Object.keys(CATEGORY_ALIASES).sort((a, b) => b.length - a.length);
+  for (const alias of sortedAliases) {
+    if (normalized.includes(alias.toLowerCase())) {
+      return CATEGORY_ALIASES[alias];
+    }
+  }
+  return null;
+};
 
 export default function ChatBot() {
   const navigate = useNavigate();
@@ -426,6 +428,17 @@ export default function ChatBot() {
           text_ar: ` تم تحديد الفئة: ${categoryLabel}`,
           text_en: `Category identified: ${categoryLabel}`,
         });
+        setChatMode(false);
+        if (data.session_id) setSessionId(data.session_id);
+        return;
+      }
+
+      const replyText = data.reply || "";
+      const detectedCategory = detectCategoryFromText(replyText);
+      if (detectedCategory && replyText) {
+        const category = normalizeCategory(detectedCategory);
+        const categoryLabel = getCategoryLabel(category, chatLanguage);
+        setChatHistory(prev => [...prev.filter(m => m.text !== THINKING_TEXT), { role: "model", text: replyText, detectedCategory: category, categoryLabel }]);
         if (data.session_id) setSessionId(data.session_id);
         return;
       }
@@ -634,7 +647,16 @@ export default function ChatBot() {
                 ? <UserMessage key={i} text={m.text} />
                 : m.text === "__SERVER_ERROR__"
                   ? <ErrorBlock key={i} onNewChat={startNewChat} language={chatLanguage} />
-                  : <BotMessage key={i} text={m.text} />
+                  : <div key={i}>
+                      <BotMessage text={m.text} />
+                      {m.detectedCategory && (
+                        <ResultButtons
+                          category={getCategoryLabel(m.detectedCategory, chatLanguage)}
+                          language={chatLanguage}
+                          onOpen={() => openCategory(m.detectedCategory)}
+                        />
+                      )}
+                    </div>
             )}
           </div>
 

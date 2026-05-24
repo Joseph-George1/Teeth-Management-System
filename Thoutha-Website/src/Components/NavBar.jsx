@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, Home, User, Bot, FileText, Shield, LogIn, LogOut, Users, Calendar , PlusCircle } from "lucide-react";
 import "../Css/NavBar.css";
 import { AuthContext } from "../services/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 export default function NavBar() {
   const { isLoggedIn, user, logout } = useContext(AuthContext);
@@ -26,14 +27,15 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {}
-        {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
-
-        {}
-        <button className="menu-icon" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={28} /> : <Menu size={28} className="icon-animate" />}
-        </button>
+        <div className="nav-right-actions">
+          {isLoggedIn && <NotificationBell />}
+          <button className="menu-icon" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X size={28} /> : <Menu size={28} className="icon-animate" />}
+          </button>
+        </div>
       </nav>
+
+      {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
 
       {}
       {isOpen && (
