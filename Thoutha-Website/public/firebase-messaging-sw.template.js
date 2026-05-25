@@ -13,6 +13,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
 messaging.onBackgroundMessage((payload) => {
   console.log('[FCM SW] Background message received:', payload);
 
@@ -33,7 +37,7 @@ messaging.onBackgroundMessage((payload) => {
 
   const notificationOptions = {
     body: notificationBody,
-    icon: '/ثوثة.png',
+    icon: '/thoutha-152x152.png',
     badge: '/thoutha-48x48.png',
     dir: 'rtl',
     lang: 'ar',
