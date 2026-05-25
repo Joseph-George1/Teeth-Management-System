@@ -55,6 +55,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto createAppointment(Long requestId, AppointmentDto appointmentDto) {
+        logger.debug("createAppointment method triggered for requestId: {}", requestId);
         // === STEP 1: Verify request exists and validate it has duration/notes set by doctor ===
         Requests request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
@@ -144,6 +145,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
             String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
             String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
+            logger.debug("Execution reached notification block. Preparing to call notificationClientService.sendAppointmentConfirmation for appointment ID: {}", appointment.getId());
             notificationClientService.sendAppointmentConfirmation(
                     appointment.getId(),
                     appointment.getPatient().getId(),

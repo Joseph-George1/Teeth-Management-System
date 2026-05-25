@@ -68,7 +68,7 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
         swRegistration = registrations.find(r => r.active && (r.active.scriptURL.includes('sw.js') || r.active.scriptURL.includes('firebase-messaging-sw.js')));
-        
+
         if (!swRegistration) {
           console.log('[Thoutha] No active service worker found, registering firebase-messaging-sw.js');
           swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
@@ -118,7 +118,7 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
       if (!globalUnsubscribe) {
         globalUnsubscribe = onMessage(messaging, (payload) => {
           console.log('[Thoutha] Foreground message received globally:', payload);
-          
+
           // Trigger all registered react callbacks
           foregroundCallbacks.forEach((cb) => {
             try {
@@ -127,12 +127,12 @@ export function useNotifications({ user, isLoggedIn, onForegroundMessage }) {
               console.error('[Thoutha] Error in foreground callback:', err);
             }
           });
-          
+
           // If the page is hidden (minimized or background tab), show a native push notification
           if (document.hidden && Notification.permission === 'granted') {
             const title = payload.notification?.title || payload.data?.title || 'حجز جديد - ثوثة';
             const body = payload.notification?.body || payload.data?.body || 'لديك حجز جديد من مريض';
-            
+
             navigator.serviceWorker.ready.then((registration) => {
               registration.showNotification(title, {
                 body: body,

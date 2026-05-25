@@ -12,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import com.spring.boot.graduationproject1.exception.NotificationDeliveryException;
 
 import java.util.*;
 
@@ -59,8 +60,8 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send appointment confirmation: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send appointment confirmation. URL: {}, Payload: {}. Error: {}", url, payload, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send appointment confirmation: " + e.getMessage(), e);
         }
     }
 
@@ -76,8 +77,8 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send treatment plan update: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send treatment plan update. URL: {}. Error: {}", url, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send treatment plan update: " + e.getMessage(), e);
         }
     }
 
@@ -93,8 +94,8 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send payment notification: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send payment notification. URL: {}. Error: {}", url, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send payment notification: " + e.getMessage(), e);
         }
     }
 
