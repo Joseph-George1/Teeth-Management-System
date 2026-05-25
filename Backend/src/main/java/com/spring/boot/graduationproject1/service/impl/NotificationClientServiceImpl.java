@@ -33,10 +33,9 @@ public class NotificationClientServiceImpl implements NotificationClientService 
     public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName, String patientPhone,
                                                            Long doctorId, String doctorName, String category, 
                                                            String location, String idempotencyKey, String triggerType) {
+        String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
+        Map<String, Object> payload = new HashMap<>();
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
-            
-            Map<String, Object> payload = new HashMap<>();
             payload.put("appointment_id", appointmentId);
             payload.put("patient_id", patientId);
             payload.put("patient_name", patientName);
@@ -67,9 +66,9 @@ public class NotificationClientServiceImpl implements NotificationClientService 
 
     @Override
     public Map<String, Object> sendTreatmentPlanUpdate(Long patientId, Long treatmentPlanId) {
+        String url = notificationServiceUrl + "/api/v1/notifications/treatment-plan-update?patient_id=" 
+                    + patientId + "&treatment_plan_id=" + treatmentPlanId;
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/treatment-plan-update?patient_id=" 
-                        + patientId + "&treatment_plan_id=" + treatmentPlanId;
             
             ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
             
@@ -84,9 +83,9 @@ public class NotificationClientServiceImpl implements NotificationClientService 
 
     @Override
     public Map<String, Object> sendPaymentReceived(Long patientId, String amount) {
+        String url = notificationServiceUrl + "/api/v1/notifications/payment-received?patient_id=" 
+                    + patientId + "&amount=" + amount;
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/payment-received?patient_id=" 
-                        + patientId + "&amount=" + amount;
             
             ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
             
