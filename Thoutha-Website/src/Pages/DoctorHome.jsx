@@ -1,5 +1,6 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback, useRef } from "react";
 import { AuthContext } from "../services/AuthContext";
+import { useNotifications } from "../services/useNotifications";
 import "../Css/DoctorHome.css";
 
 const getDate = (dt) => {
@@ -52,12 +53,36 @@ export default function DoctorHome() {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [toast, setToast] = useState(null);
   const [cancelConfirmId, setCancelConfirmId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleForegroundMessage = useCallback((payload) => {
+    const title = payload.notification?.title || payload.data?.title || 'حجز جديد';
+    const body = payload.notification?.body || payload.data?.body || 'لديك حجز جديد من مريض';
+    showToast(`${title}: ${body}`, 'success');
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
+  useNotifications({
+    user,
+    isLoggedIn,
+    onForegroundMessage: handleForegroundMessage,
+  });
+
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const fetchAppointments = useCallback((showLoader = false) => {
     if (!isLoggedIn || authLoading) return;
 
-    let cancelled = false;
-    setLoading(true);
+    if (showLoader) {
+      setLoading(true);
+    }
     setError("");
 
     const token = user?.token || localStorage.getItem("token");
@@ -69,36 +94,54 @@ export default function DoctorHome() {
         return res.json();
       })
       .then((data) => {
-        if (!cancelled) {
-          const normalizedData = normalizeList(data);
-          const pendingOnly = normalizedData.filter(appt => appt.status === "PENDING");
-          const processedData = pendingOnly.map((appt, idx) => ({
-            id: appt.id || idx,
-            name: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
-            phone: appt.patientPhoneNumber || "",
-            specialty: appt.categoryName || "",
-            description: appt.requestDescription || "",
-            time: getTime(appt.appointmentDate),
-            period: getTimePeriod(appt.appointmentDate),
-            dateTime: appt.appointmentDate || "",
-            doctorName: `${appt.doctorFirstName || ""} ${appt.doctorLastName || ""}`.trim(),
-            doctorPhone: appt.doctorPhoneNumber || "",
-            doctorCity: appt.doctorCity || "",
-            status: appt.status,
-            ...appt,
-          }));
-          setAppointments(processedData);
-        }
+        if (!isMountedRef.current) return;
+        const normalizedData = normalizeList(data);
+        const pendingOnly = normalizedData.filter(appt => appt.status === "PENDING");
+        const processedData = pendingOnly.map((appt, idx) => ({
+          id: appt.id || idx,
+          name: `${appt.patientFirstName || ""} ${appt.patientLastName || ""}`.trim() || "مريض",
+          phone: appt.patientPhoneNumber || "",
+          specialty: appt.categoryName || "",
+          description: appt.requestDescription || "",
+          time: getTime(appt.appointmentDate),
+          period: getTimePeriod(appt.appointmentDate),
+          dateTime: appt.appointmentDate || "",
+          doctorName: `${appt.doctorFirstName || ""} ${appt.doctorLastName || ""}`.trim(),
+          doctorPhone: appt.doctorPhoneNumber || "",
+          doctorCity: appt.doctorCity || "",
+          status: appt.status,
+          ...appt,
+        }));
+        setAppointments(processedData);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || "حدث خطأ أثناء جلب الحجوزات");
+        if (!isMountedRef.current) return;
+        if (showLoader) {
+          setError(err.message || "حدث خطأ أثناء جلب الحجوزات");
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (isMountedRef.current && showLoader) {
+          setLoading(false);
+        }
       });
-
-    return () => { cancelled = true; };
   }, [isLoggedIn, authLoading, user]);
+
+  // Initial fetch and fetch when refreshKey changes (e.g. from foreground FCM notification)
+  useEffect(() => {
+    fetchAppointments(true);
+  }, [fetchAppointments, refreshKey]);
+
+  // Poll for new pending appointments every 30 seconds
+  useEffect(() => {
+    if (!isLoggedIn || authLoading) return;
+
+    const interval = setInterval(() => {
+      fetchAppointments(false);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isLoggedIn, authLoading, fetchAppointments]);
 
   const showToast = (msg, type) => {
     setToast({ msg, type });

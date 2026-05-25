@@ -111,7 +111,8 @@ class NotificationService:
                     "location": location,
                     "clinic": location,
                     "type": "NEW_APPOINTMENT_REQUEST",
-                    "time": None  # Set when appointment time is known
+                    "time": None,  # Set when appointment time is known
+                    "url": "/doctor-home"
                 }
                 self.queue_service.enqueue(
                     doctor_id,
@@ -159,29 +160,29 @@ class NotificationService:
             )
             results["patient"] = "queued"
             
-            # Notify doctor of upcoming appointment
-            doctor_key = generate_idempotency_key(f"apt_reminder_{appointment_id}_doctor")
-            doctor_title = "Appointment Reminder"
-            doctor_body = f"Reminder: You have an appointment with {patient_name}"
-            self.queue_service.enqueue(
-                doctor_id,
-                doctor_title,
-                doctor_body,
-                doctor_key,
-                {
-                    "title": doctor_title,
-                    "body": doctor_body,
-                    "appointmentId": str(appointment_id),
-                    "patientId": str(patient_id),
-                    "patient_name": patient_name,
-                    "doctor_id": str(doctor_id),
-                    "doctor_name": None,
-                    "location": None,
-                    "clinic": None,
-                    "type": "APPOINTMENT_REMINDER"
-                }
-            )
-            results["doctor"] = "queued"
+            # Notify doctor of upcoming appointment - disabled (doctor only receives booking requests)
+            # doctor_key = generate_idempotency_key(f"apt_reminder_{appointment_id}_doctor")
+            # doctor_title = "Appointment Reminder"
+            # doctor_body = f"Reminder: You have an appointment with {patient_name}"
+            # self.queue_service.enqueue(
+            #     doctor_id,
+            #     doctor_title,
+            #     doctor_body,
+            #     doctor_key,
+            #     {
+            #         "title": doctor_title,
+            #         "body": doctor_body,
+            #         "appointmentId": str(appointment_id),
+            #         "patientId": str(patient_id),
+            #         "patient_name": patient_name,
+            #         "doctor_id": str(doctor_id),
+            #         "doctor_name": None,
+            #         "location": None,
+            #         "clinic": None,
+            #         "type": "APPOINTMENT_REMINDER"
+            #     }
+            # )
+            #results["doctor"] = "skipped (reminders disabled for doctor)"
             
             return results
         except Exception as e:

@@ -69,6 +69,26 @@ class FirebaseService:
                 # iOS-specific configuration
                 apns=messaging.APNSConfig(
                     headers={"apns-priority": "10"}  # High priority for iOS
+                ),
+                
+                # Web Push configuration (for PWA / browser notifications)
+                webpush=messaging.WebpushConfig(
+                    headers={
+                        "Urgency": "high",
+                        "TTL": "86400",  # 24 hours time-to-live
+                    },
+                    notification=messaging.WebpushNotification(
+                        title=title,
+                        body=body,
+                        icon="/thoutha-180x180.png",
+                        badge="/thoutha-48x48.png",
+                        tag=string_data.get("appointmentId", "thoutha-notification"),
+                        require_interaction=True,
+                        renotify=True,
+                    ),
+                    fcm_options=messaging.WebpushFCMOptions(
+                        link="/doctor-home"  # URL to open when notification is clicked
+                    )
                 )
             )
             

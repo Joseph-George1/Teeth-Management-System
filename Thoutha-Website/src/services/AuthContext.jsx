@@ -51,7 +51,7 @@ const normalizeDoctorProfile = (payload, token) => {
 
   return {
     token,
-    id: tokenPayload.id || tokenPayload.doctorId || tokenPayload.userId || tokenPayload.sub || null,
+    id: profile.id || profile.doctorId || profile.userId || tokenPayload.id || tokenPayload.doctorId || tokenPayload.userId || tokenPayload.sub || null,
     role: tokenPayload.role || profile.role || "",
     firstName,
     first_name: firstName,
