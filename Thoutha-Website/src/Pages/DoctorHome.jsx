@@ -1,6 +1,5 @@
 import { useState, useContext, useEffect, useCallback, useRef } from "react";
 import { AuthContext } from "../services/AuthContext";
-import { useNotifications } from "../services/useNotifications";
 import "../Css/DoctorHome.css";
 
 const getDate = (dt) => {
@@ -54,19 +53,6 @@ export default function DoctorHome() {
   const [toast, setToast] = useState(null);
   const [cancelConfirmId, setCancelConfirmId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleForegroundMessage = useCallback((payload) => {
-    const title = payload.notification?.title || payload.data?.title || 'حجز جديد';
-    const body = payload.notification?.body || payload.data?.body || 'لديك حجز جديد من مريض';
-    showToast(`${title}: ${body}`, 'success');
-    setRefreshKey((prev) => prev + 1);
-  }, []);
-
-  useNotifications({
-    user,
-    isLoggedIn,
-    onForegroundMessage: handleForegroundMessage,
-  });
 
   const isMountedRef = useRef(true);
 

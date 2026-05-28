@@ -9,6 +9,17 @@ const getDoctorDisplayName = (req) => {
     return `${first} ${last}`.trim();
 };
 
+const isEgyptianPhoneNumber = (phone) => {
+    // Remove spaces and dashes
+    const cleaned = phone.replace(/[\s-]/g, '');
+    
+    // Check if it matches Egyptian phone pattern
+    // 01X XXXX XXXX (11 digits) or +201X XXXX XXXX
+    const egyptianPhoneRegex = /^(01|(\+201))[0-9]{8}$/;
+    
+    return egyptianPhoneRegex.test(cleaned);
+};
+
 const getDuplicateBookingMessage = (req) => {
     const doctorName = getDoctorDisplayName(req);
     return doctorName
@@ -96,6 +107,12 @@ export default function Booking() {
         if (!formData.patientPhoneNumber.trim()) {
             errors.phone = true;
             isValid = false;
+        } else if (!isEgyptianPhoneNumber(formData.patientPhoneNumber)) {
+            errors.phone = true;
+            isValid = false;
+            setApiError('يجب إدخال رقم هاتف مصري صحيح (01xxxxxxxxx)');
+            setFieldErrors(errors);
+            return;
         }
 
         if (!isValid) {

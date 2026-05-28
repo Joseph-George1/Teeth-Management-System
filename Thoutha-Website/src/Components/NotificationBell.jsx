@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useContext } from "react";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Trash2, Loader } from "lucide-react";
 import { useNotificationsList } from "../services/useNotificationsList";
-import { useNotifications } from "../services/useNotifications";
 import { AuthContext } from "../services/AuthContext";
 import NotificationToast from "./NotificationToast";
 import "../Css/NotificationBell.css";
@@ -9,12 +8,11 @@ import "../Css/NotificationBell.css";
 export default function NotificationBell() {
   const { user, isLoggedIn } = useContext(AuthContext);
   const { notifications, unreadCount, loading, newNotification, dismissToast, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotificationsList();
-  const { setupPushNotifications } = useNotifications({ user, isLoggedIn, onForegroundMessage: null });
   const [isOpen, setIsOpen] = useState(false);
   const bellRef = useRef(null);
   const dropdownRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
-  const permissionAskedRef = useRef(false);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
   const updatePosition = useCallback(() => {
     if (!bellRef.current) return;
@@ -60,18 +58,24 @@ export default function NotificationBell() {
   const handleToggle = () => {
     if (!isOpen) {
       updatePosition();
-      if (!permissionAskedRef.current) {
-        permissionAskedRef.current = true;
-        setupPushNotifications();
-      }
     }
     setIsOpen((prev) => !prev);
   };
 
-  const handleNotificationClick = (notification) => {
-    if (!notification.read && !notification.isRead) {
-      markAsRead(notification.id);
+  const handleMarkAllAsRead = async () => {
+    setIsMarkingAll(true);
+    const unreadNotifications = notifications.filter((n) => !n.read && !n.isRead);
+    
+    // Mark each notification one by one with delay for animation effect
+    for (let i = 0; i < unreadNotifications.length; i++) {
+      await markAsRead(unreadNotifications[i].id);
+      // Small delay between each mark for visual effect
+      await new Promise((resolve) => setTimeout(resolve, 150));
     }
+    
+    // Final refetch to sync with backend
+    await fetchNotifications();
+    setIsMarkingAll(false);
   };
 
   return (
@@ -93,8 +97,15 @@ export default function NotificationBell() {
             <span className="notification-dropdown-title">الإشعارات</span>
             <div className="notification-header-actions">
               {unreadCount > 0 && (
-                <button className="notification-mark-all" onClick={markAllAsRead}>
-                  قراءة الكل
+                <button className="notification-mark-all" onClick={handleMarkAllAsRead} disabled={isMarkingAll}>
+                  {isMarkingAll ? (
+                    <>
+                      <Loader size={14} className="spinner" />
+                      جاري التعليم...
+                    </>
+                  ) : (
+                    "قراءة الكل"
+                  )}
                 </button>
               )}
               {notifications.length > 0 && (
@@ -115,7 +126,6 @@ export default function NotificationBell() {
                 <div
                   key={n.id}
                   className={`notification-item ${!n.read && !n.isRead ? "notification-unread" : ""}`}
-                  onClick={() => handleNotificationClick(n)}
                 >
                   <div className="notification-item-content">
                     <p className="notification-item-title">{n.title || "إشعار جديد"}</p>
@@ -123,9 +133,16 @@ export default function NotificationBell() {
                   </div>
                   <div className="notification-item-actions">
                     {!n.read && !n.isRead && (
-                      <div className="notification-item-dot">
-                        <span className="unread-dot" />
-                      </div>
+                      <button
+                        className="notification-item-mark-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(n.id);
+                        }}
+                        title="قراءة"
+                      >
+                        <div className="unread-dot" />
+                      </button>
                     )}
                     <button
                       className="notification-item-delete-btn"

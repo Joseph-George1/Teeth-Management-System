@@ -11,6 +11,7 @@ export function useNotificationsList() {
   const [newNotification, setNewNotification] = useState(null);
   const fetchedRef = useRef(false);
   const prevCountRef = useRef(0);
+  const prevNotificationIdsRef = useRef(new Set());
 
   const authToken = user?.token || localStorage.getItem("token");
 
@@ -33,8 +34,15 @@ export function useNotificationsList() {
       }));
 
       const newUnread = mappedList.filter((n) => !n.read && !n.isRead).length;
-
-      if (prevCountRef.current > 0 && newUnread > prevCountRef.current) {
+      const currentNotificationIds = new Set(mappedList.map((n) => n.id));
+      
+      // Check if there are any NEW notifications (IDs not in previous set)
+      const newNotificationIds = Array.from(currentNotificationIds).filter(
+        (id) => !prevNotificationIdsRef.current.has(id)
+      );
+      
+      // Show toast if there are new notifications
+      if (newNotificationIds.length > 0) {
         const latest = mappedList[0];
         if (latest) {
           setNewNotification({
@@ -44,6 +52,9 @@ export function useNotificationsList() {
           });
         }
       }
+      
+      // Update refs for next comparison
+      prevNotificationIdsRef.current = currentNotificationIds;
       prevCountRef.current = newUnread;
 
       setNotifications(mappedList);
@@ -85,15 +96,19 @@ export function useNotificationsList() {
     setUnreadCount(0);
     prevCountRef.current = 0;
     try {
-      await fetch(`${API_BASE_URL}/v1/notifications/read-all`, {
+      const response = await fetch(`${API_BASE_URL}/v1/notifications/read-all`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
       });
+      if (response.ok) {
+        // Refetch to sync with backend after marking all as read
+        await fetchNotifications();
+      }
     } catch {}
-  }, [authToken]);
+  }, [authToken, fetchNotifications]);
 
   const deleteNotification = useCallback(async (id) => {
     if (!authToken) return;
@@ -102,6 +117,11 @@ export function useNotificationsList() {
       const newUnread = updated.filter((n) => !n.read && !n.isRead).length;
       setUnreadCount(newUnread);
       prevCountRef.current = newUnread;
+      
+      // Update IDs set
+      const updatedIds = new Set(updated.map((n) => n.id));
+      prevNotificationIdsRef.current = updatedIds;
+      
       return updated;
     });
     try {
@@ -120,6 +140,7 @@ export function useNotificationsList() {
     setNotifications([]);
     setUnreadCount(0);
     prevCountRef.current = 0;
+    prevNotificationIdsRef.current = new Set();
     try {
       await fetch(`${API_BASE_URL}/v1/notifications`, {
         method: "DELETE",
@@ -141,6 +162,7 @@ export function useNotificationsList() {
       setNotifications([]);
       setUnreadCount(0);
       prevCountRef.current = 0;
+      prevNotificationIdsRef.current = new Set();
       return;
     }
 

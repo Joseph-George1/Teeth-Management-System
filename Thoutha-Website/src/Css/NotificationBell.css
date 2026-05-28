@@ -97,11 +97,33 @@
   font-family: 'Cairo', sans-serif;
   padding: 4px 10px;
   border-radius: 8px;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.notification-mark-all:hover {
+.notification-mark-all:hover:not(:disabled) {
   background: rgba(37, 180, 229, 0.12);
+}
+
+.notification-mark-all:disabled {
+  color: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.notification-mark-all .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .notification-header-actions {
@@ -237,6 +259,27 @@
   gap: 8px;
   align-self: center;
   flex-shrink: 0;
+}
+
+.notification-item-mark-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.notification-item:hover .notification-item-mark-btn {
+  opacity: 1;
+}
+
+.notification-item-mark-btn:hover {
+  background: rgba(37, 180, 229, 0.1);
 }
 
 .notification-item-delete-btn {
