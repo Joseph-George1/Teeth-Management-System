@@ -3,6 +3,44 @@ import { AuthContext } from "./AuthContext";
 
 const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
 
+/**
+ * Helper function to format notifications in Arabic
+ * Extracts patient name and formats as: "لديك موعد حجز من [Patient Name]"
+ */
+function formatNotificationInArabic(notification) {
+  // Try to extract patient name from various possible fields
+  let patientName = 
+    notification.patientName || 
+    notification.patient_name || 
+    notification.name ||
+    notification.senderName ||
+    notification.sender_name ||
+    null;
+
+  // If not found, try to extract from body or message
+  if (!patientName && (notification.body || notification.message)) {
+    const text = notification.body || notification.message || "";
+    // Try to extract name from English message like "You have a new appointment request from Ghh fcc"
+    const match = text.match(/from\s+(.+)$/i);
+    if (match) {
+      patientName = match[1].trim();
+    }
+  }
+
+  if (patientName) {
+    return {
+      title: `طلب موعد جديد`,
+      body: `لديك موعد حجز من ${patientName}`
+    };
+  }
+
+  // Fallback to original title/body
+  return {
+    title: notification.title || "إشعار جديد",
+    body: notification.body || notification.message || ""
+  };
+}
+
 export function useNotificationsList() {
   const { user, isLoggedIn } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
@@ -27,11 +65,17 @@ export function useNotificationsList() {
       const list = Array.isArray(data) ? data : data?.data || data?.content || data?.result || [];
       
       // Map readStatus from Backend to read and isRead properties
-      const mappedList = list.map((n) => ({
-        ...n,
-        read: n.readStatus !== undefined ? n.readStatus : (n.read || false),
-        isRead: n.readStatus !== undefined ? n.readStatus : (n.isRead || false),
-      }));
+      // Also format notifications in Arabic with patient name
+      const mappedList = list.map((n) => {
+        const formatted = formatNotificationInArabic(n);
+        return {
+          ...n,
+          title: formatted.title,
+          body: formatted.body,
+          read: n.readStatus !== undefined ? n.readStatus : (n.read || false),
+          isRead: n.readStatus !== undefined ? n.readStatus : (n.isRead || false),
+        };
+      });
 
       const newUnread = mappedList.filter((n) => !n.read && !n.isRead).length;
       const currentNotificationIds = new Set(mappedList.map((n) => n.id));
@@ -45,10 +89,11 @@ export function useNotificationsList() {
       if (newNotificationIds.length > 0) {
         const latest = mappedList[0];
         if (latest) {
+          const formatted = formatNotificationInArabic(latest);
           setNewNotification({
             id: Date.now(),
-            title: latest.title || "إشعار جديد",
-            body: latest.body || latest.message || "",
+            title: formatted.title,
+            body: formatted.body,
           });
         }
       }
@@ -59,7 +104,8 @@ export function useNotificationsList() {
 
       setNotifications(mappedList);
       setUnreadCount(newUnread);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في جلب الإشعارات:", error);
       setNotifications([]);
       setUnreadCount(0);
     } finally {
@@ -85,7 +131,9 @@ export function useNotificationsList() {
           "Content-Type": "application/json",
         },
       });
-    } catch {}
+    } catch (error) {
+      console.error("خطأ في تحديد الإشعار كمقروء:", error);
+    }
   }, [authToken]);
 
   const markAllAsRead = useCallback(async () => {
@@ -107,7 +155,9 @@ export function useNotificationsList() {
         // Refetch to sync with backend after marking all as read
         await fetchNotifications();
       }
-    } catch {}
+    } catch (error) {
+      console.error("خطأ في تحديد جميع الإشعارات كمقروءة:", error);
+    }
   }, [authToken, fetchNotifications]);
 
   const deleteNotification = useCallback(async (id) => {
@@ -132,7 +182,9 @@ export function useNotificationsList() {
           "Content-Type": "application/json",
         },
       });
-    } catch {}
+    } catch (error) {
+      console.error("خطأ في حذف الإشعار:", error);
+    }
   }, [authToken]);
 
   const deleteAllNotifications = useCallback(async () => {
@@ -149,7 +201,9 @@ export function useNotificationsList() {
           "Content-Type": "application/json",
         },
       });
-    } catch {}
+    } catch (error) {
+      console.error("خطأ في حذف جميع الإشعارات:", error);
+    }
   }, [authToken]);
 
   useEffect(() => {

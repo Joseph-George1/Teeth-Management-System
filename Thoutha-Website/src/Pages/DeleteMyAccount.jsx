@@ -47,6 +47,7 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
       navigate("/", { replace: true });
 
     } catch (err) {
+      console.error("خطأ في حذف الحساب:", err);
       setError(err.message || "حدث خطأ غير متوقع");
     } finally {
       setLoading(false);

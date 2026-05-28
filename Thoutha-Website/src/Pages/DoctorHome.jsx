@@ -101,6 +101,7 @@ export default function DoctorHome() {
         setAppointments(processedData);
       })
       .catch((err) => {
+        console.error("خطأ في جلب الحجوزات:", err);
         if (!isMountedRef.current) return;
         if (showLoader) {
           setError(err.message || "حدث خطأ أثناء جلب الحجوزات");
@@ -160,6 +161,7 @@ export default function DoctorHome() {
       
       showToast("تم إضافة المريض للحجوزات القادمة بنجاح ✓", "success");
     } catch (err) {
+      console.error("خطأ في قبول الحجز:", err);
       showToast(err.message || "فشل القبول", "error");
     }
   };
@@ -186,6 +188,7 @@ export default function DoctorHome() {
       setCancelConfirmId(null);
       showToast("تم إلغاء الحالة بنجاح", "error");
     } catch (err) {
+      console.error("خطأ في رفض الحجز:", err);
       showToast(err.message || "فشل الرفض", "error");
     }
   };

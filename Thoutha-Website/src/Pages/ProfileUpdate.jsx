@@ -42,7 +42,8 @@ const decodeTokenPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };

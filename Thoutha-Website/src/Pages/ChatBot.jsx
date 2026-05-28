@@ -248,7 +248,8 @@ export default function ChatBot() {
   const saveChatState = (state) => {
     try {
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
-    } catch {
+    } catch (error) {
+      console.error("خطأ في حفظ ذاكرة الدردشة:", error);
       void 0;
     }
   };
@@ -258,7 +259,8 @@ export default function ChatBot() {
       const raw = localStorage.getItem(CHAT_STORAGE_KEY);
       if (!raw) return null;
       return JSON.parse(raw);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في تحميل ذاكرة الدردشة:", error);
       return null;
     }
   };
@@ -318,7 +320,8 @@ export default function ChatBot() {
       const data = await res.json();
       if (data?.session_id) setSessionId(data.session_id);
       processResponse(data);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في بدء الاتصال بالحوار:", error);
       setHasServerError(true);
       setChatMode(true);
     } finally {
@@ -391,7 +394,8 @@ export default function ChatBot() {
         });
         setChatMode(true);
       }
-    } catch {
+    } catch (error) {
+      console.error("خطأ في الإجابة على السؤال:", error);
       addFlowItem({ type: "server_error" });
     } finally {
       setIsLoading(false);
@@ -455,7 +459,8 @@ export default function ChatBot() {
       if (data.session_id) setSessionId(data.session_id);
       const reply = data.reply || "عذراً، حدث خطأ في الاتصال. حاول مرة أخرى.";
       setChatHistory(prev => [...prev.filter(m => m.text !== THINKING_TEXT), { role: "model", text: reply }]);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في إرسال رسالة الدردشة:", error);
       setChatHistory(prev => [...prev.filter(m => m.text !== THINKING_TEXT), { role: "model", text: "__SERVER_ERROR__" }]);
     }
   };
@@ -480,7 +485,8 @@ export default function ChatBot() {
       const data = await res.json();
       if (data?.session_id) setSessionId(data.session_id);
       processResponse(data);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في البحث عن الفئة:", error);
       setHasServerError(true);
       setChatMode(true);
     } finally {
@@ -491,7 +497,8 @@ export default function ChatBot() {
   const clearAllChats = () => {
     try {
       localStorage.removeItem(CHAT_STORAGE_KEY);
-    } catch {
+    } catch (error) {
+      console.error("خطأ في حذف ذاكرة الدردشة:", error);
       void 0;
     }
     setAllSessions([]);

@@ -155,7 +155,8 @@ export default function Booking() {
                 let errorData = {};
                 try {
                     errorData = rawBody ? JSON.parse(rawBody) : {};
-                } catch {
+                } catch (error) {
+                    console.error("خطأ في تحليل استجابة الخادم:", error);
                     errorData = { message: rawBody };
                 }
 
@@ -169,6 +170,7 @@ export default function Booking() {
 
             setConfirmed(true);
         } catch (err) {
+            console.error("خطأ في عملية الحجز:", err);
             setApiError(err.message || 'حدث خطأ أثناء الحجز');
         } finally {
             setLoading(false);

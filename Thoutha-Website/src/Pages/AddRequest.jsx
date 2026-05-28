@@ -12,7 +12,8 @@ const decodeTokenPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -83,8 +84,12 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
                 categoryName:   specialization,
               }),
             });
-            await refreshUserProfile(token).catch(() => null);
-          } catch {
+            await refreshUserProfile(token).catch((error) => {
+              console.error("خطأ في تحديث ملف تعريف المستخدم بعد إنشاء الطلب:", error);
+              return null;
+            });
+          } catch (error) {
+            console.error("خطأ في بيانات ملف تعريف المستخدم:", error);
             void 0;
           }
         }
@@ -116,6 +121,7 @@ export default function AddRequest({ isOpen, onClose, onSuccess, specialization,
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
+      console.error("خطأ في إرسال طلب الموعد:", err);
       setError(err.message || "حدث خطأ، حاول مرة أخرى");
     } finally {
       setLoading(false);

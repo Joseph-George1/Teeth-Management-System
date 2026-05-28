@@ -22,7 +22,8 @@ const decodeJwtPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -158,7 +159,8 @@ export function AuthProvider({ children }) {
     setAuthLoading(true);
 
     refreshUserProfile(token)
-      .catch(() => {
+      .catch((error) => {
+        console.error("خطأ في تحديث ملف تعريف المستخدم:", error);
         if (!isActive) return;
         logout();
       })

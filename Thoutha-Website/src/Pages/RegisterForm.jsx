@@ -73,7 +73,8 @@ export default function RegisterForm() {
         if (!response.ok) throw new Error('Failed to load cities');
         const data = await response.json();
         setCities(normalizeList(data));
-      } catch {
+      } catch (error) {
+        console.error("خطأ في جلب المدن:", error);
         setCities([]);
       } finally {
         setCitiesLoading(false);
@@ -89,7 +90,8 @@ export default function RegisterForm() {
         if (!response.ok) throw new Error('Failed to load universities');
         const data = await response.json();
         setUniversities(normalizeList(data));
-      } catch {
+      } catch (error) {
+        console.error("خطأ في جلب الجامعات:", error);
         setUniversities([]);
       } finally {
         setUniversitiesLoading(false);
@@ -105,7 +107,8 @@ export default function RegisterForm() {
         if (!response.ok) throw new Error('Failed to load categories');
         const data = await response.json();
         setCategories(normalizeList(data));
-      } catch {
+      } catch (error) {
+        console.error("خطأ في جلب الفئات:", error);
         setCategories([]);
       } finally {
         setCategoriesLoading(false);
@@ -186,7 +189,8 @@ export default function RegisterForm() {
 
       navigate('/otp', { state: { email, phone } });
 
-    } catch {
+    } catch (error) {
+      console.error("خطأ في التسجيل:", error);
       setError('حدث خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);

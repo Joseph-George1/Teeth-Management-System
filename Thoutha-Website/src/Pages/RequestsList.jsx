@@ -72,7 +72,8 @@ const decodeTokenPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -120,7 +121,8 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
           if (res.ok) {
             return await res.json();
           }
-        } catch {
+        } catch (error) {
+          console.error("خطأ في جلب الطلبات حسب الاسم:", error);
           void 0;
         }
       }
