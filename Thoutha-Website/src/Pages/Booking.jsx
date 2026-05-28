@@ -14,8 +14,8 @@ const isEgyptianPhoneNumber = (phone) => {
     const cleaned = phone.replace(/[\s-]/g, '');
     
     // Check if it matches Egyptian phone pattern
-    // 01X XXXX XXXX (11 digits) or +201X XXXX XXXX
-    const egyptianPhoneRegex = /^(01|(\+201))[0-9]{8}$/;
+    // 01 followed by 9 digits = 11 digits total
+    const egyptianPhoneRegex = /^01[0-9]{9}$/;
     
     return egyptianPhoneRegex.test(cleaned);
 };
