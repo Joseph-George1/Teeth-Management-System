@@ -245,10 +245,11 @@
   gap: 8px;
   direction: ltr;
   margin-bottom: 8px;
+  flex-wrap: nowrap;
 }
 
 .otp-input-box {
-  width: 64px;
+  flex: 1;
   height: 61px;
   background-color: transparent;
   border: 1px solid #DDDDDD;
@@ -261,6 +262,7 @@
   direction: ltr;
   transition: all 0.2s ease;
   padding: 0;
+  min-width: 0;
 }
 
 .otp-input-box:focus {
@@ -432,16 +434,17 @@
 
   .otp-inputs {
     width: 100%;
-    height: 61px;
-    gap: 8px;
+    height: 48px;
+    gap: 6px;
     margin-bottom: 6px;
+    flex-wrap: nowrap;
   }
 
   .otp-input-box {
-    width: 64px;
-    height: 61px;
-    flex: 0 0 auto;
-    font-size: 20px;
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    font-size: 18px;
   }
 
   .verify-button {
