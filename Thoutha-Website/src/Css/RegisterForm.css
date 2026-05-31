@@ -12,19 +12,73 @@
   --border-radius-1: 12px;
 }
 
+/* ===== Pop-up Messages ===== */
+.error-popup {
+  position: fixed;
+  top: 146px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: 1px solid #ef5350;
+  text-align: center;
+  font-size: 13px;
+  direction: rtl;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.25);
+  animation: slideDown 0.4s ease-out;
+  max-width: calc(100% - 40px);
+  word-wrap: break-word;
+  font-family: 'Cairo', sans-serif;
+}
+
+.success-popup {
+  position: fixed;
+  top: 146px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: 1px solid #66bb6a;
+  text-align: center;
+  font-size: 13px;
+  direction: rtl;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+  animation: slideDown 0.4s ease-out;
+  max-width: calc(100% - 40px);
+  word-wrap: break-word;
+  font-family: 'Cairo', sans-serif;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 .signup-page {
   font-family: 'Cairo', sans-serif;
   background-image: linear-gradient(160deg, var(--color-1-background), var(--text-color-5), var(--color-2-background));
-  height: 710px;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 15px 0;
 }
 
 .signup-container {
   background-color: var(--color-3-background);
   width: 480px;
-  height: 600.1875px;
   border-radius: var(--border-radius-1);
   border: 1px solid var(--text-color-1);
   display: flex;
@@ -32,12 +86,14 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  padding: 20px 24px;
 }
 
 .signup-title {
   font-size: 32px;
   letter-spacing: -0.64px;
   font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .signup-subtitle {
@@ -45,12 +101,22 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: -0.12px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
+}
+
+.signup-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .input-group {
   display: flex;
   flex-direction: column;
+  margin-bottom: 8px;
+  width: 100%;
+  gap: 8px;
 }
 
 .input-group.password-row {
@@ -61,12 +127,14 @@
 .input-group.password-row .input-field-2 {
   width: calc(50% - 5px);
   margin-bottom: 0;
+  height: 40px;
+  font-size: 12px;
 }
 
 .input-field-2 {
   width: 432px;
   height: 40px;
-  margin-bottom: 5px;
+  margin-bottom: 0;
   border-radius: var(--button-raduis-1);
   border: 1px solid var(--border-color);
   padding-right: 12.5px;
@@ -88,7 +156,8 @@
   border: 1px solid var(--text-color-1);
   box-shadow: 0px 1px 2px 0px #253EA77A;
   cursor: pointer;
-  margin-top: 5px;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 
 .login-link {
@@ -96,6 +165,146 @@
   gap: 4px;
   margin-top: 5px;
   font-size: 12px;
+}
+
+/* ===== OTP Verification Section ===== */
+.phone-verification-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 8px 0;
+}
+
+.otp-error-message {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: right;
+  border: 1px solid #FECACA;
+}
+
+.otp-success-message {
+  background-color: #DCFCE7;
+  color: #166534;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: right;
+  border: 1px solid #BBF7D0;
+}
+
+.send-otp-button {
+  width: 432px;
+  height: 42px;
+  background: linear-gradient(90deg, #25B4E5 0%, #25B4E5 100%);
+  color: var(--text-color-1);
+  border-radius: var(--border-radius-1);
+  font-size: 14px;
+  font-family: 'Cairo', sans-serif;
+  border: 1px solid var(--text-color-1);
+  box-shadow: 0px 1px 2px 0px #25B4E570;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.send-otp-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #1D97BB 0%, #1D97BB 100%);
+  box-shadow: 0px 2px 4px 0px #25B4E570;
+}
+
+.send-otp-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.send-otp-button.verified {
+  background: linear-gradient(90deg, #10B981 0%, #10B981 100%);
+  box-shadow: 0px 1px 2px 0px #10B98170;
+}
+
+.otp-verification-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+}
+
+.otp-inputs {
+  width: 432px;
+  height: 61px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  direction: ltr;
+  margin-bottom: 8px;
+}
+
+.otp-input-box {
+  width: 64px;
+  height: 61px;
+  background-color: transparent;
+  border: 1px solid #DDDDDD;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  color: #1A1C1E;
+  direction: ltr;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.otp-input-box:focus {
+  outline: none;
+  border: 2px solid #1D61E7;
+  box-shadow: 0 0 0 3px rgba(29, 97, 231, 0.1);
+}
+
+.otp-input-box:disabled {
+  background-color: #F3F4F6;
+  color: #9CA3AF;
+}
+
+.verify-button {
+  width: 432px;
+  height: 42px;
+  background: linear-gradient(90deg, #1D61E7 0%, #1D61E7 100%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+  color: var(--text-color-1);
+  border-radius: var(--border-radius-1);
+  font-size: 14px;
+  font-family: 'Cairo', sans-serif;
+  border: 1px solid var(--text-color-1);
+  box-shadow: 0px 1px 2px 0px #253EA77A;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.verify-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #1449B8 0%, #1449B8 100%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+  box-shadow: 0px 2px 4px 0px #253EA77A;
+}
+
+.verify-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.phone-verified-section {
+  width: 100%;
 }
 
 .login-link a {
@@ -110,70 +319,153 @@
 @media (max-width: 1024px) {
   .signup-page {
     height: auto;
-    padding: 48px 24px;
+    padding: 24px 24px;
   }
 
-.signup-container {
+  .signup-container {
     width: 92%;
     max-width: 480px;
     height: auto;
-    padding: 24px;
-    align-items: stretch;
+    padding: 16px 20px;
   }
 
-.signup-title {
-    font-size: 30px;
+  .signup-title {
+    font-size: 28px;
+    margin-bottom: 6px;
   }
 
-.input-field-2 {
-    width: 100%;
+  .signup-subtitle {
     margin-bottom: 10px;
+  }
+
+  .input-field-2 {
+    width: 100%;
+    margin-bottom: 0;
     box-sizing: border-box;
   }
 
-.input-group.password-row .input-field-2 {
-    width: calc(50% - 5px);
+  .input-group {
+    margin-bottom: 6px;
+    gap: 6px;
   }
 
-.signup-button {
+  .input-group.password-row .input-field-2 {
+    width: calc(50% - 3px);
+  }
+
+  .signup-button,
+  .send-otp-button,
+  .verify-button {
     width: 100%;
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  .otp-inputs {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .phone-verification-section {
+    width: 100%;
+    margin: 6px 0;
   }
 }
 
 @media (max-width: 480px) {
   .signup-page {
-    padding: 24px 12px;
+    padding: 12px 12px;
   }
 
-.signup-container {
+  .signup-container {
     width: 100%;
-    padding: 16px;
+    padding: 12px 16px;
   }
 
-.signup-title {
+  .signup-title {
     font-size: 22px;
-    text-align: center;
+    margin-bottom: 6px;
   }
 
-.signup-subtitle {
+  .signup-subtitle {
     font-size: 13px;
-    text-align: center;
+    margin-bottom: 10px;
   }
 
-.input-field-2 {
-    font-size: 14px;
-    height: 44px;
+  .input-field-2 {
+    font-size: 12px;
+    height: 40px;
+    width: 100%;
+    margin-bottom: 0;
+    box-sizing: border-box;
   }
 
-.signup-button {
-    height: 44px;
-    font-size: 15px;
-  }
-
-.login-link {
-    font-size: 13px;
+  .input-group {
+    margin-bottom: 6px;
     gap: 6px;
+  }
+
+  .input-group.password-row .input-field-2 {
+    width: calc(50% - 3px);
+    margin-bottom: 0;
+  }
+
+  .signup-button {
+    width: 100%;
+    height: 42px;
+    font-size: 15px;
+    margin-top: 6px;
+    margin-bottom: 4px;
+  }
+
+  .phone-verification-section {
+    width: 100%;
+    margin: 6px 0;
+  }
+
+  .send-otp-button {
+    width: 100%;
+    height: 42px;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .otp-inputs {
+    width: 100%;
+    height: 61px;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .otp-input-box {
+    width: 64px;
+    height: 61px;
+    flex: 0 0 auto;
+    font-size: 20px;
+  }
+
+  .verify-button {
+    width: 100%;
+    height: 42px;
+    font-size: 14px;
+    margin-top: 0;
+    margin-bottom: 6px;
+  }
+
+  .login-link {
+    font-size: 12px;
+    gap: 4px;
     justify-content: center;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .error-popup,
+  .success-popup {
+    top: 146px;
+    font-size: 12px;
+    padding: 12px 16px;
   }
 }
 

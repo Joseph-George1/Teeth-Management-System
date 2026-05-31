@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from "react-helmet-async";
 import '../Css/RegisterForm.css';
 
 const SERVER_URL = 'https://thoutha.page/api';
+const OTP_LENGTH = 6;
 
 const normalizeList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -27,6 +28,14 @@ export default function RegisterForm() {
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpSuccess, setOtpSuccess] = useState('');
+  const inputsRef = useRef([]);
 
   const handlePhoneChange = (e) => {
     const value = e.target.value;
@@ -35,11 +44,20 @@ export default function RegisterForm() {
     if (!cleaned.startsWith('+2')) {
       const digits = cleaned.replace(/\D/g, '');
       setPhone(`+2${digits.replace(/^2/, '')}`);
-      return;
+    } else {
+      setPhone(`+2${cleaned.slice(2).replace(/\D/g, '')}`);
     }
     
-    setPhone(`+2${cleaned.slice(2).replace(/\D/g, '')}`);
     error && setError('');
+    
+    // إذا تم تغيير الهاتف بعد التفعيل، إعادة تعيين حالة التفعيل
+    if (phoneVerified) {
+      setPhoneVerified(false);
+      setOtpSent(false);
+      setOtp(Array(OTP_LENGTH).fill(''));
+      setOtpSuccess('');
+      setOtpError('');
+    }
   };
 
   const handleFirstNameChange = (e) => {
@@ -56,6 +74,100 @@ export default function RegisterForm() {
       setLastName(value);
     }
     error && setError('');
+  };
+
+  const sendOTP = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+    setOtpSuccess('');
+
+    if (!/^\+20\d{10}$/.test(phone)) {
+      setOtpError('رقم التليفون يجب أن يكون بصيغة +20 متبوعًا بـ 10 أرقام');
+      return;
+    }
+
+    setOtpLoading(true);
+
+    try {
+      const response = await fetch(`${SERVER_URL}/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: phone }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setOtpError(data?.messageAr || data?.messageEn || data?.message || 'فشل إرسال الكود');
+        setOtpLoading(false);
+        return;
+      }
+
+      setOtpSent(true);
+      setOtpSuccess('تم إرسال الكود بنجاح');
+      setTimeout(() => setOtpSuccess(''), 3000);
+    } catch (error) {
+      console.error("خطأ في إرسال الكود:", error);
+      setOtpError('حدث خطأ في الاتصال بالخادم');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d?$/.test(value)) return;
+
+    const updated = [...otp];
+    updated[index] = value;
+    setOtp(updated);
+
+    if (value && index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  const verifyOTP = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+
+    const code = otp.join('').trim();
+
+    if (code.length !== OTP_LENGTH) {
+      setOtpError('يرجى إدخال الكود كاملاً');
+      return;
+    }
+
+    setOtpLoading(true);
+
+    try {
+      const response = await fetch(`${SERVER_URL}/otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: phone, otp: code }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setOtpError(data?.messageAr || data?.messageEn || data?.message || 'كود غير صحيح');
+        setOtpLoading(false);
+        return;
+      }
+
+      setPhoneVerified(true);
+      setOtpSuccess('تم تفعيل الرقم بنجاح');
+      setOtpError('');
+      setTimeout(() => setOtpSuccess(''), 3000);
+    } catch (error) {
+      console.error("خطأ في التحقق من الكود:", error);
+      setOtpError('حدث خطأ في الاتصال بالخادم');
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   const [cities, setCities] = useState([]);
@@ -121,6 +233,13 @@ export default function RegisterForm() {
     e.preventDefault();
     setError('');
 
+    // التحقق من تفعيل الهاتف أولاً
+    if (!phoneVerified) {
+      setError('يجب تفعيل رقم الهاتف أولاً');
+      setTimeout(() => setError(''), 5000);
+      return;
+    }
+
     if (!firstName || !lastName || !email || !phone || !city || !faculty || !year || !password || !confirmPassword || !category) {
       setError('يرجى ملء جميع الحقول');
       return;
@@ -167,7 +286,6 @@ export default function RegisterForm() {
         universityName: faculty,
       };
 
-
       const response = await fetch(`${SERVER_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,7 +305,8 @@ export default function RegisterForm() {
         return;
       }
 
-      navigate('/otp', { state: { email, phone } });
+      // بعد نجاح التسجيل، الانتقال مباشرة إلى صفحة النجاح
+      navigate('/otp-done');
 
     } catch (error) {
       console.error("خطأ في التسجيل:", error);
@@ -199,10 +318,19 @@ export default function RegisterForm() {
 
   return (
     <>
-    {}
     {error && (
       <div className="error-popup">
         {error}
+      </div>
+    )}
+    {otpError && (
+      <div className="error-popup">
+        {otpError}
+      </div>
+    )}
+    {otpSuccess && (
+      <div className="success-popup">
+        {otpSuccess}
       </div>
     )}
     
@@ -260,6 +388,61 @@ export default function RegisterForm() {
               autoComplete="tel"
               dir="rtl"
             />
+          </div>
+
+          {/* قسم التحقق من رقم الهاتف */}
+          <div className="phone-verification-section">
+            {!otpSent && !phoneVerified && (
+              <button
+                type="button"
+                onClick={sendOTP}
+                disabled={otpLoading}
+                className="send-otp-button"
+              >
+                {otpLoading ? 'جاري الإرسال...' : 'إرسال كود التفعيل'}
+              </button>
+            )}
+
+            {otpSent && !phoneVerified && (
+              <div className="otp-verification-form">
+                <div className="otp-inputs" dir="ltr">
+                  {otp.map((value, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => (inputsRef.current[index] = el)}
+                      type="text"
+                      maxLength="1"
+                      value={value}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      className="otp-input-box"
+                      inputMode="numeric"
+                      disabled={otpLoading}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={verifyOTP}
+                  disabled={otpLoading}
+                  className="verify-button"
+                >
+                  {otpLoading ? 'جاري التحقق...' : 'تحقق من الكود'}
+                </button>
+              </div>
+            )}
+
+            {phoneVerified && (
+              <div className="phone-verified-section">
+                <button
+                  type="button"
+                  className="send-otp-button verified"
+                  disabled
+                >
+                  تم التفعيل
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="input-group">
