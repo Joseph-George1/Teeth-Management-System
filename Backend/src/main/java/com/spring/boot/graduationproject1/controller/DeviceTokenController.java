@@ -7,6 +7,7 @@ package com.spring.boot.graduationproject1.controller;
 import com.spring.boot.graduationproject1.model.User;
 import com.spring.boot.graduationproject1.repo.UserRepo;
 import com.spring.boot.graduationproject1.service.DeviceTokenService;
+import com.spring.boot.graduationproject1.service.NotificationClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,12 @@ public class DeviceTokenController {
 
     private final DeviceTokenService deviceTokenService;
     private final UserRepo userRepo;
+    private final NotificationClientService notificationClientService;
 
-    public DeviceTokenController(DeviceTokenService deviceTokenService, UserRepo userRepo) {
+    public DeviceTokenController(DeviceTokenService deviceTokenService, UserRepo userRepo, NotificationClientService notificationClientService) {
         this.deviceTokenService = deviceTokenService;
         this.userRepo = userRepo;
+        this.notificationClientService = notificationClientService;
     }
 
     @PostMapping("/register")
@@ -103,12 +106,18 @@ public class DeviceTokenController {
             User user = userRepo.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // TODO: Implement deregistration logic in DeviceTokenService
-            logger.info("Device token deregistration requested for user: {}", user.getId());
+            logger.info("Device token deregistration requested for user: {} and token: {}", user.getId(), token);
+
+            // 1. Delete token locally from Spring Boot database
+            deviceTokenService.deleteToken(token);
+
+            // 2. Call Python notification microservice to set token is_active = 0
+            Map<String, Object> pythonResponse = notificationClientService.deregisterToken(token);
+            logger.info("Notification service token deregistration response: {}", pythonResponse);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Device token deregistered successfully");
+            response.put("message", "Device token deregistered successfully on backend and notification service");
             
             return ResponseEntity.ok(response);
             

@@ -1,5 +1,4 @@
 import { useEffect, useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/MyRequests.css";
 
@@ -13,8 +12,6 @@ const getUniversity = (req) =>
 const getCity = (req) =>
   req?.doctorCityName || req?.cityName || req?.city || "";
 
-const getPhone = (req) =>
-  req?.doctorPhoneNumber || req?.phoneNumber || req?.phone || "";
 
 const getNotes = (req) =>
   req?.description || req?.notes || req?.note || "";
@@ -32,7 +29,6 @@ const getTime = (req) => {
   return req?.time || req?.requestTime || "";
 };
 
-// Convert English numbers to Arabic
 const toArabicNumbers = (str) => {
   if (!str) return "";
   const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -72,7 +68,8 @@ const decodeTokenPayload = (token) => {
     const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -102,14 +99,9 @@ export default function MyRequests() {
   const [editFormData, setEditFormData] = useState({ description: "", dateTime: "" });
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
-  const navigate = useNavigate();
-  const { user, isLoggedIn } = useContext(AuthContext);
+  const { user, isLoggedIn, authLoading } = useContext(AuthContext);
 
   const handleDelete = (reqId) => {
-    console.log("=== Delete Request Debug ===");
-    console.log("Request ID to delete:", reqId);
-    console.log("Doctor ID:", user?.id);
-    
     if (!reqId) {
       setError("معرّف الطلب غير صحيح");
       return;
@@ -126,7 +118,6 @@ export default function MyRequests() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        console.log("Delete response status:", res.status);
         if (!res.ok) {
           return res.text().then((text) => {
             throw new Error(text || `HTTP ${res.status}: فشل حذف الطلب`);
@@ -135,13 +126,11 @@ export default function MyRequests() {
         return res.json().catch(() => ({}));
       })
       .then(() => {
-        console.log("Delete successful");
         setRequests((prev) => prev.filter((r) => r?.id !== reqId));
         setSuccess("تم حذف الطلب بنجاح ✓");
         setTimeout(() => setSuccess(""), 3000);
       })
       .catch((err) => {
-        console.error("Delete error:", err);
         setError(err.message || "حدث خطأ أثناء الحذف");
       });
   };
@@ -150,7 +139,7 @@ export default function MyRequests() {
     setEditingId(req?.id);
     setEditFormData({
       description: getNotes(req),
-      dateTime: req?.dateTime || "",
+      dateTime: req?.dateTime ? req.dateTime.slice(0, 16) : "",
     });
     setEditError("");
   };
@@ -199,7 +188,17 @@ export default function MyRequests() {
   };
 
   useEffect(() => {
-    if (!isLoggedIn || !user?.id) return;
+    if (authLoading) return;
+
+    if (!isLoggedIn) {
+      setLoading(false);
+      return;
+    }
+
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
     setLoading(true);
@@ -226,7 +225,7 @@ export default function MyRequests() {
       });
 
     return () => { cancelled = true; };
-  }, [isLoggedIn, user?.id, user?.token]);
+  }, [isLoggedIn, authLoading, user?.id, user?.token]);
 
   if (!isLoggedIn) {
     return (
@@ -300,7 +299,7 @@ export default function MyRequests() {
           return (
             <article key={req?.id || i} className="card" dir="rtl">
 
-              {/* ── Header ── */}
+              {}
               <header className="card-header">
                 <div className="header-inner">
                   <div className="avatar" aria-hidden="true">
@@ -322,10 +321,10 @@ export default function MyRequests() {
                 </div>
               </header>
 
-              {/* ── Body ── */}
+              {}
               <div className="card-body">
 
-                {/* University + Governorate Row */}
+                {}
                 <div className="info-row">
                   {getUniversity(req) && (
                     <div className="info-chip">
@@ -355,7 +354,7 @@ export default function MyRequests() {
                   )}
                 </div>
 
-                {/* Day + Time Row */}
+                {}
                 {(getDate(req) || getTime(req)) && (
                   <div className="schedule-row">
                     {getDate(req) && (
@@ -393,7 +392,7 @@ export default function MyRequests() {
                   <>
                     <div className="divider" role="separator"></div>
 
-                    {/* Doctor's Note */}
+                    {}
                     <div className="note-box" role="note">
                       <div className="note-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
@@ -405,7 +404,7 @@ export default function MyRequests() {
                   </>
                 )}
 
-                {/* Actions */}
+                {}
                 <div className="request-card-actions">
                   <button
                     className="request-card-edit-btn"
@@ -428,7 +427,7 @@ export default function MyRequests() {
         })}
       </div>
 
-      {/* ── Edit Modal ── */}
+      {}
       {editingId && (
         <div className="edit-modal-overlay" onClick={handleCancelEdit}>
           <div className="edit-modal" onClick={(e) => e.stopPropagation()} dir="rtl">

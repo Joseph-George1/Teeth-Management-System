@@ -15,8 +15,6 @@ const getUniversity = (req) =>
 const getCity = (req) =>
   req?.doctorCityName || req?.cityName || req?.city || "";
 
-const getPhone = (req) =>
-  req?.doctorPhoneNumber || req?.phoneNumber || req?.phone || "";
 
 const getNotes = (req) =>
   req?.description || req?.notes || req?.note || "";
@@ -34,7 +32,6 @@ const getTime = (req) => {
   return req?.time || req?.requestTime || "";
 };
 
-// Convert English numbers to Arabic
 const toArabicNumbers = (str) => {
   if (!str) return "";
   const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -75,7 +72,8 @@ const decodeTokenPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -100,10 +98,6 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editFormData, setEditFormData] = useState({ description: "", dateTime: "" });
-  const [editError, setEditError] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
   const navigate = useNavigate();
   const { user, isLoggedIn } = useContext(AuthContext);
 
@@ -120,21 +114,19 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       ? { Authorization: `Bearer ${token}` }
       : {};
 
-    // Helper function to attempt fetch with fallback
     const attemptFetch = async () => {
-      // Try categoryName endpoint first if available
-      if (categoryName) {
+      if (categoryName && token) {
         try {
           const res = await fetch(`${API_URL_BY_NAME}?categoryName=${encodeURIComponent(categoryName)}`, { headers });
           if (res.ok) {
             return await res.json();
           }
-        } catch (err) {
-          // Fall through to categoryId attempt
+        } catch (error) {
+          console.error("خطأ في جلب الطلبات حسب الاسم:", error);
+          void 0;
         }
       }
-      
-      // Fall back to categoryId endpoint
+
       if (categoryId) {
         const res = await fetch(`${API_URL}?categoryId=${categoryId}`, { headers });
         if (!res.ok) throw new Error("فشل تحميل الطلبات");
@@ -164,7 +156,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
       });
 
     return () => { cancelled = true; };
-  }, [categoryId, categoryName, refreshKey, user]);
+  }, [categoryId, categoryName, refreshKey, user?.token]);
 
   if (loading) return <p className="requests-status">جاري تحميل الطلبات...</p>;
   if (error)   return <p className="requests-status requests-status--error">{error}</p>;
@@ -175,12 +167,6 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
     <>
       <div className="requests-list">
         {requests.map((req, i) => {
-          const isOwner = isLoggedIn && user && (
-            (req?.doctorFirstName?.toLowerCase() === user?.firstName?.toLowerCase() &&
-             req?.doctorLastName?.toLowerCase()  === user?.lastName?.toLowerCase())
-          );
-          const isPending = req?.status === "PENDING";
-
           const firstLetters = getName(req)
             .split(' ')
             .slice(0, 2)
@@ -190,7 +176,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
           return (
             <article key={req?.id || i} className="card" dir="rtl">
 
-              {/* ── Header ── */}
+              {}
               <header className="card-header">
                 <div className="header-inner">
                   <div className="avatar" aria-hidden="true">
@@ -212,10 +198,10 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                 </div>
               </header>
 
-              {/* ── Body ── */}
+              {}
               <div className="card-body">
 
-                {/* University + Governorate Row */}
+                {}
                 <div className="info-row">
                   {getUniversity(req) && (
                     <div className="info-chip">
@@ -245,7 +231,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                   )}
                 </div>
 
-                {/* Day + Time Row */}
+                {}
                 {(getDate(req) || getTime(req)) && (
                   <div className="schedule-row">
                     {getDate(req) && (
@@ -283,7 +269,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                   <>
                     <div className="divider" role="separator"></div>
 
-                    {/* Doctor's Note */}
+                    {}
                     <div className="note-box" role="note">
                       <div className="note-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
@@ -295,7 +281,7 @@ export default function RequestsList({ categoryName, categoryId, refreshKey = 0 
                   </>
                 )}
 
-                {/* Book Button */}
+                {}
                 {!isLoggedIn && (
                   <button
                     className="book-btn"

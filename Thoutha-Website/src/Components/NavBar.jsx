@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, X, Home, User, Bot, FileText, Shield, LogIn, LogOut, Users, Calendar , PlusCircle } from "lucide-react";
 import "../Css/NavBar.css";
 import { AuthContext } from "../services/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 export default function NavBar() {
   const { isLoggedIn, user, logout } = useContext(AuthContext);
@@ -17,7 +18,7 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Navbar */}
+      {}
       <nav className="navbar-container">
         <div className="nav-left">
           <Link to="/" className="logo-box">
@@ -26,29 +27,29 @@ export default function NavBar() {
           </Link>
         </div>
 
-        {/* Overlay */}
-        {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
-
-        {/* Menu Button */}
-        <button className="menu-icon" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={28} /> : <Menu size={28} className="icon-animate" />}
-        </button>
+        <div className="nav-right-actions">
+          {isLoggedIn && <NotificationBell />}
+          <button className="menu-icon" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X size={28} /> : <Menu size={28} className="icon-animate" />}
+          </button>
+        </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {isOpen && <div className="overlay" onClick={() => setIsOpen(false)}></div>}
+
+      {}
       {isOpen && (
         <div className="mobile-menu mobile-animate">
           <div className="mobile-menu2">
             {isLoggedIn ? (
               <>
-                {/* User Info */}
                 <div className="menu-icon2">
                   <button className="menu-icon3" onClick={() => setIsOpen(!isOpen)}>
                     <span>القائمة</span>
                     {isOpen ? <X size={28}/> : <Menu size={28} className="icon-animate"/>}
                   </button>
-
-                  <div className="user-info-circle">
+                  <NavLink to="/doctor-profile" className="no-margin" onClick={() => setIsOpen(false)}>
+                    <div className="user-info-circle">
                     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M0 24C0 10.7452 10.7452 0 24 0C37.2548 0 48 10.7452 48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24Z" fill="white"/>
                       <path d="M31 33V31C31 29.9391 30.5786 28.9217 29.8284 28.1716C29.0783 27.4214 28.0609 27 27 27H21C19.9391 27 18.9217 27.4214 18.1716 28.1716C17.4214 28.9217 17 29.9391 17 31V33" stroke="#84E5F3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -60,9 +61,9 @@ export default function NavBar() {
                       <p className="user-email">{user?.email}</p>
                     </div>
                   </div>
+                  </NavLink>
                 </div>
 
-                {/* Links for logged in users */}
                 <NavLink to="/doctor-home" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? "active-link" : "notactive-link"}>
                   <Home size={20} className="icon-color"/> الصفحة الرئيسية
                 </NavLink>
@@ -95,9 +96,6 @@ export default function NavBar() {
                   <Shield size={20} className="icon-color"/> سياسة الخصوصية
                 </NavLink>
 
-                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
-                  <User size={20} className="icon-color"/> حذف الحساب
-                </NavLink>
 
                 <button onClick={handleLogout} className="mobile-login-btn cursor">
                   <LogOut size={20} className="icon-animate"/> تسجيل خروج
@@ -105,7 +103,7 @@ export default function NavBar() {
               </>
             ) : (
               <>
-                {/* Links for not logged in users */}
+                
                 <div className="menu-icon1">
                   <button className="menu-icon3" onClick={() => setIsOpen(!isOpen)}>
                     <span>القائمة</span>
@@ -129,9 +127,6 @@ export default function NavBar() {
                   <Shield size={20} className="icon-color"/> سياسة الخصوصية
                 </NavLink>
 
-                <NavLink to="/delete-account" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
-                  <User size={20} className="icon-color"/> حذف الحساب
-                </NavLink>
 
                 <NavLink to="/login" onClick={() => setIsOpen(false)} className={({isActive}) => isActive ? "active-link" : "notactive-link"}>
                   <LogIn size={20} className="icon-color"/> تسجيل دخول / إنشاء حساب

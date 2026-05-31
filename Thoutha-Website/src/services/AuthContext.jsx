@@ -1,7 +1,7 @@
-// Context/AuthContext.jsx
-import { createContext, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { AuthContext } from "./AuthContextObject";
 
-export const AuthContext = createContext();
+export { AuthContext };
 
 const API_BASE_URL = import.meta.env.DEV ? "/api" : "https://thoutha.page/api";
 const DOCTOR_PROFILE_URL = `${API_BASE_URL}/doctor/getDoctorById`;
@@ -22,7 +22,8 @@ const decodeJwtPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
 };
@@ -51,7 +52,7 @@ const normalizeDoctorProfile = (payload, token) => {
 
   return {
     token,
-    id: tokenPayload.id || tokenPayload.doctorId || tokenPayload.userId || tokenPayload.sub || null,
+    id: profile.id || profile.doctorId || profile.userId || tokenPayload.id || tokenPayload.doctorId || tokenPayload.userId || tokenPayload.sub || null,
     role: tokenPayload.role || profile.role || "",
     firstName,
     first_name: firstName,
@@ -158,9 +159,10 @@ export function AuthProvider({ children }) {
     setAuthLoading(true);
 
     refreshUserProfile(token)
-      .catch(() => {
+      .catch((error) => {
+        console.error("خطأ في تحديث ملف تعريف المستخدم:", error);
         if (!isActive) return;
-        setUser(null);
+        logout();
       })
       .finally(() => {
         if (isActive) {

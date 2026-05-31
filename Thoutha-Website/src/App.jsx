@@ -1,4 +1,4 @@
-import { Route, Routes} from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import NavBar from "./Components/NavBar";
 import ScrollToTop from "./Components/ScrollToTop";
 import Home from "./Pages/Home";
@@ -27,17 +27,15 @@ import PediatricDentistry from "./Pages/PediatricDentistry";
 import RemovableProsthetics from "./Pages/RemovableProsthetics";
 import Support from "./Pages/Support";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
-import DeleteAccount from "./Pages/DeleteAccount";
 import DoctorProfile from "./Pages/DoctorProfile";
 import ProfileUpdate from "./Pages/ProfileUpdate";
 import DeleteMyAccount from "./Pages/DeleteMyAccount";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ResetPassword from "./Pages/ResetPassword";
-import NotFoundPages from "./Pages/NotFoundPages";
 import ForbiddenPage from "./Pages/ForbiddenPage";
 import UnauthorizedPage from "./Pages/UnauthorizedPage";
 import MyRequests from "./Pages/MyRequests";
-// import ComingSoon from "./Pages/ComingSoon";
+
 export default function App() {
   return (
     <>
@@ -68,7 +66,6 @@ export default function App() {
       <Route path="/removable-prosthetics" element={<RemovableProsthetics/>}></Route>
       <Route path="/support" element={<Support/>}></Route>
       <Route path="/privacy-policy" element={<PrivacyPolicy/>}></Route>
-      <Route path="/delete-account" element={<DeleteAccount/>}></Route>
       <Route path="/doctor-profile" element={<DoctorProfile/>}></Route>
       <Route path="/profile-update" element={<ProfileUpdate/>}></Route>
       <Route path="/delete-my-account" element={<DeleteMyAccount/>}></Route>

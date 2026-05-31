@@ -23,6 +23,12 @@
   padding: 12px 25px;
 }
 
+.nav-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .gradient-bg .navbar-container {
   background: #ffffffdd !important;
 }
@@ -100,6 +106,7 @@
   color: var(--text-color-1);
   padding: 0 !important;
 }
+
 .menu-icon3 {
   background-color: transparent;
   border: none;
@@ -118,7 +125,7 @@
   font-family: 'Cairo', sans-serif;
   position: relative;
   top: -18px;
-  left: 137px;
+  left: 168px;
 }
 
 .mobile-login-btn {
@@ -167,11 +174,16 @@
   gap: 25px;
   padding: 0px 0px 18px 0px;
 }
+
 .mobile-menu a {
   text-decoration: none;
   font-size: 1.1rem;
   color: #1E2939;
   margin: 0px 18px 0px 18px;
+}
+
+.no-margin{
+  margin: 0 !important;
 }
 
 .overlay {
@@ -197,6 +209,7 @@
   padding-top: 8px;
   gap: 10px;
 }
+
 .user-info {
   color: var(--text-color-1);
   font-weight: 600;
@@ -245,23 +258,21 @@
     display: none;
   }
 
-  .menu-icon,
+.menu-icon,
   .menu-icon2 {
     display: block;
   }
 
-  .mobile-menu,
+.mobile-menu,
   .mobile-menu2 {
     display: flex;
   }
 
-  .mobile-menu a {
+.mobile-menu a {
     font-size: 0.95rem;
   }
 }
 
-/* Mobile Menu Scrollbar Styling */
-/* Webkit browsers (Chrome, Safari, Edge) */
 .mobile-menu::-webkit-scrollbar {
   width: 6px;
 }
@@ -279,7 +290,6 @@
   background: #1D61E7;
 }
 
-/* Firefox scrollbar */
 .mobile-menu {
   scrollbar-width: thin;
 }

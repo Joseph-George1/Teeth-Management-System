@@ -45,6 +45,7 @@
     opacity: 0;
     transform: translateY(30px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -134,6 +135,7 @@
     opacity: 1;
     transform: scale(1);
   }
+
   100% {
     opacity: 0;
     transform: scale(2.2);
@@ -207,7 +209,6 @@
   gap: 15px;
 }
 
-/* ── Info Row (University + Governorate) ── */
 .info-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -230,7 +231,6 @@
   transform: translateY(-1px);
 }
 
-/* ── Chip Icon ── */
 .chip-icon {
   width: 34px;
   height: 34px;
@@ -276,7 +276,6 @@
   text-overflow: ellipsis;
 }
 
-/* ── Schedule Row (Day + Time) ── */
 .schedule-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -303,7 +302,6 @@
   background: linear-gradient(135deg, #25b4e5, #1d61e7);
 }
 
-/* ── Divider ── */
 .divider {
   height: 1px;
   background: linear-gradient(to left, transparent, var(--border-color, #EDF1F3) 30%, var(--border-color, #EDF1F3) 70%, transparent);
@@ -345,7 +343,6 @@
   font-family: 'Cairo', sans-serif;
 }
 
-/* ── Request Card Actions (Edit/Delete) ── */
 .request-card-actions {
   display: flex;
   gap: 12px;
@@ -372,8 +369,6 @@
   color: #3498db;
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
 }
-
-
 
 .request-card-edit-btn:hover {
   transform: translateY(-2px);
@@ -406,7 +401,6 @@
   transform: translateY(0);
 }
 
-/* ── Status Messages ── */
 .requests-status {
   font-family: 'Cairo', sans-serif;
   font-size: 18px;
@@ -421,7 +415,6 @@
   color: #ef4444;
 }
 
-/* ── Edit Modal ── */
 .edit-modal-overlay {
   position: fixed;
   inset: 0;
@@ -447,6 +440,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -555,7 +549,6 @@
   cursor: not-allowed;
 }
 
-/* ── Empty State Instructions ── */
 .mr-empty-state-instructions {
   background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
   border: 1px solid #bfdbfe;
@@ -623,93 +616,93 @@
     padding: 30px 15px;
   }
 
-  .my-requests-title {
+.my-requests-title {
     font-size: 26px;
     margin-bottom: 30px;
     padding: 10px 20px 0px 20px;
   }
 
-  .requests-list {
+.requests-list {
     width: 85%;
   }
 
-  .mr-empty-state-instructions {
+.mr-empty-state-instructions {
     width: 90%;
     padding: 40px 30px;
     min-height: 0;
   }
 
-  .mr-instructions-title {
+.mr-instructions-title {
     font-size: 20px;
   }
 
-  .mr-instructions-text {
+.mr-instructions-text {
     font-size: 14px;
   }
 
-  .mr-instructions-section-title {
+.mr-instructions-section-title {
     font-size: 15px;
   }
 
-  .mr-instructions-item {
+.mr-instructions-item {
     font-size: 13px;
   }
 
-  .card {
+.card {
     border-radius: 18px;
   }
 
-  .card-header {
+.card-header {
     padding: 18px 16px 16px;
     gap: 12px;
   }
 
-  .card-body {
+.card-body {
     padding: 16px 16px 18px;
     gap: 13px;
   }
 
-  .doctor-name {
+.doctor-name {
     font-size: 16px;
   }
 
-  .header-inner {
+.header-inner {
     gap: 12px;
   }
 
-  .avatar {
+.avatar {
     width: 52px;
     height: 52px;
     font-size: 18px;
   }
 
-  .status-badge {
+.status-badge {
     font-size: 10px;
     padding: 3px 9px;
   }
 
-  .info-row,
+.info-row,
   .schedule-row {
     gap: 9px;
   }
 
-  .chip-value {
+.chip-value {
     font-size: 12px;
     white-space: wrap;
   }
 
-  .request-card-actions {
+.request-card-actions {
     flex-direction: row;
   }
 
-  .request-card-actions button {
+.request-card-actions button {
     height: 44px;
     font-size: 13px;
     flex: 1;
     width: 100%;
   }
 
-  .edit-modal {
+.edit-modal {
     padding: 25px;
     max-width: 450px;
   }
@@ -721,136 +714,137 @@
     min-height: 85vh;
   }
 
-  .my-requests-title {
+.my-requests-title {
     font-size: 22px;
     margin-bottom: 25px;
   }
 
-  .requests-list {
+.requests-list {
     width: 100%;
     padding: 0 0;
     margin: 16px auto 24px;
     gap: 12px;
   }
 
-  .mr-empty-state-instructions {
+.mr-empty-state-instructions {
     width: 95%;
     padding: 30px 20px;
     min-height: 0;
   }
 
-  .mr-instructions-title {
+.mr-instructions-title {
     font-size: 18px;
     margin-bottom: 12px;
   }
 
-  .mr-instructions-text {
+.mr-instructions-text {
     font-size: 13px;
     margin: 6px 0;
   }
 
-  .mr-instructions-section-title {
+.mr-instructions-section-title {
     font-size: 14px;
     margin: 16px 0 10px;
   }
 
-  .mr-instructions-item {
+.mr-instructions-item {
     font-size: 12px;
     margin: 6px 0;
   }
 
-  .card {
+.card {
     border-radius: 16px;
   }
 
-  .card-header {
+.card-header {
     padding: 16px 14px 14px;
     gap: 10px;
   }
 
-  .card-body {
+.card-body {
     padding: 14px 14px 16px;
     gap: 11px;
   }
 
-  .header-inner {
+.header-inner {
     gap: 10px;
   }
 
-  .avatar {
+.avatar {
     width: 48px;
     height: 48px;
     font-size: 16px;
     border-radius: 12px;
   }
 
-  .doctor-name {
+.doctor-name {
     font-size: 15px;
     margin-bottom: 4px;
   }
 
-  .spec-badge {
+.spec-badge {
     font-size: 11px;
     padding: 2px 9px 2px 6px;
   }
 
-  .chip-icon {
+.chip-icon {
     width: 30px;
     height: 30px;
   }
 
-  .chip-icon svg {
+.chip-icon svg {
     width: 14px;
     height: 14px;
   }
 
-  .chip-label {
+.chip-label {
     font-size: 12px;
   }
 
-  .chip-value {
+.chip-value {
     font-size: 11px;
     white-space: wrap;
   }
 
-  .note-text {
+.note-text {
     font-size: 12px;
   }
 
-  .request-card-actions {
+.request-card-actions {
     gap: 10px;
     flex-direction: row;
   }
 
-  .request-card-actions button {
+.request-card-actions button {
     height: 40px;
     font-size: 12px;
     flex: 1;
     width: 100%;
   }
 
-  .edit-modal {
+.edit-modal {
     width: 95%;
     padding: 20px;
     border-radius: 16px;
   }
 
-  .edit-modal-title {
+.edit-modal-title {
     font-size: 20px;
   }
 
-  .edit-form-label {
+.edit-form-label {
     font-size: 13px;
   }
 
-  .edit-form-textarea,
+.edit-form-textarea,
   .edit-form-input {
     font-size: 13px;
     padding: 10px 12px;
   }
 
-  .requests-status {
+.requests-status {
     font-size: 16px;
     padding: 30px 15px;
   }
 }
+

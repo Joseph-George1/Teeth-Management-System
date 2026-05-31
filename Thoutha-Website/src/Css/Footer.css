@@ -54,7 +54,6 @@ html, body {
   text-align: center;
 }
 
-/* ---------------- RESPONSIVE ---------------- */
 @media (max-width: 768px) {
   .footer-container {
     padding: 18px 25px;
@@ -68,3 +67,4 @@ html, body {
   }
 
 }
+

@@ -105,15 +105,18 @@ async def get_patient_token(
 @router.get("/notifications/{token}")
 async def get_patient_notifications(
     token: str,
+    appointment_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
     """
     Get patient's appointment notification using temporary token
     
     Usage:
-    GET /api/v1/patient/notifications/123456?token=123456
+    GET /api/v1/patient/notifications/123456
+    GET /api/v1/patient/notifications/123456?appointment_id=789  (filtered for guest users)
     
     No login, no JWT, just the token!
+    If appointment_id is provided, only notifications for that specific appointment are returned.
     """
     try:
         token_service = PatientTokenService(db)
@@ -129,12 +132,24 @@ async def get_patient_notifications(
         # Record access
         token_service.access_token(token)
         
-        # Get patient's notifications for this appointment
+        # Get patient's notifications
         notifications = db.query(NotificationQueue).filter(
             NotificationQueue.user_id == token_obj.patient_id
         ).order_by(
             NotificationQueue.created_at.desc()
         ).all()
+        
+        # Filter by appointment_id if provided (for guest users viewing a specific booking)
+        if appointment_id is not None:
+            filtered = []
+            for notif in notifications:
+                try:
+                    payload_obj = json.loads(notif.payload) if notif.payload else {}
+                    if str(payload_obj.get("appointmentId")) == str(appointment_id):
+                        filtered.append(notif)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+            notifications = filtered
         
         logger.info(f"Patient {token_obj.patient_id} viewing {len(notifications)} notifications")
         

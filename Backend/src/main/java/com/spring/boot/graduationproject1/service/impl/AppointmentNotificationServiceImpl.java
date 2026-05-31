@@ -41,7 +41,8 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     doctorName,
                     category,
                     location,
-                    idempotencyKey
+                    idempotencyKey,
+                    "BOOKING"
             );
             
             logger.info("Appointment created notification sent for appointment: {}", appointment.getId());
@@ -69,7 +70,8 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     doctorName,
                     category,
                     location,
-                    idempotencyKey
+                    idempotencyKey,
+                    "APPROVAL"
             );
             
             logger.info("Appointment approved notification sent for appointment: {}", appointment.getId());
@@ -99,7 +101,8 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     doctorName,
                     category,
                     location,
-                    idempotencyKey
+                    idempotencyKey,
+                    "CANCELLATION"
             );
             
             logger.info("Appointment cancelled notification sent for appointment: {}", appointment.getId());
@@ -127,7 +130,8 @@ public class AppointmentNotificationServiceImpl implements AppointmentNotificati
                     doctorName,
                     category,
                     location,
-                    idempotencyKey
+                    idempotencyKey,
+                    "DONE"
             );
             
             logger.info("Appointment done notification sent for appointment: {}", appointment.getId());

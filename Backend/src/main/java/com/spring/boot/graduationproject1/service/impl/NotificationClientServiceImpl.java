@@ -12,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import com.spring.boot.graduationproject1.exception.NotificationDeliveryException;
 
 import java.util.*;
 
@@ -31,11 +32,10 @@ public class NotificationClientServiceImpl implements NotificationClientService 
     @Override
     public Map<String, Object> sendAppointmentConfirmation(Long appointmentId, Long patientId, String patientName, String patientPhone,
                                                            Long doctorId, String doctorName, String category, 
-                                                           String location, String idempotencyKey) {
+                                                           String location, String idempotencyKey, String triggerType) {
+        String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
+        Map<String, Object> payload = new HashMap<>();
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/appointment-confirmed";
-            
-            Map<String, Object> payload = new HashMap<>();
             payload.put("appointment_id", appointmentId);
             payload.put("patient_id", patientId);
             payload.put("patient_name", patientName);
@@ -45,6 +45,7 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             payload.put("category", category);
             payload.put("location", location);
             payload.put("idempotency_key", idempotencyKey);
+            payload.put("trigger_type", triggerType);
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -58,16 +59,16 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send appointment confirmation: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send appointment confirmation. URL: {}, Payload: {}. Error: {}", url, payload, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send appointment confirmation: " + e.getMessage(), e);
         }
     }
 
     @Override
     public Map<String, Object> sendTreatmentPlanUpdate(Long patientId, Long treatmentPlanId) {
+        String url = notificationServiceUrl + "/api/v1/notifications/treatment-plan-update?patient_id=" 
+                    + patientId + "&treatment_plan_id=" + treatmentPlanId;
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/treatment-plan-update?patient_id=" 
-                        + patientId + "&treatment_plan_id=" + treatmentPlanId;
             
             ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
             
@@ -75,16 +76,16 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send treatment plan update: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send treatment plan update. URL: {}. Error: {}", url, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send treatment plan update: " + e.getMessage(), e);
         }
     }
 
     @Override
     public Map<String, Object> sendPaymentReceived(Long patientId, String amount) {
+        String url = notificationServiceUrl + "/api/v1/notifications/payment-received?patient_id=" 
+                    + patientId + "&amount=" + amount;
         try {
-            String url = notificationServiceUrl + "/api/v1/notifications/payment-received?patient_id=" 
-                        + patientId + "&amount=" + amount;
             
             ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
             
@@ -92,8 +93,8 @@ public class NotificationClientServiceImpl implements NotificationClientService 
             return response.getBody();
             
         } catch (RestClientException e) {
-            logger.error("Failed to send payment notification: {}", e.getMessage(), e);
-            return Map.of("success", false, "error", e.getMessage());
+            logger.error("Failed to send payment notification. URL: {}. Error: {}", url, e.getMessage(), e);
+            throw new NotificationDeliveryException("Failed to send payment notification: " + e.getMessage(), e);
         }
     }
 
@@ -128,6 +129,25 @@ public class NotificationClientServiceImpl implements NotificationClientService 
         } catch (RestClientException e) {
             logger.warn("Notification service health check failed: {}", e.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public Map<String, Object> deregisterToken(String token) {
+        try {
+            String url = notificationServiceUrl + "/api/v1/device-tokens/deregister?token=" + token;
+            
+            HttpHeaders headers = new HttpHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.DELETE, entity, Map.class);
+            
+            logger.info("Token deregistered on notification service. Status: {}", response.getStatusCode());
+            return response.getBody();
+            
+        } catch (RestClientException e) {
+            logger.error("Failed to deregister token on notification service: {}", e.getMessage(), e);
+            return Map.of("success", false, "error", e.getMessage());
         }
     }
 }

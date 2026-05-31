@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/DoctorProfile.css";
 
-/* ── SVG Icons ── */
+
 const EmailIcon = () => (
   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -60,7 +60,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-/* ── Info Card Sub-component ── */
+
 const InfoCard = ({ icon, label, value, accent, wide }) => {
   const [hovered, setHovered] = useState(false);
 
@@ -166,15 +166,15 @@ export default function DoctorProfile() {
         }
       `}</style>
 
-      {/* Background blobs */}
+      {}
       <div className="dp-blob dp-blob1" />
       <div className="dp-blob dp-blob2" />
 
       <div className="dp-wrapper">
-        {/* Profile Card */}
+        {}
         <div className="dp-card">
 
-          {/* Header */}
+          {}
           <div className="dp-header-section">
             <div className="dp-header-glow" />
             <div className="dp-avatar-ring">
@@ -190,7 +190,7 @@ export default function DoctorProfile() {
             <div className="dp-header-divider" />
           </div>
 
-          {/* Info Grid */}
+          {}
           <div className="dp-info-section">
             <h2 className="dp-section-title">المعلومات الشخصية</h2>
 
@@ -235,10 +235,10 @@ export default function DoctorProfile() {
             </div>
           </div>
 
-          {/* Divider */}
+          {}
           <div className="dp-divider" />
 
-          {/* Buttons */}
+          {}
           <div className="dp-buttons-section">
             <button
               className="dp-btn dp-btn--primary"

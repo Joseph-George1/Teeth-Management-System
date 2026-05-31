@@ -21,7 +21,7 @@
   box-sizing: border-box;
 }
 
-.otp-page  {
+.otp-page {
   font-family: 'Cairo', sans-serif;
   background-image: linear-gradient(160deg, var(--color-1-background), var(--text-color-5), var(--color-2-background));
   height: 658.8px;
@@ -41,6 +41,7 @@
     align-items: center;
     position: relative;
 }
+
 .otp-container2{
     background-color: var(--color-3-background);
     width: 480px;
@@ -52,12 +53,14 @@
     align-items: center;
     position: relative;
 }
+
 .otp-title{
     margin-top: 10px;
-    font-size: 32px; 
+    font-size: 32px;
     font-weight: 700;
     color: var(--text-color-7);
 }
+
 .otp-subtitle{
     color: var(--text-color-3);
     font-size: 12px;
@@ -65,6 +68,7 @@
     letter-spacing: -0.12px;
     margin-bottom: 18px;
 }
+
 .otp-phone-input{
     width: 432px;
     height: 42px;
@@ -77,9 +81,11 @@
     padding: 0 14px;
     margin-bottom: 14px;
 }
+
 .otp-phone-input::placeholder{
     color: var(--text-color-8);
 }
+
 .otp-text{
     color: var(--text-color-7);
     font-weight: 700;
@@ -87,10 +93,12 @@
     font-size: 16px;
     margin-bottom: 15px;
 }
+
 .otp-code{
     text-align: right;
     margin-left: 62px;
 }
+
 .otp-text-2{
     width:300px;
     color: var(--text-color-8);
@@ -99,6 +107,7 @@
     margin-bottom: 15px;
     margin-bottom: 15px;
 }
+
 .otp-inputs{
     width: 432px;
     height: 61px;
@@ -109,6 +118,7 @@
     margin-bottom: 20px;
     direction: ltr;
 }
+
 .otp-input{
     background-color: transparent;
     width: 64px;
@@ -117,9 +127,10 @@
     border: 1px solid #DDDDDD;
     border-radius: 12px;
     text-align: center;
-    color: var(--text-color-8);   
+    color: var(--text-color-8);
     direction: ltr;
 }
+
 .otp-button{
     width: 432px;
     height: 42px;
@@ -134,12 +145,14 @@
     cursor: pointer;
     margin-top: 5px;
 }
+
 .otp-btn{
     width: 432px;
-     color: var(--text-color-1);
+    color: var(--text-color-1);
     font-size: 14px;
     margin-bottom: 10px;
 }
+
 .otp-resend{
     width: 100%;
     padding: 0 24px;
@@ -147,6 +160,7 @@
     text-align: right;
     display: block;
 }
+
 .otp-resend a{
     color: var(--text-color-2);
     text-decoration: none;
@@ -156,6 +170,7 @@
     letter-spacing: -0.12px;
     display: inline-block;
 }
+
 .otp-status{
     width: 432px;
     margin: 0;
@@ -166,10 +181,9 @@
     margin-right: 4px;
 }
 
-/* ---------------- RESPONSIVE (Tablet & Mobile) ---------------- */
 @media (max-width: 1024px){
     .otp-button, .otp-btn, .otp-phone-input, .otp-status{ width: 100%; }
-        
+
 }
 
 @media (max-width: 768px) {
@@ -179,7 +193,7 @@
         align-items: flex-start;
     }
 
-    .otp-container , .otp-container2{
+.otp-container , .otp-container2{
         width: 90%;
         max-width: 480px;
         height: auto;
@@ -187,20 +201,21 @@
         margin: 0 auto;
     }
 
-    .otp-text-2{
+.otp-text-2{
         width: 100%;
     }
 
-    .otp-inputs{
+.otp-inputs{
         width: 100%;
         gap: 8px;
     }
 
-    .otp-input{
+.otp-input{
         width: calc((100% - 40px) / 6);
         height: 56px;
     }
-    .otp-resend{
+
+.otp-resend{
         padding: 0 22px;
     }
 }
@@ -210,33 +225,35 @@
         padding: 20px 0;
     }
 
-    .otp-container , .otp-container2{
+.otp-container , .otp-container2{
         width: 94%;
         padding: 16px;
     }
 
-    .otp-title{
+.otp-title{
         font-size: 24px;
     }
 
-    .otp-subtitle{
+.otp-subtitle{
         font-size: 11px;
     }
 
-    .otp-text{
+.otp-text{
         font-size: 15px;
     }
 
-    .otp-inputs{
+.otp-inputs{
         gap: 6px;
     }
 
-    .otp-input{
+.otp-input{
         width: calc((100% - 30px) / 6);
         height: 48px;
         font-size: 18px;
     }
-    .otp-resend{
+
+.otp-resend{
         padding: 0 16px;
     }
 }
+

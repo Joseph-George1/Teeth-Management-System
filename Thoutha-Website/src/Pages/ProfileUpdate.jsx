@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import "../Css/ProfileUpdate.css";
 
-/* ── SVG Icons ── */
+
 const sv = (d, extra = {}) => (
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...extra}>
     <path strokeLinecap="round" strokeLinejoin="round" d={d} />
@@ -42,9 +42,17 @@ const decodeTokenPayload = (token) => {
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
 
     return JSON.parse(atob(padded));
-  } catch {
+  } catch (error) {
+    console.error("خطأ في فك تشفير JWT:", error);
     return null;
   }
+};
+
+const normalizeList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
 };
 
 const isTokenExpired = (token) => {
@@ -119,7 +127,6 @@ export default function ProfileUpdate() {
   });
 
   useEffect(() => {
-    // Pre-fill from stored user
     if (user) {
       setForm(mapUserToForm(user));
     }
@@ -132,9 +139,9 @@ export default function ProfileUpdate() {
     ])
       .then(([cityData, uniData, catData]) => {
         if (cancelled) return;
-        setCities(Array.isArray(cityData)   ? cityData.map((c) => c.name || c)   : []);
-        setUniversities(Array.isArray(uniData) ? uniData.map((u) => u.name || u) : []);
-        setCategories(Array.isArray(catData)   ? catData.map((c) => c.name || c) : []);
+        setCities(normalizeList(cityData).map((c) => (typeof c === "string" ? c : c?.name || "")).filter(Boolean));
+        setUniversities(normalizeList(uniData).map((u) => (typeof u === "string" ? u : u?.name || "")).filter(Boolean));
+        setCategories(normalizeList(catData).map((c) => (typeof c === "string" ? c : c?.name || "")).filter(Boolean));
         setLoading(false);
       })
       .catch(() => {
@@ -211,7 +218,10 @@ export default function ProfileUpdate() {
         }
       }
 
-      showToast("success", "تم حفظ البيانات بنجاح ✓");
+      showToast("success", "تم حفظ البيانات بنجاح");
+      setTimeout(() => {
+        navigate("/doctor-profile", { replace: true });
+      }, 1200);
     } catch (err) {
       showToast("error", err.message || "فشل حفظ البيانات. حاول مرة أخرى.");
     } finally {
@@ -291,19 +301,19 @@ export default function ProfileUpdate() {
     <div className="pu-root" dir="rtl">
       <style>{css}</style>
 
-      {/* Toast notification */}
+      {}
       {toast && (
         <div className={`pu-toast pu-toast--${toast.type}`}>{toast.msg}</div>
       )}
 
-      {/* Decorative blobs */}
+      {}
       <div className="pu-blob pu-blob1" />
       <div className="pu-blob pu-blob2" />
       <div className="pu-blob pu-blob3" />
 
       <div className="pu-wrapper">
 
-        {/* Page Header */}
+        {}
         <div className="pu-page-header">
           <div className="pu-icon-wrap">
             <EditIcon />
@@ -314,10 +324,10 @@ export default function ProfileUpdate() {
           </div>
         </div>
 
-        {/* Form Card */}
+        {}
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="pu-card">
 
-          {/* Avatar Strip */}
+          {}
           <div className="pu-avatar-strip">
             <div className="pu-avatar-circle">
               <span className="pu-avatar-initials">
@@ -332,12 +342,12 @@ export default function ProfileUpdate() {
 
           <div className="pu-section-divider" />
 
-          {/* Section label */}
+          {}
           <p className="pu-section-label">
             <UserIcon /> البيانات الشخصية
           </p>
 
-          {/* Row 1 */}
+          {}
           <div className="pu-row">
             <Field
               label="الاسم الأول"
@@ -367,7 +377,7 @@ export default function ProfileUpdate() {
             </Field>
           </div>
 
-          {/* Row 2 */}
+          {}
           <div className="pu-row">
             <Field
               label="البريد الإلكتروني"
@@ -404,7 +414,7 @@ export default function ProfileUpdate() {
             <MedIcon /> المعلومات الأكاديمية
           </p>
 
-          {/* Row 3 */}
+          {}
           <div className="pu-row">
             <Field
               label="التخصص"
@@ -440,7 +450,7 @@ export default function ProfileUpdate() {
             </Field>
           </div>
 
-          {/* Row 4 */}
+          {}
           <div className="pu-row">
             <Field
               label="السنة الدراسية"
@@ -478,7 +488,7 @@ export default function ProfileUpdate() {
 
           <div className="pu-section-divider" />
 
-          {/* Buttons */}
+          {}
           <div className="pu-buttons-row">
             <button
               type="submit"
@@ -508,7 +518,7 @@ export default function ProfileUpdate() {
   );
 }
 
-/* ── Reusable Field ── */
+
 const Field = ({ label, icon, children }) => {
   const [focused, setFocused] = useState(false);
 
@@ -531,3 +541,4 @@ const Field = ({ label, icon, children }) => {
     </div>
   );
 }
+

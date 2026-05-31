@@ -20,8 +20,6 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
         throw new Error("لم يتم العثور على جلسة تسجيل الدخول");
       }
 
-      // Commented out to prevent user data leak
-      // console.log("token being sent:", token);
 
       const response = await fetch(
         "https://thoutha.page/api/doctor/deleteDoctor",
@@ -33,13 +31,9 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
         }
       );
 
-      // Commented out to prevent user data leak
-      // console.log("deleteDoctor status:", response.status);
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        // Commented out to prevent user data leak
-        // console.log("deleteDoctor error body:", data);
 
         throw new Error(
           data?.message ||
@@ -48,13 +42,12 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
         );
       }
 
-      // تسجيل خروج بعد الحذف
       logout();
 
-      // الرجوع للصفحة الرئيسية
       navigate("/", { replace: true });
 
     } catch (err) {
+      console.error("خطأ في حذف الحساب:", err);
       setError(err.message || "حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
@@ -70,7 +63,7 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
       <main className="da-content">
         <div className="da-card">
 
-          {/* Warning icon */}
+          {}
           <div className="da-icon-wrap">
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="11" stroke="#ef4444" strokeWidth="1.5" />
@@ -120,3 +113,4 @@ export default function DeleteMyAccount() {  const { logout, user } = useContext
     </div>
   );
 }
+

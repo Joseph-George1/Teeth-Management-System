@@ -39,7 +39,8 @@ async def notify_appointment_confirmed(
             doctor_id=request.doctor_id,
             doctor_name=request.doctor_name,
             category=request.category,
-            location=request.location
+            location=request.location,
+            trigger_type=request.trigger_type
         )
         
         return {

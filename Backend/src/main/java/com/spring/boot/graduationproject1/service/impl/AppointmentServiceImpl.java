@@ -55,6 +55,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentDto createAppointment(Long requestId, AppointmentDto appointmentDto) {
+        logger.debug("createAppointment method triggered for requestId: {}", requestId);
         // === STEP 1: Verify request exists and validate it has duration/notes set by doctor ===
         Requests request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
@@ -127,32 +128,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         appointmentRepo.save(appointment);
 
-        // === STEP 5: Send appointment confirmation to Python notification service ===
-        try {
-            String idempotencyKey = UUID.randomUUID().toString();
-            String patientName = appointment.getPatientNameSnapshot();
-            String patientPhone = patient.getPhoneNumber();
-            String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
-            String category = doctor.getCategoryName() != null ? doctor.getCategoryName() : "General";
-            String location = doctor.getCityName() != null ? doctor.getCityName() : "Clinic";
-            notificationClientService.sendAppointmentConfirmation(
-                    appointment.getId(),
-                    patient.getId(),
-                    patientName,
-                    patientPhone,
-                    doctor.getId(),
-                    doctorName,
-                    category,
-                    location,
-                    idempotencyKey
-            );
-            logger.info("Appointment notification sent to microservice for appointment ID: {}", appointment.getId());
-        } catch (Exception e) {
-            logger.warn("Could not send appointment notification to microservice: {}", e.getMessage());
-            // Don't fail the appointment creation if notification fails
-        }
-
-        // Local notification to doctor
+        // Local notification to doctor ("New Request" — NOT patient-facing)
         userRepo.findByEmail(doctor.getEmail()).ifPresent(user -> {
             notificationService.notifyUser(
                     user,
@@ -161,6 +137,31 @@ public class AppointmentServiceImpl implements AppointmentService {
             );
         });
 
+        // === Send silent patient confirmation to Python to generate Temp Token ===
+        try {
+            String idempotencyKey = UUID.randomUUID().toString();
+            String patientName = appointment.getPatientNameSnapshot();
+            String patientPhone = appointment.getPatient().getPhoneNumber();
+            String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
+            String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
+            String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
+            logger.debug("Execution reached notification block. Preparing to call notificationClientService.sendAppointmentConfirmation for appointment ID: {}", appointment.getId());
+            notificationClientService.sendAppointmentConfirmation(
+                    appointment.getId(),
+                    appointment.getPatient().getId(),
+                    patientName,
+                    patientPhone,
+                    appointment.getDoctor().getId(),
+                    doctorName,
+                    category,
+                    location,
+                    idempotencyKey,
+                    "BOOKING" // triggerType
+            );
+            logger.info("Booking notification sent to Python for pending appointment ID: {}", appointment.getId());
+        } catch (Exception e) {
+            logger.warn("Could not send silent patient confirmation: {}", e.getMessage());
+        }
 
         return appointmentMapper.toDto(appointment);
     }
@@ -210,6 +211,33 @@ public class AppointmentServiceImpl implements AppointmentService {
             });
             // Clear duration when approved - doctor decides when it's done
             appointment.setDurationMinutes(null);
+
+            // === Send patient-facing confirmation notification via Python microservice ===
+            // This is the correct trigger point: ONLY after doctor approves the appointment
+            try {
+                String idempotencyKey = UUID.randomUUID().toString();
+                String patientName = appointment.getPatientNameSnapshot();
+                String patientPhone = appointment.getPatient().getPhoneNumber();
+                String doctorName = appointment.getDoctor().getFirstName() + " " + appointment.getDoctor().getLastName();
+                String category = appointment.getDoctor().getCategoryName() != null ? appointment.getDoctor().getCategoryName() : "General";
+                String location = appointment.getDoctor().getCityName() != null ? appointment.getDoctor().getCityName() : "Clinic";
+                notificationClientService.sendAppointmentConfirmation(
+                        appointment.getId(),
+                        appointment.getPatient().getId(),
+                        patientName,
+                        patientPhone,
+                        appointment.getDoctor().getId(),
+                        doctorName,
+                        category,
+                        location,
+                        idempotencyKey,
+                        "APPROVAL" // triggerType
+                );
+                logger.info("Patient confirmation notification sent for approved appointment ID: {}", appointment.getId());
+            } catch (Exception e) {
+                logger.warn("Could not send patient confirmation notification: {}", e.getMessage());
+                // Don't fail the approval if notification fails
+            }
         }
 
         // Mark as history when done or cancelled

@@ -4,7 +4,6 @@ import { Helmet } from "react-helmet-async";
 import { Link } from 'react-router-dom';
 import ChatBotIcon from "../Components/ChatBotIcon";
 import { AuthContext } from "../services/AuthContext";
-// import DoctorsList from './DoctorsList';
 export default function Home(){
   const aboutRef = useRef(null);
   const { isLoggedIn } = useContext(AuthContext);
@@ -16,7 +15,7 @@ export default function Home(){
           content="منصة ثوثة بتربط مرضى الأسنان بطلاب كليات طب الأسنان لعلاج الحالات مجانًا تحت الإشراف المباشر لأعضاء هيئة التدريس بالكلية، مع فرصة تعليمية عملية للطلاب"
         />
       </Helmet>
-    {/* hero section */}
+    {}
     <div className="hero-section">
       <div className="hero-container">
         <div className="hero-title-flex">
@@ -29,7 +28,7 @@ export default function Home(){
         </p>
       </div> 
     </div>
-    {/* chatbot cta section */}
+    {}
     {!isLoggedIn && (
       <div className="chatbot-cta-section">
         <div className="chatbot-cta-container">
@@ -42,7 +41,7 @@ export default function Home(){
         </div>
       </div>
     )}
-      {/* category section */}
+      {}
       <div className="category-section">
         <div className="category-container">
           <p className="category-title" ref={aboutRef}>الخدمات المتوفره</p>

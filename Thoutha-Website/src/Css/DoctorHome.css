@@ -134,7 +134,8 @@
 }
 
 @keyframes dhShimmer {
-  0%   { background-position: 200% 0; }
+  0% { background-position: 200% 0; }
+
   100% { background-position: -200% 0; }
 }
 
@@ -165,7 +166,6 @@
   border: 1px solid #fecaca;
 }
 
-/* Empty State Instructions */
 .dh-empty-state-instructions {
   background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
   border: 1px solid #bfdbfe;
@@ -287,8 +287,26 @@
 
 @keyframes dhFadeIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+@media (max-width: 768px) {
+  .dh-toast {
+    top: 16px;
+    width: calc(100vw - 32px);
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+    animation: dhFadeInMobile 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+}
+
+@keyframes dhFadeInMobile {
+  from { opacity: 0; transform: translate(-50%, -40px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
 
 .dh-card-actions {
   display: flex;
@@ -375,6 +393,14 @@
   margin-top: 10px;
 }
 
+.dh-sheet-actions .dh-close-btn {
+  width: auto;
+  flex: 1;
+}
+.dh-sheet-actions .dh-action-btn {
+  flex: 1;
+}
+
 .dh-appt-time-block {
   display: flex;
   flex-direction: column;
@@ -444,43 +470,43 @@
     padding: 16px 12px 28px;
   }
 
-  .dh-greeting {
+.dh-greeting {
     font-size: 20px;
   }
 
-  .dh-appbar-title {
+.dh-appbar-title {
     font-size: 17px;
   }
 
-  .dh-top-greeting {
+.dh-top-greeting {
     padding: 12px 16px;
   }
 
-  .dh-top-greeting-text {
+.dh-top-greeting-text {
     font-size: 15px;
   }
 
-  .dh-appt-card {
+.dh-appt-card {
     width: 100%;
   }
 
-  .dh-appt-time {
+.dh-appt-time {
     font-size: 15px;
   }
 
-  .dh-appt-name {
+.dh-appt-name {
     font-size: 14px;
   }
 
-  .dh-sheet-name {
+.dh-sheet-name {
     font-size: 18px;
   }
 
-  .dh-sheet {
+.dh-sheet {
     padding: 16px 16px 28px;
   }
 
-  .dh-action-btn {
+.dh-action-btn {
     font-size: 13px;
     padding: 9px 0;
   }
@@ -492,15 +518,15 @@
     padding: 8px 10px;
   }
 
-  .dh-appt-divider {
+.dh-appt-divider {
     margin: 0 12px;
   }
 
-  .dh-appbar-title {
+.dh-appbar-title {
     font-size: 15px;
   }
 
-  .dh-greeting {
+.dh-greeting {
     font-size: 18px;
   }
 }
@@ -526,7 +552,8 @@
 
 @keyframes dhSlideUp {
   from { transform: translateY(100%); opacity: 0.8; }
-  to   { transform: translateY(0);    opacity: 1; }
+
+  to { transform: translateY(0);    opacity: 1; }
 }
 
 .dh-sheet-handle {
@@ -623,3 +650,4 @@
 .dh-close-btn:hover {
   background: #f3f4f6;
 }
+

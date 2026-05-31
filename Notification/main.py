@@ -30,7 +30,7 @@ import atexit
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
 
-from config import get_db_session, init_firebase
+from config import get_db_session, init_firebase, SessionLocal
 from routes.notification_routes import router as notification_router
 from routes.patient_routes import router as patient_router
 from utils.logger import setup_logger
@@ -74,27 +74,45 @@ async def lifespan(app: FastAPI):
         from services.queue_service import QueueService
         from services.patient_token_service import PatientTokenService
         
+        # Throttle counter for Firebase-disabled warnings (avoid log spam)
+        _firebase_warn_counter = {"count": 0}
+        
         def process_notifications():
             """Background task to process notification queue (runs every 2 seconds)"""
+            if not firebase_enabled:
+                # Log a warning every ~60 seconds (30 cycles × 2s) so it's visible in logs
+                _firebase_warn_counter["count"] += 1
+                if _firebase_warn_counter["count"] % 30 == 1:
+                    logger.warning(
+                        "⚠ Firebase is NOT initialized — all push notifications are DISABLED. "
+                        "PENDING items in NOTIFICATION_QUEUE will NOT be dispatched. "
+                        "Fix: place firebase-key.json in the Notification/ directory and restart."
+                    )
+                return
+            
+            db = None
             try:
-                if not firebase_enabled:
-                    return  # Skip if Firebase not initialized
-                db = next(get_db_session())
+                db = SessionLocal()
                 queue_service = QueueService(db)
                 queue_service.process_queue(db)
-                db.close()
             except Exception as e:
-                logger.error(f"Background queue processor error: {e}")
+                logger.error(f"Background queue processor error: {e}", exc_info=True)
+            finally:
+                if db is not None:
+                    db.close()
         
         def cleanup_patient_tokens():
             """Background task to cleanup expired patient tokens (runs every hour)"""
+            db = None
             try:
-                db = next(get_db_session())
+                db = SessionLocal()
                 token_service = PatientTokenService(db)
                 deleted = token_service.cleanup_expired_tokens()
-                db.close()
             except Exception as e:
                 logger.error(f"Patient token cleanup error: {e}")
+            finally:
+                if db is not None:
+                    db.close()
         
         # Initialize APScheduler for background tasks
         scheduler = BackgroundScheduler()
@@ -284,6 +302,33 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
                         f"patient_id={user_id}: {fcm_token[:20]}... ({device_type})")
             assigned_user_id = user_id
         
+        # =====================================================================
+        # MISSED NOTIFICATIONS SYNC ENGINE
+        # =====================================================================
+        # If the user logs in and activates a device token, check if there are any
+        # notifications in "FAILED" state due to missing active device tokens.
+        # Mark them as "PENDING" and reset retries so the scheduler immediately
+        # delivers them.
+        # =====================================================================
+        try:
+            from models.database_models import NotificationQueue
+            
+            failed_notifications = db.query(NotificationQueue).filter(
+                NotificationQueue.user_id == assigned_user_id,
+                NotificationQueue.status == "FAILED"
+            ).all()
+            
+            if failed_notifications:
+                for notification in failed_notifications:
+                    notification.status = "PENDING"
+                    notification.retry_count = 0
+                    notification.updated_at = datetime.utcnow()
+                db.commit()
+                logger.info(f"✓ Missed Notification Sync Engine: Rescheduled {len(failed_notifications)} "
+                            f"failed notification(s) back to PENDING for user {assigned_user_id}")
+        except Exception as sync_error:
+            logger.error(f"Failed to sync missed notifications for user {assigned_user_id}: {sync_error}")
+        
         return {
             "success": True,
             "message": "Device token registered successfully",
@@ -297,6 +342,55 @@ def register_device_token(request: DeviceTokenRequest, db: Session = Depends(get
     except Exception as e:
         db.rollback()
         logger.error(f"Error registering device token: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Device token deregistration endpoint
+@app.delete("/api/v1/device-tokens/deregister")
+def deregister_device_token(token: Optional[str] = None, fcmToken: Optional[str] = None, db: Session = Depends(get_db_session)):
+    """
+    Deregister Firebase device token (set is_active = False / 0)
+    This is called when a user logs out to prevent notification leaks
+    """
+    try:
+        from models.database_models import PatientDeviceToken
+        
+        target_token = token or fcmToken
+        if not target_token or not target_token.strip():
+            raise HTTPException(status_code=400, detail="token or fcmToken is required")
+        
+        # Check if token exists in database (could have multiple rows in development)
+        existing = db.query(PatientDeviceToken).filter(
+            PatientDeviceToken.fcm_token == target_token
+        ).all()
+        
+        if not existing:
+            logger.warning(f"Device token not found for deregistration: {target_token[:20]}...")
+            return {
+                "success": True,
+                "message": "Device token not found or already deregistered"
+            }
+            
+        updated_count = 0
+        for token_entry in existing:
+            if token_entry.is_active:
+                token_entry.is_active = False
+                token_entry.last_used_at = utc_now()
+                updated_count += 1
+                
+        if updated_count > 0:
+            db.commit()
+            logger.info(f"✓ Deregistered {updated_count} device token(s): {target_token[:20]}...")
+            
+        return {
+            "success": True,
+            "message": f"Device token deregistered successfully. Updated {updated_count} active entry/entries."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deregistering device token: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

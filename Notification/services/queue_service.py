@@ -106,9 +106,11 @@ class QueueService:
                     # ===== CRITICAL: Get all active FCM tokens for this patient =====
                     # user_id in NOTIFICATION_QUEUE is actually the patient_id from the backend
                     # Search PATIENT_DEVICE_TOKENS by patient_id for matching devices
+                    logger.info(f"Looking up FCM tokens for user_id={item.user_id} (notification {item.id})")
+                    
                     device_tokens = db.query(PatientDeviceToken).filter(
                         PatientDeviceToken.patient_id == item.user_id,  # user_id = patient_id
-                        PatientDeviceToken.is_active == True
+                        PatientDeviceToken.is_active == 1  # Oracle NUMBER(1): 1=True, 0=False
                     ).all()
                     
                     # If not found by patient_id, try user_id as fallback (for backward compatibility)
@@ -116,11 +118,26 @@ class QueueService:
                         logger.debug(f"No tokens found by patient_id {item.user_id}, trying user_id fallback...")
                         device_tokens = db.query(PatientDeviceToken).filter(
                             PatientDeviceToken.user_id == item.user_id,
-                            PatientDeviceToken.is_active == True
+                            PatientDeviceToken.is_active == 1  # Oracle NUMBER(1): 1=True, 0=False
                         ).all()
                     
                     if not device_tokens:
-                        logger.warning(f"No active device tokens for user {item.user_id} - notification {item.id} cannot be sent")
+                        # Log ALL tokens for this user (including inactive) for debugging
+                        all_tokens = db.query(PatientDeviceToken).filter(
+                            (PatientDeviceToken.patient_id == item.user_id) |
+                            (PatientDeviceToken.user_id == item.user_id)
+                        ).all()
+                        if all_tokens:
+                            logger.warning(
+                                f"Found {len(all_tokens)} token(s) for user {item.user_id} but NONE are active. "
+                                f"States: {[(t.id, t.patient_id, t.user_id, t.is_active) for t in all_tokens]}"
+                            )
+                        else:
+                            logger.warning(
+                                f"ZERO device tokens exist for user {item.user_id} in PATIENT_DEVICE_TOKENS "
+                                f"(searched both patient_id and user_id columns)"
+                            )
+                        
                         item.status = "FAILED"
                         item.retry_count += 1
                         item.updated_at = datetime.utcnow()
@@ -129,11 +146,13 @@ class QueueService:
                             notification_queue_id=item.id,
                             fcm_message_id=None,
                             delivery_status="FAILED",
-                            error_message="No active device tokens for user"
+                            error_message=f"No active device tokens for user {item.user_id}"
                         )
                         db.add(audit)
                         db.commit()
                         continue
+                    
+                    logger.info(f"Found {len(device_tokens)} active token(s) for user {item.user_id}")
                     
                     # ===== CRITICAL: Send to EACH device via FCM =====
                     success_count = 0

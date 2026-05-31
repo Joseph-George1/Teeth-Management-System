@@ -41,4 +41,10 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
                 .toList();
 
     }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteToken(String token) {
+        deviceTokenRepo.deleteByToken(token);
+    }
 }

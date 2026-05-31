@@ -40,7 +40,7 @@ public class NotificationController {
         try {
             String idempotencyKey = UUID.randomUUID().toString();
             Map<String, Object> response = notificationClientService.sendAppointmentConfirmation(
-                    appointmentId, patientId, patientName, patientPhone, doctorId, doctorName, category, location, idempotencyKey);
+                    appointmentId, patientId, patientName, patientPhone, doctorId, doctorName, category, location, idempotencyKey, "APPROVAL");
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
