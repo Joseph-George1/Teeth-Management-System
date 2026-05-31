@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Muhammad Ashraf Tawfik Elkateb
+ * GitHub: https://github.com/MuhammamdElKateb
+ */
+package com.spring.boot.graduationproject1.service;
+
+import com.spring.boot.graduationproject1.dto.AdminDto;
+import com.spring.boot.graduationproject1.dto.AppointmentDto;
+import com.spring.boot.graduationproject1.dto.RequestDto;
+
+import java.util.List;
+
+public interface AdminService {
+    AdminDto getAdminsByEmail(String email);
+    List<AppointmentDto> getAllAppointments();
+    List<RequestDto> getAllRequests();
+    List<AppointmentDto> getExpiredAppointments();
+    Long getTotalAppointments();
+    Long getTotalRequests();
+    Long getPendingAppointmentsCount();
+    Long getApprovedAppointmentsCount();
+    Long getRejectedAppointmentsCount();
+    Long getPendingRequestsCount();
+    Long getApprovedRequestsCount();
+    Long getRejectedRequestsCount();
+    Long getDoctorUniversitiesCount();
+}
