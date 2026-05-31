@@ -2439,7 +2439,7 @@ TROUBLESHOOTING
 
 ## 🔗 Related Files
 
-- [Backend Code](../../Backend/src/main/java/com/spring/boot/graduationproject1/)
+- [Backend Code](../../../GraduationProject1/src/main/java/com/spring/boot/graduationproject1/)
 - [Flutter Sample](../../Thoutha-Website/)
 - [Database Schema](../../Database/)
 
