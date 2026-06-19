@@ -430,9 +430,12 @@ def api_get_doctors():
 @login_required
 def api_view_doctor(doctor_id):
     """Get full doctor details"""
-    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
-    if status == 200:
-        return jsonify({"success": True, "doctor": data})
+    data, status = _get("/api/doctor/getDoctors")
+    if status == 200 and data:
+        for doctor in data:
+            if doctor.get("id") == doctor_id:
+                return jsonify({"success": True, "doctor": doctor})
+        return jsonify({"success": False, "message": "Doctor not found"}), 404
     return jsonify({"success": False, "message": f"HTTP {status}"}), 400
 
 
@@ -1358,9 +1361,12 @@ def export_requests():
 @login_required
 def get_doctor_details(doctor_id):
     """Get full doctor details"""
-    data, status = _get(f"/api/doctor/getDoctorById?doctorId={doctor_id}")
-    if status == 200:
-        return jsonify({"success": True, "data": data})
+    data, status = _get("/api/doctor/getDoctors")
+    if status == 200 and data:
+        for doctor in data:
+            if doctor.get("id") == doctor_id:
+                return jsonify({"success": True, "data": doctor})
+        return jsonify({"success": False, "message": "Doctor not found"}), 404
     return jsonify({"success": False, "message": f"HTTP {status}"}), 400
 
 
@@ -2246,10 +2252,10 @@ DASHBOARD_TEMPLATE = """
           </div>
           {% if d.get('id') %}
           <div class="d-flex gap-2 mt-3">
-            <button class="btn btn-sm btn-outline-primary flex-fill" onclick=\"viewDoctor({{ d.id }})\" title=\"View Details\">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewDoctor({{ d.id }})" title="View Details">
               <i class="fa fa-eye me-1"></i>View
             </button>
-            <button class="btn btn-sm btn-outline-danger flex-fill" onclick=\"deleteDoctor({{ d.id }}, this)\" title=\"Delete\">
+            <button class="btn btn-sm btn-outline-danger flex-fill" onclick="deleteDoctor({{ d.id }}, this)" title="Delete">
               <i class="fa fa-trash me-1"></i>Delete
             </button>
           </div>
